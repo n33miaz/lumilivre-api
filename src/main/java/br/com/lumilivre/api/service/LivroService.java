@@ -44,11 +44,10 @@ public class LivroService {
 
 			}
 		}
-		
 	}
 	
 
-	// REMOVER PRODUTOS 
+	// REMOVER LIVROS 
 	public ResponseEntity<ResponseModel> delete(String isbn){
 		lr.deleteById(isbn);
 		rm.setMensagem("O Livro foi removido com sucesso");

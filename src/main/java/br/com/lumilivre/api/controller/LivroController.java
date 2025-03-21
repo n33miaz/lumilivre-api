@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.lumilivre.api.model.LivroModel;
@@ -16,12 +17,11 @@ import br.com.lumilivre.api.service.LivroService;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-
 @RestController
-@CrossOrigin(origins = "*")
+@RequestMapping("/lumilivre/livros")
+@CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class LivroController {
     
-	
 	@Autowired
 	private LivroService ls;
 
@@ -31,10 +31,12 @@ public class LivroController {
 		return ls.delete(isbn);
 	}
 
-	@PutMapping("/alterar{id}")
-	public ResponseEntity<?> alterar (@RequestBody LivroModel lm){
+	@PutMapping("/alterar/{isbn}")
+	public ResponseEntity<?> alterar(@PathVariable String isbn, @RequestBody LivroModel lm) {
+		lm.setIsbn(isbn); // Garante que o ISBN do objeto seja atualizado corretamente
 		return ls.cadastrarAlterar(lm, "alterar");
 	}
+	
 
 	@PostMapping("/cadastrar")
 	public ResponseEntity<?> cadastrar (@RequestBody LivroModel lm){
