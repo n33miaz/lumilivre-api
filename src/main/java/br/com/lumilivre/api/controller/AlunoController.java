@@ -39,8 +39,8 @@ public class AlunoController {
     }
 
     @PutMapping("alterar/{rm}")
-    public ResponseEntity<?> alterar (@PathVariable String rm, @RequestBody AlunoModel am){
-        am.setRm(rm);
+    public ResponseEntity<?> alterar (@PathVariable String matricula, @RequestBody AlunoModel am){
+        am.setMatricula(matricula);
         return as.cadastrarAlterar(am, "alterar");
     }
 

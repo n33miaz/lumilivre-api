@@ -3,14 +3,18 @@ package br.com.lumilivre.api.model;
 import java.time.LocalDate;
 
 import jakarta.persistence.Column;
-
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
+@Entity
+@Table (name = "alunos")
 public class AlunoModel {
-    
 
     @Id
-    @Column (name = "Rm")
+    @Column (name = "matricula", unique = true)
     private String matricula;
 
     @Column(name = "NomeAluno")
@@ -31,11 +35,11 @@ public class AlunoModel {
     @Column (name = "Genero")
     private String genero;
 
-	public String getRm() {
+	public String getMatricula() {
 		return matricula;
 	}
 
-	public void setRm(String matricula) {
+	public void setMatricula(String matricula) {
 		this.matricula = matricula;
 	}
 

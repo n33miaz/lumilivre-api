@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.model.AlunoModel;
-import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 
@@ -30,7 +29,7 @@ public class AlunoService {
         if(am.getNome().equals("")){
             rm.setMensagem("o Nome do Aluno é obrigatório");
             return new ResponseEntity<ResponseModel>(rm, HttpStatus.BAD_REQUEST);
-        } else if (am.getRm().equals("")){
+        } else if (am.getMatricula().equals("")){
             rm.setMensagem("A matrícula do Aluno é obrigatória");
             return new ResponseEntity<ResponseModel>(rm, HttpStatus.BAD_REQUEST);
         } else if (am.getCpf().equals("")){
