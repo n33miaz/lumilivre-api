@@ -21,28 +21,27 @@ import br.com.lumilivre.api.service.CursoService;
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class CursoController {
 
-	
-	@Autowired
-	private CursoService cs;
-	
-	@DeleteMapping("remover/{codigo}")
-	public  ResponseEntity<ResponseModel> remover(@PathVariable Long codigo){
-		return cs.delete(codigo);
-	}
-	
-	@PutMapping("alterar/{codigo}")
-	public ResponseEntity<?> alterar(@PathVariable Long codigo, @RequestBody CursoModel cm){
-		cm.setCodigo(codigo);
-		return cs.cadastrarAlterar(cm, "alterar");
-	}
-	
-	@PostMapping("/cadastrar")
-	public ResponseEntity<?> cadastrar (@RequestBody CursoModel cm){
-		return cs.cadastrarAlterar(cm, "cadastrar");
-	}
-	
-	@GetMapping("/listar")
-	public Iterable<CursoModel> listar(){
-		return cs.listar();
-	}
+    @Autowired
+    private CursoService cs;
+
+    @DeleteMapping("remover/{id}")
+    public ResponseEntity<ResponseModel> remover(@PathVariable Long id) {
+        return cs.delete(id);
+    }
+
+    @PutMapping("alterar/{id}")
+    public ResponseEntity<?> alterar(@PathVariable Long id, @RequestBody CursoModel cm) {
+        cm.setId(id);
+        return cs.cadastrarAlterar(cm, "alterar");
+    }
+
+    @PostMapping("/cadastrar")
+    public ResponseEntity<?> cadastrar(@RequestBody CursoModel cm) {
+        return cs.cadastrarAlterar(cm, "cadastrar");
+    }
+
+    @GetMapping("/listar")
+    public Iterable<CursoModel> listar() {
+        return cs.listar();
+    }
 }

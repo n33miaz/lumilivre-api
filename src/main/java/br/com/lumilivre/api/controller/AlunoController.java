@@ -33,12 +33,12 @@ public class AlunoController {
         return as.listar();
     }
     
-    @DeleteMapping("/remover/{rm}")
+    @DeleteMapping("/remover/{matricula}")
     public ResponseEntity<?> remover (@PathVariable String matricula){
         return as.delete(matricula);
     }
 
-    @PutMapping("alterar/{rm}")
+    @PutMapping("alterar/{matricula}")
     public ResponseEntity<?> alterar (@PathVariable String matricula, @RequestBody AlunoModel am){
         am.setMatricula(matricula);
         return as.cadastrarAlterar(am, "alterar");

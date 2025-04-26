@@ -28,9 +28,6 @@ public class CursoService{
 		if (cm.getNome().equals("")) {
 			rm.setMensagem("O Nome é Obrigátorio");
 			return new ResponseEntity<ResponseModel>(rm, HttpStatus.BAD_REQUEST);
-		} else if (cm.getTurno().equals("")) {
-			rm.setMensagem("O Turno é Obrigatório");
-			return new ResponseEntity<ResponseModel>(rm, HttpStatus.BAD_REQUEST);
 		} else {
 			if(acao.equals("cadastrar")) {
 				return new ResponseEntity<CursoModel>(cr.save(cm), HttpStatus.CREATED);
@@ -41,8 +38,8 @@ public class CursoService{
 		
 	}
 	
-	public ResponseEntity<ResponseModel> delete(Long codigo){
-		cr.deleteById(codigo);
+	public ResponseEntity<ResponseModel> delete(Long id){
+		cr.deleteById(id);
 		rm.setMensagem("O Curso foi removido com sucesso");
 		return new ResponseEntity<ResponseModel>(rm, HttpStatus.OK);
 	}

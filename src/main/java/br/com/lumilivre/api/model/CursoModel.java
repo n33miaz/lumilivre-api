@@ -20,7 +20,7 @@ public class CursoModel {
 
     @Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long codigo;
+    private long id;
 
     @Column(name = "NomeCurso") 
     private String nome;
@@ -31,37 +31,50 @@ public class CursoModel {
     @Column(name = "Turno")
     private String turno;
 
-	public long getCodigo() {
-		return codigo;
-	}
+	@Column(name = "Modulo")
+	private String modulo;
 
-	public void setCodigo(long codigo) {
-		this.codigo = codigo;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public String getNome() {
-		return nome;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public void setNome(String nome) {
-		this.nome = nome;
-	}
+    public String getNome() {
+        return nome;
+    }
 
-	public String getDescricao() {
-		return descricao;
-	}
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
 
-	public void setDescricao(String descricao) {
-		this.descricao = descricao;
-	}
+    public String getDescricao() {
+        return descricao;
+    }
 
-	public String getTurno() {
-		return turno;
-	}
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
 
-	public void setTurno(String turno) {
-		this.turno = turno;
-	}
+    public String getTurno() {
+        return turno;
+    }
+
+    public void setTurno(String turno) {
+        this.turno = turno;
+    }
+
+    public String getModulo() {
+        return modulo;
+    }
+
+    public void setModulo(String modulo) {
+        this.modulo = modulo;
+    }
+
     
-    
+ 
+	
 }
