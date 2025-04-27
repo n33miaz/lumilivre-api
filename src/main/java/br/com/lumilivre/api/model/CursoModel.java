@@ -22,7 +22,7 @@ public class CursoModel {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(name = "NomeCurso") 
+    @Column(name = "Nome") 
     private String nome;
 
     @Column(name = "Descricao")
@@ -74,7 +74,6 @@ public class CursoModel {
         this.modulo = modulo;
     }
 
-    
  
 	
 }
