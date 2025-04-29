@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -21,7 +23,7 @@ import br.com.lumilivre.api.service.CursoService;
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class CursoController {
 
-    @Autowired
+    @Autowired 
     private CursoService cs;
 
     @DeleteMapping("remover/{id}")
@@ -32,16 +34,16 @@ public class CursoController {
     @PutMapping("alterar/{id}")
     public ResponseEntity<?> alterar(@PathVariable Long id, @RequestBody CursoModel cm) {
         cm.setId(id);
-        return cs.cadastrarAlterar(cm, "alterar");
+        return cs.alterar(cm);
     }
 
     @PostMapping("/cadastrar")
     public ResponseEntity<?> cadastrar(@RequestBody CursoModel cm) {
-        return cs.cadastrarAlterar(cm, "cadastrar");
+        return cs.cadastrar(cm);
     }
 
     @GetMapping("/listar")
-    public Iterable<CursoModel> listar() {
+    public List<CursoModel> listar() {
         return cs.listar();
     }
 }

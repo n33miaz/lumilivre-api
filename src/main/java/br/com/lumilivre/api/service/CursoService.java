@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,38 +12,46 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.CursoRepository;
 
 @Service
-public class CursoService{
-	
-	
-	@Autowired 
-	private CursoRepository cr;
-	
-	@Autowired
-	private ResponseModel rm;
-	
-	public Iterable<CursoModel> listar(){
-		return cr.findAll();
-	}
-	
-	
-	public ResponseEntity<?> cadastrarAlterar(CursoModel cm, String acao){
-		if (cm.getNome().equals("")) {
-			rm.setMensagem("O Nome é Obrigátorio");
-			return new ResponseEntity<ResponseModel>(rm, HttpStatus.BAD_REQUEST);
-		} else {
-			if(acao.equals("cadastrar")) {
-				return new ResponseEntity<CursoModel>(cr.save(cm), HttpStatus.CREATED);
-			} else {
-				return new ResponseEntity<CursoModel>(cr.save(cm), HttpStatus.OK);
-			}
-		}
-		
-	}
-	
-	public ResponseEntity<ResponseModel> delete(Long id){
-		cr.deleteById(id);
-		rm.setMensagem("O Curso foi removido com sucesso");
-		return new ResponseEntity<ResponseModel>(rm, HttpStatus.OK);
-	}
-	
+public class CursoService {
+
+    @Autowired
+    private CursoRepository cr;
+
+    @Autowired
+    private ResponseModel rm;
+
+
+    // public List<CursoModel> listar() {
+    //     return cr.findAll();
+    // }
+
+    public List<CursoModel> listar() {
+        return (List<CursoModel>) cr.findAll();
+    }
+
+    public ResponseEntity<?> cadastrar(CursoModel cursoModel) {
+        if (isNomeInvalido(cursoModel)) {
+            rm.setMensagem("O Nome é Obrigatório");
+            return ResponseEntity.badRequest().body(rm);
+        }
+        CursoModel salvo = cr.save(cursoModel);
+        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+    }
+
+    public ResponseEntity<?> alterar(CursoModel cursoModel) {
+        if (isNomeInvalido(cursoModel)) {
+            rm.setMensagem("O Nome é Obrigatório");
+            return ResponseEntity.badRequest().body(rm);
+        }
+        CursoModel salvo = cr.save(cursoModel);
+        return ResponseEntity.ok(salvo);
+    }
+    public ResponseEntity<ResponseModel> delete(Long id) {
+        cr.deleteById(id);
+        rm.setMensagem("O Curso foi removido com sucesso");
+        return new ResponseEntity<ResponseModel>(rm, HttpStatus.OK);
+    }
+    private boolean isNomeInvalido(CursoModel cursoModel) {
+        return cursoModel.getNome() == null || cursoModel.getNome().trim().isEmpty();
+    }
 }
