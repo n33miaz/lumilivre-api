@@ -1,19 +1,6 @@
-# Etapa de build
-FROM maven:3.8.5-openjdk-17 AS build
-WORKDIR /app
+FROM openjdk:16-jdk-slim
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+RUN bash -c 'touch /app.jar'
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app.jar"]
 
-# Copia os arquivos do projeto para dentro do contêiner
-COPY . .
-
-# Compila o projeto com Maven
-RUN mvn clean package -DskipTests
-
-# Etapa de execução
-FROM eclipse-temurin:17-jdk
-WORKDIR /app
-
-# Copia o arquivo JAR gerado da etapa de build
-COPY --from=build /app/target/*.jar app.jar
-
-# Comando para rodar a aplicação
-CMD ["java", "-jar", "app.jar"]

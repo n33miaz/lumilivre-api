@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
@@ -21,19 +22,19 @@ public class AlunoModel {
     @Column (name = "matricula", unique = true)
     private String matricula;
 
-    @Column(name = "nome")
+    @Column(name = "nome", nullable = false)
     private String nome;
 
-    @Column(name = "sobrenome")
+    @Column(name = "sobrenome", nullable = false)
     private String sobrenome;
 
-	@Column(name = "cpf")
+	@Column(name = "cpf", nullable = false)
     private String cpf;
 
     @Column(name = "data_nascimento")
     private LocalDate dataNascimento;
 
-    @Column (name = "celular")
+    @Column (name = "celular", nullable = false)
     private String celular;
 
     @Column (name = "email")
@@ -41,12 +42,13 @@ public class AlunoModel {
 
     // Criar o relacionamento para o curso do aluno
 
-    @OneToOne
-    @JoinColumn(name =  "curso_id")
-    private CursoModel curso;
+@ManyToOne
+@JoinColumn(name =  "curso_id", nullable = false)
+private CursoModel curso;
 
-    @OneToOne
-    @JoinColumn(name =  "endereco_cep")
+
+    @OneToOne (cascade = CascadeType.ALL)
+    @JoinColumn(name =  "endereco_id")
     private EnderecoModel endereco;
 
     

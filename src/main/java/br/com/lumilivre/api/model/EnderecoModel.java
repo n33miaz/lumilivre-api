@@ -1,11 +1,6 @@
 package br.com.lumilivre.api.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Column;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 
 @Entity
 public class EnderecoModel {
@@ -13,6 +8,9 @@ public class EnderecoModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "cep")
+    private String cep;
 
     @Column(name = "logradouro")
     private String logradouro;
@@ -22,31 +20,34 @@ public class EnderecoModel {
 
     @Column(name = "bairro")
     private String bairro;
-    
+
     @Column(name = "cidade")
     private String cidade;
-    
+
     @Column(name = "complemento")
     private String complemento;
 
     @Column(name = "uf")
     private String uf;
 
-    @Column (name = "cep")
-    private String cep;
-
-    @OneToOne(mappedBy = "endereco")  // A relação bidirecional
-    private AlunoModel aluno;  // Relacionamento com a classe Aluno
-
+    @OneToOne(mappedBy = "endereco")
+    private AlunoModel aluno;
 
     // Getters e Setters
-
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getCep() {
+        return cep;
+    }
+
+    public void setCep(String cep) {
+        this.cep = cep;
     }
 
     public String getLogradouro() {
@@ -104,14 +105,4 @@ public class EnderecoModel {
     public void setAluno(AlunoModel aluno) {
         this.aluno = aluno;
     }
-
-    public String getCep() {
-        return cep;
-    }
-
-    public void setCep(String cep) {
-        this.cep = cep;
-    }
-
-    
 }
