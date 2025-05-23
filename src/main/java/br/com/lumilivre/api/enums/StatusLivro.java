@@ -3,7 +3,8 @@ package br.com.lumilivre.api.enums;
 public enum StatusLivro implements EnumStatus{
     DISPONIVEL("Disponível"),
     INDISPONIVEL("Indisponível"),
-    EM_MANUTENCAO("Em manutenção");
+    EM_MANUTENCAO("Em manutenção"),
+    EMPRESTADO("Emprestado");
 
     private final String status;
 

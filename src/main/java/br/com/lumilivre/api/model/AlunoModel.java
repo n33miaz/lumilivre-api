@@ -43,12 +43,12 @@ public class AlunoModel {
     // Criar o relacionamento para o curso do aluno
 
 @ManyToOne
-@JoinColumn(name =  "curso_id", nullable = false)
+@JoinColumn(name =  "curso_nome", nullable = false)
 private CursoModel curso;
 
 
     @OneToOne (cascade = CascadeType.ALL)
-    @JoinColumn(name =  "endereco_id")
+    @JoinColumn(name =  "endereco_cep")
     private EnderecoModel endereco;
 
     

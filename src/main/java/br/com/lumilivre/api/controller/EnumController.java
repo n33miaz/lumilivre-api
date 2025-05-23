@@ -1,9 +1,11 @@
 package br.com.lumilivre.api.controller;
 
 import br.com.lumilivre.api.enums.StatusLivro;
+import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.Cdd;
+import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.data.EnumDTO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,7 +28,11 @@ public class EnumController {
             case "PENALIDADE":
                 return penalidadeStatus();
             case "CDD":
-                return listarCdd();
+                return listarCdd();  
+            case "TIPO_CAPA":
+                return listarTipoCapa();
+            case "CLASSIFICACAO_ETARIA":
+                return listarClassificacaoEtaria();
             default:
                 throw new IllegalArgumentException("Tipo de enum não encontrado: " + tipo);
         }
@@ -53,6 +59,20 @@ public class EnumController {
     private List<EnumDTO> listarCdd() {
         return Arrays.stream(Cdd.values())
                 .map(c -> new EnumDTO(c.getCode(), c.getDescription()))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList());    
     }
+    
+    private List<EnumDTO> listarClassificacaoEtaria() {
+        return Arrays.stream(ClassificacaoEtaria.values())
+                .map(c -> new EnumDTO(c.name(), c.getStatus()))
+                .collect(Collectors.toList());    
+    }
+    
+    private List<EnumDTO> listarTipoCapa() {
+        return Arrays.stream(TipoCapa.values())
+                .map(c -> new EnumDTO(c.name(), c.getStatus()))
+                .collect(Collectors.toList());    
+    }
+    
+    
 }
