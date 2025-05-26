@@ -5,6 +5,7 @@ import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.Cdd;
+import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.data.EnumDTO;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,7 +29,9 @@ public class EnumController {
             case "PENALIDADE":
                 return penalidadeStatus();
             case "CDD":
-                return listarCdd();  
+                return listarCdd();
+            case "Turno":
+                return listarTurno(); 
             case "TIPO_CAPA":
                 return listarTipoCapa();
             case "CLASSIFICACAO_ETARIA":
@@ -59,20 +62,25 @@ public class EnumController {
     private List<EnumDTO> listarCdd() {
         return Arrays.stream(Cdd.values())
                 .map(c -> new EnumDTO(c.getCode(), c.getDescription()))
-                .collect(Collectors.toList());    
+                .collect(Collectors.toList());
     }
-    
+
     private List<EnumDTO> listarClassificacaoEtaria() {
         return Arrays.stream(ClassificacaoEtaria.values())
                 .map(c -> new EnumDTO(c.name(), c.getStatus()))
-                .collect(Collectors.toList());    
+                .collect(Collectors.toList());
     }
-    
+
     private List<EnumDTO> listarTipoCapa() {
         return Arrays.stream(TipoCapa.values())
                 .map(c -> new EnumDTO(c.name(), c.getStatus()))
-                .collect(Collectors.toList());    
+                .collect(Collectors.toList());
     }
-    
-    
+
+    private List<EnumDTO> listarTurno() {
+        return Arrays.stream(Turno.values())
+                .map(c -> new EnumDTO(c.name(), c.getStatus()))
+                .collect(Collectors.toList());
+    }
+
 }

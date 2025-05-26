@@ -1,9 +1,9 @@
 package br.com.lumilivre.api.repository;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import br.com.lumilivre.api.model.GeneroModel;
 
 
-public interface GeneroRepository extends CrudRepository<GeneroModel, Long>{
+public interface GeneroRepository extends JpaRepository<GeneroModel, Long>{
     
 }

@@ -1,4 +1,5 @@
 package br.com.lumilivre.api.model;
+
 import br.com.lumilivre.api.model.CursoModel;
 
 import java.time.LocalDate;
@@ -6,8 +7,6 @@ import java.time.LocalDate;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -15,11 +14,11 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table (name = "aluno")
+@Table(name = "aluno")
 public class AlunoModel {
 
     @Id
-    @Column (name = "matricula", unique = true)
+    @Column(name = "matricula", unique = true)
     private String matricula;
 
     @Column(name = "nome", nullable = false)
@@ -28,33 +27,24 @@ public class AlunoModel {
     @Column(name = "sobrenome", nullable = false)
     private String sobrenome;
 
-	@Column(name = "cpf", nullable = false)
+    @Column(name = "cpf", nullable = false)
     private String cpf;
 
     @Column(name = "data_nascimento")
     private LocalDate dataNascimento;
 
-    @Column (name = "celular", nullable = false)
+    @Column(name = "celular", nullable = false)
     private String celular;
 
-    @Column (name = "email")
+    @Column(name = "email")
     private String email;
 
     // Criar o relacionamento para o curso do aluno
-
-@ManyToOne
-@JoinColumn(name =  "curso_nome", nullable = false)
-private CursoModel curso;
-
-
-    @OneToOne (cascade = CascadeType.ALL)
-    @JoinColumn(name =  "endereco_cep")
-    private EnderecoModel endereco;
-
-    
+    @ManyToOne
+    @JoinColumn(name = "curso_id", nullable = false)
+    private CursoModel curso;
 
     // Criar a parte de Endereço, integrando API de CEP
-
     public String getMatricula() {
         return matricula;
     }
@@ -118,15 +108,4 @@ private CursoModel curso;
     public void setCurso(CursoModel curso) {
         this.curso = curso;
     }
-
-    public EnderecoModel getEndereco() {
-        return endereco;
-    }
-
-    public void setEndereco(EnderecoModel endereco) {
-        this.endereco = endereco;
-    }
-    
-    
-
 }

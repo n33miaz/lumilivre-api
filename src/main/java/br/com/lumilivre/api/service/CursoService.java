@@ -20,11 +20,9 @@ public class CursoService {
     @Autowired
     private ResponseModel rm;
 
-
     // public List<CursoModel> listar() {
     //     return cr.findAll();
     // }
-
     public List<CursoModel> listar() {
         return (List<CursoModel>) cr.findAll();
     }
@@ -46,11 +44,13 @@ public class CursoService {
         CursoModel salvo = cr.save(cursoModel);
         return ResponseEntity.ok(salvo);
     }
+
     public ResponseEntity<ResponseModel> delete(Long id) {
         cr.deleteById(id);
         rm.setMensagem("O Curso foi removido com sucesso");
         return new ResponseEntity<ResponseModel>(rm, HttpStatus.OK);
     }
+
     private boolean isNomeInvalido(CursoModel cursoModel) {
         return cursoModel.getNome() == null || cursoModel.getNome().trim().isEmpty();
     }

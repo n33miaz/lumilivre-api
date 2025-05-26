@@ -9,11 +9,9 @@ import br.com.lumilivre.api.data.AlunoDTO;
 import br.com.lumilivre.api.data.EnderecoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.CursoModel;
-import br.com.lumilivre.api.model.EnderecoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.CursoRepository;
-import br.com.lumilivre.api.repository.EnderecoRepository;
 import br.com.lumilivre.api.service.CepService;
 
 import java.util.List;
@@ -27,17 +25,15 @@ public class AlunoService {
     @Autowired
     private CursoRepository cursoRepository;
 
-    @Autowired
-    private EnderecoRepository enderecoRepository;
 
     @Autowired
     private ResponseModel rm;
 
     @Autowired
-    private CepService cepService; 
+    private CepService cepService;
 
-    public List<AlunoModel> listar() {
-        return (List<AlunoModel>) ar.findAll();
+    public Iterable<AlunoModel> listar() {
+        return ar.findAll();
     }
 
     public ResponseEntity<?> cadastrar(AlunoDTO dto) {
@@ -58,7 +54,7 @@ public class AlunoService {
             rm.setMensagem("O nome é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
-        
+
         if (dto.getSobrenome() == null || dto.getSobrenome().trim().isEmpty()) {
             rm.setMensagem("O sobrenome é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
@@ -94,16 +90,17 @@ public class AlunoService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
 
-        EnderecoModel endereco = new EnderecoModel();
-        endereco.setCep(enderecoDTO.getCep());
-        endereco.setLogradouro(enderecoDTO.getLogradouro());
-        endereco.setComplemento(enderecoDTO.getComplemento());
-        endereco.setBairro(enderecoDTO.getBairro());
-        endereco.setCidade(enderecoDTO.getCidade());
-        endereco.setUf(enderecoDTO.getUf());
-        endereco.setNumero(dto.getNumero()); 
+        // EnderecoModel endereco = new EnderecoModel();
+        // endereco.setCep(enderecoDTO.getCep());
+        // endereco.setLogradouro(enderecoDTO.getLogradouro());
+        // endereco.setComplemento(enderecoDTO.getComplemento());
+        // endereco.setBairro(enderecoDTO.getBairro());
+        // endereco.setLocalidade(enderecoDTO.getLocalidade());
+        // endereco.setUf(enderecoDTO.getUf());
+        // endereco.setEstado(enderecoDTO.getEstado());
+        // endereco.setNumero(dto.getNumero());
 
-        endereco = enderecoRepository.save(endereco);
+        // endereco = enderecoRepository.save(endereco);
 
         AlunoModel aluno = new AlunoModel();
         aluno.setMatricula(dto.getMatricula());
@@ -113,14 +110,13 @@ public class AlunoService {
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setCelular(dto.getCelular());
         aluno.setEmail(dto.getEmail());
-        aluno.setEndereco(endereco);
+        // aluno.setEndereco(endereco);
         aluno.setCurso(curso.get());
 
         AlunoModel salvo = ar.save(aluno);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
-
 
     public ResponseEntity<?> alterar(String matricula, AlunoDTO dto) {
         var alunoExistente = ar.findById(matricula);
@@ -164,16 +160,18 @@ public class AlunoService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
 
-        EnderecoModel endereco = alunoExistente.get().getEndereco();
-        endereco.setCep(enderecoDTO.getCep());
-        endereco.setLogradouro(enderecoDTO.getLogradouro());
-        endereco.setComplemento(enderecoDTO.getComplemento());
-        endereco.setBairro(enderecoDTO.getBairro());
-        endereco.setCidade(enderecoDTO.getCidade());
-        endereco.setUf(enderecoDTO.getUf());
-        endereco.setNumero(dto.getNumero());
+        // EnderecoModel endereco = alunoExistente.get().getEndereco();
+        // endereco.setCep(enderecoDTO.getCep());
+        // endereco.setLogradouro(enderecoDTO.getLogradouro());
+        // endereco.setComplemento(enderecoDTO.getComplemento());
+        // endereco.setBairro(enderecoDTO.getBairro());
+        // endereco.setLocalidade(enderecoDTO.getLocalidade());
+        // endereco.setUf(enderecoDTO.getUf());
+        // endereco.setEstado(enderecoDTO.getEstado());
 
-        endereco = enderecoRepository.save(endereco);
+        // endereco.setNumero(dto.getNumero());
+
+        // endereco = enderecoRepository.save(endereco);
 
         AlunoModel aluno = alunoExistente.get();
         aluno.setNome(dto.getNome());
@@ -182,7 +180,7 @@ public class AlunoService {
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setCelular(dto.getCelular());
         aluno.setEmail(dto.getEmail());
-        aluno.setEndereco(endereco);
+        // aluno.setEndereco(endereco);
         aluno.setCurso(curso.get());
 
         AlunoModel salvo = ar.save(aluno);
@@ -190,12 +188,10 @@ public class AlunoService {
         return ResponseEntity.ok(salvo);
     }
 
-
     public ResponseEntity<ResponseModel> deletar(String matricula) {
         ar.deleteById(matricula);
         rm.setMensagem("O aluno foi removido com sucesso.");
         return ResponseEntity.ok(rm);
     }
-
 
 }
