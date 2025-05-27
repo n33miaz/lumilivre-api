@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.AlunoDTO;
-import br.com.lumilivre.api.data.EnderecoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -84,8 +83,8 @@ public class AlunoService {
             rm.setMensagem("O CEP é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
-        EnderecoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
-        if (enderecoDTO == null || enderecoDTO.getCep() == null) {
+        AlunoDTO alunoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
+        if (alunoDTO == null || alunoDTO.getCep() == null) {
             rm.setMensagem("CEP inválido ou não encontrado.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
@@ -154,8 +153,8 @@ public class AlunoService {
             rm.setMensagem("O CEP é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
-        EnderecoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
-        if (enderecoDTO == null || enderecoDTO.getCep() == null) {
+        AlunoDTO alunoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
+        if (alunoDTO == null || alunoDTO.getCep() == null) {
             rm.setMensagem("CEP inválido ou não encontrado.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }

@@ -7,4 +7,9 @@ import br.com.lumilivre.api.model.CursoModel;
 
 @Repository
 public interface CursoRepository extends JpaRepository<CursoModel, Long> {
+
+    boolean existsByNomeIgnoreCase(String nome);
+
+    boolean existsByNomeIgnoreCaseAndIdNot(String nome, Long id);
+
 }

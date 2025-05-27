@@ -18,6 +18,9 @@ public class AutorController {
     @Autowired 
     private AutorService as;
 
+    @Autowired 
+    private AutorModel am;
+
     @DeleteMapping("/remover/{codigo}")
     public ResponseEntity<ResponseModel> remover(@PathVariable String codigo) {
         return as.delete(codigo);

@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 
 import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -14,41 +16,44 @@ import br.com.lumilivre.api.repository.GeneroRepository;
 @Service
 public class GeneroService {
 
-    @Autowired
+@Autowired
     private GeneroRepository gr;
-
-    @Autowired
-    private ResponseModel rm;
 
     public List<GeneroModel> listar() {
         return (List<GeneroModel>) gr.findAll();
     }
 
-    public ResponseEntity<?> cadastrar(GeneroModel GeneroModel) {
-        if (isNomeInvalido(GeneroModel)) {
+    @Transactional
+    public ResponseEntity<?> cadastrar(GeneroModel generoModel) {
+        if (isNomeInvalido(generoModel)) {
+            ResponseModel rm = new ResponseModel();
             rm.setMensagem("O Nome é Obrigatório");
             return ResponseEntity.badRequest().body(rm);
         }
-        GeneroModel salvo = gr.save(GeneroModel);
+        GeneroModel salvo = gr.save(generoModel);
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
-    public ResponseEntity<?> alterar(GeneroModel GeneroModel) {
-        if (isNomeInvalido(GeneroModel)) {
+    @Transactional
+    public ResponseEntity<?> alterar(GeneroModel generoModel) {
+        if (isNomeInvalido(generoModel)) {
+            ResponseModel rm = new ResponseModel();
             rm.setMensagem("O Nome é Obrigatório");
             return ResponseEntity.badRequest().body(rm);
         }
-        GeneroModel salvo = gr.save(GeneroModel);
+        GeneroModel salvo = gr.save(generoModel);
         return ResponseEntity.ok(salvo);
     }
 
+    @Transactional
     public ResponseEntity<ResponseModel> delete(Long id) {
         gr.deleteById(id);
+        ResponseModel rm = new ResponseModel();
         rm.setMensagem("O Genero foi removido com sucesso");
         return new ResponseEntity<ResponseModel>(rm, HttpStatus.OK);
     }
 
-    private boolean isNomeInvalido(GeneroModel GeneroModel) {
-        return GeneroModel.getNome() == null || GeneroModel.getNome().trim().isEmpty();
+    private boolean isNomeInvalido(GeneroModel generoModel) {
+        return generoModel.getNome() == null || generoModel.getNome().trim().isEmpty();
     }
 }
