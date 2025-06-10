@@ -15,11 +15,8 @@ import br.com.lumilivre.api.service.AutorService;
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class AutorController {
 
-    @Autowired 
+    @Autowired
     private AutorService as;
-
-    @Autowired 
-    private AutorModel am;
 
     @DeleteMapping("/remover/{codigo}")
     public ResponseEntity<ResponseModel> remover(@PathVariable String codigo) {
@@ -32,9 +29,8 @@ public class AutorController {
         return as.alterar(am);
     }
 
-
-        @PostMapping("/cadastrar")
-    public ResponseEntity<?> cadastrar(@RequestBody List<AutorModel> am) {
+    @PostMapping("/cadastrar")
+    public ResponseEntity<?> cadastrar(@RequestBody AutorModel am) {
         return as.cadastrar(am);
     }
 
@@ -43,3 +39,4 @@ public class AutorController {
         return as.listar();
     }
 }
+

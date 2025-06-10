@@ -11,12 +11,12 @@ import jakarta.persistence.Table;
 @Table(name = "genero")
 public class GeneroModel {
 
-    @Id
+	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+	private long id;
 
-    @Column(name = "Nome") 
-    private String nome;
+	@Column(name = "Nome")
+	private String nome;
 
 	public long getId() {
 		return id;
@@ -33,7 +33,5 @@ public class GeneroModel {
 	public void setNome(String nome) {
 		this.nome = nome;
 	}
-
-    
 
 }

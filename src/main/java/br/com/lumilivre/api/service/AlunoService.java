@@ -7,13 +7,9 @@ import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.AlunoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
-import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.CursoRepository;
-import br.com.lumilivre.api.service.CepService;
-
-import java.util.List;
 
 @Service
 public class AlunoService {
@@ -23,7 +19,6 @@ public class AlunoService {
 
     @Autowired
     private CursoRepository cursoRepository;
-
 
     @Autowired
     private ResponseModel rm;
@@ -64,6 +59,16 @@ public class AlunoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
+        if (ar.existsById(dto.getCpf())) {
+            rm.setMensagem("CPF Inválido.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+
+        if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
+            rm.setMensagem("O email é obrigatório.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+
         if (dto.getCelular() == null || dto.getCelular().trim().isEmpty()) {
             rm.setMensagem("O celular é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
@@ -83,23 +88,12 @@ public class AlunoService {
             rm.setMensagem("O CEP é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
-        AlunoDTO alunoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
-        if (alunoDTO == null || alunoDTO.getCep() == null) {
+
+        AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
+        if (enderecoDTO == null || enderecoDTO.getCep() == null) {
             rm.setMensagem("CEP inválido ou não encontrado.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
-
-        // EnderecoModel endereco = new EnderecoModel();
-        // endereco.setCep(enderecoDTO.getCep());
-        // endereco.setLogradouro(enderecoDTO.getLogradouro());
-        // endereco.setComplemento(enderecoDTO.getComplemento());
-        // endereco.setBairro(enderecoDTO.getBairro());
-        // endereco.setLocalidade(enderecoDTO.getLocalidade());
-        // endereco.setUf(enderecoDTO.getUf());
-        // endereco.setEstado(enderecoDTO.getEstado());
-        // endereco.setNumero(dto.getNumero());
-
-        // endereco = enderecoRepository.save(endereco);
 
         AlunoModel aluno = new AlunoModel();
         aluno.setMatricula(dto.getMatricula());
@@ -109,8 +103,17 @@ public class AlunoService {
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setCelular(dto.getCelular());
         aluno.setEmail(dto.getEmail());
-        // aluno.setEndereco(endereco);
         aluno.setCurso(curso.get());
+        aluno.setCep(dto.getCep());
+
+        aluno.setLogradouro(enderecoDTO.getLogradouro());
+        aluno.setComplemento(enderecoDTO.getComplemento());
+        aluno.setLocalidade(enderecoDTO.getLocalidade());
+        aluno.setBairro(enderecoDTO.getBairro());
+        aluno.setUf(enderecoDTO.getUf());
+        aluno.setEstado(enderecoDTO.getEstado());
+
+        aluno.setNumero_casa(dto.getNumero_casa());
 
         AlunoModel salvo = ar.save(aluno);
 
@@ -153,24 +156,12 @@ public class AlunoService {
             rm.setMensagem("O CEP é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
-        AlunoDTO alunoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
-        if (alunoDTO == null || alunoDTO.getCep() == null) {
+
+        AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
+        if (enderecoDTO == null || enderecoDTO.getCep() == null) {
             rm.setMensagem("CEP inválido ou não encontrado.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
-
-        // EnderecoModel endereco = alunoExistente.get().getEndereco();
-        // endereco.setCep(enderecoDTO.getCep());
-        // endereco.setLogradouro(enderecoDTO.getLogradouro());
-        // endereco.setComplemento(enderecoDTO.getComplemento());
-        // endereco.setBairro(enderecoDTO.getBairro());
-        // endereco.setLocalidade(enderecoDTO.getLocalidade());
-        // endereco.setUf(enderecoDTO.getUf());
-        // endereco.setEstado(enderecoDTO.getEstado());
-
-        // endereco.setNumero(dto.getNumero());
-
-        // endereco = enderecoRepository.save(endereco);
 
         AlunoModel aluno = alunoExistente.get();
         aluno.setNome(dto.getNome());
@@ -179,8 +170,18 @@ public class AlunoService {
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setCelular(dto.getCelular());
         aluno.setEmail(dto.getEmail());
-        // aluno.setEndereco(endereco);
         aluno.setCurso(curso.get());
+        aluno.setCep(dto.getCep());
+
+        // Preenche os dados do endereço com os dados retornados da consulta do CEP
+        aluno.setLogradouro(enderecoDTO.getLogradouro());
+        aluno.setComplemento(enderecoDTO.getComplemento());
+        aluno.setLocalidade(enderecoDTO.getLocalidade());
+        aluno.setBairro(enderecoDTO.getBairro());
+        aluno.setUf(enderecoDTO.getUf());
+        aluno.setEstado(enderecoDTO.getEstado());
+
+        aluno.setNumero_casa(dto.getNumero_casa());
 
         AlunoModel salvo = ar.save(aluno);
 
@@ -192,5 +193,6 @@ public class AlunoService {
         rm.setMensagem("O aluno foi removido com sucesso.");
         return ResponseEntity.ok(rm);
     }
+
 
 }

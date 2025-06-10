@@ -23,7 +23,11 @@ public class AutorService {
 
     public ResponseEntity<?> cadastrar(AutorModel autorModel) {
         if (isNomeInvalido(autorModel)) {
-            return badRequest("O nome do autor é obrigatório.");
+            return badRequest("O Nome do autor é obrigatório.");
+        }
+
+        if (isSobrenomeInvalido(autorModel)) {
+            return badRequest("O Sobrenome do autor é obrigatório.");
         }
 
         if (autorModel.getCodigo() == null || autorModel.getCodigo().trim().isEmpty()) {
@@ -40,7 +44,15 @@ public class AutorService {
 
     public ResponseEntity<?> alterar(AutorModel autorModel) {
         if (isNomeInvalido(autorModel)) {
-            return badRequest("O nome do autor é obrigatório.");
+            return badRequest("O Nome do autor é obrigatório.");
+        }
+
+        if (isSobrenomeInvalido(autorModel)) {
+            return badRequest("O Sobrenome do autor é obrigatório.");
+        }
+
+        if (autorModel.getCodigo() == null || autorModel.getCodigo().trim().isEmpty()) {
+            return badRequest("O código do autor é obrigatório.");
         }
 
         Optional<AutorModel> existente = autorRepository.findById(autorModel.getCodigo());
@@ -67,7 +79,10 @@ public class AutorService {
         return autorModel.getNome() == null || autorModel.getNome().trim().isEmpty();
     }
 
-    // Métodos utilitários para mensagens padronizadas
+    private boolean isSobrenomeInvalido(AutorModel autorModel) {
+        return autorModel.getSobrenome() == null || autorModel.getSobrenome().trim().isEmpty();
+    }
+
     private ResponseEntity<ResponseModel> badRequest(String mensagem) {
         ResponseModel rm = new ResponseModel();
         rm.setMensagem(mensagem);

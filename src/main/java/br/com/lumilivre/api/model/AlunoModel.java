@@ -39,73 +39,161 @@ public class AlunoModel {
     @Column(name = "email")
     private String email;
 
-    // Criar o relacionamento para o curso do aluno
     @ManyToOne
     @JoinColumn(name = "curso_id", nullable = false)
     private CursoModel curso;
 
-    // Criar a parte de Endereço, integrando API de CEP
-    public String getMatricula() {
-        return matricula;
-    }
+    @Column(name = "cep")
+    private String cep;
 
-    public void setMatricula(String matricula) {
-        this.matricula = matricula;
-    }
+    @Column(name = "logradouro")
+    private String logradouro;
 
-    public String getNome() {
-        return nome;
-    }
+    @Column(name = "complemento")
+    private String complemento;
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+    @Column(name = "bairro")
+    private String bairro;
+    
+    @Column(name = "localidade")
+    private String localidade;
+    
+    @Column(name = "uf")
+    private String uf;
+    
+    @Column(name = "numero_casa")
+    private String numero_casa;
+    
+    @Column (name = "estado")
+    private String estado;
 
-    public String getSobrenome() {
-        return sobrenome;
-    }
+	public String getMatricula() {
+		return matricula;
+	}
 
-    public void setSobrenome(String sobrenome) {
-        this.sobrenome = sobrenome;
-    }
+	public void setMatricula(String matricula) {
+		this.matricula = matricula;
+	}
 
-    public String getCpf() {
-        return cpf;
-    }
+	public String getNome() {
+		return nome;
+	}
 
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
-    }
+	public void setNome(String nome) {
+		this.nome = nome;
+	}
 
-    public LocalDate getDataNascimento() {
-        return dataNascimento;
-    }
+	public String getSobrenome() {
+		return sobrenome;
+	}
 
-    public void setDataNascimento(LocalDate dataNascimento) {
-        this.dataNascimento = dataNascimento;
-    }
+	public void setSobrenome(String sobrenome) {
+		this.sobrenome = sobrenome;
+	}
 
-    public String getCelular() {
-        return celular;
-    }
+	public String getCpf() {
+		return cpf;
+	}
 
-    public void setCelular(String celular) {
-        this.celular = celular;
-    }
+	public void setCpf(String cpf) {
+		this.cpf = cpf;
+	}
 
-    public String getEmail() {
-        return email;
-    }
+	public LocalDate getDataNascimento() {
+		return dataNascimento;
+	}
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+	public void setDataNascimento(LocalDate dataNascimento) {
+		this.dataNascimento = dataNascimento;
+	}
 
-    public CursoModel getCurso() {
-        return curso;
-    }
+	public String getCelular() {
+		return celular;
+	}
 
-    public void setCurso(CursoModel curso) {
-        this.curso = curso;
-    }
+	public void setCelular(String celular) {
+		this.celular = celular;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public CursoModel getCurso() {
+		return curso;
+	}
+
+	public void setCurso(CursoModel curso) {
+		this.curso = curso;
+	}
+
+	public String getCep() {
+		return cep;
+	}
+
+	public void setCep(String cep) {
+		this.cep = cep;
+	}
+
+	public String getLogradouro() {
+		return logradouro;
+	}
+
+	public void setLogradouro(String logradouro) {
+		this.logradouro = logradouro;
+	}
+
+	public String getComplemento() {
+		return complemento;
+	}
+
+	public void setComplemento(String complemento) {
+		this.complemento = complemento;
+	}
+
+	public String getBairro() {
+		return bairro;
+	}
+
+	public void setBairro(String bairro) {
+		this.bairro = bairro;
+	}
+
+	public String getLocalidade() {
+		return localidade;
+	}
+
+	public void setLocalidade(String localidade) {
+		this.localidade = localidade;
+	}
+
+	public String getUf() {
+		return uf;
+	}
+
+	public void setUf(String uf) {
+		this.uf = uf;
+	}
+
+	public String getNumero_casa() {
+		return numero_casa;
+	}
+
+	public void setNumero_casa(String numero_casa) {
+		this.numero_casa = numero_casa;
+	}
+
+	public String getEstado() {
+		return estado;
+	}
+
+	public void setEstado(String estado) {
+		this.estado = estado;
+	}
+	
+	
 }

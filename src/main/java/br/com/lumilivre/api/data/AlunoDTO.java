@@ -19,7 +19,7 @@ public class AlunoDTO {
     private String bairro;
     private String uf;
     private String estado;
-    private String numero;
+    private String numero_casa;
 
     public Long getCursoId() {
         return cursoId;
@@ -141,11 +141,11 @@ public class AlunoDTO {
         this.estado = estado;
     }
 
-    public String getNumero() {
-        return numero;
+    public String getNumero_casa() {
+        return numero_casa;
     }
 
-    public void setNumero(String numero) {
-        this.numero = numero;
+    public void setNumero_casa(String numero_casa) {
+        this.numero_casa = numero_casa;
     }
 }

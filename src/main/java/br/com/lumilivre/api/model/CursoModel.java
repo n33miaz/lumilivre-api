@@ -1,7 +1,10 @@
 package br.com.lumilivre.api.model;
 
+import br.com.lumilivre.api.enums.Turno;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -9,30 +12,29 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-
-
 @Entity
 @Table(name = "curso")
 @Getter
 @Setter
 
-public class CursoModel {    
+public class CursoModel {
 
     @Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(name = "Nome") 
+    @Column(name = "Nome")
     private String nome;
 
     @Column(name = "Descricao")
     private String descricao;
 
-    @Column(name = "Turno")
-    private String turno;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Turno turno;
 
-	@Column(name = "Modulo")
-	private String modulo;
+    @Column(name = "Modulo")
+    private String modulo;
 
     public long getId() {
         return id;
@@ -58,13 +60,13 @@ public class CursoModel {
         this.descricao = descricao;
     }
 
-    public String getTurno() {
-        return turno;
-    }
+    // public String getTurno() {
+    //     return turno;
+    // }
 
-    public void setTurno(String turno) {
-        this.turno = turno;
-    }
+    // public void setTurno(String turno) {
+    //     this.turno = turno;
+    // }
 
     public String getModulo() {
         return modulo;
@@ -74,6 +76,4 @@ public class CursoModel {
         this.modulo = modulo;
     }
 
- 
-	
 }
