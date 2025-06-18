@@ -28,12 +28,12 @@ public class GeneroController {
 	private GeneroService gs;
 	
     @DeleteMapping("remover/{id}")
-    public ResponseEntity<ResponseModel> remover(@PathVariable Long id) {
+    public ResponseEntity<ResponseModel> remover(@PathVariable Integer id) {
         return gs.delete(id);
     }
 
     @PutMapping("alterar/{id}")
-    public ResponseEntity<?> alterar(@PathVariable Long id, @RequestBody GeneroModel gm) {
+    public ResponseEntity<?> alterar(@PathVariable Integer id, @RequestBody GeneroModel gm) {
     	gm.setId(id);
         return gs.alterar(gm);
     }

@@ -4,68 +4,80 @@ import br.com.lumilivre.api.model.CursoModel;
 
 import java.time.LocalDate;
 
-import jakarta.persistence.CascadeType;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 
 @Entity
 @Table(name = "aluno")
 public class AlunoModel {
 
-    @Id
-    @Column(name = "matricula", unique = true)
-    private String matricula;
+	@Id
+	@Column(name = "matricula", length = 5, unique = true)
+	private String matricula;
 
-    @Column(name = "nome", nullable = false)
-    private String nome;
+	@Size(min = 2, max = 55)
+	@Column(name = "nome", nullable = false, length = 55)
+	private String nome;
 
-    @Column(name = "sobrenome", nullable = false)
-    private String sobrenome;
+	@Size(min = 2, max = 11)
+	@Column(name = "sobrenome", nullable = false)
+	private String sobrenome;
 
-    @Column(name = "cpf", nullable = false)
-    private String cpf;
+	@Size(min = 11, max = 11)
+	@Column(name = "cpf", nullable = false)
+	private String cpf;
 
-    @Column(name = "data_nascimento")
-    private LocalDate dataNascimento;
+	@JsonFormat(pattern = "dd/MM/yyyy")
+	@Column(name = "data_nascimento")
+	private LocalDate dataNascimento;
 
-    @Column(name = "celular", nullable = false)
-    private String celular;
+	@Size(min = 11, max = 11)
+	@Column(name = "celular", nullable = false)
+	private String celular;
 
-    @Column(name = "email")
-    private String email;
+	@Size(min = 2, max = 255)
+	@Column(name = "email")
+	private String email;
 
-    @ManyToOne
-    @JoinColumn(name = "curso_id", nullable = false)
-    private CursoModel curso;
+	@ManyToOne
+	@JoinColumn(name = "curso_id", nullable = false)
+	private CursoModel curso;
 
-    @Column(name = "cep")
-    private String cep;
+	@Size(min = 8, max = 8, message = "CEP deve ter exatamente 8 caracteres")
+	@Column(name = "cep")
+	private String cep;
 
-    @Column(name = "logradouro")
-    private String logradouro;
+	@Column(name = "logradouro")
+	private String logradouro;
 
-    @Column(name = "complemento")
-    private String complemento;
+	@Column(name = "complemento")
+	private String complemento;
 
-    @Column(name = "bairro")
-    private String bairro;
-    
-    @Column(name = "localidade")
-    private String localidade;
-    
-    @Column(name = "uf")
-    private String uf;
-    
-    @Column(name = "numero_casa")
-    private String numero_casa;
-    
-    @Column (name = "estado")
-    private String estado;
+	@Column(name = "bairro")
+	private String bairro;
+
+	@Column(name = "localidade")
+	private String localidade;
+
+	@Column(name = "uf")
+	private String uf;
+
+	@Column(name = "numero_casa")
+	private Integer numero_casa;
+
+	@Column(name = "estado")
+	private String estado;
 
 	public String getMatricula() {
 		return matricula;
@@ -179,11 +191,11 @@ public class AlunoModel {
 		this.uf = uf;
 	}
 
-	public String getNumero_casa() {
+	public Integer getNumero_casa() {
 		return numero_casa;
 	}
 
-	public void setNumero_casa(String numero_casa) {
+	public void setNumero_casa(Integer numero_casa) {
 		this.numero_casa = numero_casa;
 	}
 
@@ -194,6 +206,5 @@ public class AlunoModel {
 	public void setEstado(String estado) {
 		this.estado = estado;
 	}
-	
-	
+
 }

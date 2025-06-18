@@ -6,10 +6,9 @@ import org.springframework.stereotype.Repository;
 import br.com.lumilivre.api.model.CursoModel;
 
 @Repository
-public interface CursoRepository extends JpaRepository<CursoModel, Long> {
+public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 
     boolean existsByNomeIgnoreCase(String nome);
-
-    boolean existsByNomeIgnoreCaseAndIdNot(String nome, Long id);
+    boolean existsByNomeIgnoreCaseAndIdNot(String nome, Integer id);
 
 }

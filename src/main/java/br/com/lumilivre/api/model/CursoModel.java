@@ -9,38 +9,40 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "curso")
-@Getter
-@Setter
 
 public class CursoModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Integer id;
 
-    @Column(name = "Nome")
+    @Size(min = 2, max = 255)
+    @NotBlank(message = "O nome é obrigatório")
+    @Column(name = "Nome", nullable = false, length = 255)
     private String nome;
 
-    @Column(name = "Descricao")
+    @Size(min = 2, max = 255)
+    @Column(name = "Descricao", length = 255)
     private String descricao;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 55)
     private Turno turno;
 
-    @Column(name = "Modulo")
+    @Size(min = 1, max = 2)
+    @Column(name = "Modulo", length = 2)
     private String modulo;
 
-    public long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -59,14 +61,6 @@ public class CursoModel {
     public void setDescricao(String descricao) {
         this.descricao = descricao;
     }
-
-    // public String getTurno() {
-    //     return turno;
-    // }
-
-    // public void setTurno(String turno) {
-    //     this.turno = turno;
-    // }
 
     public String getModulo() {
         return modulo;

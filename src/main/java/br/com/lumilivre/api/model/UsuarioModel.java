@@ -11,24 +11,24 @@ import br.com.lumilivre.api.enums.Role;
 public class UsuarioModel {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
     @Column(unique = true, nullable = false)
-    private String email; 
+    private String email;
 
     @Column(nullable = false)
-    private String senha; 
+    private String senha;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role; 
+    private Role role;
 
-    public UUID getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

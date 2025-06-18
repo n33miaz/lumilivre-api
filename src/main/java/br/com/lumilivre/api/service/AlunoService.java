@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.AlunoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.CursoRepository;
+import java.util.Optional;
 
 @Service
 public class AlunoService {
@@ -77,15 +79,11 @@ public class AlunoService {
         if (dto.getCursoId() == null) {
             rm.setMensagem("O curso é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
-        }
-        var curso = cursoRepository.findById(dto.getCursoId());
+
+        } 
+        Optional<CursoModel> curso = cursoRepository.findById(dto.getCursoId());
         if (curso.isEmpty()) {
             rm.setMensagem("Curso não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        if (dto.getCep() == null || dto.getCep().trim().isEmpty()) {
-            rm.setMensagem("O CEP é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
 
@@ -105,7 +103,6 @@ public class AlunoService {
         aluno.setEmail(dto.getEmail());
         aluno.setCurso(curso.get());
         aluno.setCep(dto.getCep());
-
         aluno.setLogradouro(enderecoDTO.getLogradouro());
         aluno.setComplemento(enderecoDTO.getComplemento());
         aluno.setLocalidade(enderecoDTO.getLocalidade());
@@ -152,10 +149,6 @@ public class AlunoService {
             rm.setMensagem("Curso não encontrado.");
             return ResponseEntity.badRequest().body(rm);
         }
-        if (dto.getCep() == null || dto.getCep().trim().isEmpty()) {
-            rm.setMensagem("O CEP é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
 
         AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
         if (enderecoDTO == null || enderecoDTO.getCep() == null) {
@@ -172,15 +165,12 @@ public class AlunoService {
         aluno.setEmail(dto.getEmail());
         aluno.setCurso(curso.get());
         aluno.setCep(dto.getCep());
-
-        // Preenche os dados do endereço com os dados retornados da consulta do CEP
         aluno.setLogradouro(enderecoDTO.getLogradouro());
         aluno.setComplemento(enderecoDTO.getComplemento());
         aluno.setLocalidade(enderecoDTO.getLocalidade());
         aluno.setBairro(enderecoDTO.getBairro());
         aluno.setUf(enderecoDTO.getUf());
         aluno.setEstado(enderecoDTO.getEstado());
-
         aluno.setNumero_casa(dto.getNumero_casa());
 
         AlunoModel salvo = ar.save(aluno);
@@ -193,6 +183,5 @@ public class AlunoService {
         rm.setMensagem("O aluno foi removido com sucesso.");
         return ResponseEntity.ok(rm);
     }
-
 
 }

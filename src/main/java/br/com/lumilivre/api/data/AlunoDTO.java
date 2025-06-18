@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.data;
 
 import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class AlunoDTO {
 
@@ -8,10 +9,12 @@ public class AlunoDTO {
     private String nome;
     private String sobrenome;
     private String cpf;
-    private LocalDate dataNascimento;
+    
+    @JsonFormat(pattern = "dd/MM/yyyy")
+    private LocalDate data_nascimento;
     private String celular;
     private String email;
-    private Long cursoId;
+    private Integer cursoId;
     private String cep;
     private String logradouro;
     private String complemento;
@@ -19,13 +22,13 @@ public class AlunoDTO {
     private String bairro;
     private String uf;
     private String estado;
-    private String numero_casa;
+    private Integer numero_casa;
 
-    public Long getCursoId() {
+    public Integer getCursoId() {
         return cursoId;
     }
 
-    public void setCursoId(Long cursoId) {
+    public void setCursoId(Integer cursoId) {
         this.cursoId = cursoId;
     }
 
@@ -62,11 +65,11 @@ public class AlunoDTO {
     }
 
     public LocalDate getDataNascimento() {
-        return dataNascimento;
+        return data_nascimento;
     }
 
-    public void setDataNascimento(LocalDate dataNascimento) {
-        this.dataNascimento = dataNascimento;
+    public void setDataNascimento(LocalDate data_nascimento) {
+        this.data_nascimento = data_nascimento;
     }
 
     public String getCelular() {
@@ -141,11 +144,11 @@ public class AlunoDTO {
         this.estado = estado;
     }
 
-    public String getNumero_casa() {
+    public Integer getNumero_casa() {
         return numero_casa;
     }
 
-    public void setNumero_casa(String numero_casa) {
+    public void setNumero_casa(Integer numero_casa) {
         this.numero_casa = numero_casa;
     }
 }

@@ -27,12 +27,12 @@ public class CursoController {
     private CursoService cs;
 
     @DeleteMapping("remover/{id}")
-    public ResponseEntity<ResponseModel> remover(@PathVariable Long id) {
+    public ResponseEntity<ResponseModel> remover(@PathVariable Integer id) {
         return cs.delete(id);
     }
 
     @PutMapping("alterar/{id}")
-    public ResponseEntity<?> alterar(@PathVariable Long id, @RequestBody CursoModel cm) {
+    public ResponseEntity<?> alterar(@PathVariable Integer id, @RequestBody CursoModel cm) {
         cm.setId(id);
         return cs.alterar(cm);
     }

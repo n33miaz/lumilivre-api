@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.GeneroRepository;
@@ -16,7 +15,7 @@ import br.com.lumilivre.api.repository.GeneroRepository;
 @Service
 public class GeneroService {
 
-@Autowired
+    @Autowired
     private GeneroRepository gr;
 
     public List<GeneroModel> listar() {
@@ -30,6 +29,12 @@ public class GeneroService {
             rm.setMensagem("O Nome é Obrigatório");
             return ResponseEntity.badRequest().body(rm);
         }
+
+        // if (gr.existsByNomeIgnoreCaseAndIdNot(generoModel.getNome(), generoModel.getId())) {
+        //     ResponseModel rm = new ResponseModel();
+        //     rm.setMensagem("O Nome já existe no banco de dados");
+        //     return ResponseEntity.badRequest().body(rm);
+        // }
         GeneroModel salvo = gr.save(generoModel);
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
@@ -41,12 +46,18 @@ public class GeneroService {
             rm.setMensagem("O Nome é Obrigatório");
             return ResponseEntity.badRequest().body(rm);
         }
+
+        // if (gr.existsByNomeIgnoreCaseAndIdNot(generoModel.getNome(), generoModel.getId())) {
+        //     ResponseModel rm = new ResponseModel();
+        //     rm.setMensagem("O Nome já existe no banco de dados");
+        //     return ResponseEntity.badRequest().body(rm);
+        // }
         GeneroModel salvo = gr.save(generoModel);
         return ResponseEntity.ok(salvo);
     }
 
     @Transactional
-    public ResponseEntity<ResponseModel> delete(Long id) {
+    public ResponseEntity<ResponseModel> delete(Integer id) {
         gr.deleteById(id);
         ResponseModel rm = new ResponseModel();
         rm.setMensagem("O Genero foi removido com sucesso");

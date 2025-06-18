@@ -65,7 +65,7 @@ public class CursoService {
     }
 
     @Transactional
-    public ResponseEntity<ResponseModel> delete(Long id) {
+    public ResponseEntity<ResponseModel> delete(Integer id) {
         cr.deleteById(id);
         ResponseModel rm = new ResponseModel();
         rm.setMensagem("O Curso foi removido com sucesso");
