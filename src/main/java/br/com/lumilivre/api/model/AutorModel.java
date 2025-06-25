@@ -6,35 +6,38 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
-@Table (name = "autor")
+@Table(name = "autor")
 public class AutorModel {
-    
-    @Id
-    @Column (name = "codigo", unique = true)
-    private String codigo;
 
-    @Column (name = "nome")
-    private String nome;
-    
-    @Column (name = "sobrenome")
-    private String sobrenome;
-    
-    @Column (name = "pseudonimo")
-    private String pseudonimo;
-    
-    @Column (name = "data_nascimento")
-    private Date data_nascimento;
-    
-    @Column (name = "data_falecimento")
-    private Date data_falecimento;
-    
-    @Column (name = "genero_literario")
-    private String genero_literario;
-    
-    @Column (name = "nacionalidade")
-    private String nacionalidade;
+	@Id
+	@Column(name = "codigo", unique = true)
+	private String codigo;
+
+	@NotNull
+	@Column(name = "nome")
+	private String nome;
+
+	@NotNull
+	@Column(name = "sobrenome")
+	private String sobrenome;
+
+	@Column(name = "pseudonimo")
+	private String pseudonimo;
+
+	@Column(name = "data_nascimento")
+	private Date data_nascimento;
+
+	@Column(name = "data_falecimento")
+	private Date data_falecimento;
+
+	@Column(name = "genero_literario")
+	private String genero_literario;
+
+	@Column(name = "nacionalidade")
+	private String nacionalidade;
 
 	public String getCodigo() {
 		return codigo;
@@ -99,5 +102,5 @@ public class AutorModel {
 	public void setNacionalidade(String nacionalidade) {
 		this.nacionalidade = nacionalidade;
 	}
-    
+
 }

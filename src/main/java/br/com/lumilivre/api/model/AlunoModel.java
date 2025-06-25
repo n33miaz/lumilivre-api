@@ -12,11 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Past;
 
 @Entity
 @Table(name = "aluno")
@@ -26,26 +23,26 @@ public class AlunoModel {
 	@Column(name = "matricula", length = 5, unique = true)
 	private String matricula;
 
-	@Size(min = 2, max = 55)
+	@NotNull
 	@Column(name = "nome", nullable = false, length = 55)
 	private String nome;
 
-	@Size(min = 2, max = 11)
-	@Column(name = "sobrenome", nullable = false)
+	@NotNull
+	@Column(name = "sobrenome", nullable = false, length = 55)
 	private String sobrenome;
 
-	@Size(min = 11, max = 11)
-	@Column(name = "cpf", nullable = false)
+	@Column(name = "cpf", nullable = false, length = 11)
 	private String cpf;
 
 	@JsonFormat(pattern = "dd/MM/yyyy")
 	@Column(name = "data_nascimento")
 	private LocalDate dataNascimento;
 
-	@Size(min = 11, max = 11)
-	@Column(name = "celular", nullable = false)
+	@NotNull
+	@Column(name = "celular", nullable = false, length = 11)
 	private String celular;
-
+	
+	@NotNull
 	@Size(min = 2, max = 255)
 	@Column(name = "email")
 	private String email;
@@ -55,28 +52,28 @@ public class AlunoModel {
 	private CursoModel curso;
 
 	@Size(min = 8, max = 8, message = "CEP deve ter exatamente 8 caracteres")
-	@Column(name = "cep")
+	@Column(name = "cep", length = 8)
 	private String cep;
 
-	@Column(name = "logradouro")
+	@Column(name = "logradouro", length = 255)
 	private String logradouro;
 
-	@Column(name = "complemento")
+	@Column(name = "complemento", length = 55)
 	private String complemento;
 
-	@Column(name = "bairro")
+	@Column(name = "bairro", length = 255)
 	private String bairro;
 
-	@Column(name = "localidade")
+	@Column(name = "localidade", length = 255)
 	private String localidade;
 
-	@Column(name = "uf")
+	@Column(name = "uf", length = 2)
 	private String uf;
 
 	@Column(name = "numero_casa")
 	private Integer numero_casa;
 
-	@Column(name = "estado")
+	@Column(name = "estado", length = 55)
 	private String estado;
 
 	public String getMatricula() {
