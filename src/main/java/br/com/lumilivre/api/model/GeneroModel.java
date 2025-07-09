@@ -6,8 +6,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+
 
 @Entity
 @Table(name = "genero")
@@ -17,8 +17,7 @@ public class GeneroModel {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
 	
-    @Size(min = 2, max = 255)
-    @NotBlank(message = "O nome é obrigatório")
+	@NotNull
 	@Column(name = "Nome",  nullable = false, length = 255)
 	private String nome;
 

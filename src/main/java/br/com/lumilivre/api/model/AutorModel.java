@@ -17,14 +17,14 @@ public class AutorModel {
 	private String codigo;
 
 	@NotNull
-	@Column(name = "nome")
+	@Column(name = "nome", nullable = false, length = 55)
 	private String nome;
 
 	@NotNull
-	@Column(name = "sobrenome")
+	@Column(name = "sobrenome", nullable = false, length = 55)
 	private String sobrenome;
 
-	@Column(name = "pseudonimo")
+	@Column(name = "pseudonimo", length = 55)
 	private String pseudonimo;
 
 	@Column(name = "data_nascimento")
@@ -33,10 +33,10 @@ public class AutorModel {
 	@Column(name = "data_falecimento")
 	private Date data_falecimento;
 
-	@Column(name = "genero_literario")
+	@Column(name = "genero_literario", length = 55)
 	private String genero_literario;
 
-	@Column(name = "nacionalidade")
+	@Column(name = "nacionalidade", length = 55)
 	private String nacionalidade;
 
 	public String getCodigo() {

@@ -9,8 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "curso")
@@ -21,12 +20,10 @@ public class CursoModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Size(min = 2, max = 255)
-    @NotBlank(message = "O nome é obrigatório")
+    @NotNull
     @Column(name = "Nome", nullable = false, length = 255)
     private String nome;
 
-    @Size(min = 2, max = 255)
     @Column(name = "Descricao", length = 255)
     private String descricao;
 
@@ -34,8 +31,7 @@ public class CursoModel {
     @Column(nullable = false, length = 55)
     private Turno turno;
 
-    @Size(min = 1, max = 2)
-    @Column(name = "Modulo", length = 2)
+    @Column(name = "Modulo", length = 55)
     private String modulo;
 
     public Integer getId() {

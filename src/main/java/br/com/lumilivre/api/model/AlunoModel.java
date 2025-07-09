@@ -31,6 +31,7 @@ public class AlunoModel {
 	@Column(name = "sobrenome", nullable = false, length = 55)
 	private String sobrenome;
 
+	@NotNull
 	@Column(name = "cpf", nullable = false, length = 11)
 	private String cpf;
 
@@ -43,8 +44,7 @@ public class AlunoModel {
 	private String celular;
 	
 	@NotNull
-	@Size(min = 2, max = 255)
-	@Column(name = "email")
+	@Column(name = "email", length = 255)
 	private String email;
 
 	@ManyToOne
