@@ -22,7 +22,7 @@ public class EmprestimoModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @NotNull
     @Column(name = "data_emprestimo", nullable = false)
@@ -33,7 +33,7 @@ public class EmprestimoModel {
     private LocalDateTime data_devolucao;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "penalidade", length = 55)
+    @Column(name = "penalidade", length = 59)
     private Penalidade penalidade;
 
     @Enumerated(EnumType.STRING)
@@ -48,11 +48,11 @@ public class EmprestimoModel {
     @JoinColumn(name = "exemplar_tombo", nullable = false) 
     private ExemplarModel exemplar;
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.data;
 
 import java.time.LocalDate;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class AlunoDTO {

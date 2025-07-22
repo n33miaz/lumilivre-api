@@ -66,4 +66,12 @@ public class CursoModel {
         this.modulo = modulo;
     }
 
+    public Turno getTurno() {
+        return turno;
+    }
+
+    public void setTurno(Turno turno) {
+        this.turno = turno;
+    }
+
 }

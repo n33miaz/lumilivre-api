@@ -15,10 +15,10 @@ import java.util.Optional;
 public class AutorService {
 
     @Autowired
-    private AutorRepository autorRepository;
+    private AutorRepository ar;
 
     public Iterable<AutorModel> listar() {
-        return autorRepository.findAll();
+        return ar.findAll();
     }
 
     public ResponseEntity<?> cadastrar(AutorModel autorModel) {
@@ -34,11 +34,11 @@ public class AutorService {
             return badRequest("O código do autor é obrigatório.");
         }
 
-        if (autorRepository.existsById(autorModel.getCodigo())) {
+        if (ar.existsById(autorModel.getCodigo())) {
             return badRequest("Já existe um autor com este código.");
         }
 
-        AutorModel salvo = autorRepository.save(autorModel);
+        AutorModel salvo = ar.save(autorModel);
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
@@ -55,21 +55,21 @@ public class AutorService {
             return badRequest("O código do autor é obrigatório.");
         }
 
-        Optional<AutorModel> existente = autorRepository.findById(autorModel.getCodigo());
+        Optional<AutorModel> existente = ar.findById(autorModel.getCodigo());
         if (existente.isEmpty()) {
             return notFound("Autor não encontrado com o código: " + autorModel.getCodigo());
         }
 
-        AutorModel salvo = autorRepository.save(autorModel);
+        AutorModel salvo = ar.save(autorModel);
         return ResponseEntity.ok(salvo);
     }
 
     public ResponseEntity<ResponseModel> delete(String codigo) {
-        if (!autorRepository.existsById(codigo)) {
+        if (!ar.existsById(codigo)) {
             return notFound("Autor não encontrado com o código: " + codigo);
         }
 
-        autorRepository.deleteById(codigo);
+        ar.deleteById(codigo);
         ResponseModel rm = new ResponseModel();
         rm.setMensagem("O autor foi removido com sucesso.");
         return ResponseEntity.ok(rm);
@@ -93,5 +93,13 @@ public class AutorService {
         ResponseModel rm = new ResponseModel();
         rm.setMensagem(mensagem);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
+    }
+
+    public AutorModel buscarPorNome(String nome) {
+        return ar.findByNome(nome).orElse(null);
+    }
+
+    public AutorModel buscarPorCodigo(String codigo) {
+        return ar.findByCodigo(codigo);
     }
 }

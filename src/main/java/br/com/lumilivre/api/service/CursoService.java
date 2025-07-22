@@ -36,11 +36,11 @@ public class CursoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        if (cr.existsByNomeIgnoreCase(cursoModel.getNome())) {
-            ResponseModel rm = new ResponseModel();
-            rm.setMensagem("O Nome já existe no banco de dados");
-            return ResponseEntity.badRequest().body(rm);
-        }
+        // if (cr.existsByNomeIgnoreCase(cursoModel.getNome())) {
+        //     ResponseModel rm = new ResponseModel();
+        //     rm.setMensagem("O Nome já existe no banco de dados");
+        //     return ResponseEntity.badRequest().body(rm);
+        // }
 
         CursoModel salvo = cr.save(cursoModel);
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
@@ -54,11 +54,11 @@ public class CursoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        if (cr.existsByNomeIgnoreCaseAndIdNot(cursoModel.getNome(), cursoModel.getId())) {
-            ResponseModel rm = new ResponseModel();
-            rm.setMensagem("O Nome já existe no banco de dados");
-            return ResponseEntity.badRequest().body(rm);
-        }
+        // if (cr.existsByNomeIgnoreCaseAndIdNot(cursoModel.getNome(), cursoModel.getId())) {
+        //     ResponseModel rm = new ResponseModel();
+        //     rm.setMensagem("O Nome já existe no banco de dados");
+        //     return ResponseEntity.badRequest().body(rm);
+        // }
 
         CursoModel salvo = cr.save(cursoModel);
         return ResponseEntity.ok(salvo);

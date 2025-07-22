@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.AlunoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.model.AutorModel;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
@@ -183,5 +184,10 @@ public class AlunoService {
         rm.setMensagem("O aluno foi removido com sucesso.");
         return ResponseEntity.ok(rm);
     }
+    
+    public AutorModel buscarPorNome(String nome) {
+        return ar.findByNomeIgnoreCase(nome);
+    }
+
 
 }

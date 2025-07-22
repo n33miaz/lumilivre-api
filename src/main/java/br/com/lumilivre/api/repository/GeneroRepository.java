@@ -5,6 +5,8 @@ import br.com.lumilivre.api.model.GeneroModel;
 
 
 public interface GeneroRepository extends JpaRepository<GeneroModel, Integer>{
-        boolean existsByNomeIgnoreCase(String nome);
+    boolean existsByNomeIgnoreCase(String nome);
     boolean existsByNomeIgnoreCaseAndIdNot(String nome, Integer id);
+    GeneroModel findByNomeIgnoreCase(String nome);
+
 }

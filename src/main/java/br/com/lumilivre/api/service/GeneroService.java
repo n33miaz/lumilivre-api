@@ -67,4 +67,9 @@ public class GeneroService {
     private boolean isNomeInvalido(GeneroModel generoModel) {
         return generoModel.getNome() == null || generoModel.getNome().trim().isEmpty();
     }
+    
+    public GeneroModel buscarPorNome(String nome) {
+        return gr.findByNomeIgnoreCase(nome);
+    }
+
 }

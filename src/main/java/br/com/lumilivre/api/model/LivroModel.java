@@ -38,7 +38,7 @@ public class LivroModel {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "cdd", length = 10, nullable = false)
+    @Column(name = "cdd", nullable = false)
     private Cdd cdd;
 
     @NotNull
