@@ -26,29 +26,31 @@ public class ExemplarModel {
     @JoinColumn(name = "livro_isbn", nullable = false)
     private LivroModel livro;
 
-    public String getTombo() {
-        return tombo;
-    }
+	public String getTombo() {
+		return tombo;
+	}
 
-    public void setTombo(String tombo) {
-        this.tombo = tombo;
-    }
+	public void setTombo(String tombo) {
+		this.tombo = tombo;
+	}
 
-    public StatusLivro getStatus_livro() {
-        return status_livro;
-    }
+	public StatusLivro getStatus_livro() {
+		return status_livro;
+	}
 
-    public void setStatus_livro(StatusLivro status_livro) {
-        this.status_livro = status_livro;
-    }
+	public void setStatus_livro(StatusLivro status_livro) {
+		this.status_livro = status_livro;
+	}
 
-    public LivroModel getLivro() {
-        return livro;
-    }
+	public LivroModel getLivro_isbn() {
+		return livro;
+	}
 
-    public void setLivro(LivroModel livro) {
-        this.livro = livro;
-    }
+	public void setLivro_isbn(LivroModel livro_isbn) {
+		this.livro = livro_isbn;
+	}
+
+
 
     
 }

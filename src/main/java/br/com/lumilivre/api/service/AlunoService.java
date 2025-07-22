@@ -114,7 +114,6 @@ public class AlunoService {
         aluno.setNumero_casa(dto.getNumero_casa());
 
         AlunoModel salvo = ar.save(aluno);
-
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
@@ -188,6 +187,11 @@ public class AlunoService {
     public AutorModel buscarPorNome(String nome) {
         return ar.findByNomeIgnoreCase(nome);
     }
+    
+    public AutorModel buscarPorCPF(String cpf) {
+        return ar.findByNomeIgnoreCase(cpf);
+    }
+    
 
 
 }

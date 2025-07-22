@@ -1,12 +1,6 @@
-// - Dura
-// - Flexível (Brochura)
-// - Cartonada
-// - Capa com orelhas
-// - Espiralada
-
 package br.com.lumilivre.api.enums;
 
-public enum TipoCapa implements EnumStatus{
+public enum TipoCapa implements EnumStatus {
     DURA("Capa dura"),
     FLEXIVEL("Capa Flexivel"),
     CARTONADA("Capa Cartonada"),
@@ -22,5 +16,5 @@ public enum TipoCapa implements EnumStatus{
     public String getStatus() {
         return status;
     }
-    
-    }
+
+}

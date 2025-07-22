@@ -5,10 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.data.LivroDTO;
-import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
-import br.com.lumilivre.api.service.AlunoService;
 import br.com.lumilivre.api.service.LivroService;
 
 @RestController
@@ -34,8 +32,8 @@ public class LivroController {
         return ls.deletar(isbn);
     }
 
-    // @PutMapping("/alterar/{isbn}")
-    // public ResponseEntity<?> alterar(@PathVariable String isbn, @RequestBody LivroDTO livroDTO) {
-    //     return ls.alterar(isbn, livroDTO);
-    // }
+    @PutMapping("/alterar/{isbn}")
+    public ResponseEntity<?> alterar(@PathVariable String isbn, @RequestBody LivroDTO livroDTO) {
+        return ls.alterar(livroDTO);
+    }
 }

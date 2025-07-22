@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import java.util.Optional;
 
 import br.com.lumilivre.api.data.LivroDTO;
 import br.com.lumilivre.api.enums.Cdd;
@@ -61,6 +62,13 @@ public class LivroService {
             rm.setMensagem("A data é obrigatória.");
             return ResponseEntity.badRequest().body(rm);
         }
+
+        if (dto.getData_lancamento().isAfter(java.time.LocalDate.now())) {
+            rm.setMensagem("A data de lançamento não pode ser no futuro.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+
+        
 
         if (dto.getNumero_paginas() == null || dto.getNumero_paginas() <= 0) {
             rm.setMensagem("O número de páginas é obrigatório.");
@@ -129,10 +137,14 @@ public class LivroService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        // validação para o proprio isbn
+        Optional<LivroModel> livroExistente = findById(dto.getIsbn());
+        if (!livroExistente.isPresent()) {
+            rm.setMensagem("Livro não encontrado.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
+        }
 
         if (dto.getNome() == null || dto.getNome().trim().isEmpty()) {
-            rm.setMensagem("O titulo é obrigatório.");
+            rm.setMensagem("O título é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
 
@@ -140,6 +152,12 @@ public class LivroService {
             rm.setMensagem("A data é obrigatória.");
             return ResponseEntity.badRequest().body(rm);
         }
+        
+        if (dto.getData_lancamento().isAfter(java.time.LocalDate.now())) {
+            rm.setMensagem("A data de lançamento não pode ser no futuro.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+
 
         if (dto.getNumero_paginas() == null || dto.getNumero_paginas() <= 0) {
             rm.setMensagem("O número de páginas é obrigatório.");
@@ -167,7 +185,6 @@ public class LivroService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        // genero
         if (dto.getGenero() == null || dto.getGenero().trim().isEmpty()) {
             rm.setMensagem("O gênero é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
@@ -179,8 +196,32 @@ public class LivroService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        rm.setMensagem("Livro alterado com sucesso.");
-        return ResponseEntity.status(HttpStatus.CREATED).body(rm);
+        LivroModel livro = livroExistente.get();
+        livro.setIsbn(dto.getIsbn());
+        livro.setNome(dto.getNome());
+        livro.setData_lancamento(dto.getData_lancamento());
+        livro.setNumero_paginas(dto.getNumero_paginas());
+        livro.setCdd(Cdd.valueOf(dto.getCdd().toUpperCase()));
+        livro.setEditora(dto.getEditora());
+        livro.setNumero_capitulos(dto.getNumero_capitulos());
+        livro.setClassificacao_etaria(ClassificacaoEtaria.valueOf(dto.getClassificacao_etaria().toUpperCase()));
+        livro.setEdicao(dto.getEdicao());
+        livro.setVolume(dto.getVolume());
+        livro.setQuantidade(dto.getQuantidade());
+        livro.setSinopse(dto.getSinopse());
+        livro.setTipo_capa(TipoCapa.valueOf(dto.getTipo_capa().toUpperCase()));
+        livro.setImagem(dto.getImagem());
+        livro.setAutor(autor);
+        livro.setGenero(genero);
+
+        LivroModel salvo = lr.save(livro);
+
+        rm.setMensagem("Livro atualizado com sucesso.");
+        return ResponseEntity.status(HttpStatus.OK).body(rm);
+    }
+
+    private Optional<LivroModel> findById(String isbn) {
+        return lr.findById(isbn);
     }
 
     public ResponseEntity<ResponseModel> deletar(String isbn) {
