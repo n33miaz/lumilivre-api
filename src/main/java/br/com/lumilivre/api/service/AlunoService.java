@@ -67,6 +67,8 @@ public class AlunoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
+        // Criar Validação CPF Existente
+
         if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
             rm.setMensagem("O email é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
@@ -81,7 +83,7 @@ public class AlunoService {
             rm.setMensagem("O curso é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
 
-        } 
+        }
         Optional<CursoModel> curso = cursoRepository.findById(dto.getCursoId());
         if (curso.isEmpty()) {
             rm.setMensagem("Curso não encontrado.");
@@ -110,7 +112,6 @@ public class AlunoService {
         aluno.setBairro(enderecoDTO.getBairro());
         aluno.setUf(enderecoDTO.getUf());
         aluno.setEstado(enderecoDTO.getEstado());
-
         aluno.setNumero_casa(dto.getNumero_casa());
 
         AlunoModel salvo = ar.save(aluno);
@@ -183,15 +184,13 @@ public class AlunoService {
         rm.setMensagem("O aluno foi removido com sucesso.");
         return ResponseEntity.ok(rm);
     }
-    
+
     public AutorModel buscarPorNome(String nome) {
         return ar.findByNomeIgnoreCase(nome);
     }
-    
+
     public AutorModel buscarPorCPF(String cpf) {
         return ar.findByNomeIgnoreCase(cpf);
     }
-    
-
 
 }

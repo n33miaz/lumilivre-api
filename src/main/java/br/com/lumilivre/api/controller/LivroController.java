@@ -32,6 +32,11 @@ public class LivroController {
         return ls.deletar(isbn);
     }
 
+    @DeleteMapping("/remover-com-exemplares/{isbn}")
+    public ResponseEntity<?> removerComExemplares(@PathVariable String isbn) {
+        return ls.excluirLivroComExemplares(isbn);
+    }
+
     @PutMapping("/alterar/{isbn}")
     public ResponseEntity<?> alterar(@PathVariable String isbn, @RequestBody LivroDTO livroDTO) {
         return ls.alterar(livroDTO);

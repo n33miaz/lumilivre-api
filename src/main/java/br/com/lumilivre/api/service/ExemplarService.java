@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.ExemplarDTO;
+import br.com.lumilivre.api.data.LivroDTO;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.LivroModel;
@@ -26,8 +28,50 @@ public class ExemplarService {
     @Autowired
     private ResponseModel rm;
 
-    public Iterable<ExemplarModel> listar() {
+    public List<ExemplarModel> listar() {
         return er.findAll();
+    }
+
+    public ResponseEntity<?> buscarExemplaresPorIsbn(String isbn) {
+        rm.setMensagem("");
+
+        if (isbn == null || isbn.trim().isEmpty()) {
+            rm.setMensagem("O ISBN é obrigatório.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+
+        if (!lr.existsByIsbn(isbn)) {
+            rm.setMensagem("Nenhum livro encontrado com esse ISBN.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+
+        List<ExemplarModel> exemplares = er.findAllByLivroIsbn(isbn);
+
+        List<ExemplarDTO> resposta = exemplares.stream().map(exemplar -> {
+            ExemplarDTO dto = new ExemplarDTO();
+            dto.setTombo(exemplar.getTombo());
+            dto.setStatus_livro(exemplar.getStatus_livro().toString());
+            dto.setLivro_isbn(exemplar.getLivro_isbn().getIsbn());
+            return dto;
+        }).toList();
+
+        return ResponseEntity.ok(resposta);
+    }
+
+    public ResponseEntity<?> excluirLivroComExemplares(String isbn) {
+        rm.setMensagem("");
+
+        Optional<LivroModel> livroOpt = lr.findByIsbn(isbn);
+        if (livroOpt.isEmpty()) {
+            rm.setMensagem("Livro não encontrado.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+
+        er.deleteAllByLivroIsbn(isbn);
+        lr.deleteByIsbn(isbn);
+
+        rm.setMensagem("Livro e todos os exemplares foram removidos com sucesso.");
+        return ResponseEntity.ok(rm);
     }
 
     public ResponseEntity<?> cadastrar(ExemplarDTO dto) {
@@ -35,6 +79,11 @@ public class ExemplarService {
 
         if (dto.getLivro_isbn() == null || dto.getLivro_isbn().trim().isEmpty()) {
             rm.setMensagem("A ISBN é obrigatória.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+
+        if (er.existsByTombo(dto.getTombo())) {
+            rm.setMensagem("Esse tombo já existe.");
             return ResponseEntity.badRequest().body(rm);
         }
 
@@ -57,10 +106,6 @@ public class ExemplarService {
         }
 
         Optional<LivroModel> livroOpt = lr.findByIsbn(dto.getLivro_isbn());
-        if (livroOpt.isEmpty()) {
-            rm.setMensagem("Esse ISBN não está cadastrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
         LivroModel livro = livroOpt.get();
 
         ExemplarModel exemplar = new ExemplarModel();
@@ -106,10 +151,6 @@ public class ExemplarService {
         }
 
         Optional<LivroModel> livroOpt = lr.findByIsbn(dto.getLivro_isbn());
-        if (livroOpt.isEmpty()) {
-            rm.setMensagem("Esse ISBN não está cadastrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
         LivroModel livro = livroOpt.get();
 
         ExemplarModel exemplar = new ExemplarModel();

@@ -15,11 +15,15 @@ import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.AutorRepository;
+import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
 
 @Service
 public class LivroService {
 
+    @Autowired
+    private ExemplarRepository er;
+	
     @Autowired
     private LivroRepository lr;
 
@@ -229,4 +233,23 @@ public class LivroService {
         rm.setMensagem("O Livro foi removido com sucesso.");
         return ResponseEntity.ok(rm);
     }
+    
+    public ResponseEntity<?> excluirLivroComExemplares(String isbn) {
+        Optional<LivroModel> livroOpt = lr.findByIsbn(isbn);
+
+        if (livroOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(rm);
+        }
+
+        LivroModel livro = livroOpt.get();
+
+        er.deleteAllByLivroIsbn(isbn);
+
+        lr.delete(livro);
+
+        rm.setMensagem("Livro cadastrado com sucesso.");
+        return ResponseEntity.ok(rm);
+
+    }
+    
 }

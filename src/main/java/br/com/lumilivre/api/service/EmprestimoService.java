@@ -34,7 +34,6 @@ public class EmprestimoService {
     
     public ResponseEntity<?> cadastrar(EmprestimoDTO dto) {
 
-    	// DATA EMPRESTIMO
     	if (dto.getData_emprestimo() == null) {
     	    rm.setMensagem("A data de empréstimo é obrigatória.");
     	    return ResponseEntity.badRequest().body(rm);
@@ -45,8 +44,7 @@ public class EmprestimoService {
     	    return ResponseEntity.badRequest().body(rm);
     	}
     	
-    	// DATA DEVOLUÇÃO
-    	if (dto.getData_devolucao() == null) {
+        if (dto.getData_devolucao() == null) {
     	    rm.setMensagem("A data de empréstimo é obrigatória.");
     	    return ResponseEntity.badRequest().body(rm);
     	}
@@ -85,7 +83,6 @@ public class EmprestimoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        // VALIDAÇÃO TOMBO DO EXEMPLAR
         if (dto.getExemplar_tombo() == null || dto.getExemplar_tombo().trim().isEmpty()) {
             rm.setMensagem("O tombo do exemplar é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
@@ -95,6 +92,9 @@ public class EmprestimoService {
             rm.setMensagem("Exemplar não encontrado para o tombo informado.");
             return ResponseEntity.badRequest().body(rm);
         }
+
+        // Validação para saber se o tombo está em um empréstimo
+        // Validação para fazer o empréstimo apenas se o status for DISPONIVEL
 
         EmprestimoModel emprestimo = new EmprestimoModel();
         emprestimo.setAluno(alunoOpt.get());
@@ -184,7 +184,6 @@ public class EmprestimoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        // Atualizar dados do empréstimo
         emprestimo.setData_emprestimo(dto.getData_emprestimo());
         emprestimo.setData_devolucao(dto.getData_devolucao());
         emprestimo.setStatus_emprestimo(status);

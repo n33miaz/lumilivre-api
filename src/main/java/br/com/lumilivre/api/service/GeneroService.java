@@ -30,11 +30,12 @@ public class GeneroService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        // if (gr.existsByNomeIgnoreCaseAndIdNot(generoModel.getNome(), generoModel.getId())) {
-        //     ResponseModel rm = new ResponseModel();
-        //     rm.setMensagem("O Nome já existe no banco de dados");
-        //     return ResponseEntity.badRequest().body(rm);
-        // }
+        if (gr.existsByNomeIgnoreCaseAndIdNot(generoModel.getNome(),
+                generoModel.getId())) {
+            ResponseModel rm = new ResponseModel();
+            rm.setMensagem("O Nome já existe no banco de dados");
+            return ResponseEntity.badRequest().body(rm);
+        }
         GeneroModel salvo = gr.save(generoModel);
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
@@ -47,11 +48,11 @@ public class GeneroService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        // if (gr.existsByNomeIgnoreCaseAndIdNot(generoModel.getNome(), generoModel.getId())) {
-        //     ResponseModel rm = new ResponseModel();
-        //     rm.setMensagem("O Nome já existe no banco de dados");
-        //     return ResponseEntity.badRequest().body(rm);
-        // }
+        if (gr.existsByNomeIgnoreCaseAndIdNot(generoModel.getNome(), generoModel.getId())) {
+            ResponseModel rm = new ResponseModel();
+            rm.setMensagem("O Nome já existe no banco de dados");
+            ResponseEntity.badRequest().body(rm);
+        }
         GeneroModel salvo = gr.save(generoModel);
         return ResponseEntity.ok(salvo);
     }
@@ -67,7 +68,7 @@ public class GeneroService {
     private boolean isNomeInvalido(GeneroModel generoModel) {
         return generoModel.getNome() == null || generoModel.getNome().trim().isEmpty();
     }
-    
+
     public GeneroModel buscarPorNome(String nome) {
         return gr.findByNomeIgnoreCase(nome);
     }
