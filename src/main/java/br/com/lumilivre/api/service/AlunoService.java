@@ -17,12 +17,12 @@ import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.CursoRepository;
 import br.com.lumilivre.api.repository.UsuarioRepository;
+import br.com.lumilivre.api.utils.CpfValidator;
 
 import java.util.Optional;
 
 @Service
 public class AlunoService {
-
 
     @Autowired
     private AlunoRepository ar;
@@ -30,10 +30,12 @@ public class AlunoService {
     @Autowired
     private CursoRepository cursoRepository;
 
-    
     @Autowired
     private UsuarioRepository ur;
-    
+
+    @Autowired
+    private EmailService emailService;
+
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -80,11 +82,13 @@ public class AlunoService {
         }
 
         if (ar.existsById(dto.getCpf())) {
-            rm.setMensagem("CPF Inválido.");
+            rm.setMensagem("Digite outro CPF.");
             return ResponseEntity.badRequest().body(rm);
         }
-
-        // Criar Validação CPF Existente
+        if (!CpfValidator.isCpfValido(dto.getCpf())) {
+            rm.setMensagem("CPF inválido.");
+            return ResponseEntity.badRequest().body(rm);
+        }
 
         if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
             rm.setMensagem("O email é obrigatório.");
@@ -131,23 +135,21 @@ public class AlunoService {
         aluno.setEstado(enderecoDTO.getEstado());
         aluno.setNumero_casa(dto.getNumero_casa());
 
+        UsuarioModel usuario = new UsuarioModel();
+        usuario.setEmail(dto.getMatricula()); // matrícula como login
+        usuario.setSenha(passwordEncoder.encode(dto.getCpf())); // senha padrão
+        usuario.setRole(Role.ALUNO);
+        usuario.setAluno(aluno);
+
+        aluno.setUsuario(usuario);
+
         AlunoModel salvo = ar.save(aluno);
 
-        UsuarioModel usuario = new UsuarioModel();
-        usuario.setEmail(salvo.getEmail());
-        usuario.setSenha(passwordEncoder.encode("aluno123"));
-        usuario.setRole(Role.ALUNO);
-        usuario.setAluno(salvo);
-
-        salvo.setUsuario(usuario); 
-
-        ur.save(usuario);
-        ar.save(salvo);
+        emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNome(), dto.getCpf());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
 
     }
-    
 
     public ResponseEntity<?> alterar(String matricula, AlunoDTO dto) {
         var alunoExistente = ar.findById(matricula);
@@ -166,6 +168,11 @@ public class AlunoService {
         }
         if (dto.getCpf() == null || dto.getCpf().trim().isEmpty()) {
             rm.setMensagem("O CPF é obrigatório.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+
+        if (!CpfValidator.isCpfValido(dto.getCpf())) {
+            rm.setMensagem("CPF inválido.");
             return ResponseEntity.badRequest().body(rm);
         }
         if (dto.getCelular() == null || dto.getCelular().trim().isEmpty()) {

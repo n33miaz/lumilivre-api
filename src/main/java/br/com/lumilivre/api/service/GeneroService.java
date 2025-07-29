@@ -47,11 +47,11 @@ public class GeneroService {
             rm.setMensagem("O Nome é Obrigatório");
             return ResponseEntity.badRequest().body(rm);
         }
-
-        if (gr.existsByNomeIgnoreCaseAndIdNot(generoModel.getNome(), generoModel.getId())) {
+        if (gr.existsByNomeIgnoreCaseAndIdNot(generoModel.getNome(),
+                generoModel.getId())) {
             ResponseModel rm = new ResponseModel();
             rm.setMensagem("O Nome já existe no banco de dados");
-            ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(rm);
         }
         GeneroModel salvo = gr.save(generoModel);
         return ResponseEntity.ok(salvo);

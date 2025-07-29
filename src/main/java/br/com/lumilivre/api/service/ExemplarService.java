@@ -6,9 +6,9 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.data.ExemplarDTO;
-import br.com.lumilivre.api.data.LivroDTO;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.LivroModel;
@@ -74,6 +74,7 @@ public class ExemplarService {
         return ResponseEntity.ok(rm);
     }
 
+    @Transactional
     public ResponseEntity<?> cadastrar(ExemplarDTO dto) {
         rm.setMensagem("");
 
@@ -115,10 +116,13 @@ public class ExemplarService {
 
         er.save(exemplar);
 
+        atualizarQuantidadeExemplaresDoLivro(livro.getIsbn());
+
         rm.setMensagem("Exemplar cadastrado com sucesso.");
         return ResponseEntity.ok(rm);
     }
 
+    @Transactional
     public ResponseEntity<?> alterar(ExemplarDTO dto) {
         rm.setMensagem("");
 
@@ -160,24 +164,41 @@ public class ExemplarService {
 
         er.save(exemplar);
 
+        atualizarQuantidadeExemplaresDoLivro(livro.getIsbn());
+
         rm.setMensagem("Exemplar alterado com sucesso.");
         return ResponseEntity.ok(rm);
     }
 
+    @Transactional
     public ResponseEntity<ResponseModel> deletar(String tombo) {
         rm.setMensagem("");
 
-        if (!er.existsById(tombo)) {
+        Optional<ExemplarModel> exemplarOpt = er.findById(tombo);
+        if (exemplarOpt.isEmpty()) {
             rm.setMensagem("Exemplar com esse tombo não existe.");
             return ResponseEntity.badRequest().body(rm);
         }
 
+        ExemplarModel exemplar = exemplarOpt.get();
         er.deleteById(tombo);
+
+        atualizarQuantidadeExemplaresDoLivro(exemplar.getLivro_isbn().getIsbn());
+
         rm.setMensagem("O exemplar foi removido com sucesso.");
         return ResponseEntity.ok(rm);
     }
 
     public ExemplarModel buscarPorTombo(String tombo) {
         return er.findByTombo(tombo).orElse(null);
+    }
+
+    @Transactional
+    public void atualizarQuantidadeExemplaresDoLivro(String isbn) {
+        Long quantidade = er.contarExemplaresPorLivro(isbn);
+        lr.findById(isbn).ifPresent(livro -> {
+            livro.setQuantidade(quantidade.intValue());
+            lr.save(livro);
+        });
     }
 }

@@ -2,6 +2,8 @@ package br.com.lumilivre.api.model;
 
 import java.sql.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -27,9 +29,11 @@ public class AutorModel {
 	@Column(name = "pseudonimo", length = 55)
 	private String pseudonimo;
 
+	@JsonFormat(pattern = "dd/MM/yyyy")
 	@Column(name = "data_nascimento")
 	private Date data_nascimento;
 
+	@JsonFormat(pattern = "dd/MM/yyyy")
 	@Column(name = "data_falecimento")
 	private Date data_falecimento;
 

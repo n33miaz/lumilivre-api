@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import br.com.lumilivre.api.data.AlterarSenhaDTO;
 import br.com.lumilivre.api.data.UsuarioDTO;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -97,6 +98,26 @@ public class UsuarioService {
     
     public Iterable<UsuarioModel> listar() {
         return ur.findAll();
+    }
+
+    
+    public ResponseEntity<?> alterarSenha(AlterarSenhaDTO dto) {
+        Optional<UsuarioModel> opt = ur.findByEmail(dto.getMatricula());
+
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário não encontrado");
+        }
+
+        UsuarioModel usuario = opt.get();
+
+        if (!passwordEncoder.matches(dto.getSenhaAtual(), usuario.getSenha())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Senha atual incorreta");
+        }
+
+        usuario.setSenha(passwordEncoder.encode(dto.getNovaSenha()));
+        ur.save(usuario);
+
+        return ResponseEntity.ok("Senha alterada com sucesso");
     }
 
 }

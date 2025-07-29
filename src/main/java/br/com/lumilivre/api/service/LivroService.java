@@ -17,6 +17,7 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.AutorRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
+import jakarta.transaction.Transactional;
 
 @Service
 public class LivroService {
@@ -45,6 +46,15 @@ public class LivroService {
     public Iterable<LivroModel> listar() {
         return lr.findAll();
     }
+    
+    @Transactional
+    public void atualizarQuantidadeExemplaresDoLivro(String isbn) {
+        Long quantidade = er.contarExemplaresPorLivro(isbn);
+
+        lr.findById(isbn).ifPresent(livro -> {
+            livro.setQuantidade(quantidade.intValue());
+            lr.save(livro);
+        });}
 
     public ResponseEntity<?> cadastrar(LivroDTO dto) {
         if (dto.getIsbn() == null || dto.getIsbn().trim().isEmpty()) {

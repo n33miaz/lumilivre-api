@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.lumilivre.api.data.AlterarSenhaDTO;
 import br.com.lumilivre.api.data.UsuarioDTO;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.model.UsuarioModel;
@@ -42,6 +43,12 @@ public class UsuarioController {
     public Iterable<UsuarioModel> listar() {
         return us.listar();
     }
+    
+    @PutMapping("/alterar-senha")
+    public ResponseEntity<?> alterarSenha(@RequestBody AlterarSenhaDTO dto) {
+        return us.alterarSenha(dto);
+    }
+
 
 }
 
