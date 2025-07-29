@@ -3,19 +3,26 @@ package br.com.lumilivre.api.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.AlunoDTO;
+import br.com.lumilivre.api.data.UsuarioDTO;
+import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.AutorModel;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
+import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.CursoRepository;
+import br.com.lumilivre.api.repository.UsuarioRepository;
+
 import java.util.Optional;
 
 @Service
 public class AlunoService {
+
 
     @Autowired
     private AlunoRepository ar;
@@ -23,11 +30,21 @@ public class AlunoService {
     @Autowired
     private CursoRepository cursoRepository;
 
+    
+    @Autowired
+    private UsuarioRepository ur;
+    
+    private final PasswordEncoder passwordEncoder;
+
     @Autowired
     private ResponseModel rm;
 
     @Autowired
     private CepService cepService;
+
+    AlunoService(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public Iterable<AlunoModel> listar() {
         return ar.findAll();
@@ -115,8 +132,22 @@ public class AlunoService {
         aluno.setNumero_casa(dto.getNumero_casa());
 
         AlunoModel salvo = ar.save(aluno);
+
+        UsuarioModel usuario = new UsuarioModel();
+        usuario.setEmail(salvo.getEmail());
+        usuario.setSenha(passwordEncoder.encode("aluno123"));
+        usuario.setRole(Role.ALUNO);
+        usuario.setAluno(salvo);
+
+        salvo.setUsuario(usuario); 
+
+        ur.save(usuario);
+        ar.save(salvo);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+
     }
+    
 
     public ResponseEntity<?> alterar(String matricula, AlunoDTO dto) {
         var alunoExistente = ar.findById(matricula);

@@ -5,12 +5,15 @@ import br.com.lumilivre.api.model.CursoModel;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotNull;
@@ -50,6 +53,10 @@ public class AlunoModel {
 	@ManyToOne
 	@JoinColumn(name = "curso_id", nullable = false)
 	private CursoModel curso;
+	
+	@JsonManagedReference
+    @OneToOne(mappedBy = "aluno", cascade = CascadeType.ALL)
+    private UsuarioModel usuario;
 
 	@Size(min = 8, max = 8, message = "CEP deve ter exatamente 8 caracteres")
 	@Column(name = "cep", length = 8)
@@ -82,6 +89,15 @@ public class AlunoModel {
 
 	public void setMatricula(String matricula) {
 		this.matricula = matricula;
+	}
+
+	
+	public UsuarioModel getUsuario() {
+		return usuario;
+	}
+
+	public void setUsuario(UsuarioModel usuario) {
+		this.usuario = usuario;
 	}
 
 	public String getNome() {

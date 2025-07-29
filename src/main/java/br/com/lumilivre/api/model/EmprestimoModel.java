@@ -26,11 +26,11 @@ public class EmprestimoModel {
 
     @NotNull
     @Column(name = "data_emprestimo", nullable = false)
-    private LocalDateTime data_emprestimo;
+    private LocalDateTime dataEmprestimo;
 
     @NotNull
     @Column(name = "data_devolucao", nullable = false)
-    private LocalDateTime data_devolucao;
+    private LocalDateTime dataDevolucao;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "penalidade", length = 59)
@@ -38,7 +38,7 @@ public class EmprestimoModel {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status_emprestimo", length = 55)
-    private StatusEmprestimo status_emprestimo;
+    private StatusEmprestimo statusEmprestimo;
 
     @ManyToOne
     @JoinColumn(name = "aluno_matricula", nullable = false)
@@ -48,61 +48,63 @@ public class EmprestimoModel {
     @JoinColumn(name = "exemplar_tombo", nullable = false) 
     private ExemplarModel exemplar;
 
-    public Integer getId() {
-        return id;
-    }
+	public Integer getId() {
+		return id;
+	}
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
+	public void setId(Integer id) {
+		this.id = id;
+	}
 
-    public LocalDateTime getData_emprestimo() {
-        return data_emprestimo;
-    }
+	public LocalDateTime getDataEmprestimo() {
+		return dataEmprestimo;
+	}
 
-    public void setData_emprestimo(LocalDateTime data_emprestimo) {
-        this.data_emprestimo = data_emprestimo;
-    }
+	public void setDataEmprestimo(LocalDateTime dataEmprestimo) {
+		this.dataEmprestimo = dataEmprestimo;
+	}
 
-    public LocalDateTime getData_devolucao() {
-        return data_devolucao;
-    }
+	public LocalDateTime getDataDevolucao() {
+		return dataDevolucao;
+	}
 
-    public void setData_devolucao(LocalDateTime data_devolucao) {
-        this.data_devolucao = data_devolucao;
-    }
+	public void setDataDevolucao(LocalDateTime dataDevolucao) {
+		this.dataDevolucao = dataDevolucao;
+	}
 
-    public Penalidade getPenalidade() {
-        return penalidade;
-    }
+	public Penalidade getPenalidade() {
+		return penalidade;
+	}
 
-    public void setPenalidade(Penalidade penalidade) {
-        this.penalidade = penalidade;
-    }
+	public void setPenalidade(Penalidade penalidade) {
+		this.penalidade = penalidade;
+	}
 
-    public StatusEmprestimo getStatus_emprestimo() {
-        return status_emprestimo;
-    }
+	public StatusEmprestimo getStatusEmprestimo() {
+		return statusEmprestimo;
+	}
 
-    public void setStatus_emprestimo(StatusEmprestimo status_emprestimo) {
-        this.status_emprestimo = status_emprestimo;
-    }
+	public void setStatusEmprestimo(StatusEmprestimo statusEmprestimo) {
+		this.statusEmprestimo = statusEmprestimo;
+	}
 
-    public AlunoModel getAluno() {
-        return aluno;
-    }
+	public AlunoModel getAluno() {
+		return aluno;
+	}
 
-    public void setAluno(AlunoModel aluno) {
-        this.aluno = aluno;
-    }
+	public void setAluno(AlunoModel aluno) {
+		this.aluno = aluno;
+	}
 
-    public ExemplarModel getExemplar() {
-        return exemplar;
-    }
+	public ExemplarModel getExemplar() {
+		return exemplar;
+	}
 
-    public void setExemplar(ExemplarModel exemplar) {
-        this.exemplar = exemplar;
-    }
+	public void setExemplar(ExemplarModel exemplar) {
+		this.exemplar = exemplar;
+	}
+
+    
 
 
 }

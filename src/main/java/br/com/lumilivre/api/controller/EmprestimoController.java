@@ -3,6 +3,9 @@ package br.com.lumilivre.api.controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +41,21 @@ public class EmprestimoController {
     @GetMapping("/listar")
     public Iterable<EmprestimoModel> listar() {
         return es.listar();
+    }
+    
+    @GetMapping("/ativos")
+    public ResponseEntity<List<EmprestimoModel>> listarAtivos() {
+        return ResponseEntity.ok(es.listarAtivos());
+    }
+
+    @GetMapping("/atrasados")
+    public ResponseEntity<List<EmprestimoModel>> listarAtrasados() {
+        return ResponseEntity.ok(es.listarAtrasados());
+    } 
+
+    @GetMapping("/concluidos")
+    public ResponseEntity<List<EmprestimoModel>> listarConcluidos() {
+        return ResponseEntity.ok(es.listarConcluidos());
     }
 
 }
