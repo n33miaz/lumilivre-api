@@ -20,7 +20,7 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.GeneroService;
 
 @RestController
-@RequestMapping("/lumilivre/generos")
+@RequestMapping("/livros/generos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
 public class GeneroController {

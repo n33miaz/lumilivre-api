@@ -13,7 +13,7 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.ExemplarService;
 
 @RestController
-@RequestMapping("/lumilivre/livros/exemplares")
+@RequestMapping("/livros/exemplares")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class ExemplarController {
 

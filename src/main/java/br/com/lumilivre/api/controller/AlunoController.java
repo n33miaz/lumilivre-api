@@ -10,7 +10,7 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.AlunoService;
 
 @RestController
-@RequestMapping("/lumilivre/alunos")
+@RequestMapping("/alunos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class AlunoController {
 

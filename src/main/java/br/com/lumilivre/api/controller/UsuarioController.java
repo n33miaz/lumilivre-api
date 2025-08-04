@@ -19,7 +19,7 @@ import br.com.lumilivre.api.service.UsuarioService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("lumilivre/usuarios")
+@RequestMapping("/usuarios")
 public class UsuarioController {
 
     @Autowired

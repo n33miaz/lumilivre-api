@@ -15,7 +15,7 @@ import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.EmprestimoService;
 @RestController
-@RequestMapping("/lumilivre/emprestimos")
+@RequestMapping("/emprestimos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class EmprestimoController {
 

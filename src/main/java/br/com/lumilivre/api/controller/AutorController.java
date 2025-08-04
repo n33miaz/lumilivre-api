@@ -11,7 +11,7 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.AutorService;
 
 @RestController
-@RequestMapping("/lumilivre/autores")
+@RequestMapping("/autores")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class AutorController {
 

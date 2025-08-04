@@ -10,7 +10,7 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.LivroService;
 
 @RestController
-@RequestMapping("/lumilivre/livros")
+@RequestMapping("/livros")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class LivroController {
 

@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @RestController
 public class EnumController {
 
-    @GetMapping("lumilivre/enums/{tipo}")
+    @GetMapping("/enums/{tipo}")
     public List<EnumDTO> listarEnum(@PathVariable String tipo) {
         switch (tipo.toUpperCase()) {
             case "STATUS_LIVRO":
