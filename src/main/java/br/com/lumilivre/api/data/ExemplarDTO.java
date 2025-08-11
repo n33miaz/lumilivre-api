@@ -5,8 +5,15 @@ public class ExemplarDTO {
 	private String tombo;
 	private String status_livro;
 	private String livro_isbn;
+	private String localizacao_fisica;
 	
 	
+	public String getLocalizacao_fisica() {
+		return localizacao_fisica;
+	}
+	public void setLocalizacao_fisica(String localizacao_fisica) {
+		this.localizacao_fisica = localizacao_fisica;
+	}
 	public String getTombo() {
 		return tombo;
 	}

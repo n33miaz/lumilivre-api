@@ -14,17 +14,28 @@ import jakarta.persistence.Table;
 @Table(name = "exemplar")
 public class ExemplarModel {
 
-    @Id
-    @Column(name = "tombo", length = 10, unique = true)
-    private String tombo;
+	@Id
+	@Column(name = "tombo", length = 10, unique = true)
+	private String tombo;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status_livro", length = 55)
-    private StatusLivro status_livro;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status_livro", length = 55)
+	private StatusLivro status_livro;
 
-    @ManyToOne
-    @JoinColumn(name = "livro_isbn", nullable = false)
-    private LivroModel livro;
+	@ManyToOne
+	@JoinColumn(name = "livro_isbn", nullable = false)
+	private LivroModel livro;
+
+	@Column(name = "localizacao_fisica", nullable = false)
+	private String localizacao_fisica;
+
+	public String getLocalizacao_fisica() {
+		return localizacao_fisica;
+	}
+
+	public void setLocalizacao_fisica(String localizacao_fisica) {
+		this.localizacao_fisica = localizacao_fisica;
+	}
 
 	public String getTombo() {
 		return tombo;
@@ -50,7 +61,5 @@ public class ExemplarModel {
 		this.livro = livro_isbn;
 	}
 
-
-
-    
+	
 }

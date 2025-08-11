@@ -52,6 +52,7 @@ public class ExemplarService {
             dto.setTombo(exemplar.getTombo());
             dto.setStatus_livro(exemplar.getStatus_livro().toString());
             dto.setLivro_isbn(exemplar.getLivro_isbn().getIsbn());
+            dto.setLocalizacao_fisica(exemplar.getLocalizacao_fisica());
             return dto;
         }).toList();
 
@@ -113,6 +114,7 @@ public class ExemplarService {
         exemplar.setTombo(dto.getTombo());
         exemplar.setStatus_livro(status);
         exemplar.setLivro_isbn(livro);
+        exemplar.setLocalizacao_fisica(dto.getLocalizacao_fisica());
 
         er.save(exemplar);
 
@@ -161,7 +163,8 @@ public class ExemplarService {
         exemplar.setTombo(dto.getTombo());
         exemplar.setStatus_livro(status);
         exemplar.setLivro_isbn(livro);
-
+        exemplar.setLocalizacao_fisica(dto.getLocalizacao_fisica());
+        
         er.save(exemplar);
 
         atualizarQuantidadeExemplaresDoLivro(livro.getIsbn());
