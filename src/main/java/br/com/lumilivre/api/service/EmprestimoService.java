@@ -1,15 +1,21 @@
 package br.com.lumilivre.api.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.EmprestimoDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
+import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.model.AutorModel;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -21,20 +27,49 @@ import br.com.lumilivre.api.repository.ExemplarRepository;
 public class EmprestimoService {
 
     @Autowired
-    private AlunoRepository alunoRepository;       
+    private AlunoRepository alunoRepository;
+    
     @Autowired
     private ExemplarRepository exemplarRepository; 
-	
-	@Autowired
-	private EmprestimoRepository emprestimoRepository;
-	
+
+    @Autowired
+    private EmprestimoRepository emprestimoRepository;
+
     @Autowired
     private ResponseModel rm;
-	
+
     public Iterable<EmprestimoModel> listar() {
         return emprestimoRepository.findAll();
     }
     
+    public Page<EmprestimoModel> buscarPorTexto(String texto, Pageable pageable) {
+        if (texto == null || texto.isBlank()) {
+            return emprestimoRepository.findAll(pageable);
+        }
+        return emprestimoRepository.buscarPorTexto(texto, pageable);
+    }
+
+    public Page<EmprestimoModel> buscarAvancado(
+            StatusEmprestimo statusEmprestimo,
+            String tombo,
+            String livroNome,
+            String alunoNome,
+            String dataEmprestimo,
+            String dataDevolucao,
+            Pageable pageable
+    ) {
+        return emprestimoRepository.buscarAvancado(
+                statusEmprestimo,
+                tombo,
+                livroNome,
+                alunoNome,
+                dataEmprestimo,
+                dataDevolucao,
+                pageable
+        );
+    }
+
+
     public ResponseEntity<?> cadastrar(EmprestimoDTO dto) {
 
         if (dto.getData_emprestimo() == null) {
@@ -46,7 +81,7 @@ public class EmprestimoService {
             rm.setMensagem("A data de empréstimo não pode ser anterior à data atual.");
             return ResponseEntity.badRequest().body(rm);
         }
-        
+
         if (dto.getData_devolucao() == null) {
             rm.setMensagem("A data de devolução é obrigatória.");
             return ResponseEntity.badRequest().body(rm);
@@ -55,12 +90,12 @@ public class EmprestimoService {
             rm.setMensagem("A data de devolução não pode ser anterior à data atual.");
             return ResponseEntity.badRequest().body(rm);
         }
-        
+
         if (dto.getData_devolucao().isBefore(dto.getData_emprestimo())) {
             rm.setMensagem("A data de devolução não pode ser anterior à data de empréstimo.");
             return ResponseEntity.badRequest().body(rm);
         }
-        
+
         if (dto.getStatus_emprestimo() == null || dto.getStatus_emprestimo().trim().isEmpty()) {
             rm.setMensagem("O Status do Empréstimo é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
@@ -73,7 +108,7 @@ public class EmprestimoService {
             rm.setMensagem("Status do empréstimo inválido.");
             return ResponseEntity.badRequest().body(rm);
         }
-        
+
         if (dto.getAluno_matricula() == null || dto.getAluno_matricula().trim().isEmpty()) {
             rm.setMensagem("A matrícula do aluno é obrigatória.");
             return ResponseEntity.badRequest().body(rm);
@@ -93,7 +128,7 @@ public class EmprestimoService {
             rm.setMensagem("Exemplar não encontrado para o tombo informado.");
             return ResponseEntity.badRequest().body(rm);
         }
-        
+
         ExemplarModel exemplar = exemplarOpt.get();
 
         if (exemplar.getStatus_livro() != StatusLivro.DISPONIVEL) {
@@ -101,7 +136,8 @@ public class EmprestimoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        if (emprestimoRepository.existsByExemplarTomboAndStatusEmprestimo(dto.getExemplar_tombo(), StatusEmprestimo.ATIVO)) {
+        if (emprestimoRepository.existsByExemplarTomboAndStatusEmprestimo(dto.getExemplar_tombo(),
+                StatusEmprestimo.ATIVO)) {
             rm.setMensagem("Este exemplar já está emprestado em um empréstimo ativo.");
             return ResponseEntity.badRequest().body(rm);
         }
@@ -119,9 +155,7 @@ public class EmprestimoService {
         return ResponseEntity.ok(rm);
     }
 
-
-    
-    public ResponseEntity<?> alterar(EmprestimoDTO dto) {
+    public ResponseEntity<?> atualizar(EmprestimoDTO dto) {
         if (dto.getId() == null) {
             rm.setMensagem("O ID do empréstimo é obrigatório para alteração.");
             return ResponseEntity.badRequest().body(rm);
@@ -143,7 +177,7 @@ public class EmprestimoService {
             rm.setMensagem("A data de empréstimo não pode ser anterior à data atual.");
             return ResponseEntity.badRequest().body(rm);
         }
-        
+
         if (dto.getData_devolucao() == null) {
             rm.setMensagem("A data de devolução é obrigatória.");
             return ResponseEntity.badRequest().body(rm);
@@ -152,7 +186,7 @@ public class EmprestimoService {
             rm.setMensagem("A data de devolução não pode ser anterior à data atual.");
             return ResponseEntity.badRequest().body(rm);
         }
-        
+
         if (dto.getData_devolucao().isBefore(dto.getData_emprestimo())) {
             rm.setMensagem("A data de devolução não pode ser anterior à data de empréstimo.");
             return ResponseEntity.badRequest().body(rm);
@@ -206,7 +240,7 @@ public class EmprestimoService {
         return ResponseEntity.ok(rm);
     }
 
-    public ResponseEntity<ResponseModel> delete(Integer id) {
+    public ResponseEntity<ResponseModel> excluir(Integer id) {
         if (id == null) {
             rm.setMensagem("O ID do empréstimo é obrigatório para deletar.");
             return ResponseEntity.badRequest().body(rm);
@@ -222,20 +256,60 @@ public class EmprestimoService {
         rm.setMensagem("Empréstimo removido com sucesso.");
         return ResponseEntity.ok(rm);
     }
-    
-    public List<EmprestimoModel> listarAtivos() {
+
+    public List<EmprestimoModel> buscarAtivos() {
         return emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoGreaterThanEqual(
-            StatusEmprestimo.ATIVO, LocalDateTime.now());
+                StatusEmprestimo.ATIVO, LocalDateTime.now());
     }
 
-    public List<EmprestimoModel> listarAtrasados() {
+    public List<EmprestimoModel> buscarAtrasados() {
         return emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoBefore(
-            StatusEmprestimo.ATIVO, LocalDateTime.now());
+                StatusEmprestimo.ATIVO, LocalDateTime.now());
     }
 
-    public List<EmprestimoModel> listarConcluidos() {
+    public List<EmprestimoModel> buscarConcluidos() {
         return emprestimoRepository.findByStatusEmprestimo(StatusEmprestimo.CONCLUIDO);
     }
 
-        
+    public List<EmprestimoModel> listarPorStatusEDataDevolucaoAntes(StatusEmprestimo status, LocalDateTime data) {
+        return emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoBefore(status, data);
+    }
+
+    public List<EmprestimoModel> listarPorStatusEDataDevolucaoDepoisOuIgual(StatusEmprestimo status,
+            LocalDateTime data) {
+        return emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoGreaterThanEqual(status, data);
+    }
+
+    public List<EmprestimoModel> listarPorAluno(String matricula) {
+        return emprestimoRepository.findByAluno_Matricula(matricula);
+    }
+
+    public List<EmprestimoModel> listarPorExemplar(String tombo) {
+        return emprestimoRepository.findByExemplar_Tombo(tombo);
+    }
+
+    public List<EmprestimoModel> listarPorDataEmprestimoIntervalo(LocalDateTime inicio, LocalDateTime fim) {
+        return emprestimoRepository.findByDataEmprestimoBetween(inicio, fim);
+    }
+
+    public List<EmprestimoModel> listarPorDataEmprestimoAPartirDe(LocalDate dataInicio) {
+        LocalDateTime inicio = dataInicio.atStartOfDay();
+        return emprestimoRepository.findByDataEmprestimoGreaterThanEqual(inicio);
+    }
+
+    public List<EmprestimoModel> listarPorDataDevolucaoIntervalo(LocalDateTime inicio, LocalDateTime fim) {
+        return emprestimoRepository.findByDataDevolucaoBetween(inicio, fim);
+    }
+
+    public List<EmprestimoModel> listarPorDataEmprestimoIntervalo(LocalDate inicio, LocalDate fim) {
+        LocalDateTime start = inicio.atStartOfDay();
+        LocalDateTime end = fim.atTime(LocalTime.MAX);
+        return listarPorDataEmprestimoIntervalo(start, end);
+    }
+
+    public List<EmprestimoModel> listarPorDataDevolucaoIntervalo(LocalDate inicio, LocalDate fim) {
+        LocalDateTime start = inicio.atStartOfDay();
+        LocalDateTime end = fim.atTime(LocalTime.MAX);
+        return listarPorDataDevolucaoIntervalo(start, end);
+    }
 }

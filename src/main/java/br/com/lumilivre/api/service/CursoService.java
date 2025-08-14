@@ -1,12 +1,17 @@
 package br.com.lumilivre.api.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import br.com.lumilivre.api.enums.Turno;
+import br.com.lumilivre.api.model.AutorModel;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.CursoRepository;
@@ -19,10 +24,29 @@ public class CursoService {
     @Autowired
     private CursoRepository cr;
 
+    
+
+    
     public List<CursoModel> listar() {
         return (List<CursoModel>) cr.findAll();
     }
 
+    public Page<CursoModel> buscarPorTexto(String texto, Pageable pageable) {
+        if (texto == null || texto.isBlank()) {
+            return cr.findAll(pageable);
+        }
+        return cr.buscarPorTexto(texto, pageable);
+    }
+
+    public Page<CursoModel> buscarAvancado(
+            String nome,
+            String turno,
+            String modulo,
+
+            Pageable pageable) {
+        return cr.buscarAvancado(nome, turno, modulo, pageable);
+    }
+    
     @Transactional
     public ResponseEntity<?> cadastrar(CursoModel cursoModel) {
         if (isNomeInvalido(cursoModel)) {
@@ -58,4 +82,18 @@ public class CursoService {
     private boolean isNomeInvalido(CursoModel cursoModel) {
         return cursoModel.getNome() == null || cursoModel.getNome().trim().isEmpty();
     }
+    
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> listarPorTurno(Turno turno) {
+        List<CursoModel> cursos = cr.findByTurno(turno);
+
+        if (cursos.isEmpty()) {
+            ResponseModel rm = new ResponseModel();
+            rm.setMensagem("Nenhum curso encontrado para o turno informado.");
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(rm);
+        }
+
+        return ResponseEntity.ok(cursos);
+    }
+
 }

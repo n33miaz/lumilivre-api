@@ -16,6 +16,7 @@ import br.com.lumilivre.api.data.UsuarioDTO;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.service.UsuarioService;
+
 import jakarta.validation.Valid;
 
 @RestController
@@ -29,11 +30,12 @@ public class UsuarioController {
     public ResponseEntity<?> cadastrar(@RequestBody @Valid UsuarioDTO dto) {
         return us.cadastrarAdmin(dto);
     }
-    
+
     @PutMapping("/alterar/{id}")
     public ResponseEntity<?> alterar(@PathVariable Integer id, @RequestBody @Valid UsuarioDTO dto) {
         return us.alterar(id, dto);
     }
+
     @DeleteMapping("/remover/{id}")
     public ResponseEntity<ResponseModel> remover(@PathVariable Integer id) {
         return us.delete(id);
@@ -43,12 +45,10 @@ public class UsuarioController {
     public Iterable<UsuarioModel> listar() {
         return us.listar();
     }
-    
+
     @PutMapping("/alterar-senha")
     public ResponseEntity<?> alterarSenha(@RequestBody AlterarSenhaDTO dto) {
         return us.alterarSenha(dto);
     }
 
-
 }
-

@@ -3,6 +3,8 @@ package br.com.lumilivre.api.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,8 +14,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.CursoService;
@@ -25,7 +29,36 @@ public class CursoController {
 
     @Autowired 
     private CursoService cs;
+    
+    public CursoController(CursoService CursoService) {
+        this.cs = CursoService;
+    }
+    
+    
+    @GetMapping("/buscar")
+    public ResponseEntity<Page<CursoModel>> buscarPorTexto(
+            @RequestParam(required = false) String texto,
+            Pageable pageable) {
+        Page<CursoModel> cursos = cs.buscarPorTexto(texto, pageable);
+        if (cursos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(cursos);
+    }
 
+    @GetMapping("/buscar/avancado")
+    public ResponseEntity<Page<CursoModel>> buscarAvancado(
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) String turno,
+            @RequestParam(required = false) String modulo,
+            Pageable pageable) {
+        Page<CursoModel> cursos = cs.buscarAvancado(nome, turno, modulo, pageable);
+        if (cursos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(cursos);
+    }
+    
     @DeleteMapping("remover/{id}")
     public ResponseEntity<ResponseModel> remover(@PathVariable Integer id) {
         return cs.delete(id);
@@ -46,4 +79,10 @@ public class CursoController {
     public List<CursoModel> listar() {
         return cs.listar();
     }
+    
+    @GetMapping("/listar/{turno}")
+    public ResponseEntity<?> listarPorTurno(@PathVariable Turno turno) {
+        return cs.listarPorTurno(turno);
+    }
+
 }

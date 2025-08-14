@@ -1,13 +1,17 @@
 package br.com.lumilivre.api.service;
 
+import java.time.LocalDate;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.AlunoDTO;
-import br.com.lumilivre.api.data.UsuarioDTO;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.AutorModel;
@@ -18,8 +22,6 @@ import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.CursoRepository;
 import br.com.lumilivre.api.repository.UsuarioRepository;
 import br.com.lumilivre.api.utils.CpfValidator;
-
-import java.util.Optional;
 
 @Service
 public class AlunoService {
@@ -48,8 +50,25 @@ public class AlunoService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Iterable<AlunoModel> listar() {
+    public Iterable<AlunoModel> buscar() {
         return ar.findAll();
+    }
+
+    public Page<AlunoModel> buscarPorTexto(String texto, Pageable pageable) {
+        if (texto == null || texto.isBlank()) {
+            return ar.findAll(pageable);
+        }
+        return ar.buscarPorTexto(texto, pageable);
+    }
+
+    public Page<AlunoModel> buscarAvancado(
+            String nome,
+            String matricula,
+            LocalDate dataNascimento,
+            String cursoNome,
+
+            Pageable pageable) {
+        return ar.buscarAvancado(nome, matricula, dataNascimento, cursoNome, pageable);
     }
 
     public ResponseEntity<?> cadastrar(AlunoDTO dto) {
@@ -151,7 +170,7 @@ public class AlunoService {
 
     }
 
-    public ResponseEntity<?> alterar(String matricula, AlunoDTO dto) {
+    public ResponseEntity<?> atualizar(String matricula, AlunoDTO dto) {
         var alunoExistente = ar.findById(matricula);
         if (alunoExistente.isEmpty()) {
             rm.setMensagem("Aluno não encontrado para a matrícula: " + matricula);
@@ -214,10 +233,12 @@ public class AlunoService {
 
         AlunoModel salvo = ar.save(aluno);
 
+        emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNome(), dto.getCpf());
+
         return ResponseEntity.ok(salvo);
     }
 
-    public ResponseEntity<ResponseModel> deletar(String matricula) {
+    public ResponseEntity<ResponseModel> excluir(String matricula) {
         ar.deleteById(matricula);
         rm.setMensagem("O aluno foi removido com sucesso.");
         return ResponseEntity.ok(rm);

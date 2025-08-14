@@ -1,10 +1,13 @@
 package br.com.lumilivre.api.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.data.LivroDTO;
+import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.LivroService;
@@ -17,28 +20,59 @@ public class LivroController {
     @Autowired
     private LivroService ls;
 
+    @GetMapping("/buscar/todos")
+    public Iterable<LivroModel> listar() {
+        return ls.listar();
+    }
+
+    public LivroController(LivroService livroService) {
+        this.ls = livroService;
+    }
+
+    @GetMapping("/buscar")
+    public ResponseEntity<Page<LivroModel>> buscarPorTexto(
+            @RequestParam(required = false) String texto,
+            Pageable pageable) {
+        Page<LivroModel> livros = ls.buscarPorTexto(texto, pageable);
+        if (livros.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(livros);
+    }
+
+    @GetMapping("/buscar/avancado")
+    public ResponseEntity<Page<LivroModel>> buscarAvancado(
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) String isbn,
+            @RequestParam(required = false) String autor,
+            @RequestParam(required = false) String genero,
+            @RequestParam(required = false) String editora,
+            Pageable pageable) {
+        Page<LivroModel> livros = ls.buscarAvancado(nome, isbn, autor, genero, editora, pageable);
+        if (livros.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(livros);
+    }
+
     @PostMapping("/cadastrar")
     public ResponseEntity<?> cadastrar(@RequestBody LivroDTO livroDTO) {
         return ls.cadastrar(livroDTO);
     }
 
-    @GetMapping("/listar")
-    public Iterable<LivroModel> listar() {
-        return ls.listar();
+    @PutMapping("/atualizar/{isbn}")
+    public ResponseEntity<?> atualizar(@PathVariable String isbn, @RequestBody LivroDTO livroDTO) {
+        return ls.atualizar(livroDTO);
     }
 
-    @DeleteMapping("/remover/{isbn}")
-    public ResponseEntity<ResponseModel> remover(@PathVariable String isbn) {
-        return ls.deletar(isbn);
+    @DeleteMapping("/excluir/{isbn}")
+    public ResponseEntity<ResponseModel> excluir(@PathVariable String isbn) {
+        return ls.excluir(isbn);
     }
 
-    @DeleteMapping("/remover-com-exemplares/{isbn}")
-    public ResponseEntity<?> removerComExemplares(@PathVariable String isbn) {
+    @DeleteMapping("/excluir-com-exemplares/{isbn}")
+    public ResponseEntity<?> excluirComExemplares(@PathVariable String isbn) {
         return ls.excluirLivroComExemplares(isbn);
     }
 
-    @PutMapping("/alterar/{isbn}")
-    public ResponseEntity<?> alterar(@PathVariable String isbn, @RequestBody LivroDTO livroDTO) {
-        return ls.alterar(livroDTO);
-    }
 }

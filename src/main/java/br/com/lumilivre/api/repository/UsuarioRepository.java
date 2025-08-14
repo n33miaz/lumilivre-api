@@ -1,15 +1,22 @@
 package br.com.lumilivre.api.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.UsuarioModel;
 
 public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer > {
+
     boolean existsByEmail(String email);
+
     boolean existsByAluno(AlunoModel aluno);
-	Optional<UsuarioModel> findByEmail(String matricula);
+
+    Optional<UsuarioModel> findByEmail(String email);
+
+    List<UsuarioModel> findByRole(Role role);
 
 }

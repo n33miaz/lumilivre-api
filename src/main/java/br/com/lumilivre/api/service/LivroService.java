@@ -1,10 +1,14 @@
 package br.com.lumilivre.api.service;
 
+import java.util.Optional;
+import org.springframework.data.domain.Page;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import java.util.Optional;
 
 import br.com.lumilivre.api.data.LivroDTO;
 import br.com.lumilivre.api.enums.Cdd;
@@ -18,6 +22,7 @@ import br.com.lumilivre.api.repository.AutorRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
 import jakarta.transaction.Transactional;
+
 
 @Service
 public class LivroService {
@@ -47,15 +52,29 @@ public class LivroService {
         return lr.findAll();
     }
     
-    @Transactional
-    public void atualizarQuantidadeExemplaresDoLivro(String isbn) {
-        Long quantidade = er.contarExemplaresPorLivro(isbn);
+    public Page<LivroModel> buscarPorTexto(String texto, Pageable pageable) {
+        if (texto == null || texto.isBlank()) {
+            return lr.findAll(pageable);
+        }
+        return lr.buscarPorTexto(texto, pageable);
+    }
 
-        lr.findById(isbn).ifPresent(livro -> {
-            livro.setQuantidade(quantidade.intValue());
-            lr.save(livro);
-        });}
-
+    public Page<LivroModel> buscarAvancado(
+        String nome,
+        String isbn,
+        String autor,
+        String genero,
+        String editora,
+        Pageable pageable
+    ) {
+        return lr.buscarAvancado(nome, isbn, autor, genero, editora, pageable);
+    }
+    
+    private Optional<LivroModel> findByIsbn(String isbn) {
+        return lr.findById(isbn);
+        }
+        
+ 
     public ResponseEntity<?> cadastrar(LivroDTO dto) {
         if (dto.getIsbn() == null || dto.getIsbn().trim().isEmpty()) {
             rm.setMensagem("O ISBN é obrigatório.");
@@ -81,8 +100,6 @@ public class LivroService {
             rm.setMensagem("A data de lançamento não pode ser no futuro.");
             return ResponseEntity.badRequest().body(rm);
         }
-
-        
 
         if (dto.getNumero_paginas() == null || dto.getNumero_paginas() <= 0) {
             rm.setMensagem("O número de páginas é obrigatório.");
@@ -145,13 +162,13 @@ public class LivroService {
         return ResponseEntity.status(HttpStatus.CREATED).body(rm);
     }
 
-    public ResponseEntity<?> alterar(LivroDTO dto) {
+    public ResponseEntity<?> atualizar(LivroDTO dto) {
         if (dto.getIsbn() == null || dto.getIsbn().trim().isEmpty()) {
             rm.setMensagem("O ISBN é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
 
-        Optional<LivroModel> livroExistente = findById(dto.getIsbn());
+        Optional<LivroModel> livroExistente = findByIsbn(dto.getIsbn());
         if (!livroExistente.isPresent()) {
             rm.setMensagem("Livro não encontrado.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
@@ -234,11 +251,20 @@ public class LivroService {
         return ResponseEntity.status(HttpStatus.OK).body(rm);
     }
 
-    private Optional<LivroModel> findById(String isbn) {
-        return lr.findById(isbn);
-    }
 
-    public ResponseEntity<ResponseModel> deletar(String isbn) {
+
+    
+    @Transactional
+    public void atualizarQuantidadeExemplaresDoLivro(String isbn) {
+        Long quantidade = er.contarExemplaresPorLivro(isbn);
+
+        lr.findById(isbn).ifPresent(livro -> {
+            livro.setQuantidade(quantidade.intValue());
+            lr.save(livro);
+        });}
+    
+
+    public ResponseEntity<ResponseModel> excluir(String isbn) {
         lr.deleteById(isbn);
         rm.setMensagem("O Livro foi removido com sucesso.");
         return ResponseEntity.ok(rm);

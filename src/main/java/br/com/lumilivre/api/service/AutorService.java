@@ -1,6 +1,8 @@
 package br.com.lumilivre.api.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -17,18 +19,32 @@ public class AutorService {
     @Autowired
     private AutorRepository ar;
 
-    public Iterable<AutorModel> listar() {
+    public Iterable<AutorModel> buscar() {
         return ar.findAll();
     }
+    
+    public Page<AutorModel> buscarPorTexto(String texto, Pageable pageable) {
+        if (texto == null || texto.isBlank()) {
+            return ar.findAll(pageable);
+        }
+        return ar.buscarPorTexto(texto, pageable);
+    }
+
+    public Page<AutorModel> buscarAvancado(
+            String nome,
+            String pseudonimo,
+            String nacionalidade,
+
+            Pageable pageable) {
+        return ar.buscarAvancado(nome, pseudonimo, nacionalidade, pageable);
+    }
+
 
     public ResponseEntity<?> cadastrar(AutorModel autorModel) {
         if (isNomeInvalido(autorModel)) {
             return badRequest("O Nome do autor é obrigatório.");
         }
 
-        if (isSobrenomeInvalido(autorModel)) {
-            return badRequest("O Sobrenome do autor é obrigatório.");
-        }
 
         if (autorModel.getCodigo() == null || autorModel.getCodigo().trim().isEmpty()) {
             return badRequest("O código do autor é obrigatório.");
@@ -42,13 +58,9 @@ public class AutorService {
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
-    public ResponseEntity<?> alterar(AutorModel autorModel) {
+    public ResponseEntity<?> atualizar(AutorModel autorModel) {
         if (isNomeInvalido(autorModel)) {
             return badRequest("O Nome do autor é obrigatório.");
-        }
-
-        if (isSobrenomeInvalido(autorModel)) {
-            return badRequest("O Sobrenome do autor é obrigatório.");
         }
 
         if (autorModel.getCodigo() == null || autorModel.getCodigo().trim().isEmpty()) {
@@ -64,7 +76,7 @@ public class AutorService {
         return ResponseEntity.ok(salvo);
     }
 
-    public ResponseEntity<ResponseModel> delete(String codigo) {
+    public ResponseEntity<ResponseModel> excluir(String codigo) {
         if (!ar.existsById(codigo)) {
             return notFound("Autor não encontrado com o código: " + codigo);
         }
@@ -77,10 +89,6 @@ public class AutorService {
 
     private boolean isNomeInvalido(AutorModel autorModel) {
         return autorModel.getNome() == null || autorModel.getNome().trim().isEmpty();
-    }
-
-    private boolean isSobrenomeInvalido(AutorModel autorModel) {
-        return autorModel.getSobrenome() == null || autorModel.getSobrenome().trim().isEmpty();
     }
 
     private ResponseEntity<ResponseModel> badRequest(String mensagem) {

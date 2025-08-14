@@ -22,9 +22,6 @@ public class AutorModel {
 	@Column(name = "nome", nullable = false, length = 55)
 	private String nome;
 
-	@NotNull
-	@Column(name = "sobrenome", nullable = false, length = 55)
-	private String sobrenome;
 
 	@Column(name = "pseudonimo", length = 55)
 	private String pseudonimo;
@@ -57,14 +54,6 @@ public class AutorModel {
 
 	public void setNome(String nome) {
 		this.nome = nome;
-	}
-
-	public String getSobrenome() {
-		return sobrenome;
-	}
-
-	public void setSobrenome(String sobrenome) {
-		this.sobrenome = sobrenome;
 	}
 
 	public String getPseudonimo() {

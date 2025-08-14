@@ -32,17 +32,17 @@ public class UsuarioService {
             rm.setMensagem("O e-mail é obrigatório");
             return ResponseEntity.badRequest().body(rm);
         }
+        
+        if (ur.existsByEmail(dto.getEmail())) {
+            ResponseModel rm = new ResponseModel();
+            rm.setMensagem("E-mail já está em uso");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(rm);
+        }
 
         if (dto.getSenha() == null || dto.getSenha().isBlank()) {
             ResponseModel rm = new ResponseModel();
             rm.setMensagem("A senha é obrigatória");
             return ResponseEntity.badRequest().body(rm);
-        }
-
-        if (ur.existsByEmail(dto.getEmail())) {
-            ResponseModel rm = new ResponseModel();
-            rm.setMensagem("E-mail já está em uso");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(rm);
         }
 
         UsuarioModel usuarioModel = new UsuarioModel();
