@@ -19,4 +19,6 @@ public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer >
 
     List<UsuarioModel> findByRole(Role role);
 
+    Optional<UsuarioModel> findByEmailOrAluno_Matricula(String email, String matricula);
+
 }

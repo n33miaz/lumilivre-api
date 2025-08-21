@@ -18,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Service
 public class UsuarioService {
 
+    private final EmailService emailService;
+
 	
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -25,22 +27,25 @@ public class UsuarioService {
     @Autowired
     private UsuarioRepository ur;
 
-    @Transactional
+    UsuarioService(EmailService emailService) {
+        this.emailService = emailService;
+    }
+
+     @Transactional
     public ResponseEntity<?> cadastrarAdmin(UsuarioDTO dto) {
+        ResponseModel rm = new ResponseModel();
+
         if (dto.getEmail() == null || dto.getEmail().isBlank()) {
-            ResponseModel rm = new ResponseModel();
             rm.setMensagem("O e-mail é obrigatório");
             return ResponseEntity.badRequest().body(rm);
         }
-        
+
         if (ur.existsByEmail(dto.getEmail())) {
-            ResponseModel rm = new ResponseModel();
             rm.setMensagem("E-mail já está em uso");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(rm);
         }
 
         if (dto.getSenha() == null || dto.getSenha().isBlank()) {
-            ResponseModel rm = new ResponseModel();
             rm.setMensagem("A senha é obrigatória");
             return ResponseEntity.badRequest().body(rm);
         }
@@ -51,14 +56,19 @@ public class UsuarioService {
         usuarioModel.setRole(Role.ADMIN);
 
         UsuarioModel salvo = ur.save(usuarioModel);
+
+        // 🔹 Envia e-mail com senha inicial
+        emailService.enviarSenhaInicial(dto.getEmail(), "Admin", dto.getSenha());
+
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
-    
+
     @Transactional
     public ResponseEntity<?> alterar(Integer id, UsuarioDTO dto) {
+        ResponseModel rm = new ResponseModel();
         Optional<UsuarioModel> optionalUsuario = ur.findById(id);
+
         if (optionalUsuario.isEmpty()) {
-            ResponseModel rm = new ResponseModel();
             rm.setMensagem("Usuário não encontrado.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
@@ -66,12 +76,10 @@ public class UsuarioService {
         UsuarioModel usuarioModel = optionalUsuario.get();
 
         if (dto.getEmail() == null || dto.getEmail().isBlank()) {
-            ResponseModel rm = new ResponseModel();
             rm.setMensagem("O e-mail é obrigatório");
             return ResponseEntity.badRequest().body(rm);
         }
         if (!dto.getEmail().equals(usuarioModel.getEmail()) && ur.existsByEmail(dto.getEmail())) {
-            ResponseModel rm = new ResponseModel();
             rm.setMensagem("E-mail já está em uso");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(rm);
         }
@@ -79,8 +87,10 @@ public class UsuarioService {
 
         if (dto.getSenha() != null && !dto.getSenha().isBlank()) {
             usuarioModel.setSenha(passwordEncoder.encode(dto.getSenha()));
-        }
 
+            // 🔹 Envia e-mail com a nova senha
+            emailService.enviarSenhaInicial(dto.getEmail(), "Admin", dto.getSenha());
+        }
 
         UsuarioModel salvo = ur.save(usuarioModel);
         return ResponseEntity.ok(salvo);

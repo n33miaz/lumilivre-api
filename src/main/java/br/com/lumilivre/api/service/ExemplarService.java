@@ -8,8 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.lumilivre.api.data.EmprestimoDTO;
+import br.com.lumilivre.api.data.EmprestimoResponseDTO;
 import br.com.lumilivre.api.data.ExemplarDTO;
 import br.com.lumilivre.api.enums.StatusLivro;
+import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -31,6 +34,7 @@ public class ExemplarService {
     public List<ExemplarModel> listar() {
         return er.findAll();
     }
+
 
     public ResponseEntity<?> buscarExemplaresPorIsbn(String isbn) {
         rm.setMensagem("");
@@ -164,7 +168,7 @@ public class ExemplarService {
         exemplar.setStatus_livro(status);
         exemplar.setLivro_isbn(livro);
         exemplar.setLocalizacao_fisica(dto.getLocalizacao_fisica());
-        
+
         er.save(exemplar);
 
         atualizarQuantidadeExemplaresDoLivro(livro.getIsbn());

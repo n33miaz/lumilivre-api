@@ -1,5 +1,6 @@
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\config\SecurityConfig.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\controller\AlunoController.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\controller\AuthController.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\controller\AutorController.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\controller\CursoController.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\controller\EmprestimoController.java
@@ -12,9 +13,12 @@ C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\controll
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\AlterarSenhaDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\AlunoDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\EmprestimoDTO.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\EmprestimoResponseDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\EnumDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\ExemplarDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\LivroDTO.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\LoginDTO.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\LoginResponseDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\UsuarioDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\enums\Cdd.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\enums\ClassificacaoEtaria.java
@@ -43,6 +47,7 @@ C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\reposito
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\repository\LivroRepository.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\repository\UsuarioRepository.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\AlunoService.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\AuthService.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\AutorService.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\CepService.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\CursoService.java

@@ -29,8 +29,6 @@ import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.EmprestimoService;
 
-
-
 @RestController
 @RequestMapping("/emprestimos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
@@ -42,6 +40,17 @@ public class EmprestimoController {
     @GetMapping("/buscar/todos")
     public Iterable<EmprestimoModel> buscar() {
         return es.listar();
+    }
+
+    @GetMapping("/aluno/{matricula}")
+    public ResponseEntity<?> listarEmprestimos(@PathVariable String matricula) {
+        return ResponseEntity.ok(es.listarEmprestimosAluno(matricula));
+    }
+
+
+    @GetMapping("/aluno/{matricula}/historico")
+    public ResponseEntity<?> historicoEmprestimos(@PathVariable String matricula) {
+        return ResponseEntity.ok(es.listarHistorico(matricula));
     }
 
     @GetMapping("/buscar")

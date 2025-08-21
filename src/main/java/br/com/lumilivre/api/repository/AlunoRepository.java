@@ -16,8 +16,9 @@ import br.com.lumilivre.api.model.LivroModel;
 public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
     Optional<AlunoModel> findByMatricula(String matricula);
     Optional<AlunoModel> findByCpf(String cpf);
-	AutorModel findByNomeIgnoreCase(String nome);
+Optional<AlunoModel> findByNomeIgnoreCase(String nome);
 
+    
     @Query("""
         SELECT a FROM AlunoModel a
         WHERE LOWER(a.nome) LIKE LOWER(CONCAT('%', :texto, '%'))

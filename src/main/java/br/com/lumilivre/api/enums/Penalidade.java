@@ -4,7 +4,6 @@ public enum Penalidade {
 	
     REGISTRO("Registro"),
     ADVERTENCIA("Advertência"),
-    MULTA("Multa"),
     SUSPENSAO("Suspensão"),
     BLOQUEIO("Bloqueio"),
     BANIMENTO("Banimento");

@@ -1,0 +1,84 @@
+Genêro:
+- Listagem OK
+- Cadastro OK
+- Alteração OK
+- Exclusão OK
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+Curso:
+- Listagem OK
+- Cadastro OK
+- Alteração OK
+- Exclusão OK
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+Autor:
+- Listagem OK
+- Cadastro OK
+- Alteração OK
+- Exclusão OK
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+Aluno
+- Listagem OK
+- Cadastro OK
+- Alteração OK
+- Exclusão OK
+
+OBS: 
+-Alterar usuario de login para RM do aluno e não o email. OK
+-Gerar senha aleatória para primeiro acesso e enviar no email. OK
+-Aluno troca para uma senha de sua preferencia (Criar endpoint); OK
+- Validação do campo de CPF, email e celular OK
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+Livros
+- Listagem OK
+- Cadastro OK
+- Alteração OK
+- Exclusão OK
+
+OBS: Calcular quantidade de acordo com os exemplares, o padrão sendo 1. OK
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+Exemplares
+- Listagem OK
+- Cadastro OK
+- Alteração OK
+- Exclusão OK
+
+OBS: Listar exemplares por Status do Livro
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+Emprestimos 
+- Listagem OK
+- Cadastro OK 
+- Alteração OK
+- Exclusão OK
+
+OBS: 
+- Listar Emprestimos por Status
+- Alterar o status do livro após ele começar um emprestimo (EMPRESTADO)
+- Voltar status do livros após a conclusão do emprstimo (DISPONIVEL)
+- Todas as validações do emprestimo - 1 Por tombo OK
+- Limitar 3 emprestimos por aluno OK
+- Adicionar penalidades caso o aluno atrase a entrega do livro
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+
+Usuarios
+- Listagem OK
+- Cadastro OK
+- Alteração OK
+- Exclusão OK
+
+OBS: Criar alteração de senha3
+
+
+
