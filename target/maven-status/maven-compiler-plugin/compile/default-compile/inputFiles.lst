@@ -46,6 +46,8 @@ C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\reposito
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\repository\GeneroRepository.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\repository\LivroRepository.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\repository\UsuarioRepository.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\security\CustomUserDetails.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\security\CustomUserDetailsService.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\AlunoService.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\AuthService.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\AutorService.java

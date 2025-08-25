@@ -38,12 +38,14 @@ br\com\lumilivre\api\enums\Role.class
 br\com\lumilivre\api\controller\AuthController.class
 br\com\lumilivre\api\controller\GeneroController.class
 br\com\lumilivre\api\service\UsuarioService.class
+br\com\lumilivre\api\security\CustomUserDetailsService.class
 br\com\lumilivre\api\utils\CpfValidator.class
 br\com\lumilivre\api\enums\EnumStatus.class
 br\com\lumilivre\api\repository\AlunoRepository.class
 br\com\lumilivre\api\controller\EmprestimoController.class
 br\com\lumilivre\api\controller\ExemplarController.class
 br\com\lumilivre\api\repository\LivroRepository.class
+br\com\lumilivre\api\security\CustomUserDetails.class
 br\com\lumilivre\api\model\GeneroModel.class
 br\com\lumilivre\api\data\AlterarSenhaDTO.class
 br\com\lumilivre\LumilivreApplication.class
