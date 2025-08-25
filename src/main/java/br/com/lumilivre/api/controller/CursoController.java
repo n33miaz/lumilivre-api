@@ -27,14 +27,23 @@ import br.com.lumilivre.api.service.CursoService;
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class CursoController {
 
-    @Autowired 
+    @Autowired
     private CursoService cs;
-    
+
     public CursoController(CursoService CursoService) {
         this.cs = CursoService;
     }
-    
-    
+
+    @GetMapping("/buscar/todos")
+    public List<CursoModel> buscar() {
+        return cs.buscar();
+    }
+
+    @GetMapping("/buscar/{turno}")
+    public ResponseEntity<?> listarPorTurno(@PathVariable Turno turno) {
+        return cs.listarPorTurno(turno);
+    }
+
     @GetMapping("/buscar")
     public ResponseEntity<Page<CursoModel>> buscarPorTexto(
             @RequestParam(required = false) String texto,
@@ -58,31 +67,21 @@ public class CursoController {
         }
         return ResponseEntity.ok(cursos);
     }
-    
-    @DeleteMapping("remover/{id}")
-    public ResponseEntity<ResponseModel> remover(@PathVariable Integer id) {
-        return cs.delete(id);
-    }
-
-    @PutMapping("alterar/{id}")
-    public ResponseEntity<?> alterar(@PathVariable Integer id, @RequestBody CursoModel cm) {
-        cm.setId(id);
-        return cs.alterar(cm);
-    }
 
     @PostMapping("/cadastrar")
     public ResponseEntity<?> cadastrar(@RequestBody CursoModel cm) {
         return cs.cadastrar(cm);
     }
 
-    @GetMapping("/listar")
-    public List<CursoModel> listar() {
-        return cs.listar();
+    @PutMapping("atualizar/{id}")
+    public ResponseEntity<?> atualizar(@PathVariable Integer id, @RequestBody CursoModel cm) {
+        cm.setId(id);
+        return cs.atualizar(cm);
     }
-    
-    @GetMapping("/listar/{turno}")
-    public ResponseEntity<?> listarPorTurno(@PathVariable Turno turno) {
-        return cs.listarPorTurno(turno);
+
+    @DeleteMapping("excluir/{id}")
+    public ResponseEntity<ResponseModel> excluir(@PathVariable Integer id) {
+        return cs.excluir(id);
     }
 
 }

@@ -17,17 +17,13 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.CursoRepository;
 import org.springframework.transaction.annotation.Transactional;
 
-
 @Service
 public class CursoService {
 
     @Autowired
     private CursoRepository cr;
 
-    
-
-    
-    public List<CursoModel> listar() {
+    public List<CursoModel> buscar() {
         return (List<CursoModel>) cr.findAll();
     }
 
@@ -46,7 +42,7 @@ public class CursoService {
             Pageable pageable) {
         return cr.buscarAvancado(nome, turno, modulo, pageable);
     }
-    
+
     @Transactional
     public ResponseEntity<?> cadastrar(CursoModel cursoModel) {
         if (isNomeInvalido(cursoModel)) {
@@ -60,7 +56,7 @@ public class CursoService {
     }
 
     @Transactional
-    public ResponseEntity<?> alterar(CursoModel cursoModel) {
+    public ResponseEntity<?> atualizar(CursoModel cursoModel) {
         if (isNomeInvalido(cursoModel)) {
             ResponseModel rm = new ResponseModel();
             rm.setMensagem("O Nome é Obrigatório");
@@ -72,7 +68,7 @@ public class CursoService {
     }
 
     @Transactional
-    public ResponseEntity<ResponseModel> delete(Integer id) {
+    public ResponseEntity<ResponseModel> excluir(Integer id) {
         cr.deleteById(id);
         ResponseModel rm = new ResponseModel();
         rm.setMensagem("O Curso foi removido com sucesso");
@@ -82,7 +78,7 @@ public class CursoService {
     private boolean isNomeInvalido(CursoModel cursoModel) {
         return cursoModel.getNome() == null || cursoModel.getNome().trim().isEmpty();
     }
-    
+
     @Transactional(readOnly = true)
     public ResponseEntity<?> listarPorTurno(Turno turno) {
         List<CursoModel> cursos = cr.findByTurno(turno);

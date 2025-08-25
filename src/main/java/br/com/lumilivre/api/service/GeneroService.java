@@ -18,7 +18,7 @@ public class GeneroService {
     @Autowired
     private GeneroRepository gr;
 
-    public List<GeneroModel> listar() {
+    public List<GeneroModel> buscar() {
         return (List<GeneroModel>) gr.findAll();
     }
 
@@ -41,7 +41,7 @@ public class GeneroService {
     }
 
     @Transactional
-    public ResponseEntity<?> alterar(GeneroModel generoModel) {
+    public ResponseEntity<?> atualizar(GeneroModel generoModel) {
         if (isNomeInvalido(generoModel)) {
             ResponseModel rm = new ResponseModel();
             rm.setMensagem("O Nome é Obrigatório");
@@ -58,7 +58,7 @@ public class GeneroService {
     }
 
     @Transactional
-    public ResponseEntity<ResponseModel> delete(Integer id) {
+    public ResponseEntity<ResponseModel> excluir(Integer id) {
         gr.deleteById(id);
         ResponseModel rm = new ResponseModel();
         rm.setMensagem("O Genero foi removido com sucesso");

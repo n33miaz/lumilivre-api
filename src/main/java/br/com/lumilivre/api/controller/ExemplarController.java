@@ -20,14 +20,9 @@ public class ExemplarController {
     @Autowired
     private ExemplarService es;
 
-    @PostMapping("/cadastrar")
-    public ResponseEntity<?> cadastrar(@RequestBody ExemplarDTO exemplarDTO) {
-        return es.cadastrar(exemplarDTO);
-    }
-
-   @GetMapping("/listar")
-    public ResponseEntity<?> listarTodos() {
-        List<ExemplarModel> lista = es.listar();
+    @GetMapping("/buscar")
+    public ResponseEntity<?> buscarTodos() {
+        List<ExemplarModel> lista = es.buscar();
 
         List<ExemplarDTO> dtos = lista.stream().map(exemplar -> {
             ExemplarDTO dto = new ExemplarDTO();
@@ -40,19 +35,25 @@ public class ExemplarController {
         return ResponseEntity.ok(dtos);
     }
 
-    @GetMapping("/listar/{isbn}")
-    public ResponseEntity<?> listarPorIsbn(@PathVariable String isbn) {
+    @GetMapping("/buscar/{isbn}")
+    public ResponseEntity<?> buscarPorIsbn(@PathVariable String isbn) {
         return es.buscarExemplaresPorIsbn(isbn);
     }
 
-    @DeleteMapping("/remover/{tombo}")
-    public ResponseEntity<ResponseModel> remover(@PathVariable String tombo) {
-        return es.deletar(tombo);
+    @PostMapping("/cadastrar")
+    public ResponseEntity<?> cadastrar(@RequestBody ExemplarDTO exemplarDTO) {
+        return es.cadastrar(exemplarDTO);
     }
 
-    @PutMapping("/alterar/{tombo}")
-    public ResponseEntity<?> alterar(@PathVariable String tombo, @RequestBody ExemplarDTO exemplarDTO) {
+    @PutMapping("/atualizar/{tombo}")
+    public ResponseEntity<?> atualizar(@PathVariable String tombo, @RequestBody ExemplarDTO exemplarDTO) {
         exemplarDTO.setTombo(tombo);
-        return es.alterar(exemplarDTO);
+        return es.atualizar(exemplarDTO);
     }
-} 
+
+    @DeleteMapping("/excluir/{tombo}")
+    public ResponseEntity<ResponseModel> excluir(@PathVariable String tombo) {
+        return es.excluir(tombo);
+    }
+
+}

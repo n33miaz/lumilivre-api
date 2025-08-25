@@ -24,18 +24,12 @@ import br.com.lumilivre.api.service.GeneroService;
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
 public class GeneroController {
-	@Autowired
-	private GeneroService gs;
-	
-    @DeleteMapping("remover/{id}")
-    public ResponseEntity<ResponseModel> remover(@PathVariable Integer id) {
-        return gs.delete(id);
-    }
+    @Autowired
+    private GeneroService gs;
 
-    @PutMapping("alterar/{id}")
-    public ResponseEntity<?> alterar(@PathVariable Integer id, @RequestBody GeneroModel gm) {
-    	gm.setId(id);
-        return gs.alterar(gm);
+    @GetMapping("/buscar")
+    public List<GeneroModel> buscar() {
+        return gs.buscar();
     }
 
     @PostMapping("/cadastrar")
@@ -43,8 +37,15 @@ public class GeneroController {
         return gs.cadastrar(gm);
     }
 
-    @GetMapping("/listar")
-    public List<GeneroModel> listar() {
-        return gs.listar();
+    @PutMapping("atualizar/{id}")
+    public ResponseEntity<?> atualizar(@PathVariable Integer id, @RequestBody GeneroModel gm) {
+        gm.setId(id);
+        return gs.atualizar(gm);
     }
+
+    @DeleteMapping("excluir/{id}")
+    public ResponseEntity<ResponseModel> excluir(@PathVariable Integer id) {
+        return gs.excluir(id);
+    }
+
 }

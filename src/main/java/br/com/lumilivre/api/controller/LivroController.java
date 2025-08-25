@@ -20,13 +20,13 @@ public class LivroController {
     @Autowired
     private LivroService ls;
 
-    @GetMapping("/buscar/todos")
-    public Iterable<LivroModel> listar() {
-        return ls.listar();
-    }
-
     public LivroController(LivroService livroService) {
         this.ls = livroService;
+    }
+
+    @GetMapping("/buscar/todos")
+    public Iterable<LivroModel> buscar() {
+        return ls.buscar();
     }
 
     @GetMapping("/buscar")

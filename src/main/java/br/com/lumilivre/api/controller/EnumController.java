@@ -31,7 +31,7 @@ public class EnumController {
             case "CDD":
                 return listarCdd();
             case "Turno":
-                return listarTurno(); 
+                return listarTurno();
             case "TIPO_CAPA":
                 return listarTipoCapa();
             case "CLASSIFICACAO_ETARIA":

@@ -42,17 +42,6 @@ public class EmprestimoController {
         return es.listar();
     }
 
-    @GetMapping("/aluno/{matricula}")
-    public ResponseEntity<?> listarEmprestimos(@PathVariable String matricula) {
-        return ResponseEntity.ok(es.listarEmprestimosAluno(matricula));
-    }
-
-
-    @GetMapping("/aluno/{matricula}/historico")
-    public ResponseEntity<?> historicoEmprestimos(@PathVariable String matricula) {
-        return ResponseEntity.ok(es.listarHistorico(matricula));
-    }
-
     @GetMapping("/buscar")
     public ResponseEntity<Page<EmprestimoModel>> buscarPorTexto(
             @RequestParam(required = false) String texto,
@@ -153,6 +142,16 @@ public class EmprestimoController {
         LocalDate inicioLD = LocalDate.parse(inicio, formatter);
 
         return ResponseEntity.ok(es.listarPorDataEmprestimoAPartirDe(inicioLD));
+    }
+
+    @GetMapping("/aluno/{matricula}")
+    public ResponseEntity<?> listarEmprestimos(@PathVariable String matricula) {
+        return ResponseEntity.ok(es.listarEmprestimosAluno(matricula));
+    }
+
+    @GetMapping("/aluno/{matricula}/historico")
+    public ResponseEntity<?> historicoEmprestimos(@PathVariable String matricula) {
+        return ResponseEntity.ok(es.listarHistorico(matricula));
     }
 
     @PostMapping("/cadastrar")

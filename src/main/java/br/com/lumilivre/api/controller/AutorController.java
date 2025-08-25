@@ -27,7 +27,6 @@ public class AutorController {
         this.as = AutorService;
     }
     
-
     @GetMapping("/buscar/todos")
     public Iterable<AutorModel> buscar() {
         return as.buscar();
@@ -57,9 +56,9 @@ public class AutorController {
         return ResponseEntity.ok(autores);
     }
 
-    @DeleteMapping("/excluir/{codigo}")
-    public ResponseEntity<ResponseModel> excluir(@PathVariable String codigo) {
-        return as.excluir(codigo);
+    @PostMapping("/cadastrar")
+    public ResponseEntity<?> cadastrar(@RequestBody AutorModel am) {
+        return as.cadastrar(am);
     }
 
     @PutMapping("/atualizar/{codigo}")
@@ -68,11 +67,10 @@ public class AutorController {
         return as.atualizar(am);
     }
 
-    @PostMapping("/cadastrar")
-    public ResponseEntity<?> cadastrar(@RequestBody AutorModel am) {
-        return as.cadastrar(am);
+    @DeleteMapping("/excluir/{codigo}")
+    public ResponseEntity<ResponseModel> excluir(@PathVariable String codigo) {
+        return as.excluir(codigo);
     }
-
 
 }
 

@@ -31,7 +31,7 @@ public class ExemplarService {
     @Autowired
     private ResponseModel rm;
 
-    public List<ExemplarModel> listar() {
+    public List<ExemplarModel> buscar() {
         return er.findAll();
     }
 
@@ -129,7 +129,7 @@ public class ExemplarService {
     }
 
     @Transactional
-    public ResponseEntity<?> alterar(ExemplarDTO dto) {
+    public ResponseEntity<?> atualizar(ExemplarDTO dto) {
         rm.setMensagem("");
 
         if (!er.existsById(dto.getTombo())) {
@@ -178,7 +178,7 @@ public class ExemplarService {
     }
 
     @Transactional
-    public ResponseEntity<ResponseModel> deletar(String tombo) {
+    public ResponseEntity<ResponseModel> excluir(String tombo) {
         rm.setMensagem("");
 
         Optional<ExemplarModel> exemplarOpt = er.findById(tombo);

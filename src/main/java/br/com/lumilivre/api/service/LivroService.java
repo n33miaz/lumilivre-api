@@ -23,13 +23,12 @@ import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
 import jakarta.transaction.Transactional;
 
-
 @Service
 public class LivroService {
 
     @Autowired
     private ExemplarRepository er;
-	
+
     @Autowired
     private LivroRepository lr;
 
@@ -48,10 +47,10 @@ public class LivroService {
     @Autowired
     private IsbnService isbnService;
 
-    public Iterable<LivroModel> listar() {
+    public Iterable<LivroModel> buscar() {
         return lr.findAll();
     }
-    
+
     public Page<LivroModel> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
             return lr.findAll(pageable);
@@ -60,21 +59,19 @@ public class LivroService {
     }
 
     public Page<LivroModel> buscarAvancado(
-        String nome,
-        String isbn,
-        String autor,
-        String genero,
-        String editora,
-        Pageable pageable
-    ) {
+            String nome,
+            String isbn,
+            String autor,
+            String genero,
+            String editora,
+            Pageable pageable) {
         return lr.buscarAvancado(nome, isbn, autor, genero, editora, pageable);
     }
-    
+
     private Optional<LivroModel> findByIsbn(String isbn) {
         return lr.findById(isbn);
-        }
-        
- 
+    }
+
     public ResponseEntity<?> cadastrar(LivroDTO dto) {
         if (dto.getIsbn() == null || dto.getIsbn().trim().isEmpty()) {
             rm.setMensagem("O ISBN é obrigatório.");
@@ -183,12 +180,11 @@ public class LivroService {
             rm.setMensagem("A data é obrigatória.");
             return ResponseEntity.badRequest().body(rm);
         }
-        
+
         if (dto.getData_lancamento().isAfter(java.time.LocalDate.now())) {
             rm.setMensagem("A data de lançamento não pode ser no futuro.");
             return ResponseEntity.badRequest().body(rm);
         }
-
 
         if (dto.getNumero_paginas() == null || dto.getNumero_paginas() <= 0) {
             rm.setMensagem("O número de páginas é obrigatório.");
@@ -251,9 +247,6 @@ public class LivroService {
         return ResponseEntity.status(HttpStatus.OK).body(rm);
     }
 
-
-
-    
     @Transactional
     public void atualizarQuantidadeExemplaresDoLivro(String isbn) {
         Long quantidade = er.contarExemplaresPorLivro(isbn);
@@ -261,15 +254,15 @@ public class LivroService {
         lr.findById(isbn).ifPresent(livro -> {
             livro.setQuantidade(quantidade.intValue());
             lr.save(livro);
-        });}
-    
+        });
+    }
 
     public ResponseEntity<ResponseModel> excluir(String isbn) {
         lr.deleteById(isbn);
         rm.setMensagem("O Livro foi removido com sucesso.");
         return ResponseEntity.ok(rm);
     }
-    
+
     public ResponseEntity<?> excluirLivroComExemplares(String isbn) {
         Optional<LivroModel> livroOpt = lr.findByIsbn(isbn);
 
@@ -287,5 +280,5 @@ public class LivroService {
         return ResponseEntity.ok(rm);
 
     }
-    
+
 }
