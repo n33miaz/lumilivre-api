@@ -14,7 +14,7 @@
 
     <groupId>br.com</groupId>
     <artifactId>lumilivre</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1-PROD</version>
     <name>lumilivre</name>
     <description>Demo project for Spring Boot</description>
 
