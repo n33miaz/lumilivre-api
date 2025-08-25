@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,7 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.CursoService;
 
 @RestController
+@PreAuthorize("isAuthenticated()")
 @RequestMapping("/cursos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class CursoController {
@@ -34,16 +36,19 @@ public class CursoController {
         this.cs = CursoService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/todos")
     public List<CursoModel> buscar() {
         return cs.buscar();
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/{turno}")
     public ResponseEntity<?> listarPorTurno(@PathVariable Turno turno) {
         return cs.listarPorTurno(turno);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
     public ResponseEntity<Page<CursoModel>> buscarPorTexto(
             @RequestParam(required = false) String texto,
@@ -55,6 +60,7 @@ public class CursoController {
         return ResponseEntity.ok(cursos);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
     public ResponseEntity<Page<CursoModel>> buscarAvancado(
             @RequestParam(required = false) String nome,
@@ -68,20 +74,17 @@ public class CursoController {
         return ResponseEntity.ok(cursos);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PostMapping("/cadastrar")
     public ResponseEntity<?> cadastrar(@RequestBody CursoModel cm) {
         return cs.cadastrar(cm);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PutMapping("atualizar/{id}")
     public ResponseEntity<?> atualizar(@PathVariable Integer id, @RequestBody CursoModel cm) {
         cm.setId(id);
         return cs.atualizar(cm);
-    }
-
-    @DeleteMapping("excluir/{id}")
-    public ResponseEntity<ResponseModel> excluir(@PathVariable Integer id) {
-        return cs.excluir(id);
     }
 
 }

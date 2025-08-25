@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +26,7 @@ import br.com.lumilivre.api.service.AlunoService;
 @RestController
 @RequestMapping("/alunos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
+@PreAuthorize("isAuthenticated()")
 public class AlunoController {
 
     @Autowired
@@ -34,11 +36,14 @@ public class AlunoController {
         this.as = AlunoService;
     }
 
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/todos")
     public Iterable<AlunoModel> buscar() {
         return as.buscar();
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
     public ResponseEntity<Page<AlunoModel>> buscarPorTexto(
             @RequestParam(required = false) String texto,
@@ -50,6 +55,7 @@ public class AlunoController {
         return ResponseEntity.ok(alunos);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
     public ResponseEntity<Page<AlunoModel>> buscarAvancado(
             @RequestParam(required = false) String nome,
@@ -64,19 +70,25 @@ public class AlunoController {
         return ResponseEntity.ok(alunos);
     }
 
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PostMapping("/cadastrar")
     public ResponseEntity<?> cadastrar(@RequestBody AlunoDTO alunoDTO) {
         return as.cadastrar(alunoDTO);
     }
 
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @PutMapping("/atualizar/{id}")
     public ResponseEntity<?> atualizar(@PathVariable String id, @RequestBody AlunoDTO alunoDTO) {
+        // depois, quando implementar JWT, validar se ALUNO só altera seu próprio RM
         return as.atualizar(id, alunoDTO);
     }
 
+
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/excluir/{id}")
     public ResponseEntity<ResponseModel> excluir(@PathVariable String id) {
         return as.excluir(id);
     }
-
 }

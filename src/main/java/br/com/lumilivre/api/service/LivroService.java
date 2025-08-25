@@ -51,6 +51,9 @@ public class LivroService {
         return lr.findAll();
     }
 
+    public Iterable<LivroModel> buscarLivrosDisponiveis() {
+    return lr.findLivrosDisponiveis();
+}
     public Page<LivroModel> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
             return lr.findAll(pageable);

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.model.AlunoModel;
@@ -16,6 +17,7 @@ import br.com.lumilivre.api.service.AlunoService;
 import br.com.lumilivre.api.service.AutorService;
 
 @RestController
+@PreAuthorize("isAuthenticated()") 
 @RequestMapping("/autores")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class AutorController {
@@ -27,11 +29,13 @@ public class AutorController {
         this.as = AutorService;
     }
     
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/todos")
     public Iterable<AutorModel> buscar() {
         return as.buscar();
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
     public ResponseEntity<Page<AutorModel>> buscarPorTexto(
             @RequestParam(required = false) String texto,
@@ -43,6 +47,7 @@ public class AutorController {
         return ResponseEntity.ok(autores);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
     public ResponseEntity<Page<AutorModel>> buscarAvancado(
             @RequestParam(required = false) String nome,
@@ -56,17 +61,20 @@ public class AutorController {
         return ResponseEntity.ok(autores);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PostMapping("/cadastrar")
     public ResponseEntity<?> cadastrar(@RequestBody AutorModel am) {
         return as.cadastrar(am);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PutMapping("/atualizar/{codigo}")
     public ResponseEntity<?> atualizar(@PathVariable String codigo, @RequestBody AutorModel am) {
         am.setCodigo(codigo);
         return as.atualizar(am);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @DeleteMapping("/excluir/{codigo}")
     public ResponseEntity<ResponseModel> excluir(@PathVariable String codigo) {
         return as.excluir(codigo);

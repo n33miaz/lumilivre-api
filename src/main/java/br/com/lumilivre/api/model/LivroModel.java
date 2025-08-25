@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.model;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
@@ -12,6 +13,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 
@@ -79,6 +81,18 @@ public class LivroModel {
     @ManyToOne
     @JoinColumn(name = "autor_codigo")
     private AutorModel autor;
+    
+    @OneToMany(mappedBy = "livro")
+    private List<ExemplarModel> exemplares;
+
+    // getter e setter
+    public List<ExemplarModel> getExemplares() {
+        return exemplares;
+    }
+
+    public void setExemplares(List<ExemplarModel> exemplares) {
+        this.exemplares = exemplares;
+    }
 
     public String getIsbn() {
         return isbn;
@@ -210,5 +224,4 @@ public class LivroModel {
 
     // Getters e setters podem ser gerados via Lombok ou IDE
 
-    
 }

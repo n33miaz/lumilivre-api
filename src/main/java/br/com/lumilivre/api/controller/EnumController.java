@@ -8,6 +8,8 @@ import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.data.EnumDTO;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,8 +19,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
+@PreAuthorize("isAuthenticated()") 
 public class EnumController {
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/enums/{tipo}")
     public List<EnumDTO> listarEnum(@PathVariable String tipo) {
         switch (tipo.toUpperCase()) {
