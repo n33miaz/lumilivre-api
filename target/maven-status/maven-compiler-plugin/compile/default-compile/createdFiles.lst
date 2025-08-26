@@ -20,7 +20,9 @@ br\com\lumilivre\api\service\IsbnService.class
 br\com\lumilivre\api\service\AuthService.class
 br\com\lumilivre\api\service\ExemplarService.class
 br\com\lumilivre\api\data\EmprestimoDTO.class
+br\com\lumilivre\api\security\JwtUtil.class
 br\com\lumilivre\api\repository\UsuarioRepository.class
+br\com\lumilivre\api\security\JwtAuthenticationFilter.class
 br\com\lumilivre\api\model\UsuarioModel.class
 br\com\lumilivre\api\data\EnumDTO.class
 br\com\lumilivre\api\data\ExemplarDTO.class
@@ -48,6 +50,7 @@ br\com\lumilivre\api\repository\LivroRepository.class
 br\com\lumilivre\api\security\CustomUserDetails.class
 br\com\lumilivre\api\model\GeneroModel.class
 br\com\lumilivre\api\data\AlterarSenhaDTO.class
+br\com\lumilivre\api\data\JwtResponse.class
 br\com\lumilivre\LumilivreApplication.class
 br\com\lumilivre\api\data\LoginResponseDTO.class
 br\com\lumilivre\api\enums\TipoCapa.class

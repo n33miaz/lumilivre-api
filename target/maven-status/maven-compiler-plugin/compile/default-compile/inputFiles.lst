@@ -16,6 +16,7 @@ C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\Emp
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\EmprestimoResponseDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\EnumDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\ExemplarDTO.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\JwtResponse.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\LivroDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\LoginDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\LoginResponseDTO.java
@@ -48,6 +49,8 @@ C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\reposito
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\repository\UsuarioRepository.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\security\CustomUserDetails.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\security\CustomUserDetailsService.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\security\JwtAuthenticationFilter.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\security\JwtUtil.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\AlunoService.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\AuthService.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\service\AutorService.java
