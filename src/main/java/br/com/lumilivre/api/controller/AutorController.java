@@ -17,7 +17,6 @@ import br.com.lumilivre.api.service.AlunoService;
 import br.com.lumilivre.api.service.AutorService;
 
 @RestController
-@PreAuthorize("isAuthenticated()") 
 @RequestMapping("/autores")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class AutorController {

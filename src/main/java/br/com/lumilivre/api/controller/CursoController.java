@@ -24,7 +24,6 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.CursoService;
 
 @RestController
-@PreAuthorize("isAuthenticated()")
 @RequestMapping("/cursos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class CursoController {

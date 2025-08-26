@@ -14,7 +14,6 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.ExemplarService;
 
 @RestController
-@PreAuthorize("isAuthenticated()") 
 @RequestMapping("/livros/exemplares")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class ExemplarController {

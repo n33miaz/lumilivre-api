@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@PreAuthorize("isAuthenticated()") 
 public class EnumController {
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")

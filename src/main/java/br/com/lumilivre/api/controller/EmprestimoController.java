@@ -31,7 +31,6 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.EmprestimoService;
 
 @RestController
-@PreAuthorize("isAuthenticated()")
 @RequestMapping("/emprestimos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class EmprestimoController {

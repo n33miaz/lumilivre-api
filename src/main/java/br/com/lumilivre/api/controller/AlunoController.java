@@ -26,7 +26,6 @@ import br.com.lumilivre.api.service.AlunoService;
 @RestController
 @RequestMapping("/alunos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
-@PreAuthorize("isAuthenticated()")
 public class AlunoController {
 
     @Autowired

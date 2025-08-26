@@ -1,6 +1,5 @@
 package br.com.lumilivre.api.data;
 
-import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.UsuarioModel;
 
 public class LoginResponseDTO {
@@ -9,14 +8,16 @@ public class LoginResponseDTO {
     private String email;
     private String role;
     private String matriculaAluno;
+    private String token; // ✅ Novo campo para o JWT
 
-    public LoginResponseDTO(UsuarioModel usuario) {
+    public LoginResponseDTO(UsuarioModel usuario, String token) {
         this.id = usuario.getId();
         this.email = usuario.getEmail();
         this.role = usuario.getRole().name();
         if (usuario.getAluno() != null) {
             this.matriculaAluno = usuario.getAluno().getMatricula();
         }
+        this.token = token; // ✅ Armazena o token
     }
 
     public Integer getId() {
@@ -33,5 +34,9 @@ public class LoginResponseDTO {
 
     public String getMatriculaAluno() {
         return matriculaAluno;
+    }
+
+    public String getToken() {
+        return token;
     }
 }

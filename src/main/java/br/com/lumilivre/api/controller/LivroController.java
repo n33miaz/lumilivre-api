@@ -15,7 +15,6 @@ import br.com.lumilivre.api.service.LivroService;
 
 @RestController
 @RequestMapping("/livros")
-@PreAuthorize("isAuthenticated()") 
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 public class LivroController {
 

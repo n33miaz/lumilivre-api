@@ -21,7 +21,6 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.GeneroService;
 
 @RestController
-@PreAuthorize("isAuthenticated()") 
 @RequestMapping("/livros/generos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 

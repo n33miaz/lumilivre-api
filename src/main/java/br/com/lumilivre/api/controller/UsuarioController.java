@@ -21,7 +21,6 @@ import br.com.lumilivre.api.service.UsuarioService;
 import jakarta.validation.Valid;
 
 @RestController
-@PreAuthorize("isAuthenticated()") 
 @RequestMapping("/usuarios")
 public class UsuarioController {
 
