@@ -73,7 +73,6 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             @Param("dataDevolucao") String dataDevolucao,
             Pageable pageable);
 
-    // Buscar empréstimos ativos de um aluno (statusEmprestimo = ATIVO)
     @Query("""
         SELECT new br.com.lumilivre.api.data.EmprestimoResponseDTO(
             e.id, e.dataEmprestimo, e.dataDevolucao, e.statusEmprestimo, e.penalidade, e.exemplar.livro.nome
@@ -84,7 +83,6 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     """)
     List<EmprestimoResponseDTO> findEmprestimosAtivos(@Param("matricula") String matricula);
 
-    // Buscar histórico de empréstimos de um aluno (statusEmprestimo = CONCLUIDO)
     @Query("""
         SELECT new br.com.lumilivre.api.data.EmprestimoResponseDTO(
             e.id, e.dataEmprestimo, e.dataDevolucao, e.statusEmprestimo, e.penalidade, e.exemplar.livro.nome

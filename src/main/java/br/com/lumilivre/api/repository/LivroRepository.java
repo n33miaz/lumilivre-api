@@ -29,7 +29,6 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
     @Query("SELECT DISTINCT l FROM LivroModel l JOIN l.exemplares e WHERE e.status_livro = 'DISPONIVEL'")
     List<LivroModel> findLivrosDisponiveis();
 
-    // Busca geral
     @Query("""
                 SELECT l FROM LivroModel l
                 WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
@@ -40,7 +39,6 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
             """)
     Page<LivroModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
-    // Busca avançada com todos os filtros
     @Query("""
                 SELECT l FROM LivroModel l
                 WHERE (:nome IS NULL OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
