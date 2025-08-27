@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.security;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,7 +19,9 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + usuario.getRole().name()));
+        return usuario.getRoles().stream()
+            .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getNome()))
+            .collect(Collectors.toList());
     }
 
     @Override
@@ -32,23 +34,13 @@ public class CustomUserDetails implements UserDetails {
         return usuario.getEmail();
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+    // Outros métodos podem retornar true diretamente, se não for necessário bloquear conta
+    @Override public boolean isAccountNonExpired() { return true; }
+    @Override public boolean isAccountNonLocked() { return true; }
+    @Override public boolean isCredentialsNonExpired() { return true; }
+    @Override public boolean isEnabled() { return true; }
 
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
+    public UsuarioModel getUsuario() {
+        return this.usuario;
     }
 }
