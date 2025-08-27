@@ -28,22 +28,37 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/login").permitAll()
-                .requestMatchers("/livros/**", "/usuarios/**", "/alunos/**").authenticated()
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            // rota pública
+            .requestMatchers("/auth/login").permitAll()
 
-        return http.build();
-    }
+            // somente ADMIN pode gerenciar usuários
+            .requestMatchers("/usuarios/**").hasRole("ADMIN")
+
+            // ADMIN e BIBLIOTECARIO podem gerenciar livros
+            .requestMatchers("/livros/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+
+            // ADMIN e BIBLIOTECARIO podem acessar alunos
+            .requestMatchers("/alunos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+
+            // qualquer usuário logado pode pegar gêneros/autores/etc
+            .requestMatchers("/generos/**", "/autores/**", "/cursos/**", "/emprestimos/**")
+            .authenticated()
+
+            // o resto precisa estar autenticado
+            .anyRequest().authenticated()
+        )
+        .sessionManagement(session ->
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+    return http.build();
+}
 
     @Bean
     public PasswordEncoder passwordEncoder() {
