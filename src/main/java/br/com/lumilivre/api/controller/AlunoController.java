@@ -25,6 +25,7 @@ import br.com.lumilivre.api.data.ListaAlunoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.AlunoService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -50,12 +51,14 @@ public class AlunoController {
         this.as = AlunoService;
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/todos")
     public Iterable<AlunoModel> buscar() {
         return as.buscar();
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
 
@@ -74,6 +77,7 @@ public class AlunoController {
         return ResponseEntity.ok(alunos);
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
 
@@ -99,7 +103,7 @@ public class AlunoController {
         return ResponseEntity.ok(alunos);
     }
 
-
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PostMapping("/cadastrar")
 
@@ -111,7 +115,7 @@ public class AlunoController {
         return as.cadastrar(alunoDTO);
     }
 
-
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @PutMapping("/atualizar/{id}")
     public ResponseEntity<?> atualizar(@PathVariable String id, @RequestBody AlunoDTO alunoDTO) {
@@ -119,6 +123,7 @@ public class AlunoController {
         return as.atualizar(id, alunoDTO);
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/excluir/{id}")
 
