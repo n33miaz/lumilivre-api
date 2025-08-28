@@ -35,7 +35,8 @@ public class OpenApiConfig {
                         new Tag().name("1. Autenticação").description("Endpoints para obter tokens de acesso"),
                         new Tag().name("2. Alunos").description("Operações para gerenciamento de alunos"),
                         new Tag().name("3. Livros").description("Operações para gerenciamento de livros e consulta de disponibilidade"),
-                        new Tag().name("4. Autores").description("Operações para gerenciamento de autores")
+                        new Tag().name("4. Autores").description("Operações para gerenciamento de autores"),
+                        new Tag().name("5. Cursos").description("Operações para gerenciamento de cursos")
                 ))
 
                 // lista de servidores
