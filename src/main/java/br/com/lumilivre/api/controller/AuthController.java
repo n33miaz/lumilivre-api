@@ -32,11 +32,7 @@ public class AuthController {
 
     @PostMapping("/login")
 
-    @Operation(
-        summary = "Realiza o login do usuário", 
-        description = "Autentica um usuário com base em 'user' (pode ser matrícula ou email) e 'senha'. Retorna um token JWT e informações básicas do usuário em caso de sucesso.",
-        tags = { "1. Autenticação" }
-    )
+    @Operation(summary = "Realiza o login do usuário", description = "Autentica um usuário com base em 'user' (pode ser matrícula ou email) e 'senha'. Retorna um token JWT e informações básicas do usuário em caso de sucesso.", tags = { "1. Autenticação" })
     @ApiResponses
     ({
         @ApiResponse(responseCode = "200", description = "Login bem-sucedido", 

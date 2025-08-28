@@ -78,7 +78,7 @@ public class LivroController {
     })
 
     public ResponseEntity<LivroModel> buscarPorIsbn(
-        @Parameter(description = "ISBN do livro a ser buscado") @PathVariable String isbn) {
+            @Parameter(description = "ISBN do livro a ser buscado") @PathVariable String isbn) {
         return ls.findByIsbn(isbn);
     }
 
@@ -155,8 +155,8 @@ public class LivroController {
     @Operation(summary = "Atualiza um livro existente", description = "Altera os dados de uma obra com base no seu ISBN.")
 
     public ResponseEntity<?> atualizar(
-        @Parameter(description = "ISBN do livro a ser atualizado") @PathVariable String isbn, 
-        @RequestBody LivroDTO livroDTO) {
+            @Parameter(description = "ISBN do livro a ser atualizado") @PathVariable String isbn, 
+            @RequestBody LivroDTO livroDTO) {
         return ls.atualizar(livroDTO);
     }
 
@@ -167,7 +167,7 @@ public class LivroController {
     @Operation(summary = "Exclui um livro", description = "Remove uma obra. Só funciona se não houver exemplares associados.")
 
     public ResponseEntity<ResponseModel> excluir(
-        @Parameter(description = "ISBN do livro a ser excluído") @PathVariable String isbn) {
+            @Parameter(description = "ISBN do livro a ser excluído") @PathVariable String isbn) {
         return ls.excluir(isbn);
     }
 
@@ -178,8 +178,7 @@ public class LivroController {
     @Operation(summary = "Exclui um livro e seus exemplares (Acesso: ADMIN)", description = "Operação perigosa que remove uma obra e TODOS os seus exemplares. Requer permissão de Administrador.")
 
     public ResponseEntity<?> excluirComExemplares(
-        @Parameter(description = "ISBN do livro e exemplares a serem excluídos") @PathVariable String isbn) {
+            @Parameter(description = "ISBN do livro e exemplares a serem excluídos") @PathVariable String isbn) {
         return ls.excluirLivroComExemplares(isbn);
     }
-
 }
