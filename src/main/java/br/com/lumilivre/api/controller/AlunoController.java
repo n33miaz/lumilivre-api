@@ -39,7 +39,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 @RequestMapping("/alunos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "2. Alunos", description = "Operações para gerenciamento de alunos")
+@Tag(name = "2. Alunos")
 @SecurityRequirement(name = "bearerAuth") // endpoint exige autenticação JWT (anotação adiciona um icone de cadeado)
 
 public class AlunoController {

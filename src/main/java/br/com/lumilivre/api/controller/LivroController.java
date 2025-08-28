@@ -35,7 +35,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @RequestMapping("/livros")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "3. Livros", description = "Operações para gerenciamento de livros e consulta de disponibilidade")
+@Tag(name = "3. Livros")
 @SecurityRequirement(name = "bearerAuth")
 
 public class LivroController {

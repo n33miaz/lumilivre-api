@@ -1,5 +1,10 @@
 package br.com.lumilivre.api.config;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
+
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -7,10 +12,7 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
+import io.swagger.v3.oas.models.tags.Tag;
 
 @Configuration
 public class OpenApiConfig {
@@ -29,6 +31,13 @@ public class OpenApiConfig {
                         .termsOfService("http://swagger.io/terms/")
                         .license(new License().name("Apache 2.0").url("http://springdoc.org")))
                 
+                .tags(List.of( // ordem de exibição no swagger ui + paragrafo e descrição
+                        new Tag().name("1. Autenticação").description("Endpoints para obter tokens de acesso"),
+                        new Tag().name("2. Alunos").description("Operações para gerenciamento de alunos"),
+                        new Tag().name("3. Livros").description("Operações para gerenciamento de livros e consulta de disponibilidade"),
+                        new Tag().name("4. Autores").description("Operações para gerenciamento de autores")
+                ))
+
                 // lista de servidores
                 .servers(List.of(localServer, prodServerAws, prodServerCustom))
 
