@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import br.com.lumilivre.api.data.ListaAutorDTO;
+import br.com.lumilivre.api.data.ListaCursoDTO;
 import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.model.AutorModel;
 import br.com.lumilivre.api.model.CursoModel;
@@ -23,6 +25,11 @@ public class CursoService {
     @Autowired
     private CursoRepository cr;
 
+    public Page<ListaCursoDTO> buscarCursoParaListaAdmin(Pageable pageable) {
+        return cr.findCursoParaListaAdmin(pageable);
+    }
+    
+    
     public Page<CursoModel> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
             return cr.findAll(pageable);

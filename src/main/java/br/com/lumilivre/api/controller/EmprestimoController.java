@@ -1,14 +1,12 @@
 package br.com.lumilivre.api.controller;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -23,10 +21,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.lumilivre.api.data.EmprestimoDTO;
+import br.com.lumilivre.api.data.ListaEmprestimoDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
-import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.EmprestimoModel;
-import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.EmprestimoService;
 
@@ -37,6 +34,20 @@ public class EmprestimoController {
 
     @Autowired
     private EmprestimoService es;
+    
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/home")
+    public ResponseEntity<Page<ListaEmprestimoDTO>> buscarEmprestimosAdmin(
+            @RequestParam(required = false) String texto,
+            Pageable pageable) {
+
+        Page<ListaEmprestimoDTO> emprestimos = es.buscarEmprestimoParaListaAdmin(pageable);
+
+        if (emprestimos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(emprestimos);
+    }
 
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -60,8 +71,10 @@ public class EmprestimoController {
             @RequestParam(required = false) String tombo,
             @RequestParam(required = false) String livroNome,
             @RequestParam(required = false) String alunoNome,
-            @RequestParam(required = false) String dataEmprestimo,
-            @RequestParam(required = false) String dataDevolucao,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataEmprestimoInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataEmprestimoFim,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataDevolucaoInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataDevolucaoFim,
             Pageable pageable) {
 
         Page<EmprestimoModel> emprestimos = es.buscarAvancado(
@@ -69,8 +82,10 @@ public class EmprestimoController {
                 tombo,
                 livroNome,
                 alunoNome,
-                dataEmprestimo,
-                dataDevolucao,
+                dataEmprestimoInicio,
+                dataEmprestimoFim,
+                dataDevolucaoInicio,
+                dataDevolucaoFim,
                 pageable);
 
         if (emprestimos.isEmpty()) {
@@ -78,6 +93,7 @@ public class EmprestimoController {
         }
         return ResponseEntity.ok(emprestimos);
     }
+
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("buscar/ativos")

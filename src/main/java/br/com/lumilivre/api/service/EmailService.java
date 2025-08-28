@@ -21,4 +21,14 @@ public class EmailService {
 
         mailSender.send(mensagem);
     }
+    
+    public void enviarEmail(String destino, String assunto, String mensagem) {
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(destino);
+        mailMessage.setSubject(assunto);
+        mailMessage.setText(mensagem);
+        mailMessage.setFrom("biblioteca@lumilivre.com");
+        mailSender.send(mailMessage);
+    }
+
 }

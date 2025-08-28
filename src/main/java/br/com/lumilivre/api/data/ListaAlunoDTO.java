@@ -10,55 +10,49 @@ public class ListaAlunoDTO {
 
     @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate data_nascimento;
-    private String celular;
-    private Integer cursoId;
+    private String cursoNome;
+    
+	public ListaAlunoDTO(String nome, String matricula, LocalDate data_nascimento, String cursoNome) {
+		this.nome = nome;
+		this.matricula = matricula;
+		this.data_nascimento = data_nascimento;
+		this.cursoNome = cursoNome;
+	}
 
-    public ListaAlunoDTO(String nome, String matricula, LocalDate data_nascimento, String celular, Integer cursoId) {
-        this.nome = nome;
-        this.matricula = matricula;
-        this.data_nascimento = data_nascimento;
-        this.celular = celular;
-        this.cursoId = cursoId;
-    }
+	public String getNome() {
+		return nome;
+	}
 
-    public String getNome() {
-        return nome;
-    }
+	public void setNome(String nome) {
+		this.nome = nome;
+	}
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+	public String getMatricula() {
+		return matricula;
+	}
 
-    public String getMatricula() {
-        return matricula;
-    }
+	public void setMatricula(String matricula) {
+		this.matricula = matricula;
+	}
 
-    public void setMatricula(String matricula) {
-        this.matricula = matricula;
-    }
+	public LocalDate getData_nascimento() {
+		return data_nascimento;
+	}
 
-    public LocalDate getData_nascimento() {
-        return data_nascimento;
-    }
+	public void setData_nascimento(LocalDate data_nascimento) {
+		this.data_nascimento = data_nascimento;
+	}
 
-    public void setData_nascimento(LocalDate data_nascimento) {
-        this.data_nascimento = data_nascimento;
-    }
+	public String getCursoNome() {
+		return cursoNome;
+	}
 
-    public String getCelular() {
-        return celular;
-    }
+	public void setCursoNome(String cursoNome) {
+		this.cursoNome = cursoNome;
+	}
 
-    public void setCelular(String celular) {
-        this.celular = celular;
-    }
+	
 
-    public Integer getCursoId() {
-        return cursoId;
-    }
 
-    public void setCursoId(Integer cursoId) {
-        this.cursoId = cursoId;
-    }
 
 }

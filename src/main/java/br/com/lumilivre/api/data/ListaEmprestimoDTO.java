@@ -6,15 +6,15 @@ import br.com.lumilivre.api.enums.StatusEmprestimo;
 
 public class ListaEmprestimoDTO {
     private StatusEmprestimo statusEmprestimo;
-    private String livroTitulo;
+    private String livroNome;
     private String nomeAluno;
     private LocalDateTime dataEmprestimo;
     private LocalDateTime dataDevolucao;
 
-    public ListaEmprestimoDTO(StatusEmprestimo statusEmprestimo, String livroTitulo, String nomeAluno,
+    public ListaEmprestimoDTO(StatusEmprestimo statusEmprestimo, String livroNome, String nomeAluno,
             LocalDateTime dataEmprestimo, LocalDateTime dataDevolucao) {
         this.statusEmprestimo = statusEmprestimo;
-        this.livroTitulo = livroTitulo;
+        this.livroNome = livroNome;
         this.nomeAluno = nomeAluno;
         this.dataEmprestimo = dataEmprestimo;
         this.dataDevolucao = dataDevolucao;
@@ -28,12 +28,12 @@ public class ListaEmprestimoDTO {
         this.statusEmprestimo = statusEmprestimo;
     }
 
-    public String getLivroTitulo() {
-        return livroTitulo;
+    public String getlivroNome() {
+        return livroNome;
     }
 
-    public void setLivroTitulo(String livroTitulo) {
-        this.livroTitulo = livroTitulo;
+    public void setlivroNome(String livroNome) {
+        this.livroNome = livroNome;
     }
 
     public String getNomeAluno() {

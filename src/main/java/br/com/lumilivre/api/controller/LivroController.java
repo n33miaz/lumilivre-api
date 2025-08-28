@@ -40,19 +40,14 @@ public class LivroController {
             @RequestParam(required = false) String texto,
             Pageable pageable) {
 
-        Page<ListaLivroDTO> livros;
-
-        if (texto != null && !texto.isBlank()) {
-            livros = ls.buscarParaListaAdminComFiltro(texto, pageable);
-        } else {
-            livros = ls.buscarParaListaAdmin(pageable);
-        }
+        Page<ListaLivroDTO> livros = ls.buscarParaListaAdmin(pageable);
 
         if (livros.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(livros);
     }
+
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @GetMapping("/{isbn}")

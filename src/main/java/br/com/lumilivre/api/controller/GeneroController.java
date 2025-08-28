@@ -3,6 +3,8 @@ package br.com.lumilivre.api.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -13,8 +15,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.lumilivre.api.data.ListaCursoDTO;
+import br.com.lumilivre.api.data.ListaGeneroDTO;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -27,6 +32,46 @@ import br.com.lumilivre.api.service.GeneroService;
 public class GeneroController {
     @Autowired
     private GeneroService gs;
+    
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/home")
+    public ResponseEntity<Page<ListaGeneroDTO>> buscarGenerosAdmin(
+            @RequestParam(required = false) String texto,
+            Pageable pageable) {
+
+        Page<ListaGeneroDTO> generos = gs.buscarGeneroParaListaAdmin(pageable);
+
+        if (generos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(generos);
+    }
+
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/buscar")
+    public ResponseEntity<Page<GeneroModel>> buscarPorTexto(
+            @RequestParam(required = false) String texto, 
+            Pageable pageable) {
+        Page<GeneroModel> generos = gs.buscarPorTexto(texto, pageable);
+        if (generos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(generos);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/buscar/avancado")
+    public ResponseEntity<Page<GeneroModel>> buscarAvancado(
+            @RequestParam(required = false) Integer id,
+            @RequestParam(required = false) String nome,
+            Pageable pageable) {
+        Page<GeneroModel> generos = gs.buscarAvancado(id, nome, pageable);
+        if (generos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(generos);
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PostMapping("/cadastrar")

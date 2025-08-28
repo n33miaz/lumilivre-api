@@ -44,13 +44,6 @@ public class LivroService {
         return lr.findLivrosParaListaAdmin(pageable);
     }
 
-    public Page<ListaLivroDTO> buscarParaListaAdminComFiltro(String texto, Pageable pageable) {
-        if (texto == null || texto.isBlank()) {
-            return lr.findLivrosParaListaAdmin(pageable);
-        }
-        return lr.findLivrosParaListaAdminComFiltro(texto, pageable);
-    }
-
     public Iterable<LivroModel> buscarLivrosDisponiveis() {
         return lr.findLivrosDisponiveis();
     }
@@ -75,7 +68,6 @@ public class LivroService {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
 
-    // ------------------------ CADASTRO ------------------------
     public ResponseEntity<?> cadastrar(LivroDTO dto) {
         rm.setMensagem("");
 
@@ -165,7 +157,6 @@ public class LivroService {
         return ResponseEntity.status(HttpStatus.CREATED).body(rm);
     }
 
-    // ------------------------ ATUALIZAÇÃO ------------------------
     public ResponseEntity<?> atualizar(LivroDTO dto) {
         rm.setMensagem("");
 
@@ -203,7 +194,6 @@ public class LivroService {
         return ResponseEntity.ok(rm);
     }
 
-    // ------------------------ EXCLUSÕES ------------------------
     public ResponseEntity<ResponseModel> excluir(String isbn) {
         if (!lr.existsById(isbn)) {
             rm.setMensagem("Livro não encontrado.");
@@ -231,7 +221,6 @@ public class LivroService {
         return ResponseEntity.ok(rm);
     }
 
-    // ------------------------ QUANTIDADE DE EXEMPLARES ------------------------
     @Transactional
     public void atualizarQuantidadeExemplaresDoLivro(String isbn) {
         Long quantidade = er.contarExemplaresPorLivro(isbn);

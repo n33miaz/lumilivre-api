@@ -5,8 +5,10 @@ import java.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.lumilivre.api.data.AlunoDTO;
+import br.com.lumilivre.api.data.ListaAlunoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.AlunoService;
@@ -35,11 +38,18 @@ public class AlunoController {
         this.as = AlunoService;
     }
 
-
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar/todos")
-    public Iterable<AlunoModel> buscar() {
-        return as.buscar();
+    @GetMapping("/home")
+    public ResponseEntity<Page<ListaAlunoDTO>> buscarAlunosAdmin(
+            @RequestParam(required = false) String texto,
+            Pageable pageable) {
+
+        Page<ListaAlunoDTO> alunos = as.buscarAlunosParaListaAdmin(pageable);
+
+        if (alunos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(alunos);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -79,8 +89,15 @@ public class AlunoController {
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @PutMapping("/atualizar/{id}")
-    public ResponseEntity<?> atualizar(@PathVariable String id, @RequestBody AlunoDTO alunoDTO) {
-        // depois, quando implementar JWT, validar se ALUNO só altera seu próprio RM
+    public ResponseEntity<?> atualizar(@PathVariable String id, @RequestBody AlunoDTO alunoDTO, Authentication authentication) {
+        String usuarioLogado = authentication.getName(); 
+
+        if (authentication.getAuthorities().stream().anyMatch(r -> r.getAuthority().equals("ROLE_ALUNO"))) {
+            if (!usuarioLogado.equals(id)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Aluno só pode atualizar seu próprio cadastro.");
+            }
+        }
+
         return as.atualizar(id, alunoDTO);
     }
 

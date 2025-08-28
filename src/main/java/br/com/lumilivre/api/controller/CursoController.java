@@ -1,7 +1,5 @@
 package br.com.lumilivre.api.controller;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.lumilivre.api.enums.Turno;
+import br.com.lumilivre.api.data.ListaCursoDTO;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.CursoService;
@@ -34,6 +32,21 @@ public class CursoController {
     public CursoController(CursoService CursoService) {
         this.cs = CursoService;
     }
+    
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/home")
+    public ResponseEntity<Page<ListaCursoDTO>> buscarCursosAdmin(
+            @RequestParam(required = false) String texto,
+            Pageable pageable) {
+
+        Page<ListaCursoDTO> cursos = cs.buscarCursoParaListaAdmin(pageable);
+
+        if (cursos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(cursos);
+    }
+
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")

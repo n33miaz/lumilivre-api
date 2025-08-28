@@ -1,19 +1,26 @@
 package br.com.lumilivre.api.controller;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.data.ListaAutorDTO;
 import br.com.lumilivre.api.model.AutorModel;
 import br.com.lumilivre.api.model.ResponseModel;
-import br.com.lumilivre.api.service.AlunoService;
 import br.com.lumilivre.api.service.AutorService;
 
 @RestController
@@ -28,6 +35,19 @@ public class AutorController {
         this.as = AutorService;
     }
     
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/home")
+    public ResponseEntity<Page<ListaAutorDTO>> buscarAutoresAdmin(
+            @RequestParam(required = false) String texto,
+            Pageable pageable) {
+
+        Page<ListaAutorDTO> autores = as.buscarAutorParaListaAdmin(pageable);
+
+        if (autores.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(autores);
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")

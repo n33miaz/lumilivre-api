@@ -9,10 +9,12 @@ import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.data.EnumDTO;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,24 +32,20 @@ public class EnumController {
             case "STATUS_EMPRESTIMO":
                 return listarStatusEmprestimos();
             case "PENALIDADE":
-                return penalidadeStatus();
+                return listarPenalidades();
             case "CDD":
                 return listarCdd();
-            case "Turno":
+            case "TURNO":
                 return listarTurno();
             case "TIPO_CAPA":
                 return listarTipoCapa();
             case "CLASSIFICACAO_ETARIA":
                 return listarClassificacaoEtaria();
             default:
-                throw new IllegalArgumentException("Tipo de enum não encontrado: " + tipo);
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Tipo de enum não encontrado: " + tipo
+                );
         }
-    }
-
-    private List<EnumDTO> penalidadeStatus() {
-        return Arrays.stream(Penalidade.values())
-                .map(s -> new EnumDTO(s.name(), s.getStatus()))
-                .collect(Collectors.toList());
     }
 
     private List<EnumDTO> listarStatusLivros() {
@@ -58,6 +56,12 @@ public class EnumController {
 
     private List<EnumDTO> listarStatusEmprestimos() {
         return Arrays.stream(StatusEmprestimo.values())
+                .map(s -> new EnumDTO(s.name(), s.getStatus()))
+                .collect(Collectors.toList());
+    }
+
+    private List<EnumDTO> listarPenalidades() {
+        return Arrays.stream(Penalidade.values())
                 .map(s -> new EnumDTO(s.name(), s.getStatus()))
                 .collect(Collectors.toList());
     }
@@ -85,5 +89,4 @@ public class EnumController {
                 .map(c -> new EnumDTO(c.name(), c.getStatus()))
                 .collect(Collectors.toList());
     }
-
 }

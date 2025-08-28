@@ -3,13 +3,19 @@ package br.com.lumilivre.api.service;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.AlterarSenhaDTO;
+import br.com.lumilivre.api.data.ListaGeneroDTO;
+import br.com.lumilivre.api.data.ListaUsuarioDTO;
 import br.com.lumilivre.api.data.UsuarioDTO;
 import br.com.lumilivre.api.enums.Role;
+import br.com.lumilivre.api.model.AutorModel;
+import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.UsuarioRepository;
@@ -29,6 +35,26 @@ public class UsuarioService {
 
     UsuarioService(EmailService emailService) {
         this.emailService = emailService;
+    }
+    
+    
+    public Page<ListaUsuarioDTO> buscarUsuarioParaListaAdmin(Pageable pageable) {
+        return ur.findUsuarioParaListaAdmin(pageable);
+    }
+
+    public Page<UsuarioModel> buscarPorTexto(String texto, Pageable pageable) {
+        if (texto == null || texto.isBlank()) {
+            return ur.findAll(pageable);
+        }
+        return ur.buscarPorTexto(texto, pageable);
+    }
+    public Page<UsuarioModel> buscarAvancado(
+            Integer id,
+            String email,
+            Role role,
+
+            Pageable pageable) {
+        return ur.buscarAvancado(id, email, role, pageable);
     }
 
     @Transactional
@@ -96,14 +122,24 @@ public class UsuarioService {
 
     @Transactional
     public ResponseEntity<ResponseModel> excluir(Integer id) {
-        ur.deleteById(id);
-        ResponseModel rm = new ResponseModel();
-        rm.setMensagem("O ADM foi removido com sucesso");
-        return new ResponseEntity<>(rm, HttpStatus.OK);
-    }
+        Optional<UsuarioModel> optUsuario = ur.findById(id);
+        if (optUsuario.isEmpty()) {
+            ResponseModel rm = new ResponseModel();
+            rm.setMensagem("Usuário não encontrado.");
+            return new ResponseEntity<>(rm, HttpStatus.NOT_FOUND);
+        }
 
-    public Iterable<UsuarioModel> listar() {
-        return ur.findAll();
+        UsuarioModel usuario = optUsuario.get();
+
+        if (usuario.getRole() == Role.ALUNO && usuario.getAluno() != null) {
+            usuario.getAluno().setUsuario(null);
+        }
+
+        ur.delete(usuario);
+
+        ResponseModel rm = new ResponseModel();
+        rm.setMensagem("Usuário removido com sucesso");
+        return new ResponseEntity<>(rm, HttpStatus.OK);
     }
 
     public ResponseEntity<?> alterarSenha(AlterarSenhaDTO dto) {

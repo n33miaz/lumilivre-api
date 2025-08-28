@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.data.ListaAutorDTO;
 import br.com.lumilivre.api.model.AutorModel;
 
 @Repository
@@ -38,4 +38,16 @@ public interface AutorRepository extends JpaRepository<AutorModel, String> {
             @Param("pseudonimo") String pseudonimo,
             @Param("nacionalidade") String nacionalidade,
             Pageable pageable);
+    
+    @Query("""
+  	      SELECT new br.com.lumilivre.api.data.ListaAutorDTO(
+  	          a.codigo,
+  	          a.nome,
+  	          a.pseudonimo,
+  	          a.nacionalidade
+  	      )
+  	      FROM AutorModel a
+  	      ORDER BY a.codigo
+  	      """)
+  	  Page<ListaAutorDTO> findAutorParaListaAdmin(Pageable pageable);
 }

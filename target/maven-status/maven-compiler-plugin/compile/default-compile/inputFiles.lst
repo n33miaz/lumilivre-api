@@ -17,6 +17,13 @@ C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\Emp
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\EnumDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\ExemplarDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\JwtResponse.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\ListaAlunoDTO.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\ListaAutorDTO.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\ListaCursoDTO.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\ListaEmprestimoDTO.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\ListaGeneroDTO.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\ListaLivroDTO.java
+C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\ListaUsuarioDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\LivroDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\LoginDTO.java
 C:\Users\prodj\Desktop\TCC\lumilivre\src\main\java\br\com\lumilivre\api\data\LoginResponseDTO.java

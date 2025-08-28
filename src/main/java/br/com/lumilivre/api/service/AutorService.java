@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import br.com.lumilivre.api.data.ListaAutorDTO;
 import br.com.lumilivre.api.model.AutorModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.AutorRepository;
@@ -19,6 +20,10 @@ public class AutorService {
     @Autowired
     private AutorRepository ar;
 
+    public Page<ListaAutorDTO> buscarAutorParaListaAdmin(Pageable pageable) {
+        return ar.findAutorParaListaAdmin(pageable);
+    }
+    
     public Page<AutorModel> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
             return ar.findAll(pageable);
@@ -53,18 +58,23 @@ public class AutorService {
     }
 
     public ResponseEntity<?> atualizar(AutorModel autorModel) {
-        if (isNomeInvalido(autorModel)) {
-            return badRequest("O Nome do autor é obrigatório.");
-        }
-
-        if (autorModel.getCodigo() == null || autorModel.getCodigo().trim().isEmpty()) {
-            return badRequest("O código do autor é obrigatório.");
-        }
-
+    	
         Optional<AutorModel> existente = ar.findById(autorModel.getCodigo());
         if (existente.isEmpty()) {
             return notFound("Autor não encontrado com o código: " + autorModel.getCodigo());
         }
+        
+        if (autorModel.getCodigo() == null || autorModel.getCodigo().trim().isEmpty()) {
+            return badRequest("O código do autor é obrigatório.");
+        }
+
+        
+        if (isNomeInvalido(autorModel)) {
+            return badRequest("O Nome do autor é obrigatório.");
+        }
+
+
+
 
         AutorModel salvo = ar.save(autorModel);
         return ResponseEntity.ok(salvo);

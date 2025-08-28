@@ -1,15 +1,19 @@
 package br.com.lumilivre.api.controller;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import br.com.lumilivre.api.data.ExemplarDTO;
-import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.ExemplarService;
 
@@ -20,21 +24,6 @@ public class ExemplarController {
 
     @Autowired
     private ExemplarService es;
-
-//    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-//    @GetMapping("/buscar")
-//    public ResponseEntity<?> buscarTodos() {
-//        List<ExemplarModel> lista = es.buscar();
-//
-//        List<ExemplarDTO> dtos = lista.stream().map(exemplar -> {
-//            ExemplarDTO dto = new ExemplarDTO();
-//            dto.setTombo(exemplar.getTombo());
-//            dto.setStatus_livro(exemplar.getStatus_livro().toString());
-//            dto.setLivro_isbn(exemplar.getLivro_isbn().getIsbn());
-//            return dto;
-//        }).collect(Collectors.toList());
-//
-//        return ResponseEntity.ok(dtos);
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/{isbn}")

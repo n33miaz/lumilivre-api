@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import br.com.lumilivre.api.data.ListaEmprestimoDTO;
+import br.com.lumilivre.api.data.ListaGeneroDTO;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.GeneroModel;
 
@@ -24,13 +26,26 @@ public interface GeneroRepository extends JpaRepository<GeneroModel, Integer> {
 			    SELECT g FROM GeneroModel g
 			    WHERE LOWER(g.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
 			""")
-	Page<CursoModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
+	Page<GeneroModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
 	@Query("""
 			    SELECT g FROM GeneroModel g
 			    WHERE (:nome IS NULL OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
 			""")
-	Page<CursoModel> buscarAvancado(
+	Page<GeneroModel> buscarAvancado(
+			@Param("id") Integer id,
 			@Param("nome") String nome,
 			Pageable pageable);
+	
+    
+    @Query("""
+    	      SELECT new br.com.lumilivre.api.data.ListaGeneroDTO(
+    	          g.id,
+    	          g.nome
+
+    	      )
+    	      FROM GeneroModel g
+    	      ORDER BY g.nome
+    	      """)
+    	  Page<ListaGeneroDTO> findGeneroParaListaAdmin(Pageable pageable);
 }

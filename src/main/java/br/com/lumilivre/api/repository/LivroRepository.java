@@ -8,13 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.stereotype.Repository;
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
-import br.com.lumilivre.api.model.AutorModel;
-import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.LivroModel;
 
 @Repository
@@ -57,23 +53,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
       Pageable pageable);
 
   @Query("""
-	       SELECT new br.com.lumilivre.api.data.ListaLivroDTO(
-	           l.nome,
-	           l.isbn,
-	           l.autor.nome,
-	           l.editora,
-	           l.quantidade
-	       )
-	       FROM LivroModel l
-	       WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-	          OR LOWER(l.autor.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-	          OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :texto, '%'))
-	       ORDER BY l.nome
-	       """)
-	Page<ListaLivroDTO> findLivrosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
-  
-  @Query("""
-      SELECT new br.com.lumilivre.api.data.LivroListaAdminDTO(
+      SELECT new br.com.lumilivre.api.data.ListaLivroDTO(
           l.nome,
           l.isbn,
           l.autor.nome,
