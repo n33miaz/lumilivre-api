@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.enums;
 
 public enum StatusEmprestimo implements EnumStatus {
-    
+
     ATIVO("Ativo"),
     CONCLUIDO("Concluído"),
     ATRASADO("Atrasado");

@@ -36,18 +36,6 @@ public class CursoController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar/todos")
-    public List<CursoModel> buscar() {
-        return cs.buscar();
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar/{turno}")
-    public ResponseEntity<?> listarPorTurno(@PathVariable Turno turno) {
-        return cs.listarPorTurno(turno);
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
     public ResponseEntity<Page<CursoModel>> buscarPorTexto(
             @RequestParam(required = false) String texto,
@@ -84,6 +72,12 @@ public class CursoController {
     public ResponseEntity<?> atualizar(@PathVariable Integer id, @RequestBody CursoModel cm) {
         cm.setId(id);
         return cs.atualizar(cm);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @DeleteMapping("/excluir/{id}")
+    public ResponseEntity<ResponseModel> excluir(@PathVariable Integer id) {
+        return cs.excluir(id);
     }
 
 }

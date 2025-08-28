@@ -45,7 +45,7 @@ public class AlunoModel {
 	@NotNull
 	@Column(name = "celular", nullable = false, length = 11)
 	private String celular;
-	
+
 	@NotNull
 	@Column(name = "email", length = 255)
 	private String email;
@@ -53,10 +53,10 @@ public class AlunoModel {
 	@ManyToOne
 	@JoinColumn(name = "curso_id", nullable = false)
 	private CursoModel curso;
-	
+
 	@JsonManagedReference
-    @OneToOne(mappedBy = "aluno", cascade = CascadeType.ALL)
-    private UsuarioModel usuario;
+	@OneToOne(mappedBy = "aluno", cascade = CascadeType.ALL)
+	private UsuarioModel usuario;
 
 	@Size(min = 8, max = 8, message = "CEP deve ter exatamente 8 caracteres")
 	@Column(name = "cep", length = 8)
@@ -91,7 +91,6 @@ public class AlunoModel {
 		this.matricula = matricula;
 	}
 
-	
 	public UsuarioModel getUsuario() {
 		return usuario;
 	}

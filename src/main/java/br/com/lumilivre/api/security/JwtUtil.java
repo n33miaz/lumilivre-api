@@ -2,12 +2,12 @@ package br.com.lumilivre.api.security;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.List; 
+import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors; 
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.GrantedAuthority; 
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -30,19 +30,19 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-public String generateToken(UserDetails userDetails) {
-    List<String> roles = userDetails.getAuthorities().stream()
-        .map(GrantedAuthority::getAuthority)
-        .collect(Collectors.toList());
+    public String generateToken(UserDetails userDetails) {
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
 
-    return Jwts.builder()
-            .setSubject(userDetails.getUsername())
-            .claim("roles", roles)
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + expiration))
-            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-            .compact();
-}
+        return Jwts.builder()
+                .setSubject(userDetails.getUsername())
+                .claim("roles", roles)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
 
     public boolean validateToken(String token) {
         try {

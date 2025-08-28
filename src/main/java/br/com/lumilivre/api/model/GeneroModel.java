@@ -8,7 +8,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 
-
 @Entity
 @Table(name = "genero")
 public class GeneroModel {
@@ -16,9 +15,9 @@ public class GeneroModel {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
-	
+
 	@NotNull
-	@Column(name = "Nome",  nullable = false, length = 255)
+	@Column(name = "Nome", nullable = false, length = 255)
 	private String nome;
 
 	public Integer getId() {

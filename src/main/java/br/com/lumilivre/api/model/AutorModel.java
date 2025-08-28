@@ -22,7 +22,6 @@ public class AutorModel {
 	@Column(name = "nome", nullable = false, length = 55)
 	private String nome;
 
-
 	@Column(name = "pseudonimo", length = 55)
 	private String pseudonimo;
 

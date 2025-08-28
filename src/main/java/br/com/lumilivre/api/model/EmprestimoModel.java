@@ -20,33 +20,33 @@ import jakarta.validation.constraints.NotNull;
 @Table(name = "emprestimo")
 public class EmprestimoModel {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer id;
 
-    @NotNull
-    @Column(name = "data_emprestimo", nullable = false)
-    private LocalDateTime dataEmprestimo;
+	@NotNull
+	@Column(name = "data_emprestimo", nullable = false)
+	private LocalDateTime dataEmprestimo;
 
-    @NotNull
-    @Column(name = "data_devolucao", nullable = false)
-    private LocalDateTime dataDevolucao;
+	@NotNull
+	@Column(name = "data_devolucao", nullable = false)
+	private LocalDateTime dataDevolucao;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "penalidade", length = 59)
-    private Penalidade penalidade;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "penalidade", length = 59)
+	private Penalidade penalidade;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status_emprestimo", length = 55)
-    private StatusEmprestimo statusEmprestimo;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status_emprestimo", length = 55)
+	private StatusEmprestimo statusEmprestimo;
 
-    @ManyToOne
-    @JoinColumn(name = "aluno_matricula", nullable = false)
-    private AlunoModel aluno;
+	@ManyToOne
+	@JoinColumn(name = "aluno_matricula", nullable = false)
+	private AlunoModel aluno;
 
-    @ManyToOne
-    @JoinColumn(name = "exemplar_tombo", nullable = false) 
-    private ExemplarModel exemplar;
+	@ManyToOne
+	@JoinColumn(name = "exemplar_tombo", nullable = false)
+	private ExemplarModel exemplar;
 
 	public Integer getId() {
 		return id;
@@ -103,8 +103,5 @@ public class EmprestimoModel {
 	public void setExemplar(ExemplarModel exemplar) {
 		this.exemplar = exemplar;
 	}
-
-    
-
 
 }

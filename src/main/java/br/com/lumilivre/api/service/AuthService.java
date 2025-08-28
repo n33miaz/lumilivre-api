@@ -41,21 +41,16 @@ public class AuthService {
             return ResponseEntity.status(401).body("Senha incorreta");
         }
 
-        // Cria UserDetails com a role do usuário
         List<SimpleGrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + usuario.getRole().name())
-        );
+                new SimpleGrantedAuthority("ROLE_" + usuario.getRole().name()));
 
         User userDetails = new User(
                 usuario.getEmail(),
                 usuario.getSenha(),
-                authorities
-        );
+                authorities);
 
-        // Gera o token JWT
         String token = jwtUtil.generateToken(userDetails);
 
-        // Retorna o DTO com token
         return ResponseEntity.ok(new LoginResponseDTO(usuario, token));
     }
 }

@@ -21,21 +21,20 @@ public class ExemplarController {
     @Autowired
     private ExemplarService es;
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar")
-    public ResponseEntity<?> buscarTodos() {
-        List<ExemplarModel> lista = es.buscar();
-
-        List<ExemplarDTO> dtos = lista.stream().map(exemplar -> {
-            ExemplarDTO dto = new ExemplarDTO();
-            dto.setTombo(exemplar.getTombo());
-            dto.setStatus_livro(exemplar.getStatus_livro().toString());
-            dto.setLivro_isbn(exemplar.getLivro_isbn().getIsbn());
-            return dto;
-        }).collect(Collectors.toList());
-
-        return ResponseEntity.ok(dtos);
-    }
+//    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+//    @GetMapping("/buscar")
+//    public ResponseEntity<?> buscarTodos() {
+//        List<ExemplarModel> lista = es.buscar();
+//
+//        List<ExemplarDTO> dtos = lista.stream().map(exemplar -> {
+//            ExemplarDTO dto = new ExemplarDTO();
+//            dto.setTombo(exemplar.getTombo());
+//            dto.setStatus_livro(exemplar.getStatus_livro().toString());
+//            dto.setLivro_isbn(exemplar.getLivro_isbn().getIsbn());
+//            return dto;
+//        }).collect(Collectors.toList());
+//
+//        return ResponseEntity.ok(dtos);
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/{isbn}")

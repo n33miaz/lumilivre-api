@@ -18,10 +18,6 @@ public class GeneroService {
     @Autowired
     private GeneroRepository gr;
 
-    public List<GeneroModel> buscar() {
-        return (List<GeneroModel>) gr.findAll();
-    }
-
     @Transactional
     public ResponseEntity<?> cadastrar(GeneroModel generoModel) {
         if (isNomeInvalido(generoModel)) {

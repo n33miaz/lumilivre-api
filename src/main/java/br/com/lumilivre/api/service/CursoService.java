@@ -23,10 +23,6 @@ public class CursoService {
     @Autowired
     private CursoRepository cr;
 
-    public List<CursoModel> buscar() {
-        return (List<CursoModel>) cr.findAll();
-    }
-
     public Page<CursoModel> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
             return cr.findAll(pageable);
@@ -77,19 +73,6 @@ public class CursoService {
 
     private boolean isNomeInvalido(CursoModel cursoModel) {
         return cursoModel.getNome() == null || cursoModel.getNome().trim().isEmpty();
-    }
-
-    @Transactional(readOnly = true)
-    public ResponseEntity<?> listarPorTurno(Turno turno) {
-        List<CursoModel> cursos = cr.findByTurno(turno);
-
-        if (cursos.isEmpty()) {
-            ResponseModel rm = new ResponseModel();
-            rm.setMensagem("Nenhum curso encontrado para o turno informado.");
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(rm);
-        }
-
-        return ResponseEntity.ok(cursos);
     }
 
 }

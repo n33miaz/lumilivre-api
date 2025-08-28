@@ -28,11 +28,6 @@ public class AutorController {
         this.as = AutorService;
     }
     
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar/todos")
-    public Iterable<AutorModel> buscar() {
-        return as.buscar();
-    }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")

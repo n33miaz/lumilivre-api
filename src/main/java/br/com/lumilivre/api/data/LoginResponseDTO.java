@@ -8,7 +8,7 @@ public class LoginResponseDTO {
     private String email;
     private String role;
     private String matriculaAluno;
-    private String token; // ✅ Novo campo para o JWT
+    private String token;
 
     public LoginResponseDTO(UsuarioModel usuario, String token) {
         this.id = usuario.getId();
@@ -17,7 +17,7 @@ public class LoginResponseDTO {
         if (usuario.getAluno() != null) {
             this.matriculaAluno = usuario.getAluno().getMatricula();
         }
-        this.token = token; // ✅ Armazena o token
+        this.token = token;
     }
 
     public Integer getId() {

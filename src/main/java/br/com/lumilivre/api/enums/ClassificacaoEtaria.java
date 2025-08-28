@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.enums;
 
-public enum ClassificacaoEtaria implements EnumStatus{
+public enum ClassificacaoEtaria implements EnumStatus {
     INFANTIL("Infantil"),
     INFANTO_JUVENIL("Infanto Juvenil"),
     JUVENIL("Juvenil"),
@@ -16,5 +16,5 @@ public enum ClassificacaoEtaria implements EnumStatus{
     public String getStatus() {
         return status;
     }
-    
-    }
+
+}

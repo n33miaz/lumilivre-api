@@ -4,8 +4,7 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-
-public class LivroDTO  {
+public class LivroDTO {
 
     private String isbn;
     private String nome;

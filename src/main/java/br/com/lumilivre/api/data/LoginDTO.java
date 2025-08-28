@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 public class LoginDTO {
 
     @NotBlank(message = "user não deve estar em branco")
-    private String user; 
+    private String user;
 
     @NotBlank(message = "senha não deve estar em branco")
     private String senha;

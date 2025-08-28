@@ -4,14 +4,13 @@ import jakarta.validation.constraints.NotBlank;
 
 public class UsuarioDTO {
 
-    @NotBlank
-    private String email;
+	@NotBlank
+	private String email;
 
-    @NotBlank
-    private String senha;
-    
-    private String matriculaAluno;
+	@NotBlank
+	private String senha;
 
+	private String matriculaAluno;
 
 	public String getMatriculaAluno() {
 		return matriculaAluno;
@@ -35,7 +34,6 @@ public class UsuarioDTO {
 
 	public void setSenha(String senha) {
 		this.senha = senha;
-	}	
-    
-    
+	}
+
 }

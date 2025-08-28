@@ -81,11 +81,10 @@ public class LivroModel {
     @ManyToOne
     @JoinColumn(name = "autor_codigo")
     private AutorModel autor;
-    
+
     @OneToMany(mappedBy = "livro")
     private List<ExemplarModel> exemplares;
 
-    // getter e setter
     public List<ExemplarModel> getExemplares() {
         return exemplares;
     }

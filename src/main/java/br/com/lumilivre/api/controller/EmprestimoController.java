@@ -38,11 +38,6 @@ public class EmprestimoController {
     @Autowired
     private EmprestimoService es;
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar/todos")
-    public Iterable<EmprestimoModel> buscar() {
-        return es.listar();
-    }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
@@ -101,61 +96,6 @@ public class EmprestimoController {
     @GetMapping("buscar/concluidos")
     public ResponseEntity<List<EmprestimoModel>> buscarConcluidos() {
         return ResponseEntity.ok(es.buscarConcluidos());
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar/aluno/{matricula}")
-    public ResponseEntity<List<EmprestimoModel>> listarPorAluno(@PathVariable String matricula) {
-        AlunoModel aluno = new AlunoModel();
-        aluno.setMatricula(matricula);
-        return ResponseEntity.ok(es.listarPorAluno(matricula));
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar/exemplar/{tombo}")
-    public ResponseEntity<List<EmprestimoModel>> listarPorExemplar(@PathVariable String tombo) {
-        ExemplarModel exemplar = new ExemplarModel();
-        exemplar.setTombo(tombo);
-        return ResponseEntity.ok(es.listarPorExemplar(tombo));
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-
-    @GetMapping("/buscar/devolucoes-intervalo")
-    public ResponseEntity<List<EmprestimoModel>> listarPorDataDevolucaoIntervalo(
-            @RequestParam String inicio, @RequestParam String fim) {
-
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-        LocalDateTime inicioDT = LocalDateTime.parse(inicio, formatter);
-        LocalDateTime fimDT = LocalDateTime.parse(fim, formatter);
-
-        return ResponseEntity.ok(es.listarPorDataDevolucaoIntervalo(inicioDT, fimDT));
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar/emprestimos-intervalo")
-    public ResponseEntity<List<EmprestimoModel>> listarPorDataEmprestimoIntervalo(
-            @RequestParam String inicio, @RequestParam String fim) {
-
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
-        LocalDate inicioLD = LocalDate.parse(inicio, formatter);
-        LocalDate fimLD = LocalDate.parse(fim, formatter);
-
-        LocalDateTime inicioDT = inicioLD.atStartOfDay();
-        LocalDateTime fimDT = fimLD.atTime(LocalTime.MAX);
-
-        return ResponseEntity.ok(es.listarPorDataEmprestimoIntervalo(inicioDT, fimDT));
-    }
-    
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar/emprestimos-apartir")
-    public ResponseEntity<List<EmprestimoModel>> listarPorDataEmprestimoAPartirDe(
-            @RequestParam String inicio) {
-
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
-        LocalDate inicioLD = LocalDate.parse(inicio, formatter);
-
-        return ResponseEntity.ok(es.listarPorDataEmprestimoAPartirDe(inicioLD));
     }
     
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")

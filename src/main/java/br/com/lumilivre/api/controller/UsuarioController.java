@@ -32,19 +32,14 @@ public class UsuarioController {
         return us.cadastrarAdmin(dto);
     }
 
-    @PutMapping("/alterar/{id}")
-    public ResponseEntity<?> alterar(@PathVariable Integer id, @RequestBody @Valid UsuarioDTO dto) {
-        return us.alterar(id, dto);
+    @PutMapping("/atualizar/{id}")
+    public ResponseEntity<?> atualizar(@PathVariable Integer id, @RequestBody @Valid UsuarioDTO dto) {
+        return us.atualizar(id, dto);
     }
 
-    @DeleteMapping("/remover/{id}")
-    public ResponseEntity<ResponseModel> remover(@PathVariable Integer id) {
-        return us.delete(id);
-    }
-
-    @GetMapping("/listar")
-    public Iterable<UsuarioModel> listar() {
-        return us.listar();
+    @DeleteMapping("/excluir/{id}")
+    public ResponseEntity<ResponseModel> excluir(@PathVariable Integer id) {
+        return us.excluir(id);
     }
 
     @PutMapping("/alterar-senha")

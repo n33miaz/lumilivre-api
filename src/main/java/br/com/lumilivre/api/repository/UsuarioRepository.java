@@ -9,7 +9,7 @@ import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.UsuarioModel;
 
-public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer > {
+public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer> {
 
     boolean existsByEmail(String email);
 

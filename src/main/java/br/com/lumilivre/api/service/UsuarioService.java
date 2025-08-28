@@ -15,14 +15,14 @@ import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 @Service
 public class UsuarioService {
 
     private final EmailService emailService;
 
-	
-	@Autowired
-	private PasswordEncoder passwordEncoder;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private UsuarioRepository ur;
@@ -31,7 +31,7 @@ public class UsuarioService {
         this.emailService = emailService;
     }
 
-     @Transactional
+    @Transactional
     public ResponseEntity<?> cadastrarAdmin(UsuarioDTO dto) {
         ResponseModel rm = new ResponseModel();
 
@@ -57,14 +57,13 @@ public class UsuarioService {
 
         UsuarioModel salvo = ur.save(usuarioModel);
 
-        // 🔹 Envia e-mail com senha inicial
         emailService.enviarSenhaInicial(dto.getEmail(), "Admin", dto.getSenha());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
     @Transactional
-    public ResponseEntity<?> alterar(Integer id, UsuarioDTO dto) {
+    public ResponseEntity<?> atualizar(Integer id, UsuarioDTO dto) {
         ResponseModel rm = new ResponseModel();
         Optional<UsuarioModel> optionalUsuario = ur.findById(id);
 
@@ -88,7 +87,6 @@ public class UsuarioService {
         if (dto.getSenha() != null && !dto.getSenha().isBlank()) {
             usuarioModel.setSenha(passwordEncoder.encode(dto.getSenha()));
 
-            // 🔹 Envia e-mail com a nova senha
             emailService.enviarSenhaInicial(dto.getEmail(), "Admin", dto.getSenha());
         }
 
@@ -96,21 +94,18 @@ public class UsuarioService {
         return ResponseEntity.ok(salvo);
     }
 
-
-    
     @Transactional
-    public ResponseEntity<ResponseModel> delete(Integer id) {
+    public ResponseEntity<ResponseModel> excluir(Integer id) {
         ur.deleteById(id);
         ResponseModel rm = new ResponseModel();
         rm.setMensagem("O ADM foi removido com sucesso");
         return new ResponseEntity<>(rm, HttpStatus.OK);
     }
-    
+
     public Iterable<UsuarioModel> listar() {
         return ur.findAll();
     }
 
-    
     public ResponseEntity<?> alterarSenha(AlterarSenhaDTO dto) {
         Optional<UsuarioModel> opt = ur.findByEmail(dto.getMatricula());
 
@@ -131,4 +126,3 @@ public class UsuarioService {
     }
 
 }
-

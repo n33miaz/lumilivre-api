@@ -22,4 +22,3 @@ public class EmailService {
         mailSender.send(mensagem);
     }
 }
-

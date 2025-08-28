@@ -28,13 +28,6 @@ public class GeneroController {
     @Autowired
     private GeneroService gs;
 
-   
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/buscar")
-    public List<GeneroModel> buscar() {
-        return gs.buscar();
-    }
-
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PostMapping("/cadastrar")
     public ResponseEntity<?> cadastrar(@RequestBody GeneroModel gm) {

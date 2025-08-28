@@ -2,7 +2,6 @@ package br.com.lumilivre.api.enums;
 
 import java.text.Normalizer;
 
-
 public enum Cdd implements EnumStatus {
     GENERALIDADES("000"),
     BIBLIOGRAFIA("010"),
@@ -154,8 +153,8 @@ public enum Cdd implements EnumStatus {
         return normalized.replaceAll("\\p{M}", "").toLowerCase();
     }
 
-	@Override
-	public String getStatus() {
-		return null;
-	}
+    @Override
+    public String getStatus() {
+        return null;
+    }
 }

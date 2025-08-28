@@ -22,6 +22,7 @@ import br.com.lumilivre.api.repository.CursoRepository;
 import br.com.lumilivre.api.repository.UsuarioRepository;
 import br.com.lumilivre.api.utils.CpfValidator;
 
+
 @Service
 public class AlunoService {
 

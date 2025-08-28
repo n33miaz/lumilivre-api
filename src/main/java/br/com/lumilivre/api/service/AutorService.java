@@ -19,10 +19,6 @@ public class AutorService {
     @Autowired
     private AutorRepository ar;
 
-    public Iterable<AutorModel> buscar() {
-        return ar.findAll();
-    }
-    
     public Page<AutorModel> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
             return ar.findAll(pageable);
@@ -39,12 +35,10 @@ public class AutorService {
         return ar.buscarAvancado(nome, pseudonimo, nacionalidade, pageable);
     }
 
-
     public ResponseEntity<?> cadastrar(AutorModel autorModel) {
         if (isNomeInvalido(autorModel)) {
             return badRequest("O Nome do autor é obrigatório.");
         }
-
 
         if (autorModel.getCodigo() == null || autorModel.getCodigo().trim().isEmpty()) {
             return badRequest("O código do autor é obrigatório.");

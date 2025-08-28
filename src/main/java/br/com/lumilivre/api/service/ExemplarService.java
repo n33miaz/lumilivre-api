@@ -8,11 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.data.EmprestimoDTO;
-import br.com.lumilivre.api.data.EmprestimoResponseDTO;
 import br.com.lumilivre.api.data.ExemplarDTO;
 import br.com.lumilivre.api.enums.StatusLivro;
-import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -31,11 +28,7 @@ public class ExemplarService {
     @Autowired
     private ResponseModel rm;
 
-    public List<ExemplarModel> buscar() {
-        return er.findAll();
-    }
-
-
+    /** Buscar todos os exemplares de um livro pelo ISBN */
     public ResponseEntity<?> buscarExemplaresPorIsbn(String isbn) {
         rm.setMensagem("");
 
@@ -51,40 +44,21 @@ public class ExemplarService {
 
         List<ExemplarModel> exemplares = er.findAllByLivroIsbn(isbn);
 
-        List<ExemplarDTO> resposta = exemplares.stream().map(exemplar -> {
-            ExemplarDTO dto = new ExemplarDTO();
-            dto.setTombo(exemplar.getTombo());
-            dto.setStatus_livro(exemplar.getStatus_livro().toString());
-            dto.setLivro_isbn(exemplar.getLivro_isbn().getIsbn());
-            dto.setLocalizacao_fisica(exemplar.getLocalizacao_fisica());
-            return dto;
-        }).toList();
-
-        return ResponseEntity.ok(resposta);
-    }
-
-    public ResponseEntity<?> excluirLivroComExemplares(String isbn) {
-        rm.setMensagem("");
-
-        Optional<LivroModel> livroOpt = lr.findByIsbn(isbn);
-        if (livroOpt.isEmpty()) {
-            rm.setMensagem("Livro não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
+        if (exemplares.isEmpty()) {
+            rm.setMensagem("Nenhum exemplar encontrado para este ISBN.");
+            return ResponseEntity.noContent().build();
         }
 
-        er.deleteAllByLivroIsbn(isbn);
-        lr.deleteByIsbn(isbn);
-
-        rm.setMensagem("Livro e todos os exemplares foram removidos com sucesso.");
-        return ResponseEntity.ok(rm);
+        return ResponseEntity.ok(exemplares);
     }
 
+    /** Cadastrar um exemplar */
     @Transactional
     public ResponseEntity<?> cadastrar(ExemplarDTO dto) {
         rm.setMensagem("");
 
         if (dto.getLivro_isbn() == null || dto.getLivro_isbn().trim().isEmpty()) {
-            rm.setMensagem("A ISBN é obrigatória.");
+            rm.setMensagem("O ISBN é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
 
@@ -111,8 +85,7 @@ public class ExemplarService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        Optional<LivroModel> livroOpt = lr.findByIsbn(dto.getLivro_isbn());
-        LivroModel livro = livroOpt.get();
+        LivroModel livro = lr.findByIsbn(dto.getLivro_isbn()).get();
 
         ExemplarModel exemplar = new ExemplarModel();
         exemplar.setTombo(dto.getTombo());
@@ -128,6 +101,7 @@ public class ExemplarService {
         return ResponseEntity.ok(rm);
     }
 
+    /** Atualizar um exemplar */
     @Transactional
     public ResponseEntity<?> atualizar(ExemplarDTO dto) {
         rm.setMensagem("");
@@ -138,7 +112,7 @@ public class ExemplarService {
         }
 
         if (dto.getLivro_isbn() == null || dto.getLivro_isbn().trim().isEmpty()) {
-            rm.setMensagem("A ISBN é obrigatória.");
+            rm.setMensagem("O ISBN é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
 
@@ -160,8 +134,7 @@ public class ExemplarService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        Optional<LivroModel> livroOpt = lr.findByIsbn(dto.getLivro_isbn());
-        LivroModel livro = livroOpt.get();
+        LivroModel livro = lr.findByIsbn(dto.getLivro_isbn()).get();
 
         ExemplarModel exemplar = new ExemplarModel();
         exemplar.setTombo(dto.getTombo());
@@ -177,6 +150,7 @@ public class ExemplarService {
         return ResponseEntity.ok(rm);
     }
 
+    /** Excluir um exemplar */
     @Transactional
     public ResponseEntity<ResponseModel> excluir(String tombo) {
         rm.setMensagem("");
@@ -196,10 +170,12 @@ public class ExemplarService {
         return ResponseEntity.ok(rm);
     }
 
+    /** Buscar um exemplar pelo tombo */
     public ExemplarModel buscarPorTombo(String tombo) {
         return er.findByTombo(tombo).orElse(null);
     }
 
+    /** Atualizar a quantidade de exemplares de um livro */
     @Transactional
     public void atualizarQuantidadeExemplaresDoLivro(String isbn) {
         Long quantidade = er.contarExemplaresPorLivro(isbn);

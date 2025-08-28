@@ -28,37 +28,30 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-@Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-        .csrf(csrf -> csrf.disable())
-        .authorizeHttpRequests(auth -> auth
-            // rota pública
-            .requestMatchers("/auth/login").permitAll()
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        // Rotas públicas
+                        .requestMatchers("/auth/login").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-            // somente ADMIN pode gerenciar usuários
-            .requestMatchers("/usuarios/**").hasRole("ADMIN")
+                        // Apenas ADMIN
+                        .requestMatchers("/usuarios/**").hasRole("ADMIN")
 
-            // ADMIN e BIBLIOTECARIO podem gerenciar livros
-            .requestMatchers("/livros/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        // ADMIN ou BIBLIOTECARIO
+                        .requestMatchers("/livros/**", "/generos/**", "/autores/**", "/cursos/**", "/emprestimos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        .requestMatchers("/alunos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
 
-            // ADMIN e BIBLIOTECARIO podem acessar alunos
-            .requestMatchers("/alunos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        // Qualquer outra rota precisa estar autenticada
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-            // qualquer usuário logado pode pegar gêneros/autores/etc
-            .requestMatchers("/generos/**", "/autores/**", "/cursos/**", "/emprestimos/**")
-            .authenticated()
-
-            // o resto precisa estar autenticado
-            .anyRequest().authenticated()
-        )
-        .sessionManagement(session ->
-            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        )
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
-    return http.build();
-}
+        return http.build();
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {

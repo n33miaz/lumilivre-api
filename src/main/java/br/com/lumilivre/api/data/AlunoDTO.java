@@ -10,7 +10,7 @@ public class AlunoDTO {
     private String nome;
     private String sobrenome;
     private String cpf;
-    
+
     @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate data_nascimento;
     private String celular;

@@ -61,5 +61,4 @@ public class ExemplarModel {
 		this.livro = livro_isbn;
 	}
 
-	
 }
