@@ -39,7 +39,8 @@ public class OpenApiConfig {
                         new Tag().name("5. Cursos").description("Operações para gerenciamento de cursos"),
                         new Tag().name("6. Empréstimos").description("Operações para registrar e gerenciar empréstimos de livros"),
                         new Tag().name("7. Enums").description("Endpoints utilitários para obter listas de valores de enums"),
-                        new Tag().name("8. Exemplares").description("Operações para gerenciamento de exemplares (cópias físicas dos livros)")
+                        new Tag().name("8. Exemplares").description("Operações para gerenciamento de exemplares (cópias físicas dos livros)"),
+                        new Tag().name("9. Gêneros").description("Operações para gerenciamento de gêneros literários")
                 ))
 
                 // lista de servidores
