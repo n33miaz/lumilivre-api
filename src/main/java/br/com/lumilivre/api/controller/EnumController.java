@@ -9,6 +9,13 @@ import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.data.EnumDTO;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,11 +28,22 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
+
+@Tag(name = "7. Enums")
+@SecurityRequirement(name = "bearerAuth")
+
 public class EnumController {
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/enums/{tipo}")
-    public List<EnumDTO> listarEnum(@PathVariable String tipo) {
+
+    @Operation(summary = "Lista os valores de um Enum específico", description = "Endpoint genérico para obter os valores possíveis de diferentes enums do sistema, formatados como uma lista de DTOs (nome/valor). Útil para preencher selects e filtros no frontend.")
+    @ApiResponse(responseCode = "200", description = "Lista de valores retornada com sucesso")
+    @ApiResponse(responseCode = "400", description = "Tipo de enum não encontrado", content = @Content)
+
+    public List<EnumDTO> listarEnum(
+            @Parameter(description = "O tipo do enum a ser listado. Valores possíveis: STATUS_LIVRO, STATUS_EMPRESTIMO, PENALIDADE, CDD, TURNO, TIPO_CAPA, CLASSIFICACAO_ETARIA.", example = "STATUS_LIVRO")
+            @PathVariable String tipo) {
         switch (tipo.toUpperCase()) {
             case "STATUS_LIVRO":
                 return listarStatusLivros();
@@ -42,10 +60,14 @@ public class EnumController {
             case "CLASSIFICACAO_ETARIA":
                 return listarClassificacaoEtaria();
             default:
-                throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Tipo de enum não encontrado: " + tipo
-                );
+                throw new IllegalArgumentException("Tipo de enum não encontrado: " + tipo);
         }
+    }
+
+    private List<EnumDTO> penalidadeStatus() {
+        return Arrays.stream(Penalidade.values())
+                .map(s -> new EnumDTO(s.name(), s.getStatus()))
+                .collect(Collectors.toList());
     }
 
     private List<EnumDTO> listarStatusLivros() {
