@@ -8,6 +8,7 @@ lerna-debug.log*
 *.out
 
 # Arquivos de Build
+/bin/
 /target/
 .mvn/
 
@@ -23,7 +24,7 @@ lerna-debug.log*
 .metadata/
 
 # Arquivos do VSCode 
-.vscode/*
+.vscode/
 !.vscode/settings.json
 !.vscode/extensions.json
 !.vscode/launch.json
@@ -40,3 +41,6 @@ Thumbs.db
 .env
 .env.local
 application.properties
+
+# Arquivos de teste
+test/
