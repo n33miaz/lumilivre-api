@@ -25,6 +25,7 @@ public interface GeneroRepository extends JpaRepository<GeneroModel, Integer> {
 	@Query("""
 			    SELECT g FROM GeneroModel g
 			    WHERE (:nome IS NULL OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
+				AND (:id IS NULL OR g.id = :id)
 			""")
 	Page<GeneroModel> buscarAvancado(
 			@Param("id") Integer id,
