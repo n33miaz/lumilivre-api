@@ -28,7 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/usuarios")
 
-@Tag(name = "3. Usuários")
+@Tag(name = "4. Usuários")
 @SecurityRequirement(name = "bearerAuth")
 
 public class UsuarioController {

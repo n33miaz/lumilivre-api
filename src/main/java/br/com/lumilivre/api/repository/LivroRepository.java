@@ -15,7 +15,6 @@ import br.com.lumilivre.api.model.LivroModel;
 
 @Repository
 public interface LivroRepository extends JpaRepository<LivroModel, String> {
-  Optional<LivroModel> findById(String isbn);
 
   Optional<LivroModel> findByIsbn(String isbn);
 
@@ -69,7 +68,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
 	Page<ListaLivroDTO> findLivrosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
   
   @Query("""
-      SELECT new br.com.lumilivre.api.data.LivroListaAdminDTO(
+      SELECT new br.com.lumilivre.api.data.ListaLivroDTO(
           l.nome,
           l.isbn,
           l.autor.nome,

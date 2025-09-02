@@ -23,8 +23,6 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 
 	Optional<CursoModel> findByModulo(String modulo);
 
-	Optional<CursoModel> findById(Integer id);
-
 	List<CursoModel> findByTurno(Turno turno);
 
 	@Query("""

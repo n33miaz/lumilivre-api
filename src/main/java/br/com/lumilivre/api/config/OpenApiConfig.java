@@ -35,15 +35,15 @@ public class OpenApiConfig {
                 .tags(List.of( 
                         new Tag().name("1. Autenticação").description("Endpoints para obter tokens de acesso"),
                         new Tag().name("2. Home").description("Operações para exibição de dados na home"),
-                        new Tag().name("3. Usuários").description("Operações para gerenciamento de contas de usuário"),
-                        new Tag().name("4. Empréstimos").description("Operações para registrar e gerenciar empréstimos de livros"),
-                        new Tag().name("5. Alunos").description("Operações para gerenciamento de alunos"),
-                        new Tag().name("6. Livros").description("Operações para gerenciamento de livros e consulta de disponibilidade"),
-                        new Tag().name("7. Exemplares").description("Operações para gerenciamento de exemplares (cópias físicas dos livros)"),
-                        new Tag().name("8. Autores").description("Operações para gerenciamento de autores"),
-                        new Tag().name("9. Gêneros").description("Operações para gerenciamento de gêneros literários"),
-                        new Tag().name("10. Cursos").description("Operações para gerenciamento de cursos"),
-                        new Tag().name("11. Enums").description("Endpoints utilitários para obter listas de valores de enums")
+                        new Tag().name("3. Enums").description("Endpoints utilitários para obter listas de valores de enums"),
+                        new Tag().name("4. Usuários").description("Operações para gerenciamento de contas de usuário"),
+                        new Tag().name("5. Empréstimos").description("Operações para registrar e gerenciar empréstimos de livros"),
+                        new Tag().name("6. Alunos").description("Operações para gerenciamento de alunos"),
+                        new Tag().name("7. Livros").description("Operações para gerenciamento de livros e consulta de disponibilidade"),
+                        new Tag().name("8. Exemplares").description("Operações para gerenciamento de exemplares (cópias físicas dos livros)"),
+                        new Tag().name("9. Autores").description("Operações para gerenciamento de autores"),
+                        new Tag().name("10. Gêneros").description("Operações para gerenciamento de gêneros literários"),
+                        new Tag().name("11. Cursos").description("Operações para gerenciamento de cursos")
                 ))
 
                 // lista de servidores

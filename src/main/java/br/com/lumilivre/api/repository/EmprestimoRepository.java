@@ -2,7 +2,6 @@ package br.com.lumilivre.api.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +21,6 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     List<EmprestimoModel> findByAluno_MatriculaAndStatusEmprestimo(String matricula, StatusEmprestimo statusEmprestimo);
 
     boolean existsByExemplarTomboAndStatusEmprestimo(String tombo, StatusEmprestimo status);
-
-    Optional<EmprestimoModel> findById(Integer id);
 
     List<EmprestimoModel> findByStatusEmprestimo(StatusEmprestimo status);
 

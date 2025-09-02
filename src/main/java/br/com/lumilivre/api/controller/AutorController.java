@@ -24,7 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @RequestMapping("/autores")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "8. Autores")
+@Tag(name = "9. Autores")
 @SecurityRequirement(name = "bearerAuth")
 
 public class AutorController {

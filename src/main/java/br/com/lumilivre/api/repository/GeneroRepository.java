@@ -1,7 +1,5 @@
 package br.com.lumilivre.api.repository;
 
-import java.util.Optional;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,8 +15,6 @@ public interface GeneroRepository extends JpaRepository<GeneroModel, Integer> {
 	boolean existsByNomeIgnoreCaseAndIdNot(String nome, Integer id);
 
 	GeneroModel findByNomeIgnoreCase(String nome);
-
-	Optional<GeneroModel> findById(Integer id);
 
 	@Query("""
 			    SELECT g FROM GeneroModel g

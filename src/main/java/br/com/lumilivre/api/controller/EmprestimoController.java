@@ -29,7 +29,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @RequestMapping("/emprestimos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "4. Empréstimos")
+@Tag(name = "5. Empréstimos")
 @SecurityRequirement(name = "bearerAuth")
 
 public class EmprestimoController {

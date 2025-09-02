@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @RestController
 
-@Tag(name = "11. Enums")
+@Tag(name = "3. Enums")
 @SecurityRequirement(name = "bearerAuth")
 
 public class EnumController {

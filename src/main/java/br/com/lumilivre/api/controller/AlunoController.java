@@ -27,7 +27,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/alunos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "5. Alunos")
+@Tag(name = "6. Alunos")
 @SecurityRequirement(name = "bearerAuth")
 
 public class AlunoController {
