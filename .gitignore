@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.out
+
+# Arquivos de Build
+/target/
+.mvn/
+
+# Arquivos de IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.factorypath
+.settings/
+.metadata/
+
+# Arquivos do VSCode 
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# Arquivos de OS
+.DS_Store
+Thumbs.db
+
+# Arquivos locais e temporários
+*.local
+*.sw?
+
+# Arquivos de configuração de ambiente local
+.env
+.env.local
+application.properties
