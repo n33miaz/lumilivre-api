@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.controller;
 
+import br.com.lumilivre.api.data.ListaGeneroDTO;
 import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.GeneroService;
@@ -9,20 +10,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.model.CursoModel;
-import br.com.lumilivre.api.model.GeneroModel;
-import br.com.lumilivre.api.model.ResponseModel;
-import br.com.lumilivre.api.service.GeneroService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/livros/generos")
@@ -37,44 +34,50 @@ public class GeneroController {
     
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
-    public ResponseEntity<Page<ListaGeneroDTO>> buscarGenerosAdmin(
-            @RequestParam(required = false) String texto,
-            Pageable pageable) {
 
+    @Operation(summary = "Lista gêneros para a tela principal do admin", description = "Retorna uma lista paginada de gêneros com dados resumidos para a exibição no dashboard. Suporta filtro de texto.")
+    @ApiResponse(responseCode = "200", description = "Página de gêneros retornada com sucesso")
+
+    public ResponseEntity<Page<ListaGeneroDTO>> buscarGenerosAdmin(
+            @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
+            Pageable pageable) {
         Page<ListaGeneroDTO> generos = gs.buscarGeneroParaListaAdmin(pageable);
 
-        if (generos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(generos);
+        return generos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(generos);
     }
 
-
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
+
+    @Operation(summary = "Busca gêneros com paginação e filtro de texto", description = "Retorna uma página de gêneros. Pode filtrar por um texto genérico.")
+    @ApiResponse(responseCode = "200", description = "Página de gêneros retornada com sucesso")
+
     public ResponseEntity<Page<GeneroModel>> buscarPorTexto(
-            @RequestParam(required = false) String texto, 
+            @Parameter(description = "Texto para busca genérica no nome do gênero") @RequestParam(required = false) String texto, 
             Pageable pageable) {
         Page<GeneroModel> generos = gs.buscarPorTexto(texto, pageable);
-        if (generos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(generos);
+
+        return generos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(generos);
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
+
+    @Operation(summary = "Busca avançada e paginada de gêneros", description = "Filtra gêneros por ID ou nome.")
+    @ApiResponse(responseCode = "200", description = "Página de gêneros retornada com sucesso")
+
     public ResponseEntity<Page<GeneroModel>> buscarAvancado(
-            @RequestParam(required = false) Integer id,
-            @RequestParam(required = false) String nome,
+            @Parameter(description = "ID exato do gênero") @RequestParam(required = false) Integer id,
+            @Parameter(description = "Nome parcial do gênero") @RequestParam(required = false) String nome,
             Pageable pageable) {
         Page<GeneroModel> generos = gs.buscarAvancado(id, nome, pageable);
-        if (generos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(generos);
+
+        return generos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(generos);
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PostMapping("/cadastrar")
 
@@ -123,5 +126,4 @@ public class GeneroController {
             @Parameter(description = "ID do gênero a ser excluído") @PathVariable Integer id) {
         return gs.excluir(id);
     }
-
 }

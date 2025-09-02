@@ -1,7 +1,5 @@
 package br.com.lumilivre.api.model;
 
-import br.com.lumilivre.api.model.CursoModel;
-
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonFormat;

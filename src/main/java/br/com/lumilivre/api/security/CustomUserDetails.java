@@ -1,7 +1,6 @@
 package br.com.lumilivre.api.security;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 import java.util.List;
 

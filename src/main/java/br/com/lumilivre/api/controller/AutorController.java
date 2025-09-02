@@ -1,8 +1,5 @@
 package br.com.lumilivre.api.controller;
 
-import java.time.LocalDate;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.AutorModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.AutorService;
@@ -28,7 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @RequestMapping("/autores")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "4. Autores")
+@Tag(name = "8. Autores")
 @SecurityRequirement(name = "bearerAuth")
 
 public class AutorController {
@@ -39,7 +35,6 @@ public class AutorController {
     public AutorController(AutorService AutorService) {
         this.as = AutorService;
     }
-    
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
@@ -51,11 +46,9 @@ public class AutorController {
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
         Page<AutorModel> autores = as.buscarPorTexto(texto, pageable);
-        if (autores.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(autores);
-    }
+
+        return autores.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(autores);
+    } 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -74,10 +67,8 @@ public class AutorController {
             @Parameter(description = "Nacionalidade do autor") @RequestParam(required = false) String nacionalidade,
             Pageable pageable) {
         Page<AutorModel> autores = as.buscarAvancado(nome, pseudonimo, nacionalidade, pageable);
-        if (autores.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(autores);
+
+        return autores.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(autores);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

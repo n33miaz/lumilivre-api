@@ -5,36 +5,27 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.enums.Turno;
+import br.com.lumilivre.api.data.ListaCursoDTO;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.CursoService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/cursos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "5. Cursos")
+@Tag(name = "10. Cursos")
 @SecurityRequirement(name = "bearerAuth")
 
 public class CursoController {
@@ -48,19 +39,19 @@ public class CursoController {
     
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
-    public ResponseEntity<Page<ListaCursoDTO>> buscarCursosAdmin(
-            @RequestParam(required = false) String texto,
-            Pageable pageable) {
 
+    @Operation(summary = "Lista cursos para a tela principal do admin", description = "Retorna uma lista paginada de cursos com dados resumidos para a exibição no dashboard. Suporta filtro de texto. Acesso: ADMIN, BIBLIOTECARIO.")
+    @ApiResponse(responseCode = "200", description = "Página de cursos retornada com sucesso")
+
+    public ResponseEntity<Page<ListaCursoDTO>> buscarCursosAdmin(
+            @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
+            Pageable pageable) {
         Page<ListaCursoDTO> cursos = cs.buscarCursoParaListaAdmin(pageable);
 
-        if (cursos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(cursos);
-    }
+        return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
+    } 
 
-
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
 
@@ -71,10 +62,8 @@ public class CursoController {
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
         Page<CursoModel> cursos = cs.buscarPorTexto(texto, pageable);
-        if (cursos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(cursos);
+
+        return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,10 +83,8 @@ public class CursoController {
             @Parameter(description = "Módulo ou série do curso") @RequestParam(required = false) String modulo,
             Pageable pageable) {
         Page<CursoModel> cursos = cs.buscarAvancado(nome, turno, modulo, pageable);
-        if (cursos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(cursos);
+
+        return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,5 +135,4 @@ public class CursoController {
             @Parameter(description = "ID do curso a ser excluído") @PathVariable Integer id) {
         return cs.excluir(id);
     }
-
 }

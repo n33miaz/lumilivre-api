@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -58,25 +59,30 @@ public class EmprestimoService {
             String tombo,
             String livroNome,
             String alunoNome,
-            LocalDateTime dataEmprestimoInicio,
-            LocalDateTime dataEmprestimoFim,
-            LocalDateTime dataDevolucaoInicio,
-            LocalDateTime dataDevolucaoFim,
+            String dataEmprestimo, 
+            String dataDevolucao,  
             Pageable pageable) {
 
+        LocalDateTime dataEmprestimoDT = null;
+        if (dataEmprestimo != null && !dataEmprestimo.isBlank()) {
+            dataEmprestimoDT = LocalDate.parse(dataEmprestimo).atStartOfDay();
+        }
+
+        LocalDateTime dataDevolucaoDT = null;
+        if (dataDevolucao != null && !dataDevolucao.isBlank()) {
+            dataDevolucaoDT = LocalDate.parse(dataDevolucao).atStartOfDay();
+        }
+
         return emprestimoRepository.buscarAvancado(
-                statusEmprestimo,
-                tombo,
-                livroNome,
-                alunoNome,
-                dataEmprestimoInicio,
-                dataEmprestimoFim,
-                dataDevolucaoInicio,
-                dataDevolucaoFim,
-                pageable);
+            statusEmprestimo,
+            tombo,
+            livroNome,
+            alunoNome,
+            dataEmprestimoDT,
+            dataDevolucaoDT,  
+            pageable
+        );
     }
-
-
 
     public List<EmprestimoModel> buscarAtivos() {
         return emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoGreaterThanEqual(

@@ -27,7 +27,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/alunos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "2. Alunos")
+@Tag(name = "5. Alunos")
 @SecurityRequirement(name = "bearerAuth")
 
 public class AlunoController {
@@ -49,11 +49,9 @@ public class AlunoController {
             @Parameter(description = "Texto para busca genérica (em nome, matrícula, etc.)") @RequestParam(required = false) String texto,
             Pageable pageable) {
         Page<AlunoModel> alunos = as.buscarPorTexto(texto, pageable);
-        if (alunos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(alunos);
-    }
+
+        return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
+    } 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @GetMapping("/buscar/avancado")
@@ -72,11 +70,9 @@ public class AlunoController {
             @Parameter(description = "Nome parcial do curso") @RequestParam(required = false) String cursoNome,
             Pageable pageable) {
         Page<AlunoModel> alunos = as.buscarAvancado(nome, matricula, dataNascimento, cursoNome, pageable);
-        if (alunos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(alunos);
-    }
+
+        return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
+    } 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PostMapping("/cadastrar")

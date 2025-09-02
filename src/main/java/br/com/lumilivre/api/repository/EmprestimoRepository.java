@@ -71,10 +71,8 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             @Param("tombo") String tombo,
             @Param("livroNome") String livroNome,
             @Param("alunoNome") String alunoNome,
-            @Param("dataEmprestimoInicio") LocalDateTime dataEmprestimoInicio,
-            @Param("dataEmprestimoFim") LocalDateTime dataEmprestimoFim,
-            @Param("dataDevolucaoInicio") LocalDateTime dataDevolucaoInicio,
-            @Param("dataDevolucaoFim") LocalDateTime dataDevolucaoFim,
+            @Param("dataEmprestimo") LocalDateTime dataEmprestimoInicio,
+            @Param("dataDevolucao") LocalDateTime dataDevolucaoFim,
             Pageable pageable
     );
 

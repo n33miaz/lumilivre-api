@@ -8,9 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import br.com.lumilivre.api.data.ListaEmprestimoDTO;
 import br.com.lumilivre.api.data.ListaGeneroDTO;
-import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.GeneroModel;
 
 public interface GeneroRepository extends JpaRepository<GeneroModel, Integer> {

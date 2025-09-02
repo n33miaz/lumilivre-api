@@ -10,12 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.AlterarSenhaDTO;
-import br.com.lumilivre.api.data.ListaGeneroDTO;
 import br.com.lumilivre.api.data.ListaUsuarioDTO;
 import br.com.lumilivre.api.data.UsuarioDTO;
 import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.model.AutorModel;
-import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.UsuarioRepository;

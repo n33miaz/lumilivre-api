@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 
-@Tag(name = "10. Home")
+@Tag(name = "2. Home")
 @SecurityRequirement(name = "bearerAuth")
 
 public class HomeController {

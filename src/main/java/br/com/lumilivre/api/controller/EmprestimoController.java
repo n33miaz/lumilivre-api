@@ -1,29 +1,16 @@
 package br.com.lumilivre.api.controller;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.data.EmprestimoDTO;
+import br.com.lumilivre.api.data.EmprestimoResponseDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -42,7 +29,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 @RequestMapping("/emprestimos")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "6. Empréstimos")
+@Tag(name = "4. Empréstimos")
 @SecurityRequirement(name = "bearerAuth")
 
 public class EmprestimoController {
@@ -50,22 +37,18 @@ public class EmprestimoController {
     @Autowired
     private EmprestimoService es;
 
-
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
 
     @Operation(summary = "Busca empréstimos com paginação e filtro de texto", description = "Retorna uma página de empréstimos. Pode filtrar por um texto genérico.")
+    @ApiResponse(responseCode = "200", description = "Página de empréstimos retornada")
 
     public ResponseEntity<Page<EmprestimoModel>> buscarPorTexto(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
-
         Page<EmprestimoModel> emprestimos = es.buscarPorTexto(texto, pageable);
 
-        if (emprestimos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(emprestimos);
+        return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -73,14 +56,19 @@ public class EmprestimoController {
     @GetMapping("/buscar/avancado")
 
     @Operation(summary = "Busca avançada e paginada de empréstimos", description = "Filtra empréstimos por campos específicos.")
+    @ApiResponses
+    ({
+        @ApiResponse(responseCode = "200", description = "Página de empréstimos encontrada"),
+        @ApiResponse(responseCode = "204", description = "Nenhum empréstimo encontrado para os filtros")
+    })
 
     public ResponseEntity<Page<EmprestimoModel>> buscarAvancado(
-            @RequestParam(required = false) StatusEmprestimo statusEmprestimo,
-            @RequestParam(required = false) String tombo,
-            @RequestParam(required = false) String livroNome,
-            @RequestParam(required = false) String alunoNome,
-            @RequestParam(required = false) String dataEmprestimo,
-            @RequestParam(required = false) String dataDevolucao,
+                @Parameter(description = "Status do empréstimo (ATIVO, CONCLUIDO, ATRASADO)") @RequestParam(required = false) StatusEmprestimo statusEmprestimo,
+                @Parameter(description = "Código de tombo do exemplar") @RequestParam(required = false) String tombo,
+                @Parameter(description = "Nome parcial do livro") @RequestParam(required = false) String livroNome,
+                @Parameter(description = "Nome parcial do aluno") @RequestParam(required = false) String alunoNome,
+                @Parameter(description = "Data do empréstimo (formato YYYY-MM-DD)") @RequestParam(required = false) String dataEmprestimo,
+                @Parameter(description = "Data da devolução (formato YYYY-MM-DD)") @RequestParam(required = false) String dataDevolucao,
             Pageable pageable) {
 
         Page<EmprestimoModel> emprestimos = es.buscarAvancado(
@@ -88,24 +76,19 @@ public class EmprestimoController {
                 tombo,
                 livroNome,
                 alunoNome,
-                dataEmprestimoInicio,
-                dataEmprestimoFim,
-                dataDevolucaoInicio,
-                dataDevolucaoFim,
+                dataEmprestimo,
+                dataDevolucao,
                 pageable);
 
-        if (emprestimos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(emprestimos);
+        return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
-
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("buscar/ativos")
 
     @Operation(summary = "Lista todos os empréstimos ativos", description = "Retorna uma lista de todos os empréstimos com status ATIVO.")
+    @ApiResponse(responseCode = "200", description = "Lista de empréstimos ativos")
 
     public ResponseEntity<List<EmprestimoModel>> buscarAtivos() {
         return ResponseEntity.ok(es.buscarAtivos());
@@ -116,6 +99,7 @@ public class EmprestimoController {
     @GetMapping("buscar/atrasados")
 
     @Operation(summary = "Lista todos os empréstimos atrasados", description = "Retorna uma lista de empréstimos com status ATIVO cuja data de devolução já passou.")
+    @ApiResponse(responseCode = "200", description = "Lista de empréstimos atrasados")
 
     public ResponseEntity<List<EmprestimoModel>> buscarAtrasados() {
         return ResponseEntity.ok(es.buscarAtrasados());
@@ -126,6 +110,7 @@ public class EmprestimoController {
     @GetMapping("buscar/concluidos")
 
     @Operation(summary = "Lista todos os empréstimos concluídos", description = "Retorna uma lista de todos os empréstimos com status CONCLUIDO.")
+    @ApiResponse(responseCode = "200", description = "Lista de empréstimos concluídos")
 
     public ResponseEntity<List<EmprestimoModel>> buscarConcluidos() {
         return ResponseEntity.ok(es.buscarConcluidos());
@@ -211,8 +196,7 @@ public class EmprestimoController {
     @Operation(summary = "Exclui um registro de empréstimo", description = "Remove um registro de empréstimo do sistema. Use com cautela.")
     @ApiResponse(responseCode = "200", description = "Empréstimo excluído com sucesso")
 
-    public ResponseEntity<ResponseModel> excluir(
-            @Parameter(description = "ID do empréstimo a ser excluído") @PathVariable Integer id) {
+    public ResponseEntity<ResponseModel> excluir(@PathVariable Integer id) {
         return es.excluir(id);
     }
 }

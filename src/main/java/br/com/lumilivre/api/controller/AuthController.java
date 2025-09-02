@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/auth")
 
-@Tag(name = "1. Autenticação") // agrupa e ordena no swagger
+@Tag(name = "1. Autenticação") 
 
 public class AuthController {
 

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import br.com.lumilivre.api.data.ExemplarDTO;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.ExemplarService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,7 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/livros/exemplares")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "8. Exemplares")
+@Tag(name = "7. Exemplares")
 @SecurityRequirement(name = "bearerAuth")
 
 public class ExemplarController {
@@ -35,7 +36,6 @@ public class ExemplarController {
     @Autowired
     private ExemplarService es;
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/{isbn}")
 

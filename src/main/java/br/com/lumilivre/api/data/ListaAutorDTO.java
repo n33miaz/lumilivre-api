@@ -1,7 +1,5 @@
 package br.com.lumilivre.api.data;
 
-import br.com.lumilivre.api.enums.Turno;
-
 public class ListaAutorDTO {
     private String codigo;
     private String nome;

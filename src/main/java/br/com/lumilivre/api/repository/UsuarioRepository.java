@@ -9,11 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.data.ListaUsuarioDTO;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AlunoModel;
-import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.UsuarioModel;
 
 public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer> {

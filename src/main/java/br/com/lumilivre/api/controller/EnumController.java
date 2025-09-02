@@ -16,12 +16,10 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +27,7 @@ import java.util.stream.Collectors;
 
 @RestController
 
-@Tag(name = "7. Enums")
+@Tag(name = "11. Enums")
 @SecurityRequirement(name = "bearerAuth")
 
 public class EnumController {
@@ -62,12 +60,6 @@ public class EnumController {
             default:
                 throw new IllegalArgumentException("Tipo de enum não encontrado: " + tipo);
         }
-    }
-
-    private List<EnumDTO> penalidadeStatus() {
-        return Arrays.stream(Penalidade.values())
-                .map(s -> new EnumDTO(s.name(), s.getStatus()))
-                .collect(Collectors.toList());
     }
 
     private List<EnumDTO> listarStatusLivros() {

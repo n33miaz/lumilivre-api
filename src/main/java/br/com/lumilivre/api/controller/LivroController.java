@@ -5,16 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.data.LivroDTO;
@@ -35,7 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @RequestMapping("/livros")
 @CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
-@Tag(name = "3. Livros")
+@Tag(name = "6. Livros")
 @SecurityRequirement(name = "bearerAuth")
 
 public class LivroController {
@@ -56,15 +47,10 @@ public class LivroController {
     public ResponseEntity<Page<ListaLivroDTO>> listarParaAdmin(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
-
         Page<ListaLivroDTO> livros = ls.buscarParaListaAdmin(pageable);
 
-        if (livros.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(livros);
+        return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
-
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
@@ -93,10 +79,8 @@ public class LivroController {
             @Parameter(description = "Texto para busca genérica (em título, sinopse, autor, etc.)") @RequestParam(required = false) String texto,
             Pageable pageable) {
         Page<LivroModel> livros = ls.buscarPorTexto(texto, pageable);
-        if (livros.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(livros);
+
+        return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -113,10 +97,8 @@ public class LivroController {
             @Parameter(description = "Nome parcial da editora") @RequestParam(required = false) String editora,
             Pageable pageable) {
         Page<LivroModel> livros = ls.buscarAvancado(nome, isbn, autor, genero, editora, pageable);
-        if (livros.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(livros);
+
+        return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,10 +109,8 @@ public class LivroController {
 
     public ResponseEntity<Iterable<LivroModel>> listarDisponiveis() {
         Iterable<LivroModel> livrosDisponiveis = ls.buscarLivrosDisponiveis();
-        if (!livrosDisponiveis.iterator().hasNext()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(livrosDisponiveis);
+
+        return !livrosDisponiveis.iterator().hasNext() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livrosDisponiveis);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
