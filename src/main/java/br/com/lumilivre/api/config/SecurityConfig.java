@@ -11,7 +11,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import br.com.lumilivre.api.security.JwtAuthenticationFilter;
 
 @Configuration
@@ -27,24 +30,25 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        // Rotas públicas
-                        .requestMatchers("/auth/login").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // rotas para acessar a documentação mo swagger
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                    // Rotas públicas
+                    .requestMatchers("/auth/login").permitAll()
+                    .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // rotas para acessar a documentação mo swagger
 
-                        // Apenas ADMIN
-                        .requestMatchers("/usuarios/**").hasRole("ADMIN")
+                    // Apenas ADMIN
+                    .requestMatchers("/usuarios/**").hasRole("ADMIN")
 
-                        // ADMIN ou BIBLIOTECARIO
-                        .requestMatchers("/livros/**", "/generos/**", "/autores/**", "/cursos/**", "/emprestimos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
-                        .requestMatchers("/alunos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                    // ADMIN ou BIBLIOTECARIO
+                    .requestMatchers("/livros/**", "/generos/**", "/autores/**", "/cursos/**", "/emprestimos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                    .requestMatchers("/alunos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
 
-                        // Qualquer outra rota precisa estar autenticada
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                    // Qualquer outra rota precisa estar autenticada
+                    .anyRequest().authenticated()
+            )
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -57,5 +61,18 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
+    }
+
+    // Cross-Origin geral
+    @Bean
+        public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+            CorsConfiguration configuration = new CorsConfiguration();
+            configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "https://lumi-livre-web.vercel.app/")); 
+            configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+            configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+            configuration.setAllowCredentials(true);
+            UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+            source.registerCorsConfiguration("/**", configuration);
+            return source;
     }
 }

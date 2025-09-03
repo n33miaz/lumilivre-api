@@ -22,7 +22,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/autores")
-@CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
 @Tag(name = "9. Autores")
 @SecurityRequirement(name = "bearerAuth")

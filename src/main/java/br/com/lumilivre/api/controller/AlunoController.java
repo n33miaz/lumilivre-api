@@ -25,7 +25,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/alunos")
-@CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
 @Tag(name = "6. Alunos")
 @SecurityRequirement(name = "bearerAuth")

@@ -1,43 +1,59 @@
 package br.com.lumilivre.api.exception;
 
+import br.com.lumilivre.api.data.RespostaErroDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
-import br.com.lumilivre.api.data.RespostaErroDTO;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class TratadorDeExcecoesGlobal {
 
-    // captura exceções genéricas e retorna HTTP 400
+    // erros de validação
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> tratarValidacao(MethodArgumentNotValidException ex) {
+        Map<String, String> erros = ex.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.toMap(
+                    fieldError -> fieldError.getField(),
+                    fieldError -> fieldError.getDefaultMessage()
+                ));
+        Map<String, Object> corpoResposta = Map.of("status", 400, "erro", "Erro de Validação", "mensagens", erros);
+        return new ResponseEntity<>(corpoResposta, HttpStatus.BAD_REQUEST);
+    }
+
+    // erros de requisição
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<RespostaErroDTO> tratarIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
-        
-        RespostaErroDTO respostaErro = new RespostaErroDTO(
-            HttpStatus.BAD_REQUEST.value(),
-            "Requisição Inválida",
-            ex.getMessage(), // Usa a mensagem da própria exceção
-            request.getDescription(false).replace("uri=", "")
-        );
+        RespostaErroDTO resposta = new RespostaErroDTO(400, "Requisição Inválida", ex.getMessage(), request.getDescription(false).replace("uri=", ""));
+        return new ResponseEntity<>(resposta, HttpStatus.BAD_REQUEST);
+    }
 
-        return new ResponseEntity<>(respostaErro, HttpStatus.BAD_REQUEST);
+    // falha de autenticação
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<RespostaErroDTO> tratarAuthenticationException(AuthenticationException ex, WebRequest request) {
+        RespostaErroDTO resposta = new RespostaErroDTO(401, "Não Autenticado", "Token de autenticação inválido, expirado ou ausente.", request.getDescription(false).replace("uri=", ""));
+        return new ResponseEntity<>(resposta, HttpStatus.UNAUTHORIZED);
+    }
+
+    // acesso negado
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<RespostaErroDTO> tratarAccessDeniedException(AccessDeniedException ex, WebRequest request) {
+        RespostaErroDTO resposta = new RespostaErroDTO(403, "Acesso Negado", "Você não tem permissão para acessar este recurso.", request.getDescription(false).replace("uri=", ""));
+        return new ResponseEntity<>(resposta, HttpStatus.FORBIDDEN);
     }
     
-    // captura qualquer outra exceção que não foi tratada especificamente e retorna HTTP 500
+    // pega o restante dos erros
     @ExceptionHandler(Exception.class)
     public ResponseEntity<RespostaErroDTO> tratarExcecaoGlobal(Exception ex, WebRequest request) {
-
-        RespostaErroDTO respostaErro = new RespostaErroDTO(
-            HttpStatus.INTERNAL_SERVER_ERROR.value(),
-            "Erro Interno do Servidor",
-            "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.", // mensagem genérica 
-            request.getDescription(false).replace("uri=", "")
-        );
-        
         ex.printStackTrace(); 
-
-        return new ResponseEntity<>(respostaErro, HttpStatus.INTERNAL_SERVER_ERROR);
+        RespostaErroDTO resposta = new RespostaErroDTO(500, "Erro Interno do Servidor", "Ocorreu um erro inesperado.", request.getDescription(false).replace("uri=", ""));
+        return new ResponseEntity<>(resposta, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

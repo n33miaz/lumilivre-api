@@ -27,7 +27,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/emprestimos")
-@CrossOrigin(origins = "*", maxAge = 3600, allowCredentials = "false")
 
 @Tag(name = "5. Empréstimos")
 @SecurityRequirement(name = "bearerAuth")
