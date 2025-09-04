@@ -17,6 +17,9 @@ import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
@@ -140,13 +143,21 @@ public class UsuarioService {
     }
 
     public ResponseEntity<?> alterarSenha(AlterarSenhaDTO dto) {
-        Optional<UsuarioModel> opt = ur.findByEmail(dto.getMatricula());
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String usernameLogado = userDetails.getUsername();
+
+        Optional<UsuarioModel> opt = ur.findByEmailOrAluno_Matricula(usernameLogado, usernameLogado);
 
         if (opt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário não encontrado");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário logado não encontrado no sistema.");
         }
 
         UsuarioModel usuario = opt.get();
+
+        // usuário só pode alterar a própria senha
+        if (usuario.getAluno() != null && !usuario.getAluno().getMatricula().equals(dto.getMatricula())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Você não tem permissão para alterar a senha de outro usuário.");
+        }
 
         if (!passwordEncoder.matches(dto.getSenhaAtual(), usuario.getSenha())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Senha atual incorreta");
@@ -157,5 +168,4 @@ public class UsuarioService {
 
         return ResponseEntity.ok("Senha alterada com sucesso");
     }
-
 }
