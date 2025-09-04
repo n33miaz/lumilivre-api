@@ -34,7 +34,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                     // Rotas públicas
-                    .requestMatchers("/auth/login").permitAll()
+                    .requestMatchers("/auth/login", "/auth/esqueci-senha", "/auth/validar-token/**", "/auth/mudar-senha").permitAll()
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // rotas para acessar a documentação mo swagger
 
                     // Apenas ADMIN

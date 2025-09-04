@@ -39,5 +39,5 @@ public class EmailService {
                 "\n\nSe você não solicitou esta alteração, por favor ignore este e-mail.\n\n" +
                 "Atenciosamente,\nEquipe Lumi Livre");
         mailSender.send(mensagem);
-}
+    }
 }
