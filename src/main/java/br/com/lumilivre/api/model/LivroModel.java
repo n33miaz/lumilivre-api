@@ -6,16 +6,20 @@ import java.util.List;
 import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "livro")
@@ -82,7 +86,8 @@ public class LivroModel {
     @JoinColumn(name = "autor_codigo")
     private AutorModel autor;
 
-    @OneToMany(mappedBy = "livro")
+    @OneToMany(mappedBy = "livro", fetch = FetchType.EAGER)
+    @JsonIgnore
     private List<ExemplarModel> exemplares;
 
     public List<ExemplarModel> getExemplares() {
