@@ -24,10 +24,13 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
 
     List<EmprestimoModel> findByStatusEmprestimo(StatusEmprestimo status);
 
+    // busca e conta ATIVO e ATRASADO
+    List<EmprestimoModel> findByStatusEmprestimoIn(List<StatusEmprestimo> statuses);
+    long countByStatusEmprestimoIn(List<StatusEmprestimo> statuses);
+
     List<EmprestimoModel> findByStatusEmprestimoAndDataDevolucaoBefore(StatusEmprestimo status, LocalDateTime now);
 
-    List<EmprestimoModel> findByStatusEmprestimoAndDataDevolucaoGreaterThanEqual(StatusEmprestimo status,
-            LocalDateTime now);
+    List<EmprestimoModel> findByStatusEmprestimoAndDataDevolucaoGreaterThanEqual(StatusEmprestimo status, LocalDateTime now);
 
     List<EmprestimoModel> findByAluno_Matricula(String matricula);
 
