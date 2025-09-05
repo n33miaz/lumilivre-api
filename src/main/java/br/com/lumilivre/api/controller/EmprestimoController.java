@@ -94,14 +94,24 @@ public class EmprestimoController {
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("buscar/atrasados")
+    @GetMapping("/buscar/ativos-e-atrasados") 
+    @Operation(summary = "Lista todos os empréstimos ativos e atrasados", description = "Retorna uma lista de todos os empréstimos que não foram concluídos.")
+    public ResponseEntity<List<EmprestimoModel>> buscarAtivosEAtrasados() {
+        return ResponseEntity.ok(es.buscarAtivosEAtrasados());
+    }
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    @GetMapping("/contagem/ativos-e-atrasados") 
+    @Operation(summary = "Retorna a contagem de empréstimos ativos e atrasados")
+    public ResponseEntity<Long> getContagemAtivosEAtrasados() {
+        return ResponseEntity.ok(es.getContagemEmprestimosAtivosEAtrasados());
+    }
 
-    @Operation(summary = "Lista todos os empréstimos atrasados", description = "Retorna uma lista de empréstimos com status ATIVO cuja data de devolução já passou.")
-    @ApiResponse(responseCode = "200", description = "Lista de empréstimos atrasados")
-
-    public ResponseEntity<List<EmprestimoModel>> buscarAtrasados() {
-        return ResponseEntity.ok(es.buscarAtrasados());
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    @GetMapping("/buscar/apenas-atrasados") 
+    @Operation(summary = "Lista apenas os empréstimos com status ATRASADO")
+    public ResponseEntity<List<EmprestimoModel>> buscarApenasAtrasados() {
+        return ResponseEntity.ok(es.buscarApenasAtrasados());
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

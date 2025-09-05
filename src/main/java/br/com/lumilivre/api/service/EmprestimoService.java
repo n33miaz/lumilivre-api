@@ -110,6 +110,22 @@ public class EmprestimoService {
         return emprestimoRepository.findHistoricoEmprestimos(matricula);
     }
 
+    public List<EmprestimoModel> buscarAtivosEAtrasados() {
+        return emprestimoRepository.findByStatusEmprestimoIn(
+            List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO)
+        );
+    }
+
+    public long getContagemEmprestimosAtivosEAtrasados() {
+        return emprestimoRepository.countByStatusEmprestimoIn(
+            List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO)
+        );
+    }
+    
+    public List<EmprestimoModel> buscarApenasAtrasados() {
+        return emprestimoRepository.findByStatusEmprestimo(StatusEmprestimo.ATRASADO);
+    }
+
     @Transactional
     public ResponseEntity<ResponseModel> cadastrar(EmprestimoDTO dto) {
         ResponseModel rm = new ResponseModel();
