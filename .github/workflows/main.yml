@@ -32,7 +32,7 @@ jobs:
           ssh-private-key: ${{ secrets.AWS_SSH_KEY }}
 
       # 5️⃣ Deploy para EC2 via nohup
-      - name: Deploy to EC2 via SSH
+      - name: Deploy to EC2
         run: |
           JAR_LOCAL=target/lumilivre-0.0.1-PROD.jar
           JAR_REMOTE=/home/ec2-user/api/lumilivre-0.0.1-PROD.jar
@@ -48,10 +48,14 @@ jobs:
             pkill -f 'lumilivre-0.0.1-PROD.jar' || true && \
             if [ -f $JAR_REMOTE ]; then mv $JAR_REMOTE $BACKUP_REMOTE; fi && \
             mv /home/ec2-user/lumilivre-0.0.1-PROD.jar $JAR_REMOTE && \
+            export DB_USER='${{ secrets.DB_USER }}' && \
+            export DB_PASS='${{ secrets.DB_PASS }}' && \
+            export MAIL_USER='${{ secrets.MAIL_USER }}' && \
+            export MAIL_PASS='${{ secrets.MAIL_PASS }}' && \
+            export JWT_SECRET='${{ secrets.JWT_SECRET }}' && \
+            export KEYSTORE_PASS='${{ secrets.KEYSTORE_PASS }}' && \
             nohup java \
               -Dserver.ssl.key-store=/home/ec2-user/api.p12 \
-              -Dserver.ssl.key-store-password=${{ secrets.KEYSTORE_PASS }} \
               -Dserver.ssl.key-store-type=PKCS12 \
-              -Djwt.secret=${{ secrets.JWT_SECRET }} \
               -jar $JAR_REMOTE > /home/ec2-user/api/app.log 2>&1 & \
           "
