@@ -31,16 +31,18 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.AWS_SSH_KEY }}
 
-      # 5️⃣ Deploy para EC2 via nohup
+      # 5️⃣ Deploy para EC2 via nohup e copiar api.p12
       - name: Deploy to EC2
         run: |
           JAR_LOCAL=target/lumilivre-0.0.1-PROD.jar
           JAR_REMOTE=/home/ec2-user/api/lumilivre-0.0.1-PROD.jar
           BACKUP_REMOTE=/home/ec2-user/api/lumilivre-0.0.1-PROD-backup.jar
+          KEYSTORE_LOCAL=api.p12
           HOST=ec2-user@100.27.206.216
 
-          # Copiar .jar para EC2
+          # Copiar .jar e keystore para EC2
           scp -o StrictHostKeyChecking=no $JAR_LOCAL $HOST:/home/ec2-user/
+          scp -o StrictHostKeyChecking=no $KEYSTORE_LOCAL $HOST:/home/ec2-user/api/api.p12
 
           # Conectar na EC2 e atualizar API
           ssh -o StrictHostKeyChecking=no $HOST "\
@@ -48,14 +50,12 @@ jobs:
             pkill -f 'lumilivre-0.0.1-PROD.jar' || true && \
             if [ -f $JAR_REMOTE ]; then mv $JAR_REMOTE $BACKUP_REMOTE; fi && \
             mv /home/ec2-user/lumilivre-0.0.1-PROD.jar $JAR_REMOTE && \
-            export DB_USER='${{ secrets.DB_USER }}' && \
-            export DB_PASS='${{ secrets.DB_PASS }}' && \
-            export MAIL_USER='${{ secrets.MAIL_USER }}' && \
-            export MAIL_PASS='${{ secrets.MAIL_PASS }}' && \
-            export JWT_SECRET='${{ secrets.JWT_SECRET }}' && \
-            export KEYSTORE_PASS='${{ secrets.KEYSTORE_PASS }}' && \
+            chmod 600 /home/ec2-user/api/api.p12 && \
+            chown ec2-user:ec2-user /home/ec2-user/api/api.p12 && \
+            # Carregar variáveis do arquivo .env
+            set -a && source /home/ec2-user/api/.env && set +a && \
             nohup java \
-              -Dserver.ssl.key-store=/home/ec2-user/api.p12 \
+              -Dserver.ssl.key-store=/home/ec2-user/api/api.p12 \
               -Dserver.ssl.key-store-type=PKCS12 \
               -jar $JAR_REMOTE > /home/ec2-user/api/app.log 2>&1 & \
           "
