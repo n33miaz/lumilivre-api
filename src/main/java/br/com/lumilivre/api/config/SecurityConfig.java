@@ -30,25 +30,33 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                    // Rotas públicas
-                    .requestMatchers("/auth/login", "/auth/esqueci-senha", "/auth/validar-token/**", "/auth/mudar-senha").permitAll()
-                    .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // rotas para acessar a documentação mo swagger
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        // Rotas públicas
+                        .requestMatchers("/auth/login", "/auth/esqueci-senha", "/auth/validar-token/**",
+                                "/auth/mudar-senha")
+                        .permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // rotas
+                                                                                                              // para
+                                                                                                              // acessar
+                                                                                                              // a
+                                                                                                              // documentação
+                                                                                                              // mo
+                                                                                                              // swagger
 
-                    // Apenas ADMIN
-                    .requestMatchers("/usuarios/**").hasRole("ADMIN")
+                        // Apenas ADMIN
+                        .requestMatchers("/usuarios/**").hasRole("ADMIN")
 
-                    // ADMIN ou BIBLIOTECARIO
-                    .requestMatchers("/livros/**", "/generos/**", "/autores/**", "/cursos/**", "/emprestimos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
-                    .requestMatchers("/alunos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        // ADMIN ou BIBLIOTECARIO
+                        .requestMatchers("/livros/**", "/generos/**", "/autores/**", "/cursos/**", "/emprestimos/**")
+                        .hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        .requestMatchers("/alunos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
 
-                    // Qualquer outra rota precisa estar autenticada
-                    .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        // Qualquer outra rota precisa estar autenticada
+                        .anyRequest().authenticated())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -63,16 +71,17 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 
-    // Cross-Origin geral
     @Bean
-        public UrlBasedCorsConfigurationSource corsConfigurationSource() {
-            CorsConfiguration configuration = new CorsConfiguration();
-            configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000", "https://lumilivre-web.onrender.com")); 
-            configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-            configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
-            configuration.setAllowCredentials(true);
-            UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-            source.registerCorsConfiguration("/**", configuration);
-            return source;
+    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173",
+                "http://localhost:3000", "http://127.0.0.1:3000", "https://lumilivre-web.onrender.com"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowedOrigins(Arrays.asList("https://lumilivre-web.onrender.com"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
