@@ -50,3 +50,19 @@ jobs:
             mv /home/ec2-user/lumilivre-0.0.1-PROD.jar $JAR_REMOTE && \
             nohup java -jar $JAR_REMOTE > /home/ec2-user/api/app.log 2>&1 & \
           "
+
+      # 6️⃣ Health check para garantir que a API subiu
+      - name: Check API health
+        run: |
+          HOST_IP=100.27.206.216
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$HOST_IP:8080/actuator/health || echo "000")
+            if [ "$STATUS" == "200" ]; then
+              echo "✅ API is up!"
+              exit 0
+            fi
+            echo "⏳ Waiting for API to start... ($i/10)"
+            sleep 5
+          done
+          echo "❌ API did not start in time."
+          exit 1
