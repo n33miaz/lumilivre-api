@@ -40,7 +40,6 @@ Thumbs.db
 # Arquivos de configuração de ambiente local
 .env
 .env.local
-application.properties
 
 # Arquivos de teste
 test/
