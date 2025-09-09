@@ -37,16 +37,13 @@ jobs:
           JAR_LOCAL=target/lumilivre-0.0.1-PROD.jar
           JAR_REMOTE=/home/ec2-user/api/lumilivre-0.0.1-PROD.jar
           BACKUP_REMOTE=/home/ec2-user/api/lumilivre-0.0.1-PROD-backup.jar
-          P12_LOCAL=/etc/letsencrypt/live/api.lumilivre.com.br/api.p12
-          P12_REMOTE=/home/ec2-user/api/api.p12
           HOST=ec2-user@100.27.206.216
 
           # Criar pasta na EC2
           ssh -o StrictHostKeyChecking=no $HOST "mkdir -p /home/ec2-user/api"
 
-          # Copiar .jar e .p12 para EC2
+          # Copiar .jar para EC2
           scp -o StrictHostKeyChecking=no $JAR_LOCAL $HOST:/home/ec2-user/
-          scp -o StrictHostKeyChecking=no $P12_LOCAL $HOST:$P12_REMOTE
 
           # Conectar na EC2 e atualizar API
           ssh -o StrictHostKeyChecking=no $HOST "\
