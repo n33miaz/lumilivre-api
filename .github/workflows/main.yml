@@ -31,8 +31,8 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.AWS_SSH_KEY }}
 
-      # 5️⃣ Deploy para EC2
-      - name: Deploy to EC2
+      # 5️⃣ Deploy para EC2 via SSH
+      - name: Deploy to EC2 via SSH
         run: |
           JAR_LOCAL=target/lumilivre-0.0.1-PROD.jar
           JAR_REMOTE=/home/ec2-user/api/lumilivre-0.0.1-PROD.jar
@@ -41,10 +41,20 @@ jobs:
           # Copiar .jar para EC2
           scp -o StrictHostKeyChecking=no $JAR_LOCAL ec2-user@100.27.206.216:/home/ec2-user/
 
-          # Executar comandos na EC2 inline
-          ssh -o StrictHostKeyChecking=no ec2-user@100.27.206.216 " \
+          # Conectar na EC2 e atualizar API
+          ssh -o StrictHostKeyChecking=no ec2-user@100.27.206.216 "\
+            # Criar pasta se não existir
+            mkdir -p /home/ec2-user/api && \
+
+            # Matar processo antigo Java
+            pkill -f 'lumilivre-0.0.1-PROD.jar' || true && \
+
+            # Fazer backup do jar antigo
             if [ -f $JAR_REMOTE ]; then mv $JAR_REMOTE $BACKUP_REMOTE; fi && \
+
+            # Mover novo jar
             mv /home/ec2-user/lumilivre-0.0.1-PROD.jar $JAR_REMOTE && \
-            sudo systemctl stop lumilivre.service && \
-            sudo systemctl start lumilivre.service \
+
+            # Iniciar novo processo com nohup
+            nohup java -jar $JAR_REMOTE > /home/ec2-user/api/app.log 2>&1 & \
           "
