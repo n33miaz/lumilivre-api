@@ -48,6 +48,10 @@ jobs:
             pkill -f 'lumilivre-0.0.1-PROD.jar' || true && \
             if [ -f $JAR_REMOTE ]; then mv $JAR_REMOTE $BACKUP_REMOTE; fi && \
             mv /home/ec2-user/lumilivre-0.0.1-PROD.jar $JAR_REMOTE && \
-            nohup java -jar $JAR_REMOTE > /home/ec2-user/api/app.log 2>&1 & \
+            nohup java \
+              -Dserver.ssl.key-store=/home/ec2-user/api.p12 \
+              -Dserver.ssl.key-store-password=${{ secrets.KEYSTORE_PASS }} \
+              -Dserver.ssl.key-store-type=PKCS12 \
+              -Djwt.secret=${{ secrets.JWT_SECRET }} \
+              -jar $JAR_REMOTE > /home/ec2-user/api/app.log 2>&1 & \
           "
-
