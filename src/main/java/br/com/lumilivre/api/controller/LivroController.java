@@ -6,6 +6,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestPart;
+
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.data.LivroDTO;
@@ -56,10 +64,9 @@ public class LivroController {
     @GetMapping("/{isbn}")
 
     @Operation(summary = "Busca um livro específico pelo ISBN", description = "Retorna os detalhes completos de um único livro.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Livro encontrado", content = @Content(schema = @Schema(implementation = LivroModel.class))),
-        @ApiResponse(responseCode = "404", description = "Nenhum livro encontrado para o ISBN fornecido")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Livro encontrado", content = @Content(schema = @Schema(implementation = LivroModel.class))),
+            @ApiResponse(responseCode = "404", description = "Nenhum livro encontrado para o ISBN fornecido")
     })
 
     public ResponseEntity<LivroModel> buscarPorIsbn(
@@ -109,23 +116,30 @@ public class LivroController {
     public ResponseEntity<Iterable<LivroModel>> listarDisponiveis() {
         Iterable<LivroModel> livrosDisponiveis = ls.buscarLivrosDisponiveis();
 
-        return !livrosDisponiveis.iterator().hasNext() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livrosDisponiveis);
+        return !livrosDisponiveis.iterator().hasNext() ? ResponseEntity.noContent().build()
+                : ResponseEntity.ok(livrosDisponiveis);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @PostMapping("/cadastrar")
+    @PostMapping(value = "/cadastrar", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
 
     @Operation(summary = "Cadastra um novo livro", description = "Cria uma nova obra (não um exemplar) no sistema.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso"),
-        @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")
     })
 
-    public ResponseEntity<?> cadastrar(@RequestBody LivroDTO livroDTO) {
-        return ls.cadastrar(livroDTO);
+    public ResponseEntity<?> cadastrar(
+            @RequestPart("livro") String livroJson,
+            @RequestPart(value = "file", required = false) MultipartFile file) throws JsonProcessingException {
+        
+        ObjectMapper mapper = new ObjectMapper();
+        LivroDTO livroDTO = mapper.readValue(livroJson, LivroDTO.class);
+
+        return ls.cadastrar(livroDTO, file);
     }
+
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -134,7 +148,7 @@ public class LivroController {
     @Operation(summary = "Atualiza um livro existente", description = "Altera os dados de uma obra com base no seu ISBN.")
 
     public ResponseEntity<?> atualizar(
-            @Parameter(description = "ISBN do livro a ser atualizado") @PathVariable String isbn, 
+            @Parameter(description = "ISBN do livro a ser atualizado") @PathVariable String isbn,
             @RequestBody LivroDTO livroDTO) {
         return ls.atualizar(livroDTO);
     }

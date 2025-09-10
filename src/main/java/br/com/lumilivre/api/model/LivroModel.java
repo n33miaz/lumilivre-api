@@ -75,7 +75,7 @@ public class LivroModel {
     @Column(name = "tipo_capa", length = 55)
     private TipoCapa tipo_capa;
 
-    @Column(name = "imagem", length = 500)
+    @Column(name = "imagem", length = 5000)
     private String imagem;
 
     @ManyToOne

@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.service;
 
 import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.data.LivroDTO;
@@ -20,6 +22,7 @@ import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
+import br.com.lumilivre.api.utils.UrlUtils;
 
 @Service
 public class LivroService {
@@ -39,6 +42,11 @@ public class LivroService {
     @Autowired
     private GeneroService gs;
 
+    @Autowired
+    private SupabaseStorageService storageService;
+
+    private final String BASE_URL_CAPAS = "https://ylwmaozotaddmyhosiqc.supabase.co/storage/v1/object/capas/livros";
+
     // ------------------------ BUSCAS ------------------------
     public Page<ListaLivroDTO> buscarParaListaAdmin(Pageable pageable) {
         return lr.findLivrosParaListaAdmin(pageable);
@@ -55,7 +63,8 @@ public class LivroService {
         return lr.buscarPorTexto(texto, pageable);
     }
 
-    public Page<LivroModel> buscarAvancado(String nome, String isbn, String autor, String genero, String editora, Pageable pageable) {
+    public Page<LivroModel> buscarAvancado(String nome, String isbn, String autor, String genero, String editora,
+            Pageable pageable) {
         return lr.buscarAvancado(nome, isbn, autor, genero, editora, pageable);
     }
 
@@ -68,9 +77,11 @@ public class LivroService {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
 
-    public ResponseEntity<?> cadastrar(LivroDTO dto) {
+    // ------------------------ CADASTRO ------------------------
+    public ResponseEntity<?> cadastrar(LivroDTO dto, MultipartFile file) {
         rm.setMensagem("");
 
+        // ------------------ Validações ------------------
         if (dto.getIsbn() == null || dto.getIsbn().trim().isEmpty()) {
             rm.setMensagem("O ISBN é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
@@ -133,6 +144,7 @@ public class LivroService {
             return ResponseEntity.badRequest().body(rm);
         }
 
+        // ------------------ Monta o livro ------------------
         LivroModel livro = new LivroModel();
         livro.setIsbn(dto.getIsbn());
         livro.setNome(dto.getNome());
@@ -147,16 +159,31 @@ public class LivroService {
         livro.setQuantidade(dto.getQuantidade());
         livro.setSinopse(dto.getSinopse());
         livro.setTipo_capa(TipoCapa.valueOf(dto.getTipo_capa().toUpperCase()));
-        livro.setImagem(dto.getImagem());
         livro.setAutor(autor);
         livro.setGenero(genero);
 
-        lr.save(livro);
+        // ------------------ UPLOAD DA IMAGEM ------------------
+        if (file != null && !file.isEmpty()) {
+            try {
+                String nomeArquivo = file.getOriginalFilename();
+                String url = UrlUtils.gerarUrlValida(BASE_URL_CAPAS, "", nomeArquivo);
+                livro.setImagem(url);
 
+                // Se você realmente precisa enviar para o Supabase:
+                storageService.uploadFile(file);
+
+            } catch (Exception e) {
+                rm.setMensagem("Erro ao enviar a capa: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(rm);
+            }
+        }
+
+        lr.save(livro);
         rm.setMensagem("Livro cadastrado com sucesso.");
         return ResponseEntity.status(HttpStatus.CREATED).body(rm);
     }
 
+    // ------------------------ ATUALIZAÇÃO ------------------------
     public ResponseEntity<?> atualizar(LivroDTO dto) {
         rm.setMensagem("");
 
@@ -189,17 +216,16 @@ public class LivroService {
         livro.setGenero(gs.buscarPorNome(dto.getGenero()));
 
         lr.save(livro);
-
         rm.setMensagem("Livro atualizado com sucesso.");
         return ResponseEntity.ok(rm);
     }
 
+    // ------------------------ EXCLUSÃO ------------------------
     public ResponseEntity<ResponseModel> excluir(String isbn) {
         if (!lr.existsById(isbn)) {
             rm.setMensagem("Livro não encontrado.");
             return ResponseEntity.badRequest().body(rm);
         }
-
         lr.deleteById(isbn);
         rm.setMensagem("Livro removido com sucesso.");
         return ResponseEntity.ok(rm);

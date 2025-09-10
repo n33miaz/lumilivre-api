@@ -3,13 +3,16 @@ package br.com.lumilivre.api.data;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 
 public class LivroDTO {
 
     private String isbn;
     private String nome;
-
-    @JsonFormat(pattern = "dd/MM/yyyy")
+    
+    @JsonDeserialize(using = LocalDateDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate data_lancamento;
     private Integer numero_paginas;
     private String cdd;
