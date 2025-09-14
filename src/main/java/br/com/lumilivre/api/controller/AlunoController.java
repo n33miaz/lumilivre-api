@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.data.AlunoDTO;
+import br.com.lumilivre.api.data.ListaAlunoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.AlunoService;
@@ -37,6 +38,24 @@ public class AlunoController {
     public AlunoController(AlunoService AlunoService) {
         this.as = AlunoService;
     }
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/home")
+
+    @Operation(summary = "Lista alunos para a tela principal do admin", description = "Retorna uma lista paginada de alunos com dados resumidos (usando ListaAlunoDTO) para a exibição no dashboard do admin. Suporta filtro de texto.")
+    @ApiResponse(responseCode = "200", description = "Página de alunos retornada com sucesso")
+    
+    public ResponseEntity<Page<ListaAlunoDTO>> listarParaAdmin(
+            @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
+            Pageable pageable) {
+        Page<ListaAlunoDTO> alunos = as.buscarAlunosParaListaAdmin(pageable);
+
+        return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
+    }
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @GetMapping("/buscar")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")

@@ -28,9 +28,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @SecurityRequirement(name = "bearerAuth")
 
 public class GeneroController {
+	
     @Autowired
     private GeneroService gs;
     
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
 

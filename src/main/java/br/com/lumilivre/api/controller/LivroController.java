@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.data.LivroDTO;
+import br.com.lumilivre.api.data.LivroResponseMobileGeneroDTO;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.LivroService;
@@ -73,7 +76,19 @@ public class LivroController {
             @Parameter(description = "ISBN do livro a ser buscado") @PathVariable String isbn) {
         return ls.findByIsbn(isbn);
     }
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    @PreAuthorize("hasAnyRole('ALUNO')")
+    @GetMapping("/genero/{genero}")
+    
+    @Operation(summary = "Busca livros como lista", description = "Endpoint de busca para livros no mobile, usado por alunos.")
+    @ApiResponse(responseCode = "200", description = "Lista de livros retornada com sucesso")
 
+    public ResponseEntity<List<LivroResponseMobileGeneroDTO>> listarPorGenero(@PathVariable String genero) {
+        return ls.listarPorGenero(genero);
+    }
+    
+    
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO', 'ALUNO')")
     @GetMapping("/buscar")
@@ -131,15 +146,43 @@ public class LivroController {
     })
 
     public ResponseEntity<?> cadastrar(
+            @RequestPart(value = "livro", required = false) String livroJson,
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestBody(required = false) LivroDTO livroBody) throws JsonProcessingException {
+
+        LivroDTO livroDTO;
+
+        // Se veio JSON no RequestBody (apenas JSON), usa ele
+        if (livroBody != null) {
+            livroDTO = livroBody;
+        } 
+        // Se veio JSON como String no RequestPart (multipart/form-data), desserializa
+        else if (livroJson != null && !livroJson.isBlank()) {
+            ObjectMapper mapper = new ObjectMapper();
+            livroDTO = mapper.readValue(livroJson, LivroDTO.class);
+        } else {
+            return ResponseEntity.badRequest().body("Livro não informado.");
+        }
+
+        return ls.cadastrar(livroDTO, file);
+    }
+
+    
+    @PostMapping("/livros/json")
+    public ResponseEntity<?> cadastrarJson(@RequestBody LivroDTO livroDTO) {
+        return ls.cadastrar(livroDTO, null); // file = null
+    }
+
+    @PostMapping("/livros/multipart")
+    public ResponseEntity<?> cadastrarMultipart(
             @RequestPart("livro") String livroJson,
             @RequestPart(value = "file", required = false) MultipartFile file) throws JsonProcessingException {
-        
+
         ObjectMapper mapper = new ObjectMapper();
         LivroDTO livroDTO = mapper.readValue(livroJson, LivroDTO.class);
 
         return ls.cadastrar(livroDTO, file);
     }
-
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -148,10 +191,14 @@ public class LivroController {
     @Operation(summary = "Atualiza um livro existente", description = "Altera os dados de uma obra com base no seu ISBN.")
 
     public ResponseEntity<?> atualizar(
-            @Parameter(description = "ISBN do livro a ser atualizado") @PathVariable String isbn,
+            @PathVariable String isbn,
             @RequestBody LivroDTO livroDTO) {
-        return ls.atualizar(livroDTO);
+
+        livroDTO.setIsbn(isbn);
+
+        return ls.atualizar(livroDTO, null);
     }
+
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")

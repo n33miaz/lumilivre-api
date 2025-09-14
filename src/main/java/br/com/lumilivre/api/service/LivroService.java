@@ -1,6 +1,9 @@
 package br.com.lumilivre.api.service;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -13,10 +16,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.data.LivroDTO;
+import br.com.lumilivre.api.data.LivroResponseMobileGeneroDTO;
 import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
-import br.com.lumilivre.api.model.AutorModel;
 import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -27,23 +30,12 @@ import br.com.lumilivre.api.utils.UrlUtils;
 @Service
 public class LivroService {
 
-    @Autowired
-    private ExemplarRepository er;
-
-    @Autowired
-    private LivroRepository lr;
-
-    @Autowired
-    private ResponseModel rm;
-
-    @Autowired
-    private AutorService as;
-
-    @Autowired
-    private GeneroService gs;
-
-    @Autowired
-    private SupabaseStorageService storageService;
+    @Autowired private ExemplarRepository er;
+    @Autowired private LivroRepository lr;
+    @Autowired private ResponseModel rm;
+    @Autowired private GeneroService gs;
+    @Autowired private SupabaseStorageService storageService;
+    @Autowired private GoogleBooksService googleBooksService;
 
     private final String BASE_URL_CAPAS = "https://ylwmaozotaddmyhosiqc.supabase.co/storage/v1/object/capas/livros";
 
@@ -69,20 +61,30 @@ public class LivroService {
     }
 
     public ResponseEntity<LivroModel> findByIsbn(String isbn) {
-        Optional<LivroModel> livro = lr.findByIsbn(isbn);
-        if (livro.isPresent()) {
-            return ResponseEntity.ok(livro.get());
-        }
-        rm.setMensagem("Livro não encontrado.");
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        return lr.findByIsbn(isbn)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+    }
+
+    public ResponseEntity<List<LivroResponseMobileGeneroDTO>> listarPorGenero(String genero) {
+        List<LivroModel> livros = lr.findByGeneroNomeIgnoreCase(genero);
+
+        List<LivroResponseMobileGeneroDTO> resposta = livros.stream()
+                .map(l -> new LivroResponseMobileGeneroDTO(
+                        l.getImagem(),
+                        l.getNome(),
+                        l.getAutor()
+                ))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(resposta);
     }
 
     // ------------------------ CADASTRO ------------------------
     public ResponseEntity<?> cadastrar(LivroDTO dto, MultipartFile file) {
         rm.setMensagem("");
 
-        // ------------------ Validações ------------------
-        if (dto.getIsbn() == null || dto.getIsbn().trim().isEmpty()) {
+        if (isVazio(dto.getIsbn())) {
             rm.setMensagem("O ISBN é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
@@ -92,91 +94,13 @@ public class LivroService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        if (dto.getNome() == null || dto.getNome().trim().isEmpty()) {
-            rm.setMensagem("O título é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
+        preencherComGoogleBooks(dto);
 
-        if (dto.getData_lancamento() == null) {
-            rm.setMensagem("A data é obrigatória.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        if (dto.getData_lancamento().isAfter(java.time.LocalDate.now())) {
-            rm.setMensagem("A data de lançamento não pode ser no futuro.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        if (dto.getNumero_paginas() == null || dto.getNumero_paginas() <= 0) {
-            rm.setMensagem("O número de páginas é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        if (dto.getEditora() == null || dto.getEditora().trim().isEmpty()) {
-            rm.setMensagem("A editora é obrigatória.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        if (dto.getCdd() == null || dto.getCdd().trim().isEmpty()) {
-            rm.setMensagem("O CDD é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        if (dto.getAutor() == null || dto.getAutor().trim().isEmpty()) {
-            rm.setMensagem("O autor é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        AutorModel autor = as.buscarPorCodigo(dto.getAutor());
-        if (autor == null) {
-            rm.setMensagem("Autor não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        if (dto.getGenero() == null || dto.getGenero().trim().isEmpty()) {
-            rm.setMensagem("O gênero é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
+        ResponseEntity<?> erroValidacao = validarCampos(dto);
+        if (erroValidacao != null) return erroValidacao;
 
         GeneroModel genero = gs.buscarPorNome(dto.getGenero());
-        if (genero == null) {
-            rm.setMensagem("Gênero não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        // ------------------ Monta o livro ------------------
-        LivroModel livro = new LivroModel();
-        livro.setIsbn(dto.getIsbn());
-        livro.setNome(dto.getNome());
-        livro.setData_lancamento(dto.getData_lancamento());
-        livro.setNumero_paginas(dto.getNumero_paginas());
-        livro.setCdd(Cdd.valueOf(dto.getCdd().toUpperCase()));
-        livro.setEditora(dto.getEditora());
-        livro.setNumero_capitulos(dto.getNumero_capitulos());
-        livro.setClassificacao_etaria(ClassificacaoEtaria.valueOf(dto.getClassificacao_etaria().toUpperCase()));
-        livro.setEdicao(dto.getEdicao());
-        livro.setVolume(dto.getVolume());
-        livro.setQuantidade(dto.getQuantidade());
-        livro.setSinopse(dto.getSinopse());
-        livro.setTipo_capa(TipoCapa.valueOf(dto.getTipo_capa().toUpperCase()));
-        livro.setAutor(autor);
-        livro.setGenero(genero);
-
-        // ------------------ UPLOAD DA IMAGEM ------------------
-        if (file != null && !file.isEmpty()) {
-            try {
-                String nomeArquivo = file.getOriginalFilename();
-                String url = UrlUtils.gerarUrlValida(BASE_URL_CAPAS, "", nomeArquivo);
-                livro.setImagem(url);
-
-                // Se você realmente precisa enviar para o Supabase:
-                storageService.uploadFile(file);
-
-            } catch (Exception e) {
-                rm.setMensagem("Erro ao enviar a capa: " + e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(rm);
-            }
-        }
+        LivroModel livro = montarLivro(dto, genero, file);
 
         lr.save(livro);
         rm.setMensagem("Livro cadastrado com sucesso.");
@@ -184,10 +108,10 @@ public class LivroService {
     }
 
     // ------------------------ ATUALIZAÇÃO ------------------------
-    public ResponseEntity<?> atualizar(LivroDTO dto) {
+    public ResponseEntity<?> atualizar(LivroDTO dto, MultipartFile file) {
         rm.setMensagem("");
 
-        if (dto.getIsbn() == null || dto.getIsbn().trim().isEmpty()) {
+        if (isVazio(dto.getIsbn())) {
             rm.setMensagem("O ISBN é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
@@ -198,47 +122,115 @@ public class LivroService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
 
-        LivroModel livro = livroExistente.get();
-        livro.setNome(dto.getNome());
-        livro.setData_lancamento(dto.getData_lancamento());
-        livro.setNumero_paginas(dto.getNumero_paginas());
-        livro.setCdd(Cdd.valueOf(dto.getCdd().toUpperCase()));
-        livro.setEditora(dto.getEditora());
-        livro.setNumero_capitulos(dto.getNumero_capitulos());
-        livro.setClassificacao_etaria(ClassificacaoEtaria.valueOf(dto.getClassificacao_etaria().toUpperCase()));
-        livro.setEdicao(dto.getEdicao());
-        livro.setVolume(dto.getVolume());
-        livro.setQuantidade(dto.getQuantidade());
-        livro.setSinopse(dto.getSinopse());
-        livro.setTipo_capa(TipoCapa.valueOf(dto.getTipo_capa().toUpperCase()));
-        livro.setImagem(dto.getImagem());
-        livro.setAutor(as.buscarPorCodigo(dto.getAutor()));
-        livro.setGenero(gs.buscarPorNome(dto.getGenero()));
+        preencherComGoogleBooks(dto);
+
+        ResponseEntity<?> erroValidacao = validarCampos(dto);
+        if (erroValidacao != null) return erroValidacao;
+
+        GeneroModel genero = gs.buscarPorNome(dto.getGenero());
+        LivroModel livro = montarLivro(dto, genero, file);
+        livro.setIsbn(dto.getIsbn()); // garante que o ISBN não muda
 
         lr.save(livro);
         rm.setMensagem("Livro atualizado com sucesso.");
         return ResponseEntity.ok(rm);
     }
 
-    // ------------------------ EXCLUSÃO ------------------------
-    public ResponseEntity<ResponseModel> excluir(String isbn) {
-        if (!lr.existsById(isbn)) {
-            rm.setMensagem("Livro não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
+    // ------------------------ MÉTODOS AUXILIARES ------------------------
+    private void preencherComGoogleBooks(LivroDTO dto) {
+        LivroModel livroGoogle = googleBooksService.buscarLivroPorIsbn(dto.getIsbn());
+        if (livroGoogle != null) {
+            if (isVazio(dto.getNome())) dto.setNome(livroGoogle.getNome());
+            if (isVazio(dto.getEditora())) dto.setEditora(livroGoogle.getEditora());
+            if (dto.getNumero_paginas() == null) dto.setNumero_paginas(livroGoogle.getNumero_paginas());
+            if (dto.getData_lancamento() == null) dto.setData_lancamento(livroGoogle.getData_lancamento());
+            if (isVazio(dto.getSinopse())) dto.setSinopse(livroGoogle.getSinopse());
+            if (isVazio(dto.getImagem())) dto.setImagem(livroGoogle.getImagem());
+            if (isVazio(dto.getAutor()) && livroGoogle.getAutor() != null) {
+                dto.setAutor(livroGoogle.getAutor());
+            }
         }
-        lr.deleteById(isbn);
-        rm.setMensagem("Livro removido com sucesso.");
-        return ResponseEntity.ok(rm);
     }
+
+    private ResponseEntity<?> validarCampos(LivroDTO dto) {
+        if (isVazio(dto.getNome())) return erro("O título é obrigatório.");
+        if (dto.getData_lancamento() == null) return erro("A data é obrigatória.");
+        if (dto.getData_lancamento().isAfter(LocalDate.now())) return erro("A data de lançamento não pode ser no futuro.");
+        if (dto.getNumero_paginas() == null || dto.getNumero_paginas() <= 0) return erro("O número de páginas é obrigatório.");
+        if (isVazio(dto.getEditora())) return erro("A editora é obrigatória.");
+        if (isVazio(dto.getCdd())) return erro("O CDD é obrigatório.");
+        if (isVazio(dto.getAutor())) return erro("O autor é obrigatório.");
+        if (isVazio(dto.getGenero())) return erro("O gênero é obrigatório.");
+        if (gs.buscarPorNome(dto.getGenero()) == null) return erro("Gênero não encontrado.");
+        return null;
+    }
+
+    private LivroModel montarLivro(LivroDTO dto, GeneroModel genero, MultipartFile file) {
+        LivroModel livro = new LivroModel();
+        livro.setIsbn(dto.getIsbn());
+        livro.setNome(dto.getNome());
+        livro.setData_lancamento(dto.getData_lancamento());
+        livro.setNumero_paginas(dto.getNumero_paginas());
+
+        // Enums com segurança
+        try {
+            livro.setCdd(Cdd.valueOf(dto.getCdd().toUpperCase()));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("CDD inválido: " + dto.getCdd());
+        }
+        try {
+            livro.setClassificacao_etaria(ClassificacaoEtaria.valueOf(dto.getClassificacao_etaria().toUpperCase()));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Classificação etária inválida: " + dto.getClassificacao_etaria());
+        }
+        try {
+            livro.setTipo_capa(TipoCapa.valueOf(dto.getTipo_capa().toUpperCase()));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Tipo de capa inválido: " + dto.getTipo_capa());
+        }
+
+        livro.setEditora(dto.getEditora());
+        livro.setNumero_capitulos(dto.getNumero_capitulos());
+        livro.setEdicao(dto.getEdicao());
+        livro.setVolume(dto.getVolume());
+        livro.setQuantidade(dto.getQuantidade());
+        livro.setSinopse(dto.getSinopse());
+        livro.setAutor(dto.getAutor());
+        livro.setGenero(genero);
+
+        // Imagem
+        if (file != null && !file.isEmpty()) {
+            try {
+                String nomeArquivo = file.getOriginalFilename();
+                String url = UrlUtils.gerarUrlValida(BASE_URL_CAPAS, "", nomeArquivo);
+                livro.setImagem(url);
+                storageService.uploadFile(file);
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao enviar a capa: " + e.getMessage(), e);
+            }
+        } else if (!isVazio(dto.getImagem())) {
+            livro.setImagem(dto.getImagem());
+        }
+
+        return livro;
+    }
+
+    private boolean isVazio(String valor) {
+        return valor == null || valor.trim().isEmpty();
+    }
+
+    private ResponseEntity<?> erro(String mensagem) {
+        rm.setMensagem(mensagem);
+        return ResponseEntity.badRequest().body(rm);
+    }
+
+    // ------------------------ EXCLUSÃO ------------------------
+    public ResponseEntity<ResponseModel> excluir(String isbn) { if (!lr.existsById(isbn)) { rm.setMensagem("Livro não encontrado."); return ResponseEntity.badRequest().body(rm); } lr.deleteById(isbn); rm.setMensagem("Livro removido com sucesso."); return ResponseEntity.ok(rm); }
 
     @Transactional
     public ResponseEntity<?> excluirLivroComExemplares(String isbn) {
         Optional<LivroModel> livroOpt = lr.findByIsbn(isbn);
-
-        if (livroOpt.isEmpty()) {
-            rm.setMensagem("Livro não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
+        if (livroOpt.isEmpty()) return erro("Livro não encontrado.");
 
         er.deleteAllByLivroIsbn(isbn);
         lr.delete(livroOpt.get());

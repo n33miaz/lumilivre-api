@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.data.EmprestimoDTO;
 import br.com.lumilivre.api.data.EmprestimoResponseDTO;
+import br.com.lumilivre.api.data.ListaAutorDTO;
+import br.com.lumilivre.api.data.ListaEmprestimoDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -35,6 +37,24 @@ public class EmprestimoController {
 
     @Autowired
     private EmprestimoService es;
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/home")
+
+    @Operation(summary = "Lista autores para a tela principal do admin", description = "Retorna uma lista paginada de autores com dados resumidos (usando ListaEmprestimosDTO) para a exibição no dashboard do admin. Suporta filtro de texto.")
+    @ApiResponse(responseCode = "200", description = "Página de autores retornada com sucesso")
+    
+    public ResponseEntity<Page<ListaEmprestimoDTO>> listarParaAdmin(
+            @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
+            Pageable pageable) {
+        Page<ListaEmprestimoDTO> emprestimos = es.buscarEmprestimoParaListaAdmin(pageable);
+
+        return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
+    }
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
@@ -197,6 +217,8 @@ public class EmprestimoController {
             @Parameter(description = "ID do empréstimo a ser concluído") @PathVariable Integer id) {
         return es.concluirEmprestimo(id);
     }
+    
+    
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -208,4 +230,20 @@ public class EmprestimoController {
     public ResponseEntity<ResponseModel> excluir(@PathVariable Integer id) {
         return es.excluir(id);
     }
+    
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+@PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+@GetMapping("/ranking")
+
+@Operation(summary = "Ranking de alunos por quantidade de empréstimos", description = "Retorna os alunos com mais empréstimos, limitado pelo parâmetro 'top'.")
+@ApiResponses({
+@ApiResponse(responseCode = "200", description = "Ranking retornado com sucesso"),
+@ApiResponse(responseCode = "204", description = "Nenhum aluno encontrado")
+})
+public ResponseEntity<List<?>> rankingAlunos(
+@Parameter(description = "Número máximo de alunos a retornar") @RequestParam(defaultValue = "10") int top) {
+List<?> ranking = es.gerarRankingAlunos(top);
+return ranking.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(ranking);
+}
+
 }

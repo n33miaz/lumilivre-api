@@ -70,6 +70,10 @@ public class LivroModel {
 
     @Column(name = "sinopse", columnDefinition = "VARCHAR(MAX)")
     private String sinopse;
+    
+    @Column(name = "autor", length = 255)
+    private String autor;
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_capa", length = 55)
@@ -82,9 +86,6 @@ public class LivroModel {
     @JoinColumn(name = "genero_id")
     private GeneroModel genero;
 
-    @ManyToOne
-    @JoinColumn(name = "autor_codigo")
-    private AutorModel autor;
 
     @OneToMany(mappedBy = "livro", fetch = FetchType.EAGER)
     @JsonIgnore
@@ -218,14 +219,13 @@ public class LivroModel {
         this.genero = genero;
     }
 
-    public AutorModel getAutor() {
-        return autor;
-    }
+	public String getAutor() {
+		return autor;
+	}
 
-    public void setAutor(AutorModel autor) {
-        this.autor = autor;
-    }
-
-    // Getters e setters podem ser gerados via Lombok ou IDE
-
+	public void setAutor(String autor) {
+		this.autor = autor;
+	}
+    
+    
 }

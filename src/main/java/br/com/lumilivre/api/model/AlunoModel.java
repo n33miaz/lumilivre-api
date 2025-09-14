@@ -1,13 +1,17 @@
 package br.com.lumilivre.api.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import br.com.lumilivre.api.enums.Penalidade;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -80,6 +84,16 @@ public class AlunoModel {
 
 	@Column(name = "estado", length = 55)
 	private String estado;
+	
+	@Column(name = "penalidade", length = 55)
+    @Enumerated(EnumType.STRING)
+    private Penalidade penalidade; // <--- novo campo
+
+    private LocalDateTime penalidadeExpiraEm; // opcional, se quiser limitar duração da penalidade
+
+    @Column(name = "emprestimos_count", nullable = false)
+    private Integer emprestimosCount = 0;
+
 
 	public String getMatricula() {
 		return matricula;
@@ -216,5 +230,40 @@ public class AlunoModel {
 	public void setEstado(String estado) {
 		this.estado = estado;
 	}
+
+	public Penalidade getPenalidade() {
+		return penalidade;
+	}
+
+	public void setPenalidade(Penalidade penalidade) {
+		this.penalidade = penalidade;
+	}
+
+	public LocalDateTime getPenalidadeExpiraEm() {
+		return penalidadeExpiraEm;
+	}
+
+	public void setPenalidadeExpiraEm(LocalDateTime penalidadeExpiraEm) {
+		this.penalidadeExpiraEm = penalidadeExpiraEm;
+	}
+
+	public int getEmprestimosCount() {
+	    return emprestimosCount != null ? emprestimosCount : 0;
+	}
+
+
+	public void setEmprestimosCount(int emprestimosCount) {
+		this.emprestimosCount = emprestimosCount;
+	}
+	
+    // Métodos para incrementar/decrementar
+    public void incrementarEmprestimos() {
+        this.emprestimosCount++;
+    }
+
+    public void decrementarEmprestimos() {
+        if (this.emprestimosCount > 0) this.emprestimosCount--;
+    }
+	
 
 }
