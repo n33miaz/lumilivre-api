@@ -82,9 +82,8 @@ public class LivroModel {
     @Column(name = "imagem", length = 5000)
     private String imagem;
 
-    @ManyToOne
-    @JoinColumn(name = "genero_id")
-    private GeneroModel genero;
+    @Column(name = "genero", length = 255)
+    private String genero;
 
 
     @OneToMany(mappedBy = "livro", fetch = FetchType.EAGER)
@@ -211,11 +210,11 @@ public class LivroModel {
         this.imagem = imagem;
     }
 
-    public GeneroModel getGenero() {
+    public String getGenero() {
         return genero;
     }
 
-    public void setGenero(GeneroModel genero) {
+    public void setGenero(String genero) {
         this.genero = genero;
     }
 

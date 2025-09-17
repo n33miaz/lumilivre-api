@@ -20,7 +20,6 @@ import br.com.lumilivre.api.data.LivroResponseMobileGeneroDTO;
 import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
-import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.ExemplarRepository;
@@ -33,7 +32,6 @@ public class LivroService {
     @Autowired private ExemplarRepository er;
     @Autowired private LivroRepository lr;
     @Autowired private ResponseModel rm;
-    @Autowired private GeneroService gs;
     @Autowired private SupabaseStorageService storageService;
     @Autowired private GoogleBooksService googleBooksService;
 
@@ -99,8 +97,7 @@ public class LivroService {
         ResponseEntity<?> erroValidacao = validarCampos(dto);
         if (erroValidacao != null) return erroValidacao;
 
-        GeneroModel genero = gs.buscarPorNome(dto.getGenero());
-        LivroModel livro = montarLivro(dto, genero, file);
+        LivroModel livro = montarLivro(dto, file);
 
         lr.save(livro);
         rm.setMensagem("Livro cadastrado com sucesso.");
@@ -127,8 +124,7 @@ public class LivroService {
         ResponseEntity<?> erroValidacao = validarCampos(dto);
         if (erroValidacao != null) return erroValidacao;
 
-        GeneroModel genero = gs.buscarPorNome(dto.getGenero());
-        LivroModel livro = montarLivro(dto, genero, file);
+        LivroModel livro = montarLivro(dto, file);
         livro.setIsbn(dto.getIsbn()); // garante que o ISBN não muda
 
         lr.save(livro);
@@ -161,11 +157,10 @@ public class LivroService {
         if (isVazio(dto.getCdd())) return erro("O CDD é obrigatório.");
         if (isVazio(dto.getAutor())) return erro("O autor é obrigatório.");
         if (isVazio(dto.getGenero())) return erro("O gênero é obrigatório.");
-        if (gs.buscarPorNome(dto.getGenero()) == null) return erro("Gênero não encontrado.");
         return null;
     }
 
-    private LivroModel montarLivro(LivroDTO dto, GeneroModel genero, MultipartFile file) {
+    private LivroModel montarLivro(LivroDTO dto, MultipartFile file) {
         LivroModel livro = new LivroModel();
         livro.setIsbn(dto.getIsbn());
         livro.setNome(dto.getNome());
@@ -196,7 +191,7 @@ public class LivroService {
         livro.setQuantidade(dto.getQuantidade());
         livro.setSinopse(dto.getSinopse());
         livro.setAutor(dto.getAutor());
-        livro.setGenero(genero);
+        livro.setGenero(dto.getGenero());
 
         // Imagem
         if (file != null && !file.isEmpty()) {

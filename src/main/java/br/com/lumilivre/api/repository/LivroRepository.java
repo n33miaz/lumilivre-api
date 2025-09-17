@@ -30,7 +30,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
           WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
              OR LOWER(l.sinopse) LIKE LOWER(CONCAT('%', :texto, '%'))
              OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :texto, '%'))
-             OR LOWER(l.genero.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+             OR LOWER(l.genero) LIKE LOWER(CONCAT('%', :texto, '%'))
              OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :texto, '%'))
       """)
   Page<LivroModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
@@ -40,7 +40,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
           WHERE (:nome IS NULL OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
             AND (:isbn IS NULL OR l.isbn = :isbn)
             AND (:autor IS NULL OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :autor, '%')))
-            AND (:genero IS NULL OR LOWER(l.genero.nome) LIKE LOWER(CONCAT('%', :genero, '%')))
+            AND (:genero IS NULL OR LOWER(l.genero)LIKE LOWER(CONCAT('%', :genero, '%')))
             AND (:editora IS NULL OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :editora, '%')))
       """)
   Page<LivroModel> buscarAvancado(
@@ -80,7 +80,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
       """)
   Page<ListaLivroDTO> findLivrosParaListaAdmin(Pageable pageable);
 
-  @Query("SELECT l FROM LivroModel l WHERE LOWER(l.genero.nome) = LOWER(:nomeGenero)")
+  @Query("SELECT l FROM LivroModel l WHERE LOWER(l.genero) = LOWER(:nomeGenero)")
   
   List<LivroModel> findByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero);
 }
