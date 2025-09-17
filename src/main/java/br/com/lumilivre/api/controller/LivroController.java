@@ -10,13 +10,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.RequestPart;
-
-
 import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.data.LivroDTO;
 import br.com.lumilivre.api.data.LivroResponseMobileGeneroDTO;
@@ -35,81 +28,56 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/livros")
-
 @Tag(name = "7. Livros")
 @SecurityRequirement(name = "bearerAuth")
-
 public class LivroController {
 
     @Autowired
     private LivroService ls;
 
-    public LivroController(LivroService livroService) {
-        this.ls = livroService;
-    }
-
+    // ==================== MÉTODOS GET ====================
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
-
-    @Operation(summary = "Lista livros para a tela principal do admin", description = "Retorna uma lista paginada de livros com dados resumidos (usando ListaLivroDTO) para a exibição no dashboard do admin. Suporta filtro de texto.")
-    @ApiResponse(responseCode = "200", description = "Página de livros retornada com sucesso")
-
+    @Operation(summary = "Lista livros para a tela principal do admin")
     public ResponseEntity<Page<ListaLivroDTO>> listarParaAdmin(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
         Page<ListaLivroDTO> livros = ls.buscarParaListaAdmin(pageable);
-
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @GetMapping("/{isbn}")
-
-    @Operation(summary = "Busca um livro específico pelo ISBN", description = "Retorna os detalhes completos de um único livro.")
+    @Operation(summary = "Busca um livro específico pelo ISBN")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Livro encontrado", content = @Content(schema = @Schema(implementation = LivroModel.class))),
             @ApiResponse(responseCode = "404", description = "Nenhum livro encontrado para o ISBN fornecido")
     })
-
     public ResponseEntity<LivroModel> buscarPorIsbn(
             @Parameter(description = "ISBN do livro a ser buscado") @PathVariable String isbn) {
         return ls.findByIsbn(isbn);
     }
-    
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     @PreAuthorize("hasAnyRole('ALUNO')")
     @GetMapping("/genero/{genero}")
-    
-    @Operation(summary = "Busca livros como lista", description = "Endpoint de busca para livros no mobile, usado por alunos.")
-    @ApiResponse(responseCode = "200", description = "Lista de livros retornada com sucesso")
-
+    @Operation(summary = "Busca livros como lista")
     public ResponseEntity<List<LivroResponseMobileGeneroDTO>> listarPorGenero(@PathVariable String genero) {
         return ls.listarPorGenero(genero);
     }
-    
-    
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO', 'ALUNO')")
     @GetMapping("/buscar")
-
-    @Operation(summary = "Busca livros com paginação e filtro de texto", description = "Endpoint de busca geral para livros, usado tanto por administradores quanto por alunos.")
-    @ApiResponse(responseCode = "200", description = "Página de livros retornada com sucesso")
-
+    @Operation(summary = "Busca livros com paginação e filtro de texto")
     public ResponseEntity<Page<LivroModel>> buscarPorTexto(
-            @Parameter(description = "Texto para busca genérica (em título, sinopse, autor, etc.)") @RequestParam(required = false) String texto,
+            @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
         Page<LivroModel> livros = ls.buscarPorTexto(texto, pageable);
-
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO', 'ALUNO')")
     @GetMapping("/buscar/avancado")
-
-    @Operation(summary = "Busca avançada e paginada de livros", description = "Filtra livros por campos específicos como título, ISBN, autor, gênero e editora.")
-
+    @Operation(summary = "Busca avançada e paginada de livros")
     public ResponseEntity<Page<LivroModel>> buscarAvancado(
             @Parameter(description = "Nome parcial do livro") @RequestParam(required = false) String nome,
             @Parameter(description = "ISBN exato do livro") @RequestParam(required = false) String isbn,
@@ -118,105 +86,69 @@ public class LivroController {
             @Parameter(description = "Nome parcial da editora") @RequestParam(required = false) String editora,
             Pageable pageable) {
         Page<LivroModel> livros = ls.buscarAvancado(nome, isbn, autor, genero, editora, pageable);
-
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @GetMapping("/disponiveis")
-
-    @Operation(summary = "Lista livros com exemplares disponíveis", description = "Retorna uma lista de obras que possuem pelo menos um exemplar com status 'DISPONÍVEL'.")
-
+    @Operation(summary = "Lista livros com exemplares disponíveis")
     public ResponseEntity<Iterable<LivroModel>> listarDisponiveis() {
         Iterable<LivroModel> livrosDisponiveis = ls.buscarLivrosDisponiveis();
-
         return !livrosDisponiveis.iterator().hasNext() ? ResponseEntity.noContent().build()
                 : ResponseEntity.ok(livrosDisponiveis);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @PostMapping(value = "/cadastrar", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    // ==================== MÉTODOS POST ====================
 
-    @Operation(summary = "Cadastra um novo livro", description = "Cria uma nova obra (não um exemplar) no sistema.")
+    // ✅ CADASTRO SIMPLES (APENAS DADOS - JSON)
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PostMapping("/cadastrar")
+    @Operation(summary = "Cadastra um novo livro (apenas dados)")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")
+        @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso"),
+        @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")
     })
-
-    public ResponseEntity<?> cadastrar(
-            @RequestPart(value = "livro", required = false) String livroJson,
-            @RequestPart(value = "file", required = false) MultipartFile file,
-            @RequestBody(required = false) LivroDTO livroBody) throws JsonProcessingException {
-
-        LivroDTO livroDTO;
-
-        // Se veio JSON no RequestBody (apenas JSON), usa ele
-        if (livroBody != null) {
-            livroDTO = livroBody;
-        } 
-        // Se veio JSON como String no RequestPart (multipart/form-data), desserializa
-        else if (livroJson != null && !livroJson.isBlank()) {
-            ObjectMapper mapper = new ObjectMapper();
-            livroDTO = mapper.readValue(livroJson, LivroDTO.class);
-        } else {
-            return ResponseEntity.badRequest().body("Livro não informado.");
-        }
-
-        return ls.cadastrar(livroDTO, file);
+    public ResponseEntity<?> cadastrarLivro(@RequestBody LivroDTO livroDTO) {
+        return ls.cadastrar(livroDTO, null);
     }
 
-    
-    @PostMapping("/livros/json")
-    public ResponseEntity<?> cadastrarJson(@RequestBody LivroDTO livroDTO) {
-        return ls.cadastrar(livroDTO, null); // file = null
-    }
-
-    @PostMapping("/livros/multipart")
-    public ResponseEntity<?> cadastrarMultipart(
-            @RequestPart("livro") String livroJson,
-            @RequestPart(value = "file", required = false) MultipartFile file) throws JsonProcessingException {
-
-        ObjectMapper mapper = new ObjectMapper();
-        LivroDTO livroDTO = mapper.readValue(livroJson, LivroDTO.class);
-
-        return ls.cadastrar(livroDTO, file);
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // ✅ UPLOAD DE CAPA (PARA LIVRO JÁ EXISTENTE)
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @PutMapping("/atualizar/{isbn}")
+    @PostMapping(value = "/{isbn}/capa", consumes = "multipart/form-data")
+    @Operation(summary = "Faz upload da capa para um livro existente")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Capa atualizada com sucesso"),
+        @ApiResponse(responseCode = "404", description = "Livro não encontrado")
+    })
+    public ResponseEntity<?> uploadCapa(
+            @Parameter(description = "ISBN do livro") @PathVariable String isbn,
+            @Parameter(description = "Arquivo de imagem da capa") @RequestParam("file") MultipartFile file) {
+        return ls.uploadCapa(isbn, file);
+    }
 
-    @Operation(summary = "Atualiza um livro existente", description = "Altera os dados de uma obra com base no seu ISBN.")
-
+    // ==================== MÉTODOS PUT ====================
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PutMapping("/{isbn}")
+    @Operation(summary = "Atualiza um livro existente")
     public ResponseEntity<?> atualizar(
             @PathVariable String isbn,
             @RequestBody LivroDTO livroDTO) {
-
         livroDTO.setIsbn(isbn);
-
         return ls.atualizar(livroDTO, null);
     }
 
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // ==================== MÉTODOS DELETE ====================
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @DeleteMapping("/excluir/{isbn}")
-
-    @Operation(summary = "Exclui um livro", description = "Remove uma obra. Só funciona se não houver exemplares associados.")
-
+    @DeleteMapping("/{isbn}")
+    @Operation(summary = "Exclui um livro")
     public ResponseEntity<ResponseModel> excluir(
             @Parameter(description = "ISBN do livro a ser excluído") @PathVariable String isbn) {
         return ls.excluir(isbn);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN')")
-    @DeleteMapping("/excluir-com-exemplares/{isbn}")
-
-    @Operation(summary = "Exclui um livro e seus exemplares (Acesso: ADMIN)", description = "Operação perigosa que remove uma obra e TODOS os seus exemplares. Requer permissão de Administrador.")
-
+    @DeleteMapping("/{isbn}/com-exemplares")
+    @Operation(summary = "Exclui um livro e seus exemplares")
     public ResponseEntity<?> excluirComExemplares(
             @Parameter(description = "ISBN do livro e exemplares a serem excluídos") @PathVariable String isbn) {
         return ls.excluirLivroComExemplares(isbn);

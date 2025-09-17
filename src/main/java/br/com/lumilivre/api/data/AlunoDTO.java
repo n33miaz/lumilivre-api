@@ -8,10 +8,9 @@ public class AlunoDTO {
 
     private String matricula;
     private String nome;
-    private String sobrenome;
     private String cpf;
 
-    @JsonFormat(pattern = "dd/MM/yyyy")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate data_nascimento;
     private String celular;
     private String email;
@@ -47,14 +46,6 @@ public class AlunoDTO {
 
     public void setNome(String nome) {
         this.nome = nome;
-    }
-
-    public String getSobrenome() {
-        return sobrenome;
-    }
-
-    public void setSobrenome(String sobrenome) {
-        this.sobrenome = sobrenome;
     }
 
     public String getCpf() {

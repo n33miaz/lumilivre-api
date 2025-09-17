@@ -40,6 +40,7 @@ Thumbs.db
 # Arquivos de configuração de ambiente local
 .env
 .env.local
-applexamppee.example
+.application.properties
+.applexamppee.example
 # Arquivos de teste
 test/

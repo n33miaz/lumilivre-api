@@ -85,10 +85,6 @@ public class AlunoService {
             rm.setMensagem("O nome é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
-        if (dto.getSobrenome() == null || dto.getSobrenome().trim().isEmpty()) {
-            rm.setMensagem("O sobrenome é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
         if (dto.getCpf() == null || dto.getCpf().trim().isEmpty()) {
             rm.setMensagem("O CPF é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
@@ -129,7 +125,6 @@ public class AlunoService {
         AlunoModel aluno = new AlunoModel();
         aluno.setMatricula(dto.getMatricula());
         aluno.setNome(dto.getNome());
-        aluno.setSobrenome(dto.getSobrenome());
         aluno.setCpf(dto.getCpf());
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setCelular(dto.getCelular());
@@ -170,10 +165,6 @@ public class AlunoService {
             rm.setMensagem("O nome é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
-        if (dto.getSobrenome() == null || dto.getSobrenome().trim().isEmpty()) {
-            rm.setMensagem("O sobrenome é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
         if (dto.getCpf() == null || dto.getCpf().trim().isEmpty()) {
             rm.setMensagem("O CPF é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
@@ -198,7 +189,6 @@ public class AlunoService {
         boolean cpfAlterado = !aluno.getCpf().equals(dto.getCpf());
 
         aluno.setNome(dto.getNome());
-        aluno.setSobrenome(dto.getSobrenome());
         aluno.setCpf(dto.getCpf());
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setCelular(dto.getCelular());

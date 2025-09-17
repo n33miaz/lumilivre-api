@@ -29,12 +29,8 @@ public class AlunoModel {
 	private String matricula;
 
 	@NotNull
-	@Column(name = "nome", nullable = false, length = 55)
+	@Column(name = "nome", nullable = false, length = 255)
 	private String nome;
-
-	@NotNull
-	@Column(name = "sobrenome", nullable = false, length = 55)
-	private String sobrenome;
 
 	@NotNull
 	@Column(name = "cpf", nullable = false, length = 11)
@@ -117,14 +113,6 @@ public class AlunoModel {
 
 	public void setNome(String nome) {
 		this.nome = nome;
-	}
-
-	public String getSobrenome() {
-		return sobrenome;
-	}
-
-	public void setSobrenome(String sobrenome) {
-		this.sobrenome = sobrenome;
 	}
 
 	public String getCpf() {
