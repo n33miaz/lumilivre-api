@@ -14,7 +14,7 @@ public class EmailService {
     public void enviarSenhaInicial(String destino, String nome, String senha) {
         SimpleMailMessage mensagem = new SimpleMailMessage();
         mensagem.setTo(destino);
-        mensagem.setSubject("Acesso ao Portal Lumilivre");
+        mensagem.setSubject("Acesso ao Portal LumiLivre");
         mensagem.setText("Olá " + nome + ",\n\nSeu acesso foi criado com sucesso.\n" +
                 "Login: sua matrícula\nSenha inicial: " + senha + "\n\n" +
                 "Recomendamos que altere sua senha ao fazer o primeiro login.\n\nAtenciosamente,\nEquipe Lumilivre");
@@ -33,11 +33,11 @@ public class EmailService {
     public void enviarEmailResetSenha(String destino, String link) {
         SimpleMailMessage mensagem = new SimpleMailMessage();
         mensagem.setTo(destino);
-        mensagem.setSubject("Redefinição de Senha - Lumi Livre");
-        mensagem.setText("Olá,\n\nVocê solicitou a redefinição de sua senha. " +
+        mensagem.setSubject("Redefinição de Senha - LumiLivre");
+        mensagem.setText("Olá,\n\nsegue a solicitação de redefinição de senha. " +
                 "Clique no link a seguir para criar uma nova senha:\n" + link +
                 "\n\nSe você não solicitou esta alteração, por favor ignore este e-mail.\n\n" +
-                "Atenciosamente,\nEquipe Lumi Livre");
+                "Atenciosamente,\nEquipe LumiLivre");
         mailSender.send(mensagem);
     }
 }

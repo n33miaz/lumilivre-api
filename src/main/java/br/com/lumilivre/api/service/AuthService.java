@@ -82,7 +82,7 @@ public class AuthService {
             tokenRepository.save(tokenReset);
 
             // alteraremos para o link do domínio + /mudar-senha?token=
-            String linkReset = "http://localhost:5173/mudar-senha?token=" + token;
+            String linkReset = "https://lumilivre-web.onrender.com/mudar-senha?token=" + token;
             emailService.enviarEmailResetSenha(usuario.getEmail(), linkReset);
         }
     }
