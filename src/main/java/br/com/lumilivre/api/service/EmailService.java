@@ -20,7 +20,7 @@ public class EmailService {
                 "Recomendamos que altere sua senha ao fazer o primeiro login.\n\nAtenciosamente,\nEquipe Lumilivre");
         mailSender.send(mensagem);
     }
-    
+
     public void enviarEmail(String destino, String assunto, String mensagem) {
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setTo(destino);

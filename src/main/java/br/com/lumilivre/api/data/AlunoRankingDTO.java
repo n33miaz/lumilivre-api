@@ -13,5 +13,5 @@ public record AlunoRankingDTO(String matricula, String nome, int emprestimosCoun
 	public int emprestimosCount() {
 		return emprestimosCount;
 	}
-	
+
 }

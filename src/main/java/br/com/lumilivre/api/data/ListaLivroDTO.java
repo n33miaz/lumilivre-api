@@ -16,7 +16,6 @@ public class ListaLivroDTO {
         this.quantidadeExemplares = quantidadeExemplares;
     }
 
-    // Getters
     public String getNome() {
         return nome;
     }

@@ -1,7 +1,6 @@
 package br.com.lumilivre.api.service;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,6 +15,7 @@ import br.com.lumilivre.api.data.AlunoRankingDTO;
 import br.com.lumilivre.api.data.EmprestimoDTO;
 import br.com.lumilivre.api.data.EmprestimoResponseDTO;
 import br.com.lumilivre.api.data.ListaEmprestimoDTO;
+import br.com.lumilivre.api.data.ListaEmprestimoDashboardDTO;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
@@ -58,6 +58,23 @@ public class EmprestimoService {
         return emprestimoRepository.buscarPorTexto(texto, pageable);
     }
 
+    public List<EmprestimoResponseDTO> listarEmprestimosAluno(String matricula) {
+        return emprestimoRepository.findEmprestimosAtivos(matricula);
+    }
+
+    public List<EmprestimoResponseDTO> listarHistorico(String matricula) {
+        return emprestimoRepository.findHistoricoEmprestimos(matricula);
+    }
+
+    public List<ListaEmprestimoDashboardDTO> listarEmprestimosAtivosEAtrasados() {
+        return emprestimoRepository.findEmprestimosAtivosEAtrasados();
+    }
+
+    public long getContagemEmprestimosAtivosEAtrasados() {
+        return emprestimoRepository.countByStatusEmprestimoIn(
+                List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
+    }
+
     public Page<EmprestimoModel> buscarAvancado(
             StatusEmprestimo statusEmprestimo,
             String tombo,
@@ -69,12 +86,12 @@ public class EmprestimoService {
 
         LocalDateTime dataEmprestimoDT = null;
         if (dataEmprestimo != null && !dataEmprestimo.isBlank()) {
-            dataEmprestimoDT = LocalDate.parse(dataEmprestimo).atStartOfDay();
+            dataEmprestimoDT = LocalDateTime.parse(dataEmprestimo); // ou ajustar parse conforme o formato recebido
         }
 
         LocalDateTime dataDevolucaoDT = null;
         if (dataDevolucao != null && !dataDevolucao.isBlank()) {
-            dataDevolucaoDT = LocalDate.parse(dataDevolucao).atStartOfDay();
+            dataDevolucaoDT = LocalDateTime.parse(dataDevolucao); // ajustar parse conforme formato
         }
 
         return emprestimoRepository.buscarAvancado(
@@ -84,50 +101,7 @@ public class EmprestimoService {
                 alunoNome,
                 dataEmprestimoDT,
                 dataDevolucaoDT,
-                pageable
-        );
-    }
-
-    public List<EmprestimoModel> buscarAtivos() {
-        return emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoGreaterThanEqual(
-                StatusEmprestimo.ATIVO, LocalDateTime.now());
-    }
-
-    public List<EmprestimoModel> buscarAtrasados() {
-        return emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoBefore(
-                StatusEmprestimo.ATIVO, LocalDateTime.now());
-    }
-
-    public List<EmprestimoModel> buscarConcluidos() {
-        return emprestimoRepository.findByStatusEmprestimo(StatusEmprestimo.CONCLUIDO);
-    }
-
-    public Iterable<EmprestimoModel> listarDisponiveis() {
-        return emprestimoRepository.findByStatusEmprestimo(StatusEmprestimo.ATIVO);
-    }
-
-    public List<EmprestimoResponseDTO> listarEmprestimosAluno(String matricula) {
-        return emprestimoRepository.findEmprestimosAtivos(matricula);
-    }
-
-    public List<EmprestimoResponseDTO> listarHistorico(String matricula) {
-        return emprestimoRepository.findHistoricoEmprestimos(matricula);
-    }
-
-    public List<EmprestimoModel> buscarAtivosEAtrasados() {
-        return emprestimoRepository.findByStatusEmprestimoIn(
-                List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO)
-        );
-    }
-
-    public long getContagemEmprestimosAtivosEAtrasados() {
-        return emprestimoRepository.countByStatusEmprestimoIn(
-                List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO)
-        );
-    }
-
-    public List<EmprestimoModel> buscarApenasAtrasados() {
-        return emprestimoRepository.findByStatusEmprestimo(StatusEmprestimo.ATRASADO);
+                pageable);
     }
 
     // ================================
@@ -137,6 +111,7 @@ public class EmprestimoService {
     public ResponseEntity<ResponseModel> cadastrar(EmprestimoDTO dto) {
         ResponseModel rm = new ResponseModel();
 
+        // Valida datas
         if (dto.getData_emprestimo() == null || dto.getData_devolucao() == null) {
             rm.setMensagem("Datas de empréstimo e devolução são obrigatórias.");
             return ResponseEntity.badRequest().body(rm);
@@ -146,6 +121,7 @@ public class EmprestimoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
+        // Busca aluno
         AlunoModel aluno = alunoRepository.findByMatricula(dto.getAluno_matricula())
                 .orElse(null);
         if (aluno == null) {
@@ -153,6 +129,13 @@ public class EmprestimoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
+        // Valida penalidade
+        if (aluno.getPenalidade() != null) {
+            rm.setMensagem("O aluno possui penalidade ativa e não pode realizar empréstimos.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+
+        // Busca exemplar
         ExemplarModel exemplar = exemplarRepository.findByTombo(dto.getExemplar_tombo())
                 .orElse(null);
         if (exemplar == null) {
@@ -164,6 +147,7 @@ public class EmprestimoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
+        // Valida limite de empréstimos ativos
         long emprestimosAtivosAluno = emprestimoRepository
                 .countByAlunoMatriculaAndStatusEmprestimo(aluno.getMatricula(), StatusEmprestimo.ATIVO);
         if (emprestimosAtivosAluno >= LIMITE_EMPRESTIMOS_ATIVOS) {
@@ -171,6 +155,7 @@ public class EmprestimoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
+        // Cria e salva empréstimo
         EmprestimoModel emprestimo = new EmprestimoModel();
         emprestimo.setAluno(aluno);
         emprestimo.setExemplar(exemplar);
@@ -181,20 +166,19 @@ public class EmprestimoService {
         exemplar.setStatus_livro(StatusLivro.EMPRESTADO);
         exemplarRepository.save(exemplar);
 
-        // Incrementa contador de empréstimos do aluno
         aluno.incrementarEmprestimos();
         alunoRepository.save(aluno);
 
         emprestimoRepository.save(emprestimo);
 
+        // Envia e-mail
         String mensagemEmail = String.format(
                 "Olá %s,\n\nSeu empréstimo do livro '%s' foi registrado com sucesso.\n" +
                         "Data de empréstimo: %s\nData de devolução: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
                 aluno.getNome(),
                 exemplar.getLivro_isbn().getNome(),
                 dto.getData_emprestimo(),
-                dto.getData_devolucao()
-        );
+                dto.getData_devolucao());
         emailService.enviarEmail(aluno.getEmail(), "Empréstimo registrado", mensagemEmail);
 
         rm.setMensagem("Empréstimo cadastrado com sucesso.");
@@ -204,9 +188,7 @@ public class EmprestimoService {
     @Transactional
     public ResponseEntity<ResponseModel> atualizar(EmprestimoDTO dto) {
         ResponseModel rm = new ResponseModel();
-
-        EmprestimoModel emprestimo = emprestimoRepository.findById(dto.getId())
-                .orElse(null);
+        EmprestimoModel emprestimo = emprestimoRepository.findById(dto.getId()).orElse(null);
         if (emprestimo == null) {
             rm.setMensagem("Empréstimo não encontrado.");
             return ResponseEntity.badRequest().body(rm);
@@ -215,11 +197,9 @@ public class EmprestimoService {
             rm.setMensagem("Este empréstimo já foi concluído e não pode ser alterado.");
             return ResponseEntity.badRequest().body(rm);
         }
-
         emprestimo.setDataEmprestimo(dto.getData_emprestimo());
         emprestimo.setDataDevolucao(dto.getData_devolucao());
         emprestimoRepository.save(emprestimo);
-
         rm.setMensagem("Empréstimo alterado com sucesso.");
         return ResponseEntity.ok(rm);
     }
@@ -243,11 +223,9 @@ public class EmprestimoService {
 
         // Calcula penalidade se houver atraso
         if (emprestimo.getDataDevolucao().isBefore(agora)) {
-            long diasAtraso = Duration.between(emprestimo.getDataDevolucao(), agora).toDays();
-            Penalidade penalidade = calcularPenalidade(diasAtraso);
+            Penalidade penalidade = calcularPenalidade(Duration.between(emprestimo.getDataDevolucao(), agora).toDays());
             emprestimo.setPenalidade(penalidade);
 
-            // Atualiza penalidade do aluno se mais grave
             if (aluno.getPenalidade() == null || penalidadeMaisGrave(penalidade, aluno.getPenalidade())) {
                 aluno.setPenalidade(penalidade);
                 aluno.setPenalidadeExpiraEm(agora.plusDays(7));
@@ -268,8 +246,7 @@ public class EmprestimoService {
                         "Status da penalidade: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
                 aluno.getNome(),
                 exemplar.getLivro_isbn().getNome(),
-                emprestimo.getPenalidade() != null ? emprestimo.getPenalidade().name() : "Nenhuma"
-        );
+                emprestimo.getPenalidade() != null ? emprestimo.getPenalidade().name() : "Nenhuma");
         emailService.enviarEmail(aluno.getEmail(), "Empréstimo concluído", mensagemEmail);
 
         rm.setMensagem("Empréstimo concluído com sucesso.");
@@ -300,23 +277,31 @@ public class EmprestimoService {
     // ================================
     // MÉTODOS AUXILIARES
     // ================================
-    private Penalidade calcularPenalidade(long diasAtraso) {
-        if (diasAtraso <= 1) return Penalidade.REGISTRO;
-        if (diasAtraso <= 5) return Penalidade.ADVERTENCIA;
-        if (diasAtraso <= 7) return Penalidade.SUSPENSAO;
-        if (diasAtraso <= 10) return Penalidade.BLOQUEIO;
-        if (diasAtraso > 10 && diasAtraso <= 90) return Penalidade.BLOQUEIO;
-        if (diasAtraso > 90) return Penalidade.BANIMENTO;
+    private static Penalidade calcularPenalidade(long diasAtraso) {
+        if (diasAtraso <= 1)
+            return Penalidade.REGISTRO;
+        if (diasAtraso <= 5)
+            return Penalidade.ADVERTENCIA;
+        if (diasAtraso <= 7)
+            return Penalidade.SUSPENSAO;
+        if (diasAtraso <= 10)
+            return Penalidade.BLOQUEIO;
+        if (diasAtraso > 10 && diasAtraso <= 90)
+            return Penalidade.BLOQUEIO;
+        if (diasAtraso > 90)
+            return Penalidade.BANIMENTO;
         return null;
     }
 
-    private boolean penalidadeMaisGrave(Penalidade nova, Penalidade atual) {
-        if (nova == null) return false;
-        if (atual == null) return true;
+    private static boolean penalidadeMaisGrave(Penalidade nova, Penalidade atual) {
+        if (nova == null)
+            return false;
+        if (atual == null)
+            return true;
         return gravidade(nova) > gravidade(atual);
     }
 
-    private int gravidade(Penalidade p) {
+    private static int gravidade(Penalidade p) {
         return switch (p) {
             case REGISTRO -> 1;
             case ADVERTENCIA -> 2;

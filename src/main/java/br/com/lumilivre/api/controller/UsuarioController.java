@@ -35,9 +35,9 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioService us;
-    
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
 
@@ -50,7 +50,7 @@ public class UsuarioController {
         Page<ListaUsuarioDTO> usuarios = us.buscarUsuarioParaListaAdmin(pageable);
 
         return usuarios.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(usuarios);
-    } 
+    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -74,7 +74,7 @@ public class UsuarioController {
     @Operation(summary = "Busca avançada e paginada de usuários", description = "Filtra usuários por ID, e-mail ou perfil (role).")
     @ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso")
 
-    public ResponseEntity<Page<UsuarioModel>> buscarAvancado( 
+    public ResponseEntity<Page<UsuarioModel>> buscarAvancado(
             @Parameter(description = "ID exato do usuário") @RequestParam(required = false) Integer id,
             @Parameter(description = "E-mail parcial do usuário") @RequestParam(required = false) String email,
             @Parameter(description = "Perfil do usuário (ADMIN, BIBLIOTECARIO, ALUNO)") @RequestParam(required = false) Role role,
@@ -89,11 +89,10 @@ public class UsuarioController {
     @PostMapping("/cadastrar")
 
     @Operation(summary = "Cadastra um novo usuário (Acesso: ADMIN)", description = "Cria um novo usuário com perfil de ADMIN ou BIBLIOTECARIO. A criação de usuários ALUNO é automática via cadastro de aluno.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "201", description = "Usuário cadastrado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioModel.class))),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos"),
-        @ApiResponse(responseCode = "409", description = "E-mail já está em uso")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Usuário cadastrado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioModel.class))),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "409", description = "E-mail já está em uso")
     })
 
     public ResponseEntity<?> cadastrar(@RequestBody @Valid UsuarioDTO dto) {
@@ -105,14 +104,13 @@ public class UsuarioController {
     @PutMapping("/atualizar/{id}")
 
     @Operation(summary = "Atualiza um usuário existente (Acesso: ADMIN)", description = "Altera os dados de um usuário (e-mail, senha, perfil) com base no seu ID.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioModel.class))),
-        @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioModel.class))),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
 
     public ResponseEntity<?> atualizar(
-            @Parameter(description = "ID do usuário a ser atualizado") @PathVariable Integer id, 
+            @Parameter(description = "ID do usuário a ser atualizado") @PathVariable Integer id,
             @RequestBody @Valid UsuarioDTO dto) {
         return us.atualizar(id, dto);
     }
@@ -134,11 +132,10 @@ public class UsuarioController {
     @PutMapping("/alterar-senha")
 
     @Operation(summary = "Altera a própria senha", description = "Permite que um usuário logado altere sua própria senha, fornecendo a matrícula (do DTO), a senha atual e a nova senha.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Senha alterada com sucesso"),
-        @ApiResponse(responseCode = "401", description = "Senha atual incorreta"),
-        @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Senha alterada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Senha atual incorreta"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
 
     public ResponseEntity<?> alterarSenha(@RequestBody AlterarSenhaDTO dto) {

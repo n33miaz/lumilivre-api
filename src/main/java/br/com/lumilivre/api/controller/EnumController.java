@@ -38,8 +38,7 @@ public class EnumController {
     @ApiResponse(responseCode = "400", description = "Tipo de enum não encontrado", content = @Content)
 
     public List<EnumDTO> listarEnum(
-            @Parameter(description = "O tipo do enum a ser listado. Valores possíveis: STATUS_LIVRO, STATUS_EMPRESTIMO, PENALIDADE, CDD, TURNO, TIPO_CAPA, CLASSIFICACAO_ETARIA.", example = "STATUS_LIVRO")
-            @PathVariable String tipo) {
+            @Parameter(description = "O tipo do enum a ser listado. Valores possíveis: STATUS_LIVRO, STATUS_EMPRESTIMO, PENALIDADE, CDD, TURNO, TIPO_CAPA, CLASSIFICACAO_ETARIA.", example = "STATUS_LIVRO") @PathVariable String tipo) {
         switch (tipo.toUpperCase()) {
             case "STATUS_LIVRO":
                 return listarStatusLivros();

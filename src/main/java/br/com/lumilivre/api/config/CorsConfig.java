@@ -13,7 +13,7 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // todas as rotas
+                registry.addMapping("/**")
                         .allowedOrigins("https://lumilivre-web.onrender.com")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
@@ -22,3 +22,4 @@ public class CorsConfig {
         };
     }
 }
+F

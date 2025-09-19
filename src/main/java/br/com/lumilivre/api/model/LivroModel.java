@@ -70,10 +70,9 @@ public class LivroModel {
 
     @Column(name = "sinopse", columnDefinition = "VARCHAR(MAX)")
     private String sinopse;
-    
+
     @Column(name = "autor", length = 255)
     private String autor;
-
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_capa", length = 55)
@@ -84,7 +83,6 @@ public class LivroModel {
 
     @Column(name = "genero", length = 255)
     private String genero;
-
 
     @OneToMany(mappedBy = "livro", fetch = FetchType.EAGER)
     @JsonIgnore
@@ -218,13 +216,12 @@ public class LivroModel {
         this.genero = genero;
     }
 
-	public String getAutor() {
-		return autor;
-	}
+    public String getAutor() {
+        return autor;
+    }
 
-	public void setAutor(String autor) {
-		this.autor = autor;
-	}
-    
-    
+    public void setAutor(String autor) {
+        this.autor = autor;
+    }
+
 }

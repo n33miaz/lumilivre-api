@@ -105,8 +105,8 @@ public class LivroController {
     @PostMapping("/cadastrar")
     @Operation(summary = "Cadastra um novo livro (apenas dados)")
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso"),
-        @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")
+            @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")
     })
     public ResponseEntity<?> cadastrarLivro(@RequestBody LivroDTO livroDTO) {
         return ls.cadastrar(livroDTO, null);
@@ -117,8 +117,8 @@ public class LivroController {
     @PostMapping(value = "/{isbn}/capa", consumes = "multipart/form-data")
     @Operation(summary = "Faz upload da capa para um livro existente")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Capa atualizada com sucesso"),
-        @ApiResponse(responseCode = "404", description = "Livro não encontrado")
+            @ApiResponse(responseCode = "200", description = "Capa atualizada com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Livro não encontrado")
     })
     public ResponseEntity<?> uploadCapa(
             @Parameter(description = "ISBN do livro") @PathVariable String isbn,

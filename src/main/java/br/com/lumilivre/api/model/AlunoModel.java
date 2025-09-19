@@ -80,16 +80,15 @@ public class AlunoModel {
 
 	@Column(name = "estado", length = 55)
 	private String estado;
-	
+
 	@Column(name = "penalidade", length = 55)
-    @Enumerated(EnumType.STRING)
-    private Penalidade penalidade; // <--- novo campo
+	@Enumerated(EnumType.STRING)
+	private Penalidade penalidade;
 
-    private LocalDateTime penalidadeExpiraEm; // opcional, se quiser limitar duração da penalidade
+	private LocalDateTime penalidadeExpiraEm;
 
-    @Column(name = "emprestimos_count", nullable = false)
-    private Integer emprestimosCount = 0;
-
+	@Column(name = "emprestimos_count", nullable = false)
+	private Integer emprestimosCount = 0;
 
 	public String getMatricula() {
 		return matricula;
@@ -236,22 +235,21 @@ public class AlunoModel {
 	}
 
 	public int getEmprestimosCount() {
-	    return emprestimosCount != null ? emprestimosCount : 0;
+		return emprestimosCount != null ? emprestimosCount : 0;
 	}
-
 
 	public void setEmprestimosCount(int emprestimosCount) {
 		this.emprestimosCount = emprestimosCount;
 	}
-	
-    // Métodos para incrementar/decrementar
-    public void incrementarEmprestimos() {
-        this.emprestimosCount++;
-    }
 
-    public void decrementarEmprestimos() {
-        if (this.emprestimosCount > 0) this.emprestimosCount--;
-    }
-	
+	// Métodos para incrementar/decrementar
+	public void incrementarEmprestimos() {
+		this.emprestimosCount++;
+	}
+
+	public void decrementarEmprestimos() {
+		if (this.emprestimosCount > 0)
+			this.emprestimosCount--;
+	}
 
 }

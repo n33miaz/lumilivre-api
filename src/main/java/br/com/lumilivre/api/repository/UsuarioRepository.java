@@ -25,38 +25,36 @@ public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer> 
     List<UsuarioModel> findByRole(Role role);
 
     Optional<UsuarioModel> findByEmailOrAluno_Matricula(String email, String matricula);
-    
+
     @Query("""
-            SELECT u FROM UsuarioModel u
-            WHERE CAST(u.id AS string) LIKE CONCAT('%', :texto, '%')
-               OR LOWER(u.email) LIKE LOWER(CONCAT('%', :texto, '%'))
-               OR LOWER(u.role) LIKE LOWER(CONCAT('%', :texto, '%'))
-        """)
+                SELECT u FROM UsuarioModel u
+                WHERE CAST(u.id AS string) LIKE CONCAT('%', :texto, '%')
+                   OR LOWER(u.email) LIKE LOWER(CONCAT('%', :texto, '%'))
+                   OR LOWER(u.role) LIKE LOWER(CONCAT('%', :texto, '%'))
+            """)
     Page<UsuarioModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
-
     @Query("""
-            SELECT u FROM UsuarioModel u
-            WHERE (:id IS NULL OR CAST(u.id AS string) LIKE CONCAT('%', :id, '%'))
-              AND (:email IS NULL OR u.email = :email)
-              AND (:role IS NULL OR LOWER(u.role) LIKE LOWER(CONCAT('%', :role, '%')))
-        """)
+                SELECT u FROM UsuarioModel u
+                WHERE (:id IS NULL OR CAST(u.id AS string) LIKE CONCAT('%', :id, '%'))
+                  AND (:email IS NULL OR u.email = :email)
+                  AND (:role IS NULL OR LOWER(u.role) LIKE LOWER(CONCAT('%', :role, '%')))
+            """)
     Page<UsuarioModel> buscarAvancado(
-        @Param("id") Integer id,
-        @Param("email") String email,
-        @Param("role") Role role,
-        Pageable pageable);
-
+            @Param("id") Integer id,
+            @Param("email") String email,
+            @Param("role") Role role,
+            Pageable pageable);
 
     @Query("""
-        SELECT new br.com.lumilivre.api.data.ListaUsuarioDTO(
-            u.id,
-            u.email,
-            u.role 
-        )
-        FROM UsuarioModel u
-        ORDER BY u.id
-        """)
+            SELECT new br.com.lumilivre.api.data.ListaUsuarioDTO(
+                u.id,
+                u.email,
+                u.role
+            )
+            FROM UsuarioModel u
+            ORDER BY u.id
+            """)
     Page<ListaUsuarioDTO> findUsuarioParaListaAdmin(Pageable pageable);
 
 }

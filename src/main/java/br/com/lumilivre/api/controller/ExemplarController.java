@@ -43,10 +43,9 @@ public class ExemplarController {
     @PostMapping("/cadastrar")
 
     @Operation(summary = "Cadastra um novo exemplar", description = "Cria um novo exemplar (cópia física) para um livro já existente, identificado pelo ISBN.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Exemplar cadastrado com sucesso"), 
-        @ApiResponse(responseCode = "400", description = "Dados inválidos (ex: ISBN não encontrado, Tombo duplicado)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Exemplar cadastrado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos (ex: ISBN não encontrado, Tombo duplicado)")
     })
 
     public ResponseEntity<?> cadastrar(@RequestBody ExemplarDTO exemplarDTO) {
@@ -58,14 +57,13 @@ public class ExemplarController {
     @PutMapping("/atualizar/{tombo}")
 
     @Operation(summary = "Atualiza um exemplar existente", description = "Altera os dados de um exemplar específico, identificado pelo seu código de tombo.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Exemplar atualizado com sucesso"),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos ou exemplar não encontrado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Exemplar atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos ou exemplar não encontrado")
     })
 
     public ResponseEntity<?> atualizar(
-            @Parameter(description = "Código de tombo do exemplar a ser atualizado") @PathVariable String tombo, 
+            @Parameter(description = "Código de tombo do exemplar a ser atualizado") @PathVariable String tombo,
             @RequestBody ExemplarDTO exemplarDTO) {
         exemplarDTO.setTombo(tombo);
         return es.atualizar(exemplarDTO);

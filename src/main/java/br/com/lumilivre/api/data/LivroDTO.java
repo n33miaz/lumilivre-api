@@ -10,7 +10,7 @@ public class LivroDTO {
 
     private String isbn;
     private String nome;
-    
+
     @JsonDeserialize(using = LocalDateDeserializer.class)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate data_lancamento;

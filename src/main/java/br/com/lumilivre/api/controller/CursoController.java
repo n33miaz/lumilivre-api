@@ -35,7 +35,7 @@ public class CursoController {
     public CursoController(CursoService CursoService) {
         this.cs = CursoService;
     }
-    
+
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
 
@@ -48,7 +48,7 @@ public class CursoController {
         Page<ListaCursoDTO> cursos = cs.buscarCursoParaListaAdmin(pageable);
 
         return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
-    } 
+    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -70,10 +70,9 @@ public class CursoController {
     @GetMapping("/buscar/avancado")
 
     @Operation(summary = "Busca avançada e paginada de cursos", description = "Filtra cursos por campos específicos como nome, turno e módulo.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Página de cursos encontrada"),
-        @ApiResponse(responseCode = "204", description = "Nenhum curso encontrado para os filtros")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Página de cursos encontrada"),
+            @ApiResponse(responseCode = "204", description = "Nenhum curso encontrado para os filtros")
     })
 
     public ResponseEntity<Page<CursoModel>> buscarAvancado(
@@ -91,12 +90,11 @@ public class CursoController {
     @PostMapping("/cadastrar")
 
     @Operation(summary = "Cadastra um novo curso", description = "Cria um novo curso no sistema.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "201", description = "Curso cadastrado com sucesso", content = @Content(schema = @Schema(implementation = CursoModel.class))),
-        @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos (ex: nome em branco)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Curso cadastrado com sucesso", content = @Content(schema = @Schema(implementation = CursoModel.class))),
+            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos (ex: nome em branco)")
     })
-    
+
     public ResponseEntity<?> cadastrar(@RequestBody CursoModel cm) {
         return cs.cadastrar(cm);
     }
@@ -106,14 +104,13 @@ public class CursoController {
     @PutMapping("atualizar/{id}")
 
     @Operation(summary = "Atualiza um curso existente", description = "Altera os dados de um curso com base no seu ID.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Curso atualizado com sucesso", content = @Content(schema = @Schema(implementation = CursoModel.class))),
-        @ApiResponse(responseCode = "404", description = "Curso não encontrado para o ID fornecido")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Curso atualizado com sucesso", content = @Content(schema = @Schema(implementation = CursoModel.class))),
+            @ApiResponse(responseCode = "404", description = "Curso não encontrado para o ID fornecido")
     })
 
     public ResponseEntity<?> atualizar(
-            @Parameter(description = "ID do curso a ser atualizado") @PathVariable Integer id, 
+            @Parameter(description = "ID do curso a ser atualizado") @PathVariable Integer id,
             @RequestBody CursoModel cm) {
         cm.setId(id);
         return cs.atualizar(cm);
@@ -124,10 +121,9 @@ public class CursoController {
     @DeleteMapping("/excluir/{id}")
 
     @Operation(summary = "Exclui um curso", description = "Remove um curso do sistema.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Curso excluído com sucesso"),
-        @ApiResponse(responseCode = "404", description = "Curso não encontrado para o ID fornecido")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Curso excluído com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Curso não encontrado para o ID fornecido")
     })
 
     public ResponseEntity<ResponseModel> excluir(

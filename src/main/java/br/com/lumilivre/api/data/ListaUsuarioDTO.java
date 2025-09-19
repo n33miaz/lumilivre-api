@@ -3,11 +3,11 @@ package br.com.lumilivre.api.data;
 import br.com.lumilivre.api.enums.Role;
 
 public class ListaUsuarioDTO {
-	
+
 	private Integer id;
 	private String email;
 	private Role role;
-	
+
 	public ListaUsuarioDTO(Integer id, String email, Role role) {
 		this.id = id;
 		this.email = email;
@@ -37,7 +37,5 @@ public class ListaUsuarioDTO {
 	public void setRole(Role role) {
 		this.role = role;
 	}
-
-
 
 }

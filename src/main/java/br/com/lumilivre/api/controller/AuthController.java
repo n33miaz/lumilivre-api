@@ -22,7 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/auth")
 
-@Tag(name = "1. Autenticação") 
+@Tag(name = "1. Autenticação")
 
 public class AuthController {
 
@@ -31,15 +31,13 @@ public class AuthController {
 
     @PostMapping("/login")
 
-    @Operation(summary = "Realiza o login do usuário", description = "Autentica um usuário com base em 'user' (pode ser matrícula ou email) e 'senha'. Retorna um token JWT e informações básicas do usuário em caso de sucesso.", tags = { "1. Autenticação" })
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Login bem-sucedido", 
-                        content = @Content(mediaType = "application/json", 
-                        schema = @Schema(implementation = LoginResponseDTO.class))),
-        @ApiResponse(responseCode = "401", description = "Credenciais inválidas (senha incorreta)"),
-        @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
-    }) 
+    @Operation(summary = "Realiza o login do usuário", description = "Autentica um usuário com base em 'user' (pode ser matrícula ou email) e 'senha'. Retorna um token JWT e informações básicas do usuário em caso de sucesso.", tags = {
+            "1. Autenticação" })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login bem-sucedido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Credenciais inválidas (senha incorreta)"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    })
 
     public ResponseEntity<?> login(@RequestBody @Valid LoginDTO dto) {
         return authService.login(dto);
@@ -53,7 +51,8 @@ public class AuthController {
 
     public ResponseEntity<Map<String, String>> esqueciSenha(@RequestBody Map<String, String> payload) {
         authService.solicitarResetSenha(payload.get("email"));
-        return ResponseEntity.ok(Map.of("mensagem", "Se um e-mail correspondente for encontrado, um link para redefinição será enviado."));
+        return ResponseEntity.ok(Map.of("mensagem",
+                "Se um e-mail correspondente for encontrado, um link para redefinição será enviado."));
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +76,7 @@ public class AuthController {
     @Operation(summary = "Muda a senha usando um token", description = "Define uma nova senha para o usuário associado a um token de redefinição válido.")
     @ApiResponse(responseCode = "200", description = "Senha alterada com sucesso")
     @ApiResponse(responseCode = "400", description = "Token inválido ou expirado")
-    
+
     public ResponseEntity<?> mudarSenha(@RequestBody @Valid MudarSenhaComTokenDTO dto) {
         try {
             authService.mudarSenhaComToken(dto);

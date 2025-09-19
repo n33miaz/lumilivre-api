@@ -1,21 +1,22 @@
 package br.com.lumilivre.api.data;
 
-import java.time.LocalDate;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
+import br.com.lumilivre.api.enums.Penalidade;
 
 public class ListaAlunoDTO {
-    private String nome;
-    private String matricula;
+	private Penalidade penalidade;
+	private String matricula;
+	private String nome;
+	private String email;
+	private String celular;
+	private String cursoNome;
 
-    @JsonFormat(pattern = "dd/MM/yyyy")
-    private LocalDate data_nascimento;
-    private String cursoNome;
-    
-	public ListaAlunoDTO(String nome, String matricula, LocalDate data_nascimento, String cursoNome) {
-		this.nome = nome;
+	public ListaAlunoDTO(Penalidade penalidade, String matricula, String nome, String email, String celular,
+			String cursoNome) {
+		this.penalidade = penalidade;
 		this.matricula = matricula;
-		this.data_nascimento = data_nascimento;
+		this.nome = nome;
+		this.email = email;
+		this.celular = celular;
 		this.cursoNome = cursoNome;
 	}
 
@@ -35,14 +36,6 @@ public class ListaAlunoDTO {
 		this.matricula = matricula;
 	}
 
-	public LocalDate getData_nascimento() {
-		return data_nascimento;
-	}
-
-	public void setData_nascimento(LocalDate data_nascimento) {
-		this.data_nascimento = data_nascimento;
-	}
-
 	public String getCursoNome() {
 		return cursoNome;
 	}
@@ -51,8 +44,28 @@ public class ListaAlunoDTO {
 		this.cursoNome = cursoNome;
 	}
 
-	
+	public Penalidade getPenalidade() {
+		return penalidade;
+	}
 
+	public void setPenalidade(Penalidade penalidade) {
+		this.penalidade = penalidade;
+	}
 
+	public String getCelular() {
+		return celular;
+	}
+
+	public void setCelular(String celular) {
+		this.celular = celular;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
 
 }

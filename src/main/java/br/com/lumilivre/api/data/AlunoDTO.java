@@ -1,8 +1,14 @@
 package br.com.lumilivre.api.data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+
+import br.com.lumilivre.api.enums.Penalidade;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 public class AlunoDTO {
 
@@ -23,6 +29,9 @@ public class AlunoDTO {
     private String uf;
     private String estado;
     private Integer numero_casa;
+    private Penalidade penalidade;
+    private LocalDateTime penalidadeExpiraEm;
+    private Integer emprestimosCount = 0;
 
     public Integer getCursoId() {
         return cursoId;
@@ -143,4 +152,37 @@ public class AlunoDTO {
     public void setNumero_casa(Integer numero_casa) {
         this.numero_casa = numero_casa;
     }
+
+    public LocalDate getData_nascimento() {
+        return data_nascimento;
+    }
+
+    public void setData_nascimento(LocalDate data_nascimento) {
+        this.data_nascimento = data_nascimento;
+    }
+
+    public Penalidade getPenalidade() {
+        return penalidade;
+    }
+
+    public void setPenalidade(Penalidade penalidade) {
+        this.penalidade = penalidade;
+    }
+
+    public LocalDateTime getPenalidadeExpiraEm() {
+        return penalidadeExpiraEm;
+    }
+
+    public void setPenalidadeExpiraEm(LocalDateTime penalidadeExpiraEm) {
+        this.penalidadeExpiraEm = penalidadeExpiraEm;
+    }
+
+    public Integer getEmprestimosCount() {
+        return emprestimosCount;
+    }
+
+    public void setEmprestimosCount(Integer emprestimosCount) {
+        this.emprestimosCount = emprestimosCount;
+    }
+
 }

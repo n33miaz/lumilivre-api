@@ -29,11 +29,16 @@ import br.com.lumilivre.api.utils.UrlUtils;
 @Service
 public class LivroService {
 
-    @Autowired private ExemplarRepository er;
-    @Autowired private LivroRepository lr;
-    @Autowired private ResponseModel rm;
-    @Autowired private SupabaseStorageService storageService;
-    @Autowired private GoogleBooksService googleBooksService;
+    @Autowired
+    private ExemplarRepository er;
+    @Autowired
+    private LivroRepository lr;
+    @Autowired
+    private ResponseModel rm;
+    @Autowired
+    private SupabaseStorageService storageService;
+    @Autowired
+    private GoogleBooksService googleBooksService;
 
     private final String BASE_URL_CAPAS = "https://ylwmaozotaddmyhosiqc.supabase.co/storage/v1/object/capas/livros";
 
@@ -71,8 +76,7 @@ public class LivroService {
                 .map(l -> new LivroResponseMobileGeneroDTO(
                         l.getImagem(),
                         l.getNome(),
-                        l.getAutor()
-                ))
+                        l.getAutor()))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(resposta);
@@ -87,21 +91,21 @@ public class LivroService {
         }
 
         LivroModel livro = livroOpt.get();
-        
+
         try {
             String nomeArquivo = file.getOriginalFilename();
             String url = UrlUtils.gerarUrlValida(BASE_URL_CAPAS, "", nomeArquivo);
-            
+
             // Upload para o Supabase
             storageService.uploadFile(file);
-            
+
             // Atualiza apenas a URL da imagem
             livro.setImagem(url);
             lr.save(livro);
-            
+
             rm.setMensagem("Capa atualizada com sucesso.");
             return ResponseEntity.ok(rm);
-            
+
         } catch (Exception e) {
             rm.setMensagem("Erro ao fazer upload da capa: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(rm);
@@ -112,7 +116,7 @@ public class LivroService {
     public ResponseEntity<?> cadastrar(LivroDTO dto, MultipartFile file) {
         System.out.println("📥 INICIANDO CADASTRO PARA ISBN: " + dto.getIsbn());
         System.out.println("📖 TÍTULO ENVIADO PELO CLIENTE: " + dto.getNome());
-        
+
         rm.setMensagem("");
 
         if (isVazio(dto.getIsbn())) {
@@ -128,7 +132,8 @@ public class LivroService {
         preencherComGoogleBooks(dto);
 
         ResponseEntity<?> erroValidacao = validarCampos(dto);
-        if (erroValidacao != null) return erroValidacao;
+        if (erroValidacao != null)
+            return erroValidacao;
 
         LivroModel livro = montarLivro(dto, file);
 
@@ -156,7 +161,8 @@ public class LivroService {
         preencherComGoogleBooks(dto);
 
         ResponseEntity<?> erroValidacao = validarCampos(dto);
-        if (erroValidacao != null) return erroValidacao;
+        if (erroValidacao != null)
+            return erroValidacao;
 
         LivroModel livro = montarLivro(dto, file);
         livro.setIsbn(dto.getIsbn()); // garante que o ISBN não muda
@@ -169,14 +175,14 @@ public class LivroService {
     // ------------------------ MÉTODOS AUXILIARES ------------------------
     private void preencherComGoogleBooks(LivroDTO dto) {
         System.out.println("🟡 BUSCANDO ISBN NO GOOGLE BOOKS: " + dto.getIsbn());
-        
+
         LivroModel livroGoogle = googleBooksService.buscarLivroPorIsbn(dto.getIsbn());
-        
+
         if (livroGoogle == null) {
             System.out.println("🔴 LIVRO NÃO ENCONTRADO NO GOOGLE BOOKS OU ERRO NA CONEXÃO");
             return;
         }
-        
+
         System.out.println("🟢 LIVRO ENCONTRADO: " + livroGoogle.getNome());
         System.out.println("📊 DADOS DA API GOOGLE BOOKS:");
         System.out.println("   Título: " + livroGoogle.getNome());
@@ -184,7 +190,7 @@ public class LivroService {
         System.out.println("   Editora: " + livroGoogle.getEditora());
         System.out.println("   Páginas: " + livroGoogle.getNumero_paginas());
         System.out.println("   Data: " + livroGoogle.getData_lancamento());
-        
+
         // Preenche apenas campos que estão vazios/no DTO
         if (isVazio(dto.getNome())) {
             System.out.println("📖 Preenchendo título: " + livroGoogle.getNome());
@@ -214,7 +220,7 @@ public class LivroService {
             System.out.println("👥 Preenchendo autor: " + livroGoogle.getAutor());
             dto.setAutor(livroGoogle.getAutor());
         }
-        
+
         System.out.println("✅ DADOS APÓS PREENCHIMENTO:");
         System.out.println("   Título: " + dto.getNome());
         System.out.println("   Autor: " + dto.getAutor());
@@ -230,16 +236,24 @@ public class LivroService {
         System.out.println("   Páginas: " + dto.getNumero_paginas());
         System.out.println("   CDD: " + dto.getCdd());
         System.out.println("   Gênero: " + dto.getGenero());
-        
-        if (isVazio(dto.getNome())) return erro("O título é obrigatório.");
-        if (dto.getData_lancamento() == null) return erro("A data é obrigatória.");
-        if (dto.getData_lancamento().isAfter(LocalDate.now())) return erro("A data de lançamento não pode ser no futuro.");
-        if (dto.getNumero_paginas() == null || dto.getNumero_paginas() <= 0) return erro("O número de páginas é obrigatório.");
-        if (isVazio(dto.getEditora())) return erro("A editora é obrigatória.");
-        if (isVazio(dto.getCdd())) return erro("O CDD é obrigatório.");
-        if (isVazio(dto.getAutor())) return erro("O autor é obrigatório.");
-        if (isVazio(dto.getGenero())) return erro("O gênero é obrigatório.");
-        
+
+        if (isVazio(dto.getNome()))
+            return erro("O título é obrigatório.");
+        if (dto.getData_lancamento() == null)
+            return erro("A data é obrigatória.");
+        if (dto.getData_lancamento().isAfter(LocalDate.now()))
+            return erro("A data de lançamento não pode ser no futuro.");
+        if (dto.getNumero_paginas() == null || dto.getNumero_paginas() <= 0)
+            return erro("O número de páginas é obrigatório.");
+        if (isVazio(dto.getEditora()))
+            return erro("A editora é obrigatória.");
+        if (isVazio(dto.getCdd()))
+            return erro("O CDD é obrigatório.");
+        if (isVazio(dto.getAutor()))
+            return erro("O autor é obrigatório.");
+        if (isVazio(dto.getGenero()))
+            return erro("O gênero é obrigatório.");
+
         System.out.println("✅ VALIDAÇÃO OK");
         return null;
     }
@@ -305,20 +319,21 @@ public class LivroService {
     }
 
     // ------------------------ EXCLUSÃO ------------------------
-    public ResponseEntity<ResponseModel> excluir(String isbn) { 
-        if (!lr.existsById(isbn)) { 
-            rm.setMensagem("Livro não encontrado."); 
-            return ResponseEntity.badRequest().body(rm); 
-        } 
-        lr.deleteById(isbn); 
-        rm.setMensagem("Livro removido com sucesso."); 
-        return ResponseEntity.ok(rm); 
+    public ResponseEntity<ResponseModel> excluir(String isbn) {
+        if (!lr.existsById(isbn)) {
+            rm.setMensagem("Livro não encontrado.");
+            return ResponseEntity.badRequest().body(rm);
+        }
+        lr.deleteById(isbn);
+        rm.setMensagem("Livro removido com sucesso.");
+        return ResponseEntity.ok(rm);
     }
 
     @Transactional
     public ResponseEntity<?> excluirLivroComExemplares(String isbn) {
         Optional<LivroModel> livroOpt = lr.findByIsbn(isbn);
-        if (livroOpt.isEmpty()) return erro("Livro não encontrado.");
+        if (livroOpt.isEmpty())
+            return erro("Livro não encontrado.");
 
         er.deleteAllByLivroIsbn(isbn);
         lr.delete(livroOpt.get());

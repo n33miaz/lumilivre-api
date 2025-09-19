@@ -24,7 +24,6 @@ public class EmprestimoResponseDTO {
 		this.livroTitulo = livroTitulo;
 	}
 
-	// Getters e setters
 	public Integer getId() {
 		return id;
 	}

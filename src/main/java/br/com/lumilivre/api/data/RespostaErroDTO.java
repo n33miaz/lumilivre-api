@@ -18,9 +18,23 @@ public class RespostaErroDTO {
         this.caminho = caminho;
     }
 
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public int getStatus() { return status; }
-    public String getErro() { return erro; }
-    public String getMensagem() { return mensagem; }
-    public String getCaminho() { return caminho; }
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public String getErro() {
+        return erro;
+    }
+
+    public String getMensagem() {
+        return mensagem;
+    }
+
+    public String getCaminho() {
+        return caminho;
+    }
 }

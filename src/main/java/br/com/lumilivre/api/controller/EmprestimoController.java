@@ -13,6 +13,7 @@ import br.com.lumilivre.api.data.EmprestimoDTO;
 import br.com.lumilivre.api.data.EmprestimoResponseDTO;
 import br.com.lumilivre.api.data.ListaAutorDTO;
 import br.com.lumilivre.api.data.ListaEmprestimoDTO;
+import br.com.lumilivre.api.data.ListaEmprestimoDashboardDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -37,7 +38,7 @@ public class EmprestimoController {
 
     @Autowired
     private EmprestimoService es;
-    
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -45,7 +46,7 @@ public class EmprestimoController {
 
     @Operation(summary = "Lista autores para a tela principal do admin", description = "Retorna uma lista paginada de autores com dados resumidos (usando ListaEmprestimosDTO) para a exibição no dashboard do admin. Suporta filtro de texto.")
     @ApiResponse(responseCode = "200", description = "Página de autores retornada com sucesso")
-    
+
     public ResponseEntity<Page<ListaEmprestimoDTO>> listarParaAdmin(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
@@ -53,7 +54,7 @@ public class EmprestimoController {
 
         return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
-    
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -75,19 +76,18 @@ public class EmprestimoController {
     @GetMapping("/buscar/avancado")
 
     @Operation(summary = "Busca avançada e paginada de empréstimos", description = "Filtra empréstimos por campos específicos.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Página de empréstimos encontrada"),
-        @ApiResponse(responseCode = "204", description = "Nenhum empréstimo encontrado para os filtros")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Página de empréstimos encontrada"),
+            @ApiResponse(responseCode = "204", description = "Nenhum empréstimo encontrado para os filtros")
     })
 
     public ResponseEntity<Page<EmprestimoModel>> buscarAvancado(
-                @Parameter(description = "Status do empréstimo (ATIVO, CONCLUIDO, ATRASADO)") @RequestParam(required = false) StatusEmprestimo statusEmprestimo,
-                @Parameter(description = "Código de tombo do exemplar") @RequestParam(required = false) String tombo,
-                @Parameter(description = "Nome parcial do livro") @RequestParam(required = false) String livroNome,
-                @Parameter(description = "Nome parcial do aluno") @RequestParam(required = false) String alunoNome,
-                @Parameter(description = "Data do empréstimo (formato YYYY-MM-DD)") @RequestParam(required = false) String dataEmprestimo,
-                @Parameter(description = "Data da devolução (formato YYYY-MM-DD)") @RequestParam(required = false) String dataDevolucao,
+            @Parameter(description = "Status do empréstimo (ATIVO, CONCLUIDO, ATRASADO)") @RequestParam(required = false) StatusEmprestimo statusEmprestimo,
+            @Parameter(description = "Código de tombo do exemplar") @RequestParam(required = false) String tombo,
+            @Parameter(description = "Nome parcial do livro") @RequestParam(required = false) String livroNome,
+            @Parameter(description = "Nome parcial do aluno") @RequestParam(required = false) String alunoNome,
+            @Parameter(description = "Data do empréstimo (formato YYYY-MM-DD)") @RequestParam(required = false) String dataEmprestimo,
+            @Parameter(description = "Data da devolução (formato YYYY-MM-DD)") @RequestParam(required = false) String dataDevolucao,
             Pageable pageable) {
 
         Page<EmprestimoModel> emprestimos = es.buscarAvancado(
@@ -103,52 +103,15 @@ public class EmprestimoController {
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("buscar/ativos")
-
-    @Operation(summary = "Lista todos os empréstimos ativos", description = "Retorna uma lista de todos os empréstimos com status ATIVO.")
-    @ApiResponse(responseCode = "200", description = "Lista de empréstimos ativos")
-
-    public ResponseEntity<List<EmprestimoModel>> buscarAtivos() {
-        return ResponseEntity.ok(es.buscarAtivos());
-    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @GetMapping("/buscar/ativos-e-atrasados") 
-    @Operation(summary = "Lista todos os empréstimos ativos e atrasados", description = "Retorna uma lista de todos os empréstimos que não foram concluídos.")
-    public ResponseEntity<List<EmprestimoModel>> buscarAtivosEAtrasados() {
-        return ResponseEntity.ok(es.buscarAtivosEAtrasados());
-    }
-    
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @GetMapping("/contagem/ativos-e-atrasados") 
+    @GetMapping("/contagem/ativos-e-atrasados")
     @Operation(summary = "Retorna a contagem de empréstimos ativos e atrasados")
     public ResponseEntity<Long> getContagemAtivosEAtrasados() {
         return ResponseEntity.ok(es.getContagemEmprestimosAtivosEAtrasados());
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @GetMapping("/buscar/apenas-atrasados") 
-    @Operation(summary = "Lista apenas os empréstimos com status ATRASADO")
-    public ResponseEntity<List<EmprestimoModel>> buscarApenasAtrasados() {
-        return ResponseEntity.ok(es.buscarApenasAtrasados());
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("buscar/concluidos")
-
-    @Operation(summary = "Lista todos os empréstimos concluídos", description = "Retorna uma lista de todos os empréstimos com status CONCLUIDO.")
-    @ApiResponse(responseCode = "200", description = "Lista de empréstimos concluídos")
-
-    public ResponseEntity<List<EmprestimoModel>> buscarConcluidos() {
-        return ResponseEntity.ok(es.buscarConcluidos());
-    }
-    
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/aluno/{matricula}")
-
     @Operation(summary = "Lista os empréstimos ativos de um aluno", description = "Retorna uma lista de empréstimos com status ATIVO para uma matrícula de aluno específica.")
     @ApiResponse(responseCode = "200", description = "Empréstimos encontrados", content = @Content(schema = @Schema(implementation = EmprestimoResponseDTO.class)))
 
@@ -169,15 +132,23 @@ public class EmprestimoController {
         return ResponseEntity.ok(es.listarHistorico(matricula));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @Operation(summary = "Lista os emprestimos que estão na lista para o dashboard", description = "Retorna uma lista de todos os empréstimos dos proximos 7 dias.")
+    @ApiResponse(responseCode = "200", description = "Histórico encontrado", content = @Content(schema = @Schema(implementation = EmprestimoResponseDTO.class)))
+
+    @GetMapping("/dashboard")
+    public List<ListaEmprestimoDashboardDTO> listarVencendo() {
+        return es.listarEmprestimosAtivosEAtrasados();
+    }
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PostMapping("/cadastrar")
 
     @Operation(summary = "Registra um novo empréstimo", description = "Cria um novo registro de empréstimo, associando um exemplar a um aluno.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Empréstimo cadastrado com sucesso"),
-        @ApiResponse(responseCode = "400", description = "Dados inválidos (ex: aluno ou exemplar não encontrado, exemplar indisponível, aluno com limite de empréstimos)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Empréstimo cadastrado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos (ex: aluno ou exemplar não encontrado, exemplar indisponível, aluno com limite de empréstimos)")
     })
 
     public ResponseEntity<?> cadastrar(@RequestBody EmprestimoDTO dto) {
@@ -189,36 +160,32 @@ public class EmprestimoController {
     @PutMapping("/atualizar/{id}")
 
     @Operation(summary = "Atualiza um empréstimo existente", description = "Altera os dados de um empréstimo, como as datas. Não altera o status.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Empréstimo atualizado com sucesso"),
-        @ApiResponse(responseCode = "400", description = "Empréstimo já concluído ou não encontrado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Empréstimo atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Empréstimo já concluído ou não encontrado")
     })
 
     public ResponseEntity<?> atualizar(
-            @Parameter(description = "ID do empréstimo a ser atualizado") @PathVariable Integer id, 
+            @Parameter(description = "ID do empréstimo a ser atualizado") @PathVariable Integer id,
             @RequestBody EmprestimoDTO dto) {
         dto.setId(id);
         return es.atualizar(dto);
     }
-    
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PutMapping("/concluir/{id}")
 
     @Operation(summary = "Conclui (devolve) um empréstimo", description = "Muda o status de um empréstimo para CONCLUIDO, calcula possíveis penalidades e libera o exemplar.")
-    @ApiResponses
-    ({
-        @ApiResponse(responseCode = "200", description = "Empréstimo concluído com sucesso"),
-        @ApiResponse(responseCode = "400", description = "Empréstimo não encontrado ou já concluído")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Empréstimo concluído com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Empréstimo não encontrado ou já concluído")
     })
 
     public ResponseEntity<?> concluirEmprestimo(
             @Parameter(description = "ID do empréstimo a ser concluído") @PathVariable Integer id) {
         return es.concluirEmprestimo(id);
     }
-    
-    
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -230,20 +197,20 @@ public class EmprestimoController {
     public ResponseEntity<ResponseModel> excluir(@PathVariable Integer id) {
         return es.excluir(id);
     }
-    
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-@PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-@GetMapping("/ranking")
 
-@Operation(summary = "Ranking de alunos por quantidade de empréstimos", description = "Retorna os alunos com mais empréstimos, limitado pelo parâmetro 'top'.")
-@ApiResponses({
-@ApiResponse(responseCode = "200", description = "Ranking retornado com sucesso"),
-@ApiResponse(responseCode = "204", description = "Nenhum aluno encontrado")
-})
-public ResponseEntity<List<?>> rankingAlunos(
-@Parameter(description = "Número máximo de alunos a retornar") @RequestParam(defaultValue = "10") int top) {
-List<?> ranking = es.gerarRankingAlunos(top);
-return ranking.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(ranking);
-}
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/ranking")
+
+    @Operation(summary = "Ranking de alunos por quantidade de empréstimos", description = "Retorna os alunos com mais empréstimos, limitado pelo parâmetro 'top'.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Ranking retornado com sucesso"),
+            @ApiResponse(responseCode = "204", description = "Nenhum aluno encontrado")
+    })
+    public ResponseEntity<List<?>> rankingAlunos(
+            @Parameter(description = "Número máximo de alunos a retornar") @RequestParam(defaultValue = "10") int top) {
+        List<?> ranking = es.gerarRankingAlunos(top);
+        return ranking.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(ranking);
+    }
 
 }

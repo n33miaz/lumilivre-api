@@ -73,16 +73,16 @@ public class AuthService {
         // se o usuário não existe, nada é feito
         if (usuarioOpt.isPresent()) {
             UsuarioModel usuario = usuarioOpt.get();
-            
+
             // token aleatório
             String token = UUID.randomUUID().toString();
-            
+
             // salva o token, associado ao usuário
             TokenResetSenhaModel tokenReset = new TokenResetSenhaModel(token, usuario, 30);
             tokenRepository.save(tokenReset);
 
             // alteraremos para o link do domínio + /mudar-senha?token=
-            String linkReset = "http://localhost:5173/mudar-senha?token=" + token;
+            String linkReset = "https://lumilivre-web.onrender.com/mudar-senha?token=" + token;
             emailService.enviarEmailResetSenha(usuario.getEmail(), linkReset);
         }
     }
@@ -105,12 +105,10 @@ public class AuthService {
 
         TokenResetSenhaModel tokenReset = tokenOpt.get();
         UsuarioModel usuario = tokenReset.getUsuario();
-        
-        // altera a senha do usuário
+
         usuario.setSenha(passwordEncoder.encode(dto.getNovaSenha()));
         ur.save(usuario);
 
-        // invalida o token
         tokenRepository.delete(tokenReset);
     }
 }

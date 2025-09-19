@@ -22,8 +22,7 @@ public class CursoService {
     public Page<ListaCursoDTO> buscarCursoParaListaAdmin(Pageable pageable) {
         return cr.findCursoParaListaAdmin(pageable);
     }
-    
-    
+
     public Page<CursoModel> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
             return cr.findAll(pageable);

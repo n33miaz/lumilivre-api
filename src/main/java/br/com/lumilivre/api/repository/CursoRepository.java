@@ -46,16 +46,15 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			@Param("turno") String turno,
 			@Param("modulo") String modulo,
 			Pageable pageable);
-	
-    
-    @Query("""
-  	      SELECT new br.com.lumilivre.api.data.ListaCursoDTO(
-  	          c.nome,
-  	          c.turno,
-  	          c.modulo
-  	      )
-  	      FROM CursoModel c
-  	      ORDER BY c.nome
-  	      """)
-  	  Page<ListaCursoDTO> findCursoParaListaAdmin(Pageable pageable);
+
+	@Query("""
+			SELECT new br.com.lumilivre.api.data.ListaCursoDTO(
+			    c.nome,
+			    c.turno,
+			    c.modulo
+			)
+			FROM CursoModel c
+			ORDER BY c.nome
+			""")
+	Page<ListaCursoDTO> findCursoParaListaAdmin(Pageable pageable);
 }

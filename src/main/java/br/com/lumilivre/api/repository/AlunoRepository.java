@@ -11,52 +11,59 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import br.com.lumilivre.api.data.ListaAlunoDTO;
+import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.model.AlunoModel;
 
 public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
 
-    Optional<AlunoModel> findByMatricula(String matricula);
-    Optional<AlunoModel> findByCpf(String cpf);
-    Optional<AlunoModel> findByNomeIgnoreCase(String nome);
-    List<AlunoModel> findAllByOrderByEmprestimosCountDesc();
-    
+	Optional<AlunoModel> findByMatricula(String matricula);
 
+	Optional<AlunoModel> findByCpf(String cpf);
 
-    @Query("""
-        SELECT a FROM AlunoModel a
-        LEFT JOIN a.curso c
-        WHERE LOWER(a.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-           OR LOWER(a.matricula) LIKE LOWER(CONCAT('%', :texto, '%'))
-           OR CAST(a.dataNascimento AS text) LIKE CONCAT('%', :texto, '%')
-           OR LOWER(c.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-    """)
-    Page<AlunoModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
+	Optional<AlunoModel> findByNomeIgnoreCase(String nome);
 
-    @Query("""
-        SELECT a FROM AlunoModel a
-        LEFT JOIN a.curso c
-        WHERE (:nome IS NULL OR LOWER(a.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
-          AND (:matricula IS NULL OR a.matricula = :matricula)
-          AND (:dataNascimento IS NULL OR a.dataNascimento = :dataNascimento)
-          AND (:cursoNome IS NULL OR LOWER(c.nome) LIKE LOWER(CONCAT('%', :cursoNome, '%')))
-    """)
-    Page<AlunoModel> buscarAvancado(
-        @Param("nome") String nome,
-        @Param("matricula") String matricula,
-        @Param("dataNascimento") LocalDate dataNascimento,
-        @Param("cursoNome") String cursoNome,
-        Pageable pageable);
+	List<AlunoModel> findAllByOrderByEmprestimosCountDesc();
 
-    @Query("""
-        SELECT new br.com.lumilivre.api.data.ListaAlunoDTO(
-            a.nome,
-            a.matricula,
-            a.dataNascimento,
-            c.nome
-        )
-        FROM AlunoModel a
-        LEFT JOIN a.curso c
-        ORDER BY a.nome
-    """)
-    Page<ListaAlunoDTO> findAlunosParaListaAdmin(Pageable pageable);
+	@Query(value = """
+			    SELECT *
+			    FROM aluno a
+			    WHERE a.texto_busca @@ plainto_tsquery('portuguese', :texto)
+			""", nativeQuery = true)
+	Page<AlunoModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
+
+	@Query("""
+			    SELECT a FROM AlunoModel a
+			    LEFT JOIN a.curso c
+			    WHERE (:penalidadeEnum IS NULL OR a.penalidade = :penalidadeEnum)
+			      AND (:matricula IS NULL OR a.matricula = :matricula)
+			      AND (:nome IS NULL OR LOWER(a.nome) LIKE CONCAT('%', LOWER(:nome), '%'))
+			      AND (:cursoNome IS NULL OR LOWER(c.nome) LIKE CONCAT('%', LOWER(:cursoNome), '%'))
+			      AND (:dataNascimento IS NULL OR a.dataNascimento = :dataNascimento)
+			      AND (:email IS NULL OR LOWER(a.email) LIKE CONCAT('%', LOWER(:email), '%'))
+			      AND (:celular IS NULL OR a.celular = :celular)
+			""")
+	Page<AlunoModel> buscarAvancado(
+			@Param("penalidadeEnum") Penalidade penalidadeEnum,
+			@Param("matricula") String matricula,
+			@Param("nome") String nome,
+			@Param("cursoNome") String cursoNome,
+			@Param("dataNascimento") LocalDate dataNascimento,
+			@Param("email") String email,
+			@Param("celular") String celular,
+			Pageable pageable);
+
+	@Query("""
+			    SELECT new br.com.lumilivre.api.data.ListaAlunoDTO(
+			        a.penalidade,
+			        a.matricula,
+			        a.nome,
+			        a.email,
+			        a.celular,
+			        c.nome
+			    )
+			    FROM AlunoModel a
+			    JOIN a.curso c
+			    ORDER BY a.nome
+			""")
+	Page<ListaAlunoDTO> findAlunosParaListaAdmin(Pageable pageable);
 }

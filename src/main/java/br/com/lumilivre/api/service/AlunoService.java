@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.AlunoDTO;
 import br.com.lumilivre.api.data.ListaAlunoDTO;
+import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.CursoModel;
@@ -22,7 +23,6 @@ import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.CursoRepository;
 import br.com.lumilivre.api.repository.UsuarioRepository;
 import br.com.lumilivre.api.utils.CpfValidator;
-
 
 @Service
 public class AlunoService {
@@ -37,7 +37,7 @@ public class AlunoService {
     private UsuarioRepository ur;
 
     @Autowired
-    private EmailService emailService; 
+    private EmailService emailService;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -62,9 +62,21 @@ public class AlunoService {
         return ar.buscarPorTexto(texto, pageable);
     }
 
-    public Page<AlunoModel> buscarAvancado(String nome, String matricula, LocalDate dataNascimento,
-            String cursoNome, Pageable pageable) {
-        return ar.buscarAvancado(nome, matricula, dataNascimento, cursoNome, pageable);
+    public Page<AlunoModel> buscarAvancado(String penalidadeStr, String matricula, String nome,
+            String cursoNome, LocalDate dataNascimento,
+            String email, String celular, Pageable pageable) {
+        Penalidade penalidadeEnum = null;
+        if (penalidadeStr != null && !penalidadeStr.isBlank()) {
+            try {
+                penalidadeEnum = Penalidade.valueOf(penalidadeStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Caso a string não seja válida, você pode tratar aqui
+                penalidadeEnum = null;
+            }
+        }
+
+        return ar.buscarAvancado(
+                penalidadeEnum, matricula, nome, cursoNome, dataNascimento, email, celular, pageable);
     }
 
     public ResponseEntity<?> cadastrar(AlunoDTO dto) {
@@ -212,7 +224,6 @@ public class AlunoService {
         return ResponseEntity.ok(salvo);
     }
 
-
     public ResponseEntity<ResponseModel> excluir(String matricula) {
         var alunoOpt = ar.findById(matricula);
 
@@ -233,9 +244,8 @@ public class AlunoService {
         return ResponseEntity.ok(rm);
     }
 
-
     public Optional<AlunoModel> buscarPorNome(String nome) {
-        return ar.findByNomeIgnoreCase(nome); // precisa mudar o método no repository para retornar AlunoModel
+        return ar.findByNomeIgnoreCase(nome);
     }
 
     public Optional<AlunoModel> buscarPorCPF(String cpf) {

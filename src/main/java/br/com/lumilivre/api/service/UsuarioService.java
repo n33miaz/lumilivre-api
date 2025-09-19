@@ -36,8 +36,7 @@ public class UsuarioService {
     UsuarioService(EmailService emailService) {
         this.emailService = emailService;
     }
-    
-    
+
     public Page<ListaUsuarioDTO> buscarUsuarioParaListaAdmin(Pageable pageable) {
         return ur.findUsuarioParaListaAdmin(pageable);
     }
@@ -48,6 +47,7 @@ public class UsuarioService {
         }
         return ur.buscarPorTexto(texto, pageable);
     }
+
     public Page<UsuarioModel> buscarAvancado(
             Integer id,
             String email,
@@ -156,7 +156,8 @@ public class UsuarioService {
 
         // usuário só pode alterar a própria senha
         if (usuario.getAluno() != null && !usuario.getAluno().getMatricula().equals(dto.getMatricula())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Você não tem permissão para alterar a senha de outro usuário.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Você não tem permissão para alterar a senha de outro usuário.");
         }
 
         if (!passwordEncoder.matches(dto.getSenhaAtual(), usuario.getSenha())) {
