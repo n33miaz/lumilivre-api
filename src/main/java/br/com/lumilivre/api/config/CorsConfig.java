@@ -14,7 +14,7 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("https://lumilivre-web.onrender.com")
+                        .allowedOrigins("https://lumilivre-web.onrender.com", "http://localhost:5173")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
@@ -22,4 +22,3 @@ public class CorsConfig {
         };
     }
 }
-F

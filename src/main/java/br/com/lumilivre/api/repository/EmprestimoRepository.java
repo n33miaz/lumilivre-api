@@ -19,12 +19,26 @@ import br.com.lumilivre.api.model.EmprestimoModel;
 @Repository
 public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Integer> {
 
-    boolean existsByExemplarTomboAndStatusEmprestimo(String tombo, StatusEmprestimo status);
-
-    // busca e conta ATIVO e ATRASADO
     List<EmprestimoModel> findByStatusEmprestimoIn(List<StatusEmprestimo> statuses);
 
     long countByStatusEmprestimoIn(List<StatusEmprestimo> statuses);
+
+    List<EmprestimoModel> findByStatusEmprestimoAndDataDevolucaoBefore(StatusEmprestimo status, LocalDateTime now);
+
+    List<EmprestimoModel> findByStatusEmprestimoAndDataDevolucaoGreaterThanEqual(StatusEmprestimo status,
+            LocalDateTime now);
+
+    List<EmprestimoModel> findByAluno_Matricula(String matricula);
+
+    List<EmprestimoModel> findByDataEmprestimoGreaterThanEqual(LocalDateTime dataInicio);
+
+    List<EmprestimoModel> findByExemplar_Tombo(String tombo);
+
+    List<EmprestimoModel> findByDataEmprestimoBetween(LocalDateTime inicio, LocalDateTime fim);
+
+    List<EmprestimoModel> findByDataDevolucaoBetween(LocalDateTime inicio, LocalDateTime fim);
+
+    boolean existsByExemplarTomboAndStatusEmprestimo(String tombo, StatusEmprestimo status);
 
     long countByAlunoMatriculaAndStatusEmprestimo(String matricula, StatusEmprestimo status);
 
@@ -114,5 +128,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 ORDER BY emprestimo.dataDevolucao ASC
             """)
     List<ListaEmprestimoDashboardDTO> findEmprestimosAtivosEAtrasados();
+
+	List<EmprestimoModel> findByStatusEmprestimo(StatusEmprestimo atrasado);
 
 }

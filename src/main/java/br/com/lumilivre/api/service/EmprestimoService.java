@@ -70,10 +70,23 @@ public class EmprestimoService {
         return emprestimoRepository.findEmprestimosAtivosEAtrasados();
     }
 
+
+    public List<EmprestimoModel> buscarAtivosEAtrasados() {
+        return emprestimoRepository.findByStatusEmprestimoIn(
+            List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO)
+        );
+    }
+
     public long getContagemEmprestimosAtivosEAtrasados() {
         return emprestimoRepository.countByStatusEmprestimoIn(
-                List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
+            List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO)
+        );
     }
+
+    public List<EmprestimoModel> buscarApenasAtrasados() {
+        return emprestimoRepository.findByStatusEmprestimo(StatusEmprestimo.ATRASADO);
+    }
+
 
     public Page<EmprestimoModel> buscarAvancado(
             StatusEmprestimo statusEmprestimo,
@@ -184,6 +197,8 @@ public class EmprestimoService {
         rm.setMensagem("Empréstimo cadastrado com sucesso.");
         return ResponseEntity.ok(rm);
     }
+
+
 
     @Transactional
     public ResponseEntity<ResponseModel> atualizar(EmprestimoDTO dto) {

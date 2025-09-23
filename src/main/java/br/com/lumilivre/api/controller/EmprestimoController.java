@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.data.EmprestimoDTO;
 import br.com.lumilivre.api.data.EmprestimoResponseDTO;
-import br.com.lumilivre.api.data.ListaAutorDTO;
 import br.com.lumilivre.api.data.ListaEmprestimoDTO;
 import br.com.lumilivre.api.data.ListaEmprestimoDashboardDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
@@ -53,6 +52,19 @@ public class EmprestimoController {
         Page<ListaEmprestimoDTO> emprestimos = es.buscarEmprestimoParaListaAdmin(pageable);
 
         return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
+    }
+
+    @GetMapping("/buscar/ativos-e-atrasados")
+    @Operation(summary = "Lista todos os empréstimos ativos e atrasados", description = "Retorna uma lista de todos os empréstimos que não foram concluídos.")
+    public ResponseEntity<List<EmprestimoModel>> buscarAtivosEAtrasados() {
+        return ResponseEntity.ok(es.buscarAtivosEAtrasados());
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    @GetMapping("/buscar/apenas-atrasados")
+    @Operation(summary = "Lista apenas os empréstimos com status ATRASADO")
+    public ResponseEntity<List<EmprestimoModel>> buscarApenasAtrasados() {
+        return ResponseEntity.ok(es.buscarApenasAtrasados());
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
