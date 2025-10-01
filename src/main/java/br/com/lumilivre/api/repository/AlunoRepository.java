@@ -52,6 +52,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
 			@Param("celular") String celular,
 			Pageable pageable);
 
+	// busca a lista de alunos SEM filtro
 	@Query("""
 			    SELECT new br.com.lumilivre.api.data.ListaAlunoDTO(
 			        a.penalidade,
@@ -65,5 +66,18 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
 			    JOIN a.curso c
 			    ORDER BY a.nome
 			""")
-	Page<ListaAlunoDTO> findAlunosParaListaAdmin(Pageable pageable);
+	Page<ListaAlunoDTO> findAlunosParaListaAdmin(Pageable pageable); // Nome do método corrigido
+
+	// busca a lista de alunos COM filtro
+	@Query("""
+	        SELECT new br.com.lumilivre.api.data.ListaAlunoDTO(
+	            a.penalidade, a.matricula, a.nome, a.email, a.celular, c.nome
+	        )
+	        FROM AlunoModel a JOIN a.curso c
+	        WHERE LOWER(a.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+	           OR a.matricula LIKE CONCAT('%', :texto, '%')
+	           OR LOWER(c.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+	        ORDER BY a.nome
+	    """)
+	Page<ListaAlunoDTO> findAlunosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 }

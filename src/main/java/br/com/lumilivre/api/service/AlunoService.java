@@ -51,9 +51,15 @@ public class AlunoService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Page<ListaAlunoDTO> buscarAlunosParaListaAdmin(Pageable pageable) {
+    public Page<ListaAlunoDTO> buscarAlunosParaListaAdmin(String texto, Pageable pageable) {
+    if (texto != null && !texto.isBlank()) {
+        // Se houver texto, chama a query de filtro
+        return ar.findAlunosParaListaAdminComFiltro(texto, pageable);
+    } else {
+        // Se não houver texto, chama a query que lista todos
         return ar.findAlunosParaListaAdmin(pageable);
     }
+}
 
     public Page<AlunoModel> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
