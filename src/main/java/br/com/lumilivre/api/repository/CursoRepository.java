@@ -21,7 +21,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 
 	boolean existsByNomeIgnoreCaseAndIdNot(String nome, Integer id);
 
-	Optional<CursoModel> findByModulo(String modulo);
+	Optional<CursoModel> findByModulo_Nome(String nomeModulo);
 
 	List<CursoModel> findByTurno(Turno turno);
 
