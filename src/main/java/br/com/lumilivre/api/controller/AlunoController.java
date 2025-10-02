@@ -50,7 +50,7 @@ public class AlunoController {
     public ResponseEntity<Page<ListaAlunoDTO>> listarParaAdmin(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaAlunoDTO> alunos = as.buscarAlunosParaListaAdmin(pageable);
+        Page<ListaAlunoDTO> alunos = as.buscarAlunosParaListaAdmin(texto, pageable);
 
         return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
     }
