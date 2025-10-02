@@ -350,4 +350,8 @@ public class LivroService {
             lr.save(l);
         });
     }
+
+    public List<LivroModel> buscarTodos() {
+        return lr.findAll(); // retorna todos os livros
+    }
 }

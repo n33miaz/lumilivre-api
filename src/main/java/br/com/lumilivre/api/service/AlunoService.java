@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.service;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -250,6 +251,10 @@ public class AlunoService {
 
     public Optional<AlunoModel> buscarPorCPF(String cpf) {
         return ar.findByCpf(cpf);
+    }
+
+    public List<AlunoModel> buscarTodos() {
+        return ar.findAll();
     }
 
 }

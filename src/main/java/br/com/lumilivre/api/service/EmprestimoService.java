@@ -333,4 +333,7 @@ public class EmprestimoService {
                 .map(a -> new AlunoRankingDTO(a.getMatricula(), a.getNome(), a.getEmprestimosCount()))
                 .toList();
     }
+    public List<EmprestimoModel> buscarTodos() {
+        return emprestimoRepository.findAll();
+    }
 }
