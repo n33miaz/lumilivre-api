@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.data.AlunoDTO;
 import br.com.lumilivre.api.data.ListaAlunoDTO;
@@ -53,10 +54,10 @@ public class AlunoService {
 
     public Page<ListaAlunoDTO> buscarAlunosParaListaAdmin(String texto, Pageable pageable) {
     if (texto != null && !texto.isBlank()) {
-        // Se houver texto, chama a query de filtro
+        // se tem texto, chama a query de filtro
         return ar.findAlunosParaListaAdminComFiltro(texto, pageable);
     } else {
-        // Se não houver texto, chama a query que lista todos
+        // se não, chama a query que lista todos
         return ar.findAlunosParaListaAdmin(pageable);
     }
 }
@@ -85,6 +86,7 @@ public class AlunoService {
                 penalidadeEnum, matricula, nome, cursoNome, dataNascimento, email, celular, pageable);
     }
 
+    @Transactional
     public ResponseEntity<?> cadastrar(AlunoDTO dto) {
         if (dto.getMatricula() == null || dto.getMatricula().trim().isEmpty()) {
             rm.setMensagem("A matrícula é obrigatória.");
@@ -98,7 +100,6 @@ public class AlunoService {
             rm.setMensagem("Essa matrícula já está cadastrada.");
             return ResponseEntity.badRequest().body(rm);
         }
-
         if (dto.getNome() == null || dto.getNome().trim().isEmpty()) {
             rm.setMensagem("O nome é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
@@ -128,34 +129,47 @@ public class AlunoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        Optional<CursoModel> curso = cursoRepository.findById(dto.getCursoId());
-        if (curso.isEmpty()) {
+        Optional<CursoModel> cursoOpt = cursoRepository.findById(dto.getCursoId());
+        if (cursoOpt.isEmpty()) {
             rm.setMensagem("Curso não encontrado.");
             return ResponseEntity.badRequest().body(rm);
         }
 
-        AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
-        if (enderecoDTO == null || enderecoDTO.getCep() == null) {
-            rm.setMensagem("CEP inválido ou não encontrado.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
-        }
-
         AlunoModel aluno = new AlunoModel();
+
         aluno.setMatricula(dto.getMatricula());
         aluno.setNome(dto.getNome());
+        aluno.setSobrenome(dto.getSobrenome()); 
         aluno.setCpf(dto.getCpf());
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setCelular(dto.getCelular());
         aluno.setEmail(dto.getEmail());
-        aluno.setCurso(curso.get());
-        aluno.setCep(dto.getCep());
-        aluno.setLogradouro(enderecoDTO.getLogradouro());
-        aluno.setComplemento(enderecoDTO.getComplemento());
-        aluno.setLocalidade(enderecoDTO.getLocalidade());
-        aluno.setBairro(enderecoDTO.getBairro());
-        aluno.setUf(enderecoDTO.getUf());
-        aluno.setEstado(enderecoDTO.getEstado());
+        aluno.setCurso(cursoOpt.get());
         aluno.setNumero_casa(dto.getNumero_casa());
+        aluno.setComplemento(dto.getComplemento());
+
+        if (dto.getCep() != null && !dto.getCep().trim().isEmpty()) {
+            if (dto.getCep().length() != 8) {
+                rm.setMensagem("O CEP deve conter 8 dígitos.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(rm);
+            }
+            try {
+                AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
+                if (enderecoDTO != null && enderecoDTO.getCep() != null) {
+                    aluno.setCep(enderecoDTO.getCep().replace("-", ""));
+                    aluno.setLogradouro(enderecoDTO.getLogradouro());
+                    aluno.setLocalidade(enderecoDTO.getLocalidade());
+                    aluno.setBairro(enderecoDTO.getBairro());
+                    aluno.setUf(enderecoDTO.getUf());
+                } else {
+                    rm.setMensagem("CEP inválido ou não encontrado.");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(rm);
+                }
+            } catch (Exception e) {
+                rm.setMensagem("Erro ao consultar o serviço de CEP.");
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(rm);
+            }
+        }
 
         UsuarioModel usuario = new UsuarioModel();
         usuario.setEmail(dto.getMatricula());
