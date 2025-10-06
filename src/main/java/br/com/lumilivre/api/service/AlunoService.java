@@ -17,6 +17,7 @@ import br.com.lumilivre.api.data.AlunoDTO;
 import br.com.lumilivre.api.data.ListaAlunoDTO;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.Role;
+import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -71,20 +72,34 @@ public class AlunoService {
     }
 
     public Page<AlunoModel> buscarAvancado(String penalidadeStr, String matricula, String nome,
-            String cursoNome, LocalDate dataNascimento,
+            String cursoNome, String turnoStr, String modulo, LocalDate dataNascimento,
             String email, String celular, Pageable pageable) {
+                
         Penalidade penalidadeEnum = null;
         if (penalidadeStr != null && !penalidadeStr.isBlank()) {
             try {
                 penalidadeEnum = Penalidade.valueOf(penalidadeStr.toUpperCase());
             } catch (IllegalArgumentException e) {
-                // Caso a string não seja válida, você pode tratar aqui
                 penalidadeEnum = null;
             }
         }
 
+        Turno turnoEnum = null;
+        if (turnoStr != null && !turnoStr.isBlank()) {
+            try {
+                turnoEnum = Turno.valueOf(turnoStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                turnoEnum = null;
+            }
+        }
+
+        String nomeFiltro = (nome != null && !nome.isBlank()) ? "%" + nome + "%" : null;
+        String cursoNomeFiltro = (cursoNome != null && !cursoNome.isBlank()) ? "%" + cursoNome + "%" : null;
+        String moduloFiltro = (modulo != null && !modulo.isBlank()) ? "%" + modulo + "%" : null;
+        String emailFiltro = (email != null && !email.isBlank()) ? "%" + email + "%" : null;
+
         return ar.buscarAvancado(
-                penalidadeEnum, matricula, nome, cursoNome, dataNascimento, email, celular, pageable);
+                penalidadeEnum, matricula, nomeFiltro, cursoNomeFiltro, turnoEnum, moduloFiltro, dataNascimento, emailFiltro, celular, pageable);
     }
 
     @Transactional
@@ -101,8 +116,8 @@ public class AlunoService {
             rm.setMensagem("Essa matrícula já está cadastrada.");
             return ResponseEntity.badRequest().body(rm);
         }
-        if (dto.getNome() == null || dto.getNome().trim().isEmpty()) {
-            rm.setMensagem("O nome é obrigatório.");
+        if (dto.getNomeCompleto() == null || dto.getNomeCompleto().trim().isEmpty()) {
+            rm.setMensagem("O nome completo é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
         if (dto.getCpf() == null || dto.getCpf().trim().isEmpty()) {
@@ -139,8 +154,7 @@ public class AlunoService {
         AlunoModel aluno = new AlunoModel();
 
         aluno.setMatricula(dto.getMatricula());
-        aluno.setNome(dto.getNome());
-        aluno.setSobrenome(dto.getSobrenome()); 
+        aluno.setNomeCompleto(dto.getNomeCompleto());
         aluno.setCpf(dto.getCpf());
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setCelular(dto.getCelular());
@@ -180,7 +194,7 @@ public class AlunoService {
         aluno.setUsuario(usuario);
 
         AlunoModel salvo = ar.save(aluno);
-        emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNome(), dto.getCpf());
+        emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNomeCompleto(), dto.getCpf());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
@@ -194,8 +208,8 @@ public class AlunoService {
 
         AlunoModel aluno = alunoOpt.get();
 
-        if (dto.getNome() == null || dto.getNome().trim().isEmpty()) {
-            rm.setMensagem("O nome é obrigatório.");
+        if (dto.getNomeCompleto() == null || dto.getNomeCompleto().trim().isEmpty()) {
+            rm.setMensagem("O nome completo é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
         if (dto.getCpf() == null || dto.getCpf().trim().isEmpty()) {
@@ -221,7 +235,7 @@ public class AlunoService {
 
         boolean cpfAlterado = !aluno.getCpf().equals(dto.getCpf());
 
-        aluno.setNome(dto.getNome());
+        aluno.setNomeCompleto(dto.getNomeCompleto());
         aluno.setCpf(dto.getCpf());
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setCelular(dto.getCelular());
@@ -233,12 +247,11 @@ public class AlunoService {
         aluno.setLocalidade(enderecoDTO.getLocalidade());
         aluno.setBairro(enderecoDTO.getBairro());
         aluno.setUf(enderecoDTO.getUf());
-        aluno.setEstado(enderecoDTO.getEstado());
         aluno.setNumero_casa(dto.getNumero_casa());
 
         if (cpfAlterado && aluno.getUsuario() != null) {
             aluno.getUsuario().setSenha(passwordEncoder.encode(dto.getCpf()));
-            emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNome(), dto.getCpf());
+            emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNomeCompleto(), dto.getCpf());
         }
 
         AlunoModel salvo = ar.save(aluno);

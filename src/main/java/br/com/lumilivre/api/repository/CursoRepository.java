@@ -1,7 +1,6 @@
 package br.com.lumilivre.api.repository;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,29 +20,25 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 
 	boolean existsByNomeIgnoreCaseAndIdNot(String nome, Integer id);
 
-	Optional<CursoModel> findByModulo_Nome(String nomeModulo);
-
 	List<CursoModel> findByTurno(Turno turno);
 
 	@Query("""
 			    SELECT c FROM CursoModel c
-			    WHERE LOWER(c.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-			       OR LOWER(c.turno) LIKE LOWER(CONCAT('%', :texto, '%'))
-			       OR STR(c.modulo) LIKE CONCAT('%', :texto, '%')
-			       OR LOWER(c.descricao) LIKE LOWER(CONCAT('%', :texto, '%'))
+			    WHERE c.nome ILIKE :texto
+			       OR CAST(c.turno AS text) ILIKE :texto
+			       OR c.modulo ILIKE :texto
 			""")
 	Page<CursoModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
 	@Query("""
-			    SELECT c FROM CursoModel c
-			    WHERE (:nome IS NULL OR LOWER(c.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
-			      AND (:turno IS NULL OR c.turno = :turno)
-			      AND (:modulo IS NULL OR c.modulo = :modulo)
-			      AND (:descricao IS NULL OR LOWER(c.descricao) LIKE LOWER(CONCAT('%', :descricao, '%')))
-			""")
+            SELECT c FROM CursoModel c
+            WHERE (:nome IS NULL OR c.nome ILIKE :nome)
+              AND (:turno IS NULL OR c.turno = :turno)
+              AND (:modulo IS NULL OR c.modulo ILIKE :modulo)
+        """)
 	Page<CursoModel> buscarAvancado(
 			@Param("nome") String nome,
-			@Param("turno") String turno,
+			@Param("turno") Turno turno,
 			@Param("modulo") String modulo,
 			Pageable pageable);
 

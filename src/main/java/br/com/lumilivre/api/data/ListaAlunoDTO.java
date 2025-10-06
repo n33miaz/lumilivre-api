@@ -8,18 +8,16 @@ public class ListaAlunoDTO {
 	private Penalidade penalidade;
 	private String matricula;
 	private String cursoNome;
-	private String nome;
-	private String sobrenome;
+	private String nomeCompleto;
 	private LocalDate dataNascimento;
 	private String email;
 	private String celular; // contato
 
-	public ListaAlunoDTO(Penalidade penalidade, String matricula, String cursoNome, String nome, String sobrenome, LocalDate dataNascimento, String email, String celular) {
+	public ListaAlunoDTO(Penalidade penalidade, String matricula, String cursoNome, String nomeCompleto, LocalDate dataNascimento, String email, String celular) {
 		this.penalidade = penalidade;
 		this.matricula = matricula;
 		this.cursoNome = cursoNome;
-		this.nome = nome;
-		this.sobrenome = sobrenome;
+		this.nomeCompleto = nomeCompleto;
         this.dataNascimento = dataNascimento;
 		this.email = email;
 		this.celular = celular;
@@ -34,11 +32,8 @@ public class ListaAlunoDTO {
 	public String getCursoNome() { return cursoNome; }
 	public void setCursoNome(String cursoNome) { this.cursoNome = cursoNome; }
 
-	public String getNome() { return nome; }
-	public void setNome(String nome) { this.nome = nome; }
-
-	public String getSobrenome() { return sobrenome; }
-	public void setSobrenome(String sobrenome) { this.sobrenome = sobrenome; }
+	public String getNome() { return nomeCompleto; }
+	public void setNome(String nomeCompleto) { this.nomeCompleto = nomeCompleto; }
 
 	public LocalDate getDataNascimento() { return dataNascimento; }
 	public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }

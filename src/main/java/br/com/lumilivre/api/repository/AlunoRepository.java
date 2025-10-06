@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import br.com.lumilivre.api.data.ListaAlunoDTO;
 import br.com.lumilivre.api.enums.Penalidade;
+import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.model.AlunoModel;
 
 public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
@@ -20,7 +21,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
 
 	Optional<AlunoModel> findByCpf(String cpf);
 
-	Optional<AlunoModel> findByNomeIgnoreCase(String nome);
+	Optional<AlunoModel> findByNomeIgnoreCase(String nomeCompleto);
 
 	List<AlunoModel> findAllByOrderByEmprestimosCountDesc();
 
@@ -32,21 +33,25 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
 	Page<AlunoModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
 	@Query("""
-			    SELECT a FROM AlunoModel a
-			    LEFT JOIN a.curso c
-			    WHERE (:penalidadeEnum IS NULL OR a.penalidade = :penalidadeEnum)
-			      AND (:matricula IS NULL OR a.matricula = :matricula)
-			      AND (:nome IS NULL OR LOWER(a.nome) LIKE CONCAT('%', LOWER(:nome), '%'))
-			      AND (:cursoNome IS NULL OR LOWER(c.nome) LIKE CONCAT('%', LOWER(:cursoNome), '%'))
-			      AND (:dataNascimento IS NULL OR a.dataNascimento = :dataNascimento)
-			      AND (:email IS NULL OR LOWER(a.email) LIKE CONCAT('%', LOWER(:email), '%'))
-			      AND (:celular IS NULL OR a.celular = :celular)
+				SELECT a FROM AlunoModel a
+				LEFT JOIN a.curso c
+				WHERE (:penalidadeEnum IS NULL OR a.penalidade = :penalidadeEnum)
+				AND (:matricula IS NULL OR a.matricula = :matricula)
+				AND (:nomeCompleto IS NULL OR a.nomeCompleto ILIKE :nomeCompleto)
+				AND (:cursoNome IS NULL OR c.nome ILIKE :cursoNome)
+				AND (:turno IS NULL OR c.turno = :turno)
+				AND (:modulo IS NULL OR c.modulo ILIKE :modulo)
+				AND (:dataNascimento IS NULL OR a.dataNascimento = :dataNascimento)
+				AND (:email IS NULL OR a.email ILIKE :email)
+				AND (:celular IS NULL OR a.celular = :celular)
 			""")
 	Page<AlunoModel> buscarAvancado(
 			@Param("penalidadeEnum") Penalidade penalidadeEnum,
 			@Param("matricula") String matricula,
-			@Param("nome") String nome,
+			@Param("nomeCompleto") String nomeCompleto,
 			@Param("cursoNome") String cursoNome,
+			@Param("turno") Turno turno,
+			@Param("modulo") String modulo,
 			@Param("dataNascimento") LocalDate dataNascimento,
 			@Param("email") String email,
 			@Param("celular") String celular,
@@ -58,31 +63,29 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
 			        a.penalidade,
 			        a.matricula,
 					c.nome,
-			        a.nome,
-					a.sobrenome,
+			        a.nomeCompleto,
 					a.dataNascimento,
 			        a.email,
 			        a.celular
 			    )
 			    FROM AlunoModel a
 			    JOIN a.curso c
-			    ORDER BY a.nome
+			    ORDER BY a.nomeCompleto
 			""")
 	Page<ListaAlunoDTO> findAlunosParaListaAdmin(Pageable pageable); // Nome do método corrigido
 
 	// busca a lista de alunos COM filtro
 	@Query("""
 	        SELECT new br.com.lumilivre.api.data.ListaAlunoDTO(
-	            a.penalidade, a.matricula, c.nome, a.nome, a.sobrenome, a.dataNascimento, a.email, a.celular
+	            a.penalidade, a.matricula, c.nome, a.nomeCompleto, a.dataNascimento, a.email, a.celular
 	        )
 	        FROM AlunoModel a JOIN a.curso c
-	        WHERE LOWER(a.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-			   OR LOWER(a.sobrenome) LIKE LOWER(CONCAT('%', :texto, '%'))
+	        WHERE a.nomeCompleto ILIKE CONCAT('%', :texto, '%')
 	           OR a.matricula LIKE CONCAT('%', :texto, '%')
 	           OR LOWER(c.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
 			   OR a.celular LIKE CONCAT('%', :texto, '%')
 			   OR LOWER(a.email) LIKE LOWER(CONCAT('%', :texto, '%'))
-	        ORDER BY a.nome
+	        ORDER BY a.nomeCompleto
 	    """)
 	Page<ListaAlunoDTO> findAlunosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 }

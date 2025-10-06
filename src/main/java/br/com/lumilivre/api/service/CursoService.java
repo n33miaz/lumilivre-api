@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.ListaCursoDTO;
+import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.CursoRepository;
@@ -32,11 +33,23 @@ public class CursoService {
 
     public Page<CursoModel> buscarAvancado(
             String nome,
-            String turno,
+            String turnoStr,
             String modulo,
-
             Pageable pageable) {
-        return cr.buscarAvancado(nome, turno, modulo, pageable);
+        
+        Turno turnoEnum = null;
+        if (turnoStr != null && !turnoStr.isBlank()) {
+            try {
+                turnoEnum = Turno.valueOf(turnoStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                turnoEnum = null;
+            }
+        }
+
+        String nomeFiltro = (nome != null && !nome.isBlank()) ? "%" + nome + "%" : null;
+        String moduloFiltro = (modulo != null && !modulo.isBlank()) ? "%" + modulo + "%" : null;
+        
+        return cr.buscarAvancado(nomeFiltro, turnoEnum, moduloFiltro, pageable);
     }
 
     @Transactional

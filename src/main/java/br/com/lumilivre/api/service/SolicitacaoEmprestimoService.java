@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.EmprestimoDTO;
 import br.com.lumilivre.api.data.ListaSolicitacaoCompletaDTO;
-import br.com.lumilivre.api.data.ListaSolicitacaoDTO;
 import br.com.lumilivre.api.data.ListaSolicitacaoDashboardDTO;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
@@ -47,7 +46,7 @@ public class SolicitacaoEmprestimoService {
                 .stream()
                 .map(s -> new ListaSolicitacaoCompletaDTO(
                         s.getId(),
-                        s.getAluno().getNome(),
+                        s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
                         s.getExemplar().getTombo(),
                         s.getExemplar().getLivro_isbn().getNome(),
@@ -133,7 +132,7 @@ public class SolicitacaoEmprestimoService {
                 .stream()
                 .map(s -> new SolicitacaoEmprestimoDTO(
                         s.getId(),
-                        s.getAluno().getNome(),
+                        s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
                         s.getExemplar().getTombo(),
                         s.getExemplar().getLivro_isbn().getNome(),
@@ -148,7 +147,7 @@ public class SolicitacaoEmprestimoService {
                 .stream()
                 .map(s -> new SolicitacaoEmprestimoDTO(
                         s.getId(),
-                        s.getAluno().getNome(),
+                        s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
                         s.getExemplar().getTombo(),
                         s.getExemplar().getLivro_isbn().getNome(),

@@ -10,8 +10,7 @@ import br.com.lumilivre.api.enums.Penalidade;
 public class AlunoDTO {
 
     private String matricula;
-    private String nome;
-    private String sobrenome;
+    private String nomeCompleto;
     private String cpf;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
@@ -25,7 +24,6 @@ public class AlunoDTO {
     private String localidade;
     private String bairro;
     private String uf;
-    private String estado;
     private Integer numero_casa;
     private Penalidade penalidade;
     private LocalDateTime penalidadeExpiraEm;
@@ -47,20 +45,12 @@ public class AlunoDTO {
         this.matricula = matricula;
     }
 
-    public String getNome() {
-        return nome;
+    public String getNomeCompleto() {
+        return nomeCompleto;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getSobrenome() {
-        return sobrenome;
-    }
-
-    public void setSobrenome(String sobrenome) {
-        this.sobrenome = sobrenome;
+    public void setNomeCompleto(String nomeCompleto) {
+        this.nomeCompleto = nomeCompleto;
     }
 
     public String getCpf() {
@@ -141,14 +131,6 @@ public class AlunoDTO {
 
     public void setUf(String uf) {
         this.uf = uf;
-    }
-
-    public String getEstado() {
-        return estado;
-    }
-
-    public void setEstado(String estado) {
-        this.estado = estado;
     }
 
     public Integer getNumero_casa() {

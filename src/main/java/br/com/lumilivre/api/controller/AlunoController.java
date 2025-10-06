@@ -82,19 +82,21 @@ public class AlunoController {
     })
 
     public ResponseEntity<Page<AlunoModel>> buscarAvancado(
-            @Parameter(description = "Texto parcial da Penalidade") @RequestParam(required = false) String penalidade,
-            @Parameter(description = "Matrícula exata do aluno") @RequestParam(required = false) String matricula,
-            @Parameter(description = "Nome parcial do aluno") @RequestParam(required = false) String nome,
-            @Parameter(description = "Nome parcial do curso") @RequestParam(required = false) String cursoNome,
-            @Parameter(description = "Data de nascimento no formato YYYY-MM-DD") @RequestParam(required = false) LocalDate dataNascimento,
-            @Parameter(description = "Texto parcial ou completo do email") @RequestParam(required = false) String email,
-            @Parameter(description = "Numero parcial ou completo") @RequestParam(required = false) String celular,
+        @Parameter(description = "Status da Penalidade (ADVERTENCIA, SUSPENSAO, etc)") @RequestParam(required = false) String penalidade,
+        @Parameter(description = "Matrícula exata do aluno") @RequestParam(required = false) String matricula,
+        @Parameter(description = "Nome parcial do aluno") @RequestParam(required = false) String nome,
+        @Parameter(description = "Nome parcial do curso") @RequestParam(required = false) String cursoNome,
+        @Parameter(description = "Turno do curso (MANHA, TARDE, NOITE, INTEGRAL)") @RequestParam(required = false) String turno, // Adicionado
+        @Parameter(description = "Módulo ou série do curso") @RequestParam(required = false) String modulo, // Adicionado
+        @Parameter(description = "Data de nascimento no formato YYYY-MM-DD") @RequestParam(required = false) LocalDate dataNascimento,
+        @Parameter(description = "Texto parcial ou completo do email") @RequestParam(required = false) String email,
+        @Parameter(description = "Numero parcial ou completo") @RequestParam(required = false) String celular,
+        Pageable pageable) {
+            
+    Page<AlunoModel> alunos = as.buscarAvancado(penalidade, matricula, nome, cursoNome, turno, modulo, dataNascimento, email,
+            celular, pageable); // <--- Chamada atualizada com todos os parâmetros
 
-            Pageable pageable) {
-        Page<AlunoModel> alunos = as.buscarAvancado(penalidade, matricula, nome, cursoNome, dataNascimento, email,
-                celular, pageable);
-
-        return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
+    return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

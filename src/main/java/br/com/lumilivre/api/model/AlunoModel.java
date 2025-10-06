@@ -29,12 +29,8 @@ public class AlunoModel {
 	private String matricula;
 
 	@NotNull
-	@Column(name = "nome", nullable = false, length = 55)
-	private String nome;
-
-	@NotNull
-	@Column(name = "sobrenome", nullable = false, length = 55)
-	private String sobrenome;
+	@Column(name = "nome_Completo", nullable = false, length = 110)
+	private String nomeCompleto;
 
 	@NotNull
 	@Column(name = "cpf", nullable = false, length = 11)
@@ -82,9 +78,6 @@ public class AlunoModel {
 	@Column(name = "numero_casa")
 	private Integer numero_casa;
 
-	@Column(name = "estado", length = 55)
-	private String estado;
-
 	@Column(name = "penalidade", length = 55)
 	@Enumerated(EnumType.STRING)
 	private Penalidade penalidade;
@@ -110,20 +103,12 @@ public class AlunoModel {
 		this.usuario = usuario;
 	}
 
-	public String getNome() {
-		return nome;
+	public String getNomeCompleto() {
+		return nomeCompleto;
 	}
 
-	public void setNome(String nome) {
-		this.nome = nome;
-	}
-
-	public String getSobrenome() {
-    	return sobrenome;
-	}
-
-	public void setSobrenome(String sobrenome) {
-		this.sobrenome = sobrenome;
+	public void setNomeCompleto(String nomeCompleto) {
+		this.nomeCompleto = nomeCompleto;
 	}
 
 	public String getCpf() {
@@ -220,14 +205,6 @@ public class AlunoModel {
 
 	public void setNumero_casa(Integer numero_casa) {
 		this.numero_casa = numero_casa;
-	}
-
-	public String getEstado() {
-		return estado;
-	}
-
-	public void setEstado(String estado) {
-		this.estado = estado;
 	}
 
 	public Penalidade getPenalidade() {

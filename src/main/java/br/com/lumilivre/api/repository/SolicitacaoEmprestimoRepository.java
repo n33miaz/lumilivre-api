@@ -5,8 +5,6 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import br.com.lumilivre.api.data.ListaEmprestimoDTO;
-import br.com.lumilivre.api.data.ListaSolicitacaoDTO;
 import br.com.lumilivre.api.data.ListaSolicitacaoDashboardDTO;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;

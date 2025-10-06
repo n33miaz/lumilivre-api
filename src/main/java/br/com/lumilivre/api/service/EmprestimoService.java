@@ -92,7 +92,7 @@ public class EmprestimoService {
             StatusEmprestimo statusEmprestimo,
             String tombo,
             String livroNome,
-            String alunoNome,
+            String alunoNomeCompleto,
             String dataEmprestimo,
             String dataDevolucao,
             Pageable pageable) {
@@ -111,7 +111,7 @@ public class EmprestimoService {
                 statusEmprestimo,
                 tombo,
                 livroNome,
-                alunoNome,
+                alunoNomeCompleto,
                 dataEmprestimoDT,
                 dataDevolucaoDT,
                 pageable);
@@ -188,7 +188,7 @@ public class EmprestimoService {
         String mensagemEmail = String.format(
                 "Olá %s,\n\nSeu empréstimo do livro '%s' foi registrado com sucesso.\n" +
                         "Data de empréstimo: %s\nData de devolução: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
-                aluno.getNome(),
+                aluno.getNomeCompleto(),
                 exemplar.getLivro_isbn().getNome(),
                 dto.getData_emprestimo(),
                 dto.getData_devolucao());
@@ -259,7 +259,7 @@ public class EmprestimoService {
         String mensagemEmail = String.format(
                 "Olá %s,\n\nSeu empréstimo do livro '%s' foi concluído.\n" +
                         "Status da penalidade: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
-                aluno.getNome(),
+                aluno.getNomeCompleto(),
                 exemplar.getLivro_isbn().getNome(),
                 emprestimo.getPenalidade() != null ? emprestimo.getPenalidade().name() : "Nenhuma");
         emailService.enviarEmail(aluno.getEmail(), "Empréstimo concluído", mensagemEmail);
@@ -330,7 +330,7 @@ public class EmprestimoService {
         List<AlunoModel> alunos = alunoRepository.findAllByOrderByEmprestimosCountDesc();
         return alunos.stream()
                 .limit(top)
-                .map(a -> new AlunoRankingDTO(a.getMatricula(), a.getNome(), a.getEmprestimosCount()))
+                .map(a -> new AlunoRankingDTO(a.getMatricula(), a.getNomeCompleto(), a.getEmprestimosCount()))
                 .toList();
     }
     public List<EmprestimoModel> buscarTodos() {
