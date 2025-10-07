@@ -3,8 +3,8 @@ package br.com.lumilivre.api.model;
 import br.com.lumilivre.api.enums.Turno;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter; 
-import lombok.Setter; 
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "curso")
@@ -25,5 +25,5 @@ public class CursoModel {
     private Turno turno;
 
     @Column(name = "modulo", length = 55)
-    private String modulo; 
+    private String modulo;
 }
