@@ -279,7 +279,7 @@ public class AlunoService {
     }
 
     public Optional<AlunoModel> buscarPorNome(String nome) {
-        return ar.findByNomeIgnoreCase(nome);
+        return ar.findByNomeCompletoIgnoreCase(nome);
     }
 
     public Optional<AlunoModel> buscarPorCPF(String cpf) {

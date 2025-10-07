@@ -52,4 +52,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			ORDER BY c.nome
 			""")
 	Page<ListaCursoDTO> findCursoParaListaAdmin(Pageable pageable);
+
+	@Query("SELECT DISTINCT c.modulo FROM CursoModel c WHERE c.modulo IS NOT NULL AND c.modulo <> '' ORDER BY c.modulo")
+	List<String> findDistinctModulos();
 }

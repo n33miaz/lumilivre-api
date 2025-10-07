@@ -21,7 +21,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
 
 	Optional<AlunoModel> findByCpf(String cpf);
 
-	Optional<AlunoModel> findByNomeIgnoreCase(String nomeCompleto);
+	Optional<AlunoModel> findByNomeCompletoIgnoreCase(String nomeCompleto);
 
 	List<AlunoModel> findAllByOrderByEmprestimosCountDesc();
 
@@ -72,7 +72,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
 			    JOIN a.curso c
 			    ORDER BY a.nomeCompleto
 			""")
-	Page<ListaAlunoDTO> findAlunosParaListaAdmin(Pageable pageable); // Nome do método corrigido
+	Page<ListaAlunoDTO> findAlunosParaListaAdmin(Pageable pageable);
 
 	// busca a lista de alunos COM filtro
 	@Query("""

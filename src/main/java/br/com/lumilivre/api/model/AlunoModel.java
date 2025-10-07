@@ -29,7 +29,7 @@ public class AlunoModel {
 	private String matricula;
 
 	@NotNull
-	@Column(name = "nome_Completo", nullable = false, length = 110)
+	@Column(name = "nome_completo", nullable = false, length = 110)
 	private String nomeCompleto;
 
 	@NotNull

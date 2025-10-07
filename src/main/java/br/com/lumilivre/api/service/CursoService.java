@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -88,4 +90,7 @@ public class CursoService {
         return cursoModel.getNome() == null || cursoModel.getNome().trim().isEmpty();
     }
 
+    public List<String> buscarModulosDistintos() {
+        return cr.findDistinctModulos();
+    }
 }

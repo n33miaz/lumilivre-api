@@ -54,22 +54,23 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     @Query("""
                 SELECT e FROM EmprestimoModel e
                 WHERE (:statusEmprestimo IS NULL OR e.statusEmprestimo = :statusEmprestimo)
-                  AND (:tombo IS NULL OR LOWER(e.exemplar.tombo) LIKE LOWER(CONCAT('%', :tombo, '%')))
-                  AND (:livroNome IS NULL OR LOWER(e.exemplar.livro.nome) LIKE LOWER(CONCAT('%', :livroNome, '%')))
-                  AND (:alunoNome IS NULL OR LOWER(e.aluno.nome) LIKE LOWER(CONCAT('%', :alunoNome, '%')))
-                  AND (:alunoNome IS NULL OR LOWER(e.aluno.nome) LIKE LOWER(CONCAT('%', :alunoNome, '%')))
-                  AND (:dataEmprestimoInicio IS NULL OR e.dataEmprestimo >= :dataEmprestimoInicio)
-                  AND (:dataEmprestimoFim IS NULL OR e.dataEmprestimo <= :dataEmprestimoFim)
-                  AND (:dataDevolucaoInicio IS NULL OR e.dataDevolucao >= :dataDevolucaoInicio)
-                  AND (:dataDevolucaoFim IS NULL OR e.dataDevolucao <= :dataDevolucaoFim)
+                AND (:tombo IS NULL OR e.exemplar.tombo ILIKE :tombo)
+                AND (:livroNome IS NULL OR e.exemplar.livro.nome ILIKE :livroNome)
+                AND (:alunoNomeCompleto IS NULL OR e.aluno.nomeCompleto ILIKE :alunoNomeCompleto)
+                AND (:dataEmprestimoInicio IS NULL OR e.dataEmprestimo >= :dataEmprestimoInicio)
+                AND (:dataEmprestimoFim IS NULL OR e.dataEmprestimo <= :dataEmprestimoFim)
+                AND (:dataDevolucaoInicio IS NULL OR e.dataDevolucao >= :dataDevolucaoInicio)
+                AND (:dataDevolucaoFim IS NULL OR e.dataDevolucao <= :dataDevolucaoFim)
             """)
     Page<EmprestimoModel> buscarAvancado(
             @Param("statusEmprestimo") StatusEmprestimo statusEmprestimo,
             @Param("tombo") String tombo,
             @Param("livroNome") String livroNome,
-            @Param("alunoNome") String alunoNome,
-            @Param("dataEmprestimo") LocalDateTime dataEmprestimoInicio,
-            @Param("dataDevolucao") LocalDateTime dataDevolucaoFim,
+            @Param("alunoNomeCompleto") String alunoNomeCompleto, 
+            @Param("dataEmprestimoInicio") LocalDateTime dataEmprestimoInicio, 
+            @Param("dataEmprestimoFim") LocalDateTime dataEmprestimoFim, 
+            @Param("dataDevolucaoInicio") LocalDateTime dataDevolucaoInicio, 
+            @Param("dataDevolucaoFim") LocalDateTime dataDevolucaoFim, 
             Pageable pageable);
 
     @Query("""
@@ -97,7 +98,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                     e.statusEmprestimo,
                     l.nome,
                     ex.tombo,
-                    a.nome,
+                    a.nomeCompleto,
                     a.curso.nome,
                     e.dataEmprestimo,
                     e.dataDevolucao
@@ -113,7 +114,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     @Query("""
                 SELECT new br.com.lumilivre.api.data.ListaEmprestimoDashboardDTO(
                     livro.nome,
-                    aluno.nome,
+                    aluno.nomeCompleto,
                     emprestimo.dataDevolucao,
                     emprestimo.statusEmprestimo
                 )

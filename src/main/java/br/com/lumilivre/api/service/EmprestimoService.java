@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -89,32 +90,43 @@ public class EmprestimoService {
 
 
     public Page<EmprestimoModel> buscarAvancado(
-            StatusEmprestimo statusEmprestimo,
-            String tombo,
-            String livroNome,
-            String alunoNomeCompleto,
-            String dataEmprestimo,
-            String dataDevolucao,
-            Pageable pageable) {
+        StatusEmprestimo statusEmprestimo,
+        String tombo,
+        String livroNome,
+        String alunoNomeCompleto,
+        String dataEmprestimo, // Mantemos como String para o Controller
+        String dataDevolucao, // Mantemos como String para o Controller
+        Pageable pageable) {
 
-        LocalDateTime dataEmprestimoDT = null;
-        if (dataEmprestimo != null && !dataEmprestimo.isBlank()) {
-            dataEmprestimoDT = LocalDateTime.parse(dataEmprestimo); // ou ajustar parse conforme o formato recebido
-        }
+    // Prepara os parâmetros de texto para a busca com ILIKE
+    String tomboFiltro = (tombo != null && !tombo.isBlank()) ? "%" + tombo + "%" : null;
+    String livroNomeFiltro = (livroNome != null && !livroNome.isBlank()) ? "%" + livroNome + "%" : null;
+    String alunoNomeFiltro = (alunoNomeCompleto != null && !alunoNomeCompleto.isBlank()) ? "%" + alunoNomeCompleto + "%" : null;
 
-        LocalDateTime dataDevolucaoDT = null;
-        if (dataDevolucao != null && !dataDevolucao.isBlank()) {
-            dataDevolucaoDT = LocalDateTime.parse(dataDevolucao); // ajustar parse conforme formato
-        }
+    // Converte as datas (se existirem)
+    LocalDateTime dataEmprestimoInicio = null;
+    if (dataEmprestimo != null && !dataEmprestimo.isBlank()) {
+        // Assumindo formato YYYY-MM-DD, pegamos o início do dia
+        dataEmprestimoInicio = LocalDate.parse(dataEmprestimo).atStartOfDay();
+    }
 
-        return emprestimoRepository.buscarAvancado(
-                statusEmprestimo,
-                tombo,
-                livroNome,
-                alunoNomeCompleto,
-                dataEmprestimoDT,
-                dataDevolucaoDT,
-                pageable);
+    LocalDateTime dataDevolucaoFim = null;
+    if (dataDevolucao != null && !dataDevolucao.isBlank()) {
+        // Assumindo formato YYYY-MM-DD, pegamos o fim do dia
+        dataDevolucaoFim = LocalDate.parse(dataDevolucao).atTime(23, 59, 59);
+    }
+
+    // Chama o método do repositório com os parâmetros corretos
+    return emprestimoRepository.buscarAvancado(
+            statusEmprestimo,
+            tomboFiltro,
+            livroNomeFiltro,
+            alunoNomeFiltro,
+            dataEmprestimoInicio,
+            null, // não esta sendo usada (null)
+            null, // não esta sendo usada (null)
+            dataDevolucaoFim,
+            pageable);
     }
 
     // ================================

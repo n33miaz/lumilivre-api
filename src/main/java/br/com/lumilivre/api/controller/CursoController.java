@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -129,5 +131,15 @@ public class CursoController {
     public ResponseEntity<ResponseModel> excluir(
             @Parameter(description = "ID do curso a ser excluído") @PathVariable Integer id) {
         return cs.excluir(id);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/modulos")
+
+    @Operation(summary = "Lista todos os módulos distintos existentes")
+    public ResponseEntity<List<String>> listarModulosDistintos() {
+        List<String> modulos = cs.buscarModulosDistintos();
+        return modulos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(modulos);
     }
 }

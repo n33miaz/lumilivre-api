@@ -19,7 +19,7 @@ public interface SolicitacaoEmprestimoRepository extends JpaRepository<Solicitac
 
 	@Query("""
 			    SELECT new br.com.lumilivre.api.data.ListaSolicitacaoDashboardDTO(
-			        a.nome,
+			        a.nomeCompleto,
 			        l.nome,
 			        ex.tombo,
 			        s.dataSolicitacao
