@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 	boolean existsByNomeIgnoreCase(String nome);
 
 	boolean existsByNomeIgnoreCaseAndIdNot(String nome, Integer id);
+    Optional<CursoModel> findByNomeIgnoreCase(String nome);
 
 	List<CursoModel> findByTurno(Turno turno);
 

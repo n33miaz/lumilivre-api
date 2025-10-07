@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
+import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.LivroModel;
 
 @Repository
@@ -88,4 +89,6 @@ Page<ListaLivroDTO> findLivrosParaListaAdmin(Pageable pageable);
     @Query("SELECT l FROM LivroModel l WHERE LOWER(l.genero) = LOWER(:nomeGenero)")
 
     List<LivroModel> findByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero);
+    Optional<LivroModel> findByNomeIgnoreCase(String nome);
+
 }
