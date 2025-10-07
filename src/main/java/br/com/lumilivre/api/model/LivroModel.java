@@ -49,9 +49,6 @@ public class LivroModel {
     @Column(name = "editora", length = 55, nullable = false)
     private String editora;
 
-    @Column(name = "numero_capitulos")
-    private Integer numero_capitulos;
-
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "classificacao_etaria", length = 55, nullable = false)
@@ -140,14 +137,6 @@ public class LivroModel {
 
     public void setEditora(String editora) {
         this.editora = editora;
-    }
-
-    public Integer getNumero_capitulos() {
-        return numero_capitulos;
-    }
-
-    public void setNumero_capitulos(Integer numero_capitulos) {
-        this.numero_capitulos = numero_capitulos;
     }
 
     public ClassificacaoEtaria getClassificacao_etaria() {
