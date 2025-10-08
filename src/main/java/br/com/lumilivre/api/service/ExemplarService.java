@@ -5,16 +5,19 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.data.ExemplarDTO;
 import br.com.lumilivre.api.data.ListaLivroDTO;
+import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
+import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
 
@@ -29,6 +32,9 @@ public class ExemplarService {
 
     @Autowired
     private ResponseModel rm;
+
+    @Autowired
+    private EmprestimoRepository emprestimoRepository;
 
     /** Buscar todos os exemplares de um livro pelo ISBN */
     public ResponseEntity<?> buscarExemplaresPorIsbn(String isbn) {
@@ -161,16 +167,36 @@ public class ExemplarService {
     public ResponseEntity<ResponseModel> excluir(String tombo) {
         rm.setMensagem("");
 
+        //  exemplar existe?
         Optional<ExemplarModel> exemplarOpt = er.findById(tombo);
         if (exemplarOpt.isEmpty()) {
-            rm.setMensagem("Exemplar com esse tombo não existe.");
-            return ResponseEntity.badRequest().body(rm);
+            rm.setMensagem("Exemplar com o tombo '" + tombo + "' não foi encontrado.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
+        }
+
+        // ta em um empréstimo ativo?
+        boolean temEmprestimoAtivo = emprestimoRepository.existsByExemplarTomboAndStatusEmprestimo(tombo, StatusEmprestimo.ATIVO);
+        boolean temEmprestimoAtrasado = emprestimoRepository.existsByExemplarTomboAndStatusEmprestimo(tombo, StatusEmprestimo.ATRASADO);
+
+        if (temEmprestimoAtivo || temEmprestimoAtrasado) {
+            rm.setMensagem("Não é possível excluir. Este exemplar está atualmente emprestado.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(rm);
         }
 
         ExemplarModel exemplar = exemplarOpt.get();
-        er.deleteById(tombo);
+        LivroModel livro = exemplar.getLivro_isbn(); 
 
-        atualizarQuantidadeExemplaresDoLivro(exemplar.getLivro_isbn().getIsbn());
+        if (livro != null && livro.getExemplares() != null) {
+            livro.getExemplares().remove(exemplar);
+        }
+        
+        er.delete(exemplar); 
+        
+        if (livro != null) {
+            Long novaQuantidade = er.contarExemplaresPorLivro(livro.getIsbn());
+            livro.setQuantidade(novaQuantidade.intValue());
+            lr.save(livro);
+        }
 
         rm.setMensagem("O exemplar foi removido com sucesso.");
         return ResponseEntity.ok(rm);
