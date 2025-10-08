@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
+import br.com.lumilivre.api.data.LivroAgrupadoDTO;
 import br.com.lumilivre.api.data.LivroDTO;
 import br.com.lumilivre.api.data.LivroResponseMobileGeneroDTO;
 import br.com.lumilivre.api.enums.Cdd;
@@ -352,5 +353,9 @@ public class LivroService {
 
     public List<LivroModel> buscarTodos() {
         return lr.findAll(); // retorna todos os livros
+    }
+
+    public Page<LivroAgrupadoDTO> buscarLivrosAgrupados(Pageable pageable, String texto) {
+        return lr.findLivrosAgrupados(pageable, texto); // retorna todos os livros agrupados (agrupa os exemplares)
     }
 }

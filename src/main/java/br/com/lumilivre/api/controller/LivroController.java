@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
+import br.com.lumilivre.api.data.LivroAgrupadoDTO;
 import br.com.lumilivre.api.data.LivroDTO;
 import br.com.lumilivre.api.data.LivroResponseMobileGeneroDTO;
 import br.com.lumilivre.api.model.LivroModel;
@@ -43,6 +44,16 @@ public class LivroController {
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
         Page<ListaLivroDTO> livros = ls.buscarParaListaAdmin(pageable);
+        return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/home/agrupado")
+    @Operation(summary = "Lista livros agrupados por ISBN com contagem de exemplares")
+    public ResponseEntity<Page<LivroAgrupadoDTO>> listarAgrupadoParaAdmin(
+            @Parameter(description = "Texto para busca por nome ou ISBN") @RequestParam(required = false) String texto,
+            Pageable pageable) {
+        Page<LivroAgrupadoDTO> livros = ls.buscarLivrosAgrupados(pageable, texto);
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
