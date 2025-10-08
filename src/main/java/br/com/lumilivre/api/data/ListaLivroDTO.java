@@ -13,9 +13,10 @@ public class ListaLivroDTO {
     private String genero;
     private String autor;
     private String editora;
+    private String localizacao_fisica;
 
     public ListaLivroDTO(StatusLivro status, String tomboExemplar, String isbn, Cdd cdd, String nome,
-            String genero, String autor, String editora) {
+            String genero, String autor, String editora, String localizacao_fisica) {
         this.status = status;
         this.tomboExemplar = tomboExemplar;
         this.isbn = isbn;
@@ -24,6 +25,7 @@ public class ListaLivroDTO {
         this.genero = genero;
         this.autor = autor;
         this.editora = editora;
+        this.localizacao_fisica = localizacao_fisica;
     }
 
     public StatusLivro getStatus() {
@@ -88,5 +90,13 @@ public class ListaLivroDTO {
 
     public void setEditora(String editora) {
         this.editora = editora;
+    }
+
+    public String getLocalizacao_fisica() {
+        return localizacao_fisica;
+    }
+
+    public void setLocalizacao_fisica(String localizacao_fisica) {
+        this.localizacao_fisica = localizacao_fisica;
     }
 }

@@ -77,7 +77,8 @@ Page<ListaLivroDTO> findLivrosParaListaAdminComFiltro(@Param("texto") String tex
     	        l.nome,           
     	        l.genero,         
     	        l.autor,     
-    	        l.editora         
+    	        l.editora,
+                e.localizacao_fisica
     	    )
     	    FROM LivroModel l
     	    JOIN l.exemplares e

@@ -2,6 +2,7 @@ package br.com.lumilivre.api.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.data.ExemplarDTO;
+import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.LivroModel;
@@ -45,11 +47,15 @@ public class ExemplarService {
         List<ExemplarModel> exemplares = er.findAllByLivroIsbn(isbn);
 
         if (exemplares.isEmpty()) {
-            rm.setMensagem("Nenhum exemplar encontrado para este ISBN.");
             return ResponseEntity.noContent().build();
         }
 
-        return ResponseEntity.ok(exemplares);
+        // Converte a lista de Model para uma lista de DTO
+        List<ListaLivroDTO> exemplaresDTO = exemplares.stream()
+                .map(this::converterParaDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(exemplaresDTO);
     }
 
     /** Cadastrar um exemplar */
@@ -183,5 +189,20 @@ public class ExemplarService {
             livro.setQuantidade(quantidade.intValue());
             lr.save(livro);
         });
+    }
+
+    private ListaLivroDTO converterParaDTO(ExemplarModel exemplar) {
+        LivroModel livro = exemplar.getLivro_isbn();
+        return new ListaLivroDTO(
+            exemplar.getStatus_livro(),
+            exemplar.getTombo(),
+            livro.getIsbn(),
+            livro.getCdd(),
+            livro.getNome(),
+            livro.getGenero(),
+            livro.getAutor(),
+            livro.getEditora(),
+            exemplar.getLocalizacao_fisica() 
+        );
     }
 }

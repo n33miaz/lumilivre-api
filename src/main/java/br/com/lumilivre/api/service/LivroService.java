@@ -267,7 +267,7 @@ public class LivroService {
 
         // Enums com segurança
         try {
-            livro.setCdd(Cdd.valueOf(dto.getCdd().toUpperCase()));
+            livro.setCdd(Cdd.fromCode(dto.getCdd()));
         } catch (Exception e) {
             throw new IllegalArgumentException("CDD inválido: " + dto.getCdd());
         }
@@ -283,7 +283,6 @@ public class LivroService {
         }
 
         livro.setEditora(dto.getEditora());
-        livro.setNumero_capitulos(dto.getNumero_capitulos());
         livro.setEdicao(dto.getEdicao());
         livro.setVolume(dto.getVolume());
         livro.setQuantidade(dto.getQuantidade());
