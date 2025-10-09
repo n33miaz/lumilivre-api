@@ -79,7 +79,7 @@ public class EnumController {
 
     private List<EnumDTO> listarCdd() {
         return Arrays.stream(Cdd.values())
-                .map(c -> new EnumDTO(c.getCode(), c.getDescription()))
+                .map(c -> new EnumDTO(c.name(), c.getDescription()))
                 .collect(Collectors.toList());
     }
 
