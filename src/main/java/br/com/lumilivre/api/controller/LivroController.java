@@ -14,6 +14,7 @@ import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.data.LivroAgrupadoDTO;
 import br.com.lumilivre.api.data.LivroDTO;
 import br.com.lumilivre.api.data.LivroResponseMobileGeneroDTO;
+import br.com.lumilivre.api.data.GeneroCatalogoDTO;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.LivroService;
@@ -107,6 +108,14 @@ public class LivroController {
         Iterable<LivroModel> livrosDisponiveis = ls.buscarLivrosDisponiveis();
         return !livrosDisponiveis.iterator().hasNext() ? ResponseEntity.noContent().build()
                 : ResponseEntity.ok(livrosDisponiveis);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO', 'ALUNO')")
+    @GetMapping("/catalogo-mobile")
+    @Operation(summary = "Busca o catálogo de livros agrupados por gênero para o app mobile")
+    public ResponseEntity<List<GeneroCatalogoDTO>> buscarCatalogoMobile() {
+        List<GeneroCatalogoDTO> catalogo = ls.buscarCatalogoParaMobile();
+        return catalogo.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(catalogo);
     }
 
     // ==================== MÉTODOS POST ====================

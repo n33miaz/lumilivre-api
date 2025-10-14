@@ -1,7 +1,9 @@
 package br.com.lumilivre.api.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -18,6 +20,7 @@ import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.data.LivroAgrupadoDTO;
 import br.com.lumilivre.api.data.LivroDTO;
 import br.com.lumilivre.api.data.LivroResponseMobileGeneroDTO;
+import br.com.lumilivre.api.data.GeneroCatalogoDTO;
 import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
@@ -81,6 +84,40 @@ public class LivroService {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(resposta);
+    }
+
+    public List<LivroModel> buscarTodos() {
+        return lr.findAll(); // retorna todos os livros
+    }
+
+    public Page<LivroAgrupadoDTO> buscarLivrosAgrupados(Pageable pageable, String texto) {
+        return lr.findLivrosAgrupados(pageable, texto); // retorna todos os livros agrupados (agrupa os exemplares)
+    }
+
+    public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
+        List<LivroModel> livrosDisponiveis = lr.findLivrosDisponiveis();
+
+        Map<String, List<LivroModel>> livrosPorGenero = livrosDisponiveis.stream()
+                .filter(livro -> livro.getGenero() != null && !livro.getGenero().isEmpty())
+                .collect(Collectors.groupingBy(LivroModel::getGenero));
+
+        List<GeneroCatalogoDTO> catalogo = new ArrayList<>();
+        for (Map.Entry<String, List<LivroModel>> entry : livrosPorGenero.entrySet()) {
+            String genero = entry.getKey();
+            List<LivroResponseMobileGeneroDTO> livrosDoGenero = entry.getValue().stream()
+                    .limit(10) 
+                    .map(livro -> new LivroResponseMobileGeneroDTO(
+                            livro.getImagem(),
+                            livro.getNome(),
+                            livro.getAutor()))
+                    .collect(Collectors.toList());
+
+            catalogo.add(new GeneroCatalogoDTO(genero, livrosDoGenero));
+        }
+
+        catalogo.sort((g1, g2) -> Integer.compare(g2.getLivros().size(), g1.getLivros().size()));
+
+        return catalogo;
     }
 
     // ------------------------ UPLOAD DE CAPA ------------------------
@@ -175,17 +212,17 @@ public class LivroService {
 
     // ------------------------ MÉTODOS AUXILIARES ------------------------
     private void preencherComGoogleBooks(LivroDTO dto) {
-        System.out.println("🟡 BUSCANDO ISBN NO GOOGLE BOOKS: " + dto.getIsbn());
+        System.out.println("BUSCANDO ISBN NO GOOGLE BOOKS: " + dto.getIsbn());
 
         LivroModel livroGoogle = googleBooksService.buscarLivroPorIsbn(dto.getIsbn());
 
         if (livroGoogle == null) {
-            System.out.println("🔴 LIVRO NÃO ENCONTRADO NO GOOGLE BOOKS OU ERRO NA CONEXÃO");
+            System.out.println("LIVRO NÃO ENCONTRADO NO GOOGLE BOOKS OU ERRO NA CONEXÃO");
             return;
         }
 
-        System.out.println("🟢 LIVRO ENCONTRADO: " + livroGoogle.getNome());
-        System.out.println("📊 DADOS DA API GOOGLE BOOKS:");
+        System.out.println("LIVRO ENCONTRADO: " + livroGoogle.getNome());
+        System.out.println("DADOS DA API GOOGLE BOOKS:");
         System.out.println("   Título: " + livroGoogle.getNome());
         System.out.println("   Autor: " + livroGoogle.getAutor());
         System.out.println("   Editora: " + livroGoogle.getEditora());
@@ -194,27 +231,27 @@ public class LivroService {
 
         // Preenche apenas campos que estão vazios/no DTO
         if (isVazio(dto.getNome())) {
-            System.out.println("📖 Preenchendo título: " + livroGoogle.getNome());
+            System.out.println("Preenchendo título: " + livroGoogle.getNome());
             dto.setNome(livroGoogle.getNome());
         }
         if (isVazio(dto.getEditora())) {
-            System.out.println("🏢 Preenchendo editora: " + livroGoogle.getEditora());
+            System.out.println("Preenchendo editora: " + livroGoogle.getEditora());
             dto.setEditora(livroGoogle.getEditora());
         }
         if (dto.getNumero_paginas() == null) {
-            System.out.println("📄 Preenchendo páginas: " + livroGoogle.getNumero_paginas());
+            System.out.println("Preenchendo páginas: " + livroGoogle.getNumero_paginas());
             dto.setNumero_paginas(livroGoogle.getNumero_paginas());
         }
         if (dto.getData_lancamento() == null) {
-            System.out.println("📅 Preenchendo data: " + livroGoogle.getData_lancamento());
+            System.out.println("Preenchendo data: " + livroGoogle.getData_lancamento());
             dto.setData_lancamento(livroGoogle.getData_lancamento());
         }
         if (isVazio(dto.getSinopse())) {
-            System.out.println("📝 Preenchendo sinopse");
+            System.out.println("Preenchendo sinopse");
             dto.setSinopse(livroGoogle.getSinopse());
         }
         if (isVazio(dto.getImagem())) {
-            System.out.println("🖼️ Preenchendo imagem");
+            System.out.println("Preenchendo imagem");
             dto.setImagem(livroGoogle.getImagem());
         }
         if (isVazio(dto.getAutor()) && !isVazio(livroGoogle.getAutor())) {
@@ -222,14 +259,14 @@ public class LivroService {
             dto.setAutor(livroGoogle.getAutor());
         }
 
-        System.out.println("✅ DADOS APÓS PREENCHIMENTO:");
+        System.out.println("DADOS APÓS PREENCHIMENTO:");
         System.out.println("   Título: " + dto.getNome());
         System.out.println("   Autor: " + dto.getAutor());
         System.out.println("   Editora: " + dto.getEditora());
     }
 
     private ResponseEntity<?> validarCampos(LivroDTO dto) {
-        System.out.println("🔍 VALIDANDO CAMPOS DO DTO:");
+        System.out.println("VALIDANDO CAMPOS DO DTO:");
         System.out.println("   Título: " + dto.getNome());
         System.out.println("   Autor: " + dto.getAutor());
         System.out.println("   Editora: " + dto.getEditora());
@@ -313,7 +350,7 @@ public class LivroService {
     }
 
     private ResponseEntity<?> erro(String mensagem) {
-        System.out.println("❌ ERRO DE VALIDAÇÃO: " + mensagem);
+        System.out.println("ERRO DE VALIDAÇÃO: " + mensagem);
         rm.setMensagem(mensagem);
         return ResponseEntity.badRequest().body(rm);
     }
@@ -351,11 +388,5 @@ public class LivroService {
         });
     }
 
-    public List<LivroModel> buscarTodos() {
-        return lr.findAll(); // retorna todos os livros
-    }
 
-    public Page<LivroAgrupadoDTO> buscarLivrosAgrupados(Pageable pageable, String texto) {
-        return lr.findLivrosAgrupados(pageable, texto); // retorna todos os livros agrupados (agrupa os exemplares)
-    }
 }
