@@ -72,21 +72,23 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
     Page<ListaLivroDTO> findLivrosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-    	    SELECT new br.com.lumilivre.api.data.ListaLivroDTO(
-    	        e.status_livro,  
-    	        e.tombo,         
-    	        l.isbn,           
-    	        l.cdd,            
-    	        l.nome,
-                (SELECT STRING_AGG(g.nome, ', ') FROM l.generos g),                    
-    	        l.autor,     
-    	        l.editora,
+            SELECT new br.com.lumilivre.api.data.ListaLivroDTO(
+                e.status_livro,
+                e.tombo,
+                l.isbn,
+                l.cdd,
+                l.nome,
+                STRING_AGG(g.nome, ', '), 
+                l.autor,
+                l.editora,
                 e.localizacao_fisica
-    	    )
-    	    FROM LivroModel l
-    	    JOIN l.exemplares e
-    	    ORDER BY l.nome
-    	""")
+            )
+            FROM LivroModel l
+            JOIN l.exemplares e
+            LEFT JOIN l.generos g
+            GROUP BY e.status_livro, e.tombo, l.isbn, l.cdd, l.nome, l.autor, l.editora, e.localizacao_fisica
+            ORDER BY l.nome
+        """)
     Page<ListaLivroDTO> findLivrosParaListaAdmin(Pageable pageable);
 
     @Query("SELECT l FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
