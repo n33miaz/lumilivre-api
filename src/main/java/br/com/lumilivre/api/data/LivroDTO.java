@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.data;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -25,13 +26,19 @@ public class LivroDTO {
     private String sinopse;
     private String tipo_capa;
     private String imagem;
-    private String genero;
     private String autor;
+    private Set<String> generos;
+
+    public Set<String> getGeneros() {
+        return generos;
+    }
+    public void setGeneros(Set<String> generos) {
+        this.generos = generos;
+    }
 
     public String getIsbn() {
         return isbn;
     }
-
     public void setIsbn(String isbn) {
         this.isbn = isbn;
     }
@@ -39,7 +46,6 @@ public class LivroDTO {
     public String getNome() {
         return nome;
     }
-
     public void setNome(String nome) {
         this.nome = nome;
     }
@@ -47,7 +53,6 @@ public class LivroDTO {
     public LocalDate getData_lancamento() {
         return data_lancamento;
     }
-
     public void setData_lancamento(LocalDate data_lancamento) {
         this.data_lancamento = data_lancamento;
     }
@@ -55,7 +60,6 @@ public class LivroDTO {
     public Integer getNumero_paginas() {
         return numero_paginas;
     }
-
     public void setNumero_paginas(Integer numero_paginas) {
         this.numero_paginas = numero_paginas;
     }
@@ -63,7 +67,6 @@ public class LivroDTO {
     public String getCdd() {
         return cdd;
     }
-
     public void setCdd(String cdd) {
         this.cdd = cdd;
     }
@@ -71,7 +74,6 @@ public class LivroDTO {
     public String getEditora() {
         return editora;
     }
-
     public void setEditora(String editora) {
         this.editora = editora;
     }
@@ -79,7 +81,6 @@ public class LivroDTO {
     public Integer getNumero_capitulos() {
         return numero_capitulos;
     }
-
     public void setNumero_capitulos(Integer numero_capitulos) {
         this.numero_capitulos = numero_capitulos;
     }
@@ -87,7 +88,6 @@ public class LivroDTO {
     public String getClassificacao_etaria() {
         return classificacao_etaria;
     }
-
     public void setClassificacao_etaria(String classificacao_etaria) {
         this.classificacao_etaria = classificacao_etaria;
     }
@@ -95,7 +95,6 @@ public class LivroDTO {
     public String getEdicao() {
         return edicao;
     }
-
     public void setEdicao(String edicao) {
         this.edicao = edicao;
     }
@@ -103,7 +102,6 @@ public class LivroDTO {
     public Integer getVolume() {
         return volume;
     }
-
     public void setVolume(Integer volume) {
         this.volume = volume;
     }
@@ -111,7 +109,6 @@ public class LivroDTO {
     public Integer getQuantidade() {
         return quantidade;
     }
-
     public void setQuantidade(Integer quantidade) {
         this.quantidade = quantidade;
     }
@@ -119,7 +116,6 @@ public class LivroDTO {
     public String getSinopse() {
         return sinopse;
     }
-
     public void setSinopse(String sinopse) {
         this.sinopse = sinopse;
     }
@@ -127,7 +123,6 @@ public class LivroDTO {
     public String getTipo_capa() {
         return tipo_capa;
     }
-
     public void setTipo_capa(String tipo_capa) {
         this.tipo_capa = tipo_capa;
     }
@@ -135,23 +130,13 @@ public class LivroDTO {
     public String getImagem() {
         return imagem;
     }
-
     public void setImagem(String imagem) {
         this.imagem = imagem;
-    }
-
-    public String getGenero() {
-        return genero;
-    }
-
-    public void setGenero(String genero) {
-        this.genero = genero;
     }
 
     public String getAutor() {
         return autor;
     }
-
     public void setAutor(String autor) {
         this.autor = autor;
     }

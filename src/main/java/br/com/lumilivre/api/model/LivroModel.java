@@ -1,7 +1,9 @@
 package br.com.lumilivre.api.model;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
@@ -13,6 +15,9 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
@@ -76,17 +81,28 @@ public class LivroModel {
     @Column(name = "imagem", length = 5000)
     private String imagem;
 
-    @Column(name = "genero", length = 255)
-    private String genero;
-
     @OneToMany(mappedBy = "livro", fetch = FetchType.EAGER)
     @JsonIgnore
     private List<ExemplarModel> exemplares;
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "livro_genero",
+        joinColumns = @JoinColumn(name = "livro_isbn"),
+        inverseJoinColumns = @JoinColumn(name = "genero_id")
+    )
+    private Set<GeneroModel> generos = new HashSet<>();
+
+    public Set<GeneroModel> getGeneros() {
+        return generos;
+    }
+    public void setGeneros(Set<GeneroModel> generos) {
+        this.generos = generos;
+    }
+
     public List<ExemplarModel> getExemplares() {
         return exemplares;
     }
-
     public void setExemplares(List<ExemplarModel> exemplares) {
         this.exemplares = exemplares;
     }
@@ -94,7 +110,6 @@ public class LivroModel {
     public String getIsbn() {
         return isbn;
     }
-
     public void setIsbn(String isbn) {
         this.isbn = isbn;
     }
@@ -102,7 +117,6 @@ public class LivroModel {
     public String getNome() {
         return nome;
     }
-
     public void setNome(String nome) {
         this.nome = nome;
     }
@@ -110,7 +124,6 @@ public class LivroModel {
     public LocalDate getData_lancamento() {
         return data_lancamento;
     }
-
     public void setData_lancamento(LocalDate data_lancamento) {
         this.data_lancamento = data_lancamento;
     }
@@ -118,7 +131,6 @@ public class LivroModel {
     public Integer getNumero_paginas() {
         return numero_paginas;
     }
-
     public void setNumero_paginas(Integer numero_paginas) {
         this.numero_paginas = numero_paginas;
     }
@@ -126,7 +138,6 @@ public class LivroModel {
     public Cdd getCdd() {
         return cdd;
     }
-
     public void setCdd(Cdd cdd) {
         this.cdd = cdd;
     }
@@ -134,11 +145,9 @@ public class LivroModel {
     public String getEditora() {
         return editora;
     }
-
     public void setEditora(String editora) {
         this.editora = editora;
     }
-
     public ClassificacaoEtaria getClassificacao_etaria() {
         return classificacao_etaria;
     }
@@ -146,11 +155,9 @@ public class LivroModel {
     public void setClassificacao_etaria(ClassificacaoEtaria classificacao_etaria) {
         this.classificacao_etaria = classificacao_etaria;
     }
-
     public String getEdicao() {
         return edicao;
     }
-
     public void setEdicao(String edicao) {
         this.edicao = edicao;
     }
@@ -158,7 +165,6 @@ public class LivroModel {
     public Integer getVolume() {
         return volume;
     }
-
     public void setVolume(Integer volume) {
         this.volume = volume;
     }
@@ -166,7 +172,6 @@ public class LivroModel {
     public Integer getQuantidade() {
         return quantidade;
     }
-
     public void setQuantidade(Integer quantidade) {
         this.quantidade = quantidade;
     }
@@ -174,7 +179,6 @@ public class LivroModel {
     public String getSinopse() {
         return sinopse;
     }
-
     public void setSinopse(String sinopse) {
         this.sinopse = sinopse;
     }
@@ -182,7 +186,6 @@ public class LivroModel {
     public TipoCapa getTipo_capa() {
         return tipo_capa;
     }
-
     public void setTipo_capa(TipoCapa tipo_capa) {
         this.tipo_capa = tipo_capa;
     }
@@ -190,23 +193,14 @@ public class LivroModel {
     public String getImagem() {
         return imagem;
     }
-
     public void setImagem(String imagem) {
         this.imagem = imagem;
     }
 
-    public String getGenero() {
-        return genero;
-    }
-
-    public void setGenero(String genero) {
-        this.genero = genero;
-    }
 
     public String getAutor() {
         return autor;
     }
-
     public void setAutor(String autor) {
         this.autor = autor;
     }

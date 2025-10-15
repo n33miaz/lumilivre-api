@@ -15,6 +15,7 @@ import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.ExemplarModel;
+import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
@@ -219,13 +220,18 @@ public class ExemplarService {
 
     private ListaLivroDTO converterParaDTO(ExemplarModel exemplar) {
         LivroModel livro = exemplar.getLivro_isbn();
+
+        String generosFormatados = livro.getGeneros().stream()
+                    .map(GeneroModel::getNome)
+                    .collect(Collectors.joining(", "));
+
         return new ListaLivroDTO(
             exemplar.getStatus_livro(),
             exemplar.getTombo(),
             livro.getIsbn(),
             livro.getCdd(),
             livro.getNome(),
-            livro.getGenero(),
+            generosFormatados,
             livro.getAutor(),
             livro.getEditora(),
             exemplar.getLocalizacao_fisica() 

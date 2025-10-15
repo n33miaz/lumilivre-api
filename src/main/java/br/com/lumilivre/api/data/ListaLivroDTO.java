@@ -31,7 +31,6 @@ public class ListaLivroDTO {
     public StatusLivro getStatus() {
         return status;
     }
-
     public void setStatus(StatusLivro status) {
         this.status = status;
     }
@@ -39,7 +38,6 @@ public class ListaLivroDTO {
     public String getTomboExemplar() {
         return tomboExemplar;
     }
-
     public void setTomboExemplar(String tomboExemplar) {
         this.tomboExemplar = tomboExemplar;
     }
@@ -47,7 +45,6 @@ public class ListaLivroDTO {
     public String getIsbn() {
         return isbn;
     }
-
     public void setIsbn(String isbn) {
         this.isbn = isbn;
     }
@@ -55,7 +52,6 @@ public class ListaLivroDTO {
     public Cdd getCdd() {
         return cdd;
     }
-
     public void setCdd(Cdd cdd) {
         this.cdd = cdd;
     }
@@ -63,7 +59,6 @@ public class ListaLivroDTO {
     public String getNome() {
         return nome;
     }
-
     public void setNome(String nome) {
         this.nome = nome;
     }
@@ -71,7 +66,6 @@ public class ListaLivroDTO {
     public String getGenero() {
         return genero;
     }
-
     public void setGenero(String genero) {
         this.genero = genero;
     }
@@ -79,7 +73,6 @@ public class ListaLivroDTO {
     public String getAutor() {
         return autor;
     }
-
     public void setAutor(String autor) {
         this.autor = autor;
     }
@@ -87,7 +80,6 @@ public class ListaLivroDTO {
     public String getEditora() {
         return editora;
     }
-
     public void setEditora(String editora) {
         this.editora = editora;
     }
@@ -95,7 +87,6 @@ public class ListaLivroDTO {
     public String getLocalizacao_fisica() {
         return localizacao_fisica;
     }
-
     public void setLocalizacao_fisica(String localizacao_fisica) {
         this.localizacao_fisica = localizacao_fisica;
     }

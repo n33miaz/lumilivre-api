@@ -12,13 +12,13 @@ import org.springframework.stereotype.Repository;
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.data.LivroAgrupadoDTO;
-import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.LivroModel;
 
 @Repository
 public interface LivroRepository extends JpaRepository<LivroModel, String> {
 
     Optional<LivroModel> findByIsbn(String isbn);
+    Optional<LivroModel> findByNomeIgnoreCase(String nome);
 
     boolean existsByIsbn(String isbn);
 
@@ -28,23 +28,25 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
     List<LivroModel> findLivrosDisponiveis();
 
     @Query("""
-                SELECT l FROM LivroModel l
+                SELECT DISTINCT l FROM LivroModel l
+                LEFT JOIN l.generos g
                 WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-                   OR LOWER(l.sinopse) LIKE LOWER(CONCAT('%', :texto, '%'))
-                   OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :texto, '%'))
-                   OR LOWER(l.genero) LIKE LOWER(CONCAT('%', :texto, '%'))
-                   OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :texto, '%'))
+                OR LOWER(l.sinopse) LIKE LOWER(CONCAT('%', :texto, '%'))
+                OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :texto, '%'))
+                OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+                OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :texto, '%'))
             """)
     Page<LivroModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-                SELECT l FROM LivroModel l
-                WHERE (:nome IS NULL OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
-                  AND (:isbn IS NULL OR l.isbn = :isbn)
-                  AND (:autor IS NULL OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :autor, '%')))
-                  AND (:genero IS NULL OR LOWER(l.genero)LIKE LOWER(CONCAT('%', :genero, '%')))
-                  AND (:editora IS NULL OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :editora, '%')))
-            """)
+            SELECT DISTINCT l FROM LivroModel l
+            LEFT JOIN l.generos g
+            WHERE (:nome IS NULL OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
+              AND (:isbn IS NULL OR l.isbn = :isbn)
+              AND (:autor IS NULL OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :autor, '%')))
+              AND (:genero IS NULL OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :genero, '%')))
+              AND (:editora IS NULL OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :editora, '%')))
+        """)
     Page<LivroModel> buscarAvancado(
             @Param("nome") String nome,
             @Param("isbn") String isbn,
@@ -75,8 +77,8 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
     	        e.tombo,         
     	        l.isbn,           
     	        l.cdd,            
-    	        l.nome,           
-    	        l.genero,         
+    	        l.nome,
+                (SELECT STRING_AGG(g.nome, ', ') FROM l.generos g),                    
     	        l.autor,     
     	        l.editora,
                 e.localizacao_fisica
@@ -87,10 +89,8 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
     	""")
     Page<ListaLivroDTO> findLivrosParaListaAdmin(Pageable pageable);
 
-    @Query("SELECT l FROM LivroModel l WHERE LOWER(l.genero) = LOWER(:nomeGenero)")
-
+    @Query("SELECT l FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
     List<LivroModel> findByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero);
-    Optional<LivroModel> findByNomeIgnoreCase(String nome);
 
     @Query("""
         SELECT new br.com.lumilivre.api.data.LivroAgrupadoDTO(

@@ -2,9 +2,12 @@ package br.com.lumilivre.api.service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +27,11 @@ import br.com.lumilivre.api.data.GeneroCatalogoDTO;
 import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
+import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.ExemplarRepository;
+import br.com.lumilivre.api.repository.GeneroRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
 import br.com.lumilivre.api.utils.UrlUtils;
 
@@ -43,6 +48,8 @@ public class LivroService {
     private SupabaseStorageService storageService;
     @Autowired
     private GoogleBooksService googleBooksService;
+    @Autowired
+    private GeneroRepository gr;
 
     private final String BASE_URL_CAPAS = "https://ylwmaozotaddmyhosiqc.supabase.co/storage/v1/object/capas/livros";
 
@@ -94,31 +101,42 @@ public class LivroService {
         return lr.findLivrosAgrupados(pageable, texto); // retorna todos os livros agrupados (agrupa os exemplares)
     }
 
-    public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
-        List<LivroModel> livrosDisponiveis = lr.findLivrosDisponiveis();
+public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
+    List<LivroModel> livrosDisponiveis = lr.findLivrosDisponiveis();
 
-        Map<String, List<LivroModel>> livrosPorGenero = livrosDisponiveis.stream()
-                .filter(livro -> livro.getGenero() != null && !livro.getGenero().isEmpty())
-                .collect(Collectors.groupingBy(LivroModel::getGenero));
+    // Usaremos um Map para agrupar livros por nome de gênero
+    Map<String, List<LivroModel>> livrosPorNomeGenero = new HashMap<>();
 
-        List<GeneroCatalogoDTO> catalogo = new ArrayList<>();
-        for (Map.Entry<String, List<LivroModel>> entry : livrosPorGenero.entrySet()) {
-            String genero = entry.getKey();
-            List<LivroResponseMobileGeneroDTO> livrosDoGenero = entry.getValue().stream()
-                    .limit(10) 
-                    .map(livro -> new LivroResponseMobileGeneroDTO(
-                            livro.getImagem(),
-                            livro.getNome(),
-                            livro.getAutor()))
-                    .collect(Collectors.toList());
-
-            catalogo.add(new GeneroCatalogoDTO(genero, livrosDoGenero));
+    // Itera sobre cada livro e seus múltiplos gêneros
+    for (LivroModel livro : livrosDisponiveis) {
+        for (GeneroModel genero : livro.getGeneros()) {
+            // Adiciona o livro à lista correspondente ao nome do gênero
+            livrosPorNomeGenero.computeIfAbsent(genero.getNome(), k -> new ArrayList<>()).add(livro);
         }
-
-        catalogo.sort((g1, g2) -> Integer.compare(g2.getLivros().size(), g1.getLivros().size()));
-
-        return catalogo;
     }
+
+    List<GeneroCatalogoDTO> catalogo = new ArrayList<>();
+    for (Map.Entry<String, List<LivroModel>> entry : livrosPorNomeGenero.entrySet()) {
+        String nomeGenero = entry.getKey();
+        List<LivroResponseMobileGeneroDTO> livrosDoGenero = entry.getValue().stream()
+                .distinct() // garante que um livro não apareça duas vezes no mesmo gênero
+                .limit(10)
+                .map(livro -> new LivroResponseMobileGeneroDTO(
+                        livro.getImagem(),
+                        livro.getNome(),
+                        livro.getAutor()))
+                .collect(Collectors.toList());
+
+        if (!livrosDoGenero.isEmpty()) {
+            catalogo.add(new GeneroCatalogoDTO(nomeGenero, livrosDoGenero));
+        }
+    }
+
+    // ordena os carrosséis pelo que tem mais livros
+    catalogo.sort((g1, g2) -> Integer.compare(g2.getLivros().size(), g1.getLivros().size()));
+
+    return catalogo;
+    }   
 
     // ------------------------ UPLOAD DE CAPA ------------------------
     public ResponseEntity<?> uploadCapa(String isbn, MultipartFile file) {
@@ -152,8 +170,8 @@ public class LivroService {
 
     // ------------------------ CADASTRO ------------------------
     public ResponseEntity<?> cadastrar(LivroDTO dto, MultipartFile file) {
-        System.out.println("📥 INICIANDO CADASTRO PARA ISBN: " + dto.getIsbn());
-        System.out.println("📖 TÍTULO ENVIADO PELO CLIENTE: " + dto.getNome());
+        System.out.println("INICIANDO CADASTRO PARA ISBN: " + dto.getIsbn());
+        System.out.println("TÍTULO ENVIADO PELO CLIENTE: " + dto.getNome());
 
         rm.setMensagem("");
 
@@ -273,7 +291,7 @@ public class LivroService {
         System.out.println("   Data: " + dto.getData_lancamento());
         System.out.println("   Páginas: " + dto.getNumero_paginas());
         System.out.println("   CDD: " + dto.getCdd());
-        System.out.println("   Gênero: " + dto.getGenero());
+        System.out.println("   Gênero: " + dto.getGeneros());
 
         if (isVazio(dto.getNome()))
             return erro("O título é obrigatório.");
@@ -289,10 +307,10 @@ public class LivroService {
             return erro("O CDD é obrigatório.");
         if (isVazio(dto.getAutor()))
             return erro("O autor é obrigatório.");
-        if (isVazio(dto.getGenero()))
-            return erro("O gênero é obrigatório.");
+        if (dto.getGeneros() == null || dto.getGeneros().isEmpty())
+        return erro("O gênero é obrigatório.");
 
-        System.out.println("✅ VALIDAÇÃO OK");
+        System.out.println("VALIDAÇÃO OK");
         return null;
     }
 
@@ -326,7 +344,9 @@ public class LivroService {
         livro.setQuantidade(dto.getQuantidade());
         livro.setSinopse(dto.getSinopse());
         livro.setAutor(dto.getAutor());
-        livro.setGenero(dto.getGenero());
+        
+        Set<GeneroModel> generos = processarGeneros(dto.getGeneros());
+        livro.setGeneros(generos);
 
         // Imagem
         if (file != null && !file.isEmpty()) {
@@ -354,6 +374,26 @@ public class LivroService {
         rm.setMensagem(mensagem);
         return ResponseEntity.badRequest().body(rm);
     }
+
+    private Set<GeneroModel> processarGeneros(Set<String> nomesGeneros) {
+    if (nomesGeneros == null || nomesGeneros.isEmpty()) {
+        return new HashSet<>();
+    }
+
+    Set<GeneroModel> generosProcessados = new HashSet<>();
+    for (String nomeGenero : nomesGeneros) {
+        // genero existe? ignorando case
+        GeneroModel genero = gr.findByNomeIgnoreCase(nomeGenero.trim())
+            .orElseGet(() -> {
+                // se não, cria um novo
+                GeneroModel novoGenero = new GeneroModel();
+                novoGenero.setNome(nomeGenero.trim());
+                return gr.save(novoGenero);
+            });
+        generosProcessados.add(genero);
+    }
+    return generosProcessados;
+}
 
     // ------------------------ EXCLUSÃO ------------------------
     public ResponseEntity<ResponseModel> excluir(String isbn) {
