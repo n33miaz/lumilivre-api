@@ -7,6 +7,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,6 +17,9 @@ public class GoogleBooksService {
 
     private static final String GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
 
+    // novo campo para guardar as categorias
+    private List<String> categories = new ArrayList<>();
+
     public LivroModel buscarLivroPorIsbn(String isbn) {
         try {
             RestTemplate restTemplate = new RestTemplate();
@@ -23,19 +27,19 @@ public class GoogleBooksService {
                     .queryParam("q", "isbn:" + isbn)
                     .toUriString();
 
-            System.out.println("🔍 Buscando ISBN no Google Books: " + url);
+            System.out.println("Buscando ISBN no Google Books: " + url);
 
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);
 
             // Verifica se a resposta é válida e contém items
             if (response == null || !response.containsKey("items")) {
-                System.out.println("📭 Nenhum livro encontrado para ISBN: " + isbn);
+                System.out.println("Nenhum livro encontrado para ISBN: " + isbn);
                 return null;
             }
 
             List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
             if (items.isEmpty()) {
-                System.out.println("📭 Lista de items vazia para ISBN: " + isbn);
+                System.out.println("Lista de items vazia para ISBN: " + isbn);
                 return null;
             }
 
@@ -43,8 +47,14 @@ public class GoogleBooksService {
             Map<String, Object> volumeInfo = (Map<String, Object>) primeiroItem.get("volumeInfo");
 
             if (volumeInfo == null) {
-                System.out.println("⚠️ VolumeInfo não encontrado para ISBN: " + isbn);
+                System.out.println("VolumeInfo não encontrado para ISBN: " + isbn);
                 return null;
+            }
+
+            if (volumeInfo.containsKey("categories")) {
+                this.categories = (List<String>) volumeInfo.get("categories");
+            } else {
+                this.categories.clear();
             }
 
             LivroModel livro = new LivroModel();
@@ -63,7 +73,7 @@ public class GoogleBooksService {
                 if (!autores.isEmpty()) {
                     String autoresString = String.join(", ", autores);
                     livro.setAutor(autoresString);
-                    System.out.println("👥 Autores encontrados: " + autoresString);
+                    System.out.println("Autores encontrados: " + autoresString);
                 }
             }
 
@@ -86,7 +96,7 @@ public class GoogleBooksService {
                                 LocalDate.parse(publishedDate, DateTimeFormatter.ofPattern("yyyy-MM-dd")));
                     }
                 } catch (Exception e) {
-                    System.out.println("⚠️ Erro ao parsear data: " + publishedDate);
+                    System.out.println("Erro ao parsear data: " + publishedDate);
                 }
             }
 
@@ -102,13 +112,17 @@ public class GoogleBooksService {
                 livro.setImagem(imagem);
             }
 
-            System.out.println("✅ Livro encontrado: " + livro.getNome());
+            System.out.println("Livro encontrado: " + livro.getNome());
             return livro;
 
         } catch (Exception e) {
-            System.out.println("❌ Erro ao buscar livro no Google Books: " + e.getMessage());
+            System.out.println("Erro ao buscar livro no Google Books: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
     }
+    public List<String> getCategories() {
+        return this.categories;
+    }
 }
+

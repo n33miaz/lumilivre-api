@@ -101,41 +101,41 @@ public class LivroService {
         return lr.findLivrosAgrupados(pageable, texto); // retorna todos os livros agrupados (agrupa os exemplares)
     }
 
-public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
-    List<LivroModel> livrosDisponiveis = lr.findLivrosDisponiveis();
+    public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
+        List<LivroModel> livrosDisponiveis = lr.findLivrosDisponiveis();
 
-    // Usaremos um Map para agrupar livros por nome de gênero
-    Map<String, List<LivroModel>> livrosPorNomeGenero = new HashMap<>();
+        // Usaremos um Map para agrupar livros por nome de gênero
+        Map<String, List<LivroModel>> livrosPorNomeGenero = new HashMap<>();
 
-    // Itera sobre cada livro e seus múltiplos gêneros
-    for (LivroModel livro : livrosDisponiveis) {
-        for (GeneroModel genero : livro.getGeneros()) {
-            // Adiciona o livro à lista correspondente ao nome do gênero
-            livrosPorNomeGenero.computeIfAbsent(genero.getNome(), k -> new ArrayList<>()).add(livro);
+        // Itera sobre cada livro e seus múltiplos gêneros
+        for (LivroModel livro : livrosDisponiveis) {
+            for (GeneroModel genero : livro.getGeneros()) {
+                // Adiciona o livro à lista correspondente ao nome do gênero
+                livrosPorNomeGenero.computeIfAbsent(genero.getNome(), k -> new ArrayList<>()).add(livro);
+            }
         }
-    }
 
-    List<GeneroCatalogoDTO> catalogo = new ArrayList<>();
-    for (Map.Entry<String, List<LivroModel>> entry : livrosPorNomeGenero.entrySet()) {
-        String nomeGenero = entry.getKey();
-        List<LivroResponseMobileGeneroDTO> livrosDoGenero = entry.getValue().stream()
-                .distinct() // garante que um livro não apareça duas vezes no mesmo gênero
-                .limit(10)
-                .map(livro -> new LivroResponseMobileGeneroDTO(
-                        livro.getImagem(),
-                        livro.getNome(),
-                        livro.getAutor()))
-                .collect(Collectors.toList());
+        List<GeneroCatalogoDTO> catalogo = new ArrayList<>();
+        for (Map.Entry<String, List<LivroModel>> entry : livrosPorNomeGenero.entrySet()) {
+            String nomeGenero = entry.getKey();
+            List<LivroResponseMobileGeneroDTO> livrosDoGenero = entry.getValue().stream()
+                    .distinct() // garante que um livro não apareça duas vezes no mesmo gênero
+                    .limit(10)
+                    .map(livro -> new LivroResponseMobileGeneroDTO(
+                            livro.getImagem(),
+                            livro.getNome(),
+                            livro.getAutor()))
+                    .collect(Collectors.toList());
 
-        if (!livrosDoGenero.isEmpty()) {
-            catalogo.add(new GeneroCatalogoDTO(nomeGenero, livrosDoGenero));
+            if (!livrosDoGenero.isEmpty()) {
+                catalogo.add(new GeneroCatalogoDTO(nomeGenero, livrosDoGenero));
+            }
         }
-    }
 
-    // ordena os carrosséis pelo que tem mais livros
-    catalogo.sort((g1, g2) -> Integer.compare(g2.getLivros().size(), g1.getLivros().size()));
+        // ordena os carrosséis pelo que tem mais livros
+        catalogo.sort((g1, g2) -> Integer.compare(g2.getLivros().size(), g1.getLivros().size()));
 
-    return catalogo;
+        return catalogo;
     }   
 
     // ------------------------ UPLOAD DE CAPA ------------------------
@@ -275,6 +275,14 @@ public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
         if (isVazio(dto.getAutor()) && !isVazio(livroGoogle.getAutor())) {
             System.out.println("👥 Preenchendo autor: " + livroGoogle.getAutor());
             dto.setAutor(livroGoogle.getAutor());
+        }
+
+        if (dto.getGeneros() == null || dto.getGeneros().isEmpty()) {
+            List<String> categoriasDoGoogle = googleBooksService.getCategories();
+            if (categoriasDoGoogle != null && !categoriasDoGoogle.isEmpty()) {
+                System.out.println("Preenchendo gêneros: " + categoriasDoGoogle);
+                dto.setGeneros(new HashSet<>(categoriasDoGoogle));
+            }
         }
 
         System.out.println("DADOS APÓS PREENCHIMENTO:");
