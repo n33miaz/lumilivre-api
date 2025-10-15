@@ -166,7 +166,7 @@ public class LivroController {
         return ls.excluir(isbn);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @DeleteMapping("/{isbn}/com-exemplares")
     @Operation(summary = "Exclui um livro e seus exemplares")
     public ResponseEntity<?> excluirComExemplares(
