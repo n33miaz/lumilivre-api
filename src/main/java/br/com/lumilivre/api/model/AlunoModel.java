@@ -32,7 +32,6 @@ public class AlunoModel {
 	@Column(name = "nome_completo", nullable = false, length = 110)
 	private String nomeCompleto;
 
-	@NotNull
 	@Column(name = "cpf", nullable = false, length = 11)
 	private String cpf;
 
