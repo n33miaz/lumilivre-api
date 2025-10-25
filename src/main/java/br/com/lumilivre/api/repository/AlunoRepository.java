@@ -93,7 +93,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
     @Query("SELECT a.matricula FROM AlunoModel a")
     Set<String> findAllMatriculas();
 
-    // 🔹 ATUALIZAÇÃO: somente CPFs não nulos
+    // ATUALIZAÇÃO: somente CPFs não nulos
     @Query("SELECT a.cpf FROM AlunoModel a WHERE a.cpf IS NOT NULL")
     Set<String> findAllCpfs();
 }

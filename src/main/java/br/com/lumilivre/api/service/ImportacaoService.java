@@ -27,6 +27,7 @@ public class ImportacaoService {
     private final CursoRepository cursoRepository;
     private final LivroRepository livroRepository;
     private final ExemplarRepository exemplarRepository;
+    private final GeneroRepository generoRepository;
     
     private static final int BATCH_SIZE = 50;
 
@@ -34,11 +35,13 @@ public class ImportacaoService {
             AlunoRepository alunoRepository,
             CursoRepository cursoRepository,
             LivroRepository livroRepository,
-            ExemplarRepository exemplarRepository) {
+            ExemplarRepository exemplarRepository,
+            GeneroRepository generoRepository) {
         this.alunoRepository = alunoRepository;
         this.cursoRepository = cursoRepository;
         this.livroRepository = livroRepository;
         this.exemplarRepository = exemplarRepository;
+        this.generoRepository = generoRepository;
     }
 
     public String importar(String tipo, MultipartFile file) throws Exception {
@@ -76,13 +79,13 @@ public class ImportacaoService {
 
      // Buscar todas as matrículas existentes
      Set<String> matriculasExistentes = alunoRepository.findAllMatriculas();
-
      // Buscar cursos e criar mapa case-insensitive
-     Map<String, CursoModel> cursosMap = new HashMap<>();
-     for (CursoModel curso : cursoRepository.findAll()) {
-         String nomeNormalizado = curso.getNome().toLowerCase().trim();
-         cursosMap.putIfAbsent(nomeNormalizado, curso); // Evita duplicatas
-     }
+     Map<String, CursoModel> cursosMap = cursoRepository.findAll().stream()
+        .collect(Collectors.toMap(
+            curso -> curso.getNome().toLowerCase().trim(),
+            curso -> curso,
+            (cursoExistente, novoCurso) -> cursoExistente // Em caso de duplicatas, mantém o primeiro
+    ));
 
      try (InputStream is = file.getInputStream();
           Workbook workbook = WorkbookFactory.create(is)) {
@@ -249,9 +252,11 @@ public class ImportacaoService {
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> isbnsNoExcel = new HashSet<>();
 
-        try (InputStream is = file.getInputStream();
-             Workbook workbook = WorkbookFactory.create(is)) {
+        // Otimização: Carrega todos os gêneros existentes em um mapa
+        Map<String, GeneroModel> generosMap = generoRepository.findAll().stream()
+            .collect(Collectors.toMap(g -> g.getNome().toLowerCase().trim(), g -> g));
 
+        try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
@@ -263,21 +268,19 @@ public class ImportacaoService {
                     logErros.add(new ErroImportacao(linhaNum, "ISBN vazio"));
                     continue;
                 }
-
                 if (!isbnsNoExcel.add(isbn)) {
                     logErros.add(new ErroImportacao(linhaNum, "ISBN duplicado no Excel: " + isbn));
                     continue;
                 }
-
                 if (livroRepository.existsByIsbn(isbn)) {
                     logErros.add(new ErroImportacao(linhaNum, "Livro já existe: " + isbn));
                     continue;
                 }
 
                 try {
-                    LivroModel livro = criarLivroFromRow(row);
+                    // Passamos o mapa de gêneros para o método de criação
+                    LivroModel livro = criarLivroFromRow(row, generosMap);
                     livrosParaSalvar.add(livro);
-                    
                 } catch (Exception e) {
                     logErros.add(new ErroImportacao(linhaNum, "Erro ao processar livro: " + e.getMessage()));
                 }
@@ -287,7 +290,7 @@ public class ImportacaoService {
         return salvarLivrosEmLotes(livrosParaSalvar, logErros);
     }
 
-    private LivroModel criarLivroFromRow(Row row) {
+    private LivroModel criarLivroFromRow(Row row, Map<String, GeneroModel> generosMap) {
         LivroModel livro = new LivroModel();
         livro.setIsbn(getCellString(row, 0));
         livro.setNome(getCellString(row, 1));
@@ -299,14 +302,32 @@ public class ImportacaoService {
         String cddNome = getCellString(row, 6);
         if (!cddNome.isBlank()) {
             try {
+                // Sugestão: Normalizar a busca de CDD para ser mais flexível
                 livro.setCdd(Cdd.searchByPartialDescription(cddNome));
             } catch (IllegalArgumentException e) {
-                livro.setCdd(null);
+                log.warn("CDD '{}' não encontrado na linha {}. Será salvo como nulo.", cddNome, row.getRowNum() + 1);
+                livro.setCdd(null); // Define como nulo se não encontrar
             }
         }
 
-        livro.setQuantidade(getCellInteger(row, 7));
-        livro.setGenero(getCellString(row, 8));
+        livro.setQuantidade(getCellInteger(row, 7)); // Este campo deve ser gerenciado pelo número de exemplares
+
+        String generosStr = getCellString(row, 8);
+        if (!generosStr.isBlank()) {
+            Set<GeneroModel> generosDoLivro = new HashSet<>();
+            String[] nomesGeneros = generosStr.split(","); // Separa por vírgula
+            for (String nome : nomesGeneros) {
+                String nomeNormalizado = nome.toLowerCase().trim();
+                GeneroModel genero = generosMap.computeIfAbsent(nomeNormalizado, key -> {
+                    log.info("Gênero '{}' não encontrado, criando um novo.", key);
+                    GeneroModel novoGenero = new GeneroModel();
+                    novoGenero.setNome(nome.trim()); // Salva com a primeira letra maiúscula
+                    return generoRepository.save(novoGenero);
+                });
+                generosDoLivro.add(genero);
+            }
+            livro.setGeneros(generosDoLivro);
+        }
 
         return livro;
     }
