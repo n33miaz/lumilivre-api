@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
 
@@ -18,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
@@ -46,9 +46,9 @@ public class LivroModel {
     private Integer numero_paginas;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "cdd", nullable = false)
-    private Cdd cdd;
+    @ManyToOne 
+    @JoinColumn(name = "cdd_codigo") 
+    private CddModel cdd;
 
     @NotNull
     @Column(name = "editora", length = 55, nullable = false)
@@ -135,10 +135,10 @@ public class LivroModel {
         this.numero_paginas = numero_paginas;
     }
 
-    public Cdd getCdd() {
+    public CddModel getCdd() {
         return cdd;
     }
-    public void setCdd(Cdd cdd) {
+    public void setCdd(CddModel cdd) {
         this.cdd = cdd;
     }
 

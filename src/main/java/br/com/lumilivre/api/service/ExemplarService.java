@@ -229,7 +229,7 @@ public class ExemplarService {
             exemplar.getStatus_livro(),
             exemplar.getTombo(),
             livro.getIsbn(),
-            livro.getCdd(),
+            livro.getCdd().getCodigo(),
             livro.getNome(),
             generosFormatados,
             livro.getAutor(),

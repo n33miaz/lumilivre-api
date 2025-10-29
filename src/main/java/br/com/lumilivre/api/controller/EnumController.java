@@ -4,7 +4,6 @@ import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.Penalidade;
-import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.data.EnumDTO;
@@ -46,8 +45,6 @@ public class EnumController {
                 return listarStatusEmprestimos();
             case "PENALIDADE":
                 return listarPenalidades();
-            case "CDD":
-                return listarCdd();
             case "TURNO":
                 return listarTurno();
             case "TIPO_CAPA":
@@ -74,12 +71,6 @@ public class EnumController {
     private List<EnumDTO> listarPenalidades() {
         return Arrays.stream(Penalidade.values())
                 .map(s -> new EnumDTO(s.name(), s.getStatus()))
-                .collect(Collectors.toList());
-    }
-
-    private List<EnumDTO> listarCdd() {
-        return Arrays.stream(Cdd.values())
-                .map(c -> new EnumDTO(c.name(), c.getDescription()))
                 .collect(Collectors.toList());
     }
 

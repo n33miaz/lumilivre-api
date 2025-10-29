@@ -1,6 +1,5 @@
 package br.com.lumilivre.api.data;
 
-import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.StatusLivro;
 
 public class ListaLivroDTO {
@@ -8,14 +7,14 @@ public class ListaLivroDTO {
     private StatusLivro status;
     private String tomboExemplar;
     private String isbn;
-    private Cdd cdd;
+    private String cdd;
     private String nome;
     private String genero;
     private String autor;
     private String editora;
     private String localizacao_fisica;
 
-    public ListaLivroDTO(StatusLivro status, String tomboExemplar, String isbn, Cdd cdd, String nome,
+    public ListaLivroDTO(StatusLivro status, String tomboExemplar, String isbn, String cdd, String nome,
             String genero, String autor, String editora, String localizacao_fisica) {
         this.status = status;
         this.tomboExemplar = tomboExemplar;
@@ -49,10 +48,10 @@ public class ListaLivroDTO {
         this.isbn = isbn;
     }
 
-    public Cdd getCdd() {
+    public String getCdd() {
         return cdd;
     }
-    public void setCdd(Cdd cdd) {
+    public void setCdd(String cdd) {
         this.cdd = cdd;
     }
 

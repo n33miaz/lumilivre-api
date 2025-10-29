@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import br.com.lumilivre.api.enums.Cdd;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.*;
 import br.com.lumilivre.api.repository.*;
@@ -28,6 +27,7 @@ public class ImportacaoService {
     private final LivroRepository livroRepository;
     private final ExemplarRepository exemplarRepository;
     private final GeneroRepository generoRepository;
+    private final CddRepository cddRepository;
     
     private static final int BATCH_SIZE = 50;
 
@@ -36,12 +36,14 @@ public class ImportacaoService {
             CursoRepository cursoRepository,
             LivroRepository livroRepository,
             ExemplarRepository exemplarRepository,
-            GeneroRepository generoRepository) {
+            GeneroRepository generoRepository,
+            CddRepository cddRepository) {
         this.alunoRepository = alunoRepository;
         this.cursoRepository = cursoRepository;
         this.livroRepository = livroRepository;
         this.exemplarRepository = exemplarRepository;
         this.generoRepository = generoRepository;
+        this.cddRepository = cddRepository;
     }
 
     public String importar(String tipo, MultipartFile file) throws Exception {
@@ -299,15 +301,19 @@ public class ImportacaoService {
         livro.setData_lancamento(ExcelUtils.getLocalDate(row.getCell(4)));
         livro.setNumero_paginas(getCellInteger(row, 5));
 
-        String cddNome = getCellString(row, 6);
-        if (!cddNome.isBlank()) {
-            try {
-                // Sugestão: Normalizar a busca de CDD para ser mais flexível
-                livro.setCdd(Cdd.searchByPartialDescription(cddNome));
-            } catch (IllegalArgumentException e) {
-                log.warn("CDD '{}' não encontrado na linha {}. Será salvo como nulo.", cddNome, row.getRowNum() + 1);
-                livro.setCdd(null); // Define como nulo se não encontrar
+        String cddCodigo = getCellString(row, 6);
+        if (!cddCodigo.isBlank()) {
+
+            CddModel cdd = cddRepository.findById(cddCodigo).orElse(null);
+            if (cdd != null) {
+                livro.setCdd(cdd);
+            } else {
+                log.warn("CDD '{}' não encontrado no banco de dados para a linha {}. Será salvo como nulo.", cddCodigo, row.getRowNum() + 1);
+                // Lançar exceção ou deixar nulo? Por enquanto, vamos lançar para garantir a integridade.
+                throw new IllegalArgumentException("CDD '" + cddCodigo + "' inválido na linha " + (row.getRowNum() + 1));
             }
+        } else {
+            throw new IllegalArgumentException("Código CDD é obrigatório na linha " + (row.getRowNum() + 1));
         }
 
         livro.setQuantidade(getCellInteger(row, 7)); // Este campo deve ser gerenciado pelo número de exemplares
