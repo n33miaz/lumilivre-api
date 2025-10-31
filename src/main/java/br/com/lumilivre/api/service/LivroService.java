@@ -77,8 +77,8 @@ public class LivroService {
         return lr.buscarAvancado(nome, isbn, autor, genero, editora, pageable);
     }
 
-    public ResponseEntity<LivroModel> findByIsbn(String isbn) {
-        return lr.findByIsbn(isbn)
+    public ResponseEntity<LivroModel> findById(Long id) {
+        return lr.findById(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
     }

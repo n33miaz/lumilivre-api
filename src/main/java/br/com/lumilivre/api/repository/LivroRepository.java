@@ -15,7 +15,7 @@ import br.com.lumilivre.api.data.LivroAgrupadoDTO;
 import br.com.lumilivre.api.model.LivroModel;
 
 @Repository
-public interface LivroRepository extends JpaRepository<LivroModel, String> {
+public interface LivroRepository extends JpaRepository<LivroModel, Long> {
 
     Optional<LivroModel> findByIsbn(String isbn);
     Optional<LivroModel> findByNomeIgnoreCase(String nome);

@@ -201,7 +201,7 @@ public class EmprestimoService {
                 "Olá %s,\n\nSeu empréstimo do livro '%s' foi registrado com sucesso.\n" +
                         "Data de empréstimo: %s\nData de devolução: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
                 aluno.getNomeCompleto(),
-                exemplar.getLivro_isbn().getNome(),
+                exemplar.getLivro().getNome(),
                 dto.getData_emprestimo(),
                 dto.getData_devolucao());
         emailService.enviarEmail(aluno.getEmail(), "Empréstimo registrado", mensagemEmail);
@@ -272,7 +272,7 @@ public class EmprestimoService {
                 "Olá %s,\n\nSeu empréstimo do livro '%s' foi concluído.\n" +
                         "Status da penalidade: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
                 aluno.getNomeCompleto(),
-                exemplar.getLivro_isbn().getNome(),
+                exemplar.getLivro().getNome(),
                 emprestimo.getPenalidade() != null ? emprestimo.getPenalidade().name() : "Nenhuma");
         emailService.enviarEmail(aluno.getEmail(), "Empréstimo concluído", mensagemEmail);
 

@@ -59,15 +59,14 @@ public class LivroController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
-    @GetMapping("/{isbn}")
+    @GetMapping("/{id}")
     @Operation(summary = "Busca um livro específico pelo ISBN")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Livro encontrado", content = @Content(schema = @Schema(implementation = LivroModel.class))),
             @ApiResponse(responseCode = "404", description = "Nenhum livro encontrado para o ISBN fornecido")
     })
-    public ResponseEntity<LivroModel> buscarPorIsbn(
-            @Parameter(description = "ISBN do livro a ser buscado") @PathVariable String isbn) {
-        return ls.findByIsbn(isbn);
+    public ResponseEntity<LivroModel> buscarPorId(@PathVariable Long id) {
+        return ls.findById(id); 
     }
 
     @PreAuthorize("hasAnyRole('ALUNO')")

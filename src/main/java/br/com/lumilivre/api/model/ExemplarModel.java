@@ -24,7 +24,7 @@ public class ExemplarModel {
 	private StatusLivro status_livro;
 
 	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "livro_isbn", nullable = false)
+	@JoinColumn(name = "livro_id", nullable = false)
 	private LivroModel livro;
 
 	@Column(name = "localizacao_fisica", nullable = false)
@@ -54,12 +54,12 @@ public class ExemplarModel {
 		this.status_livro = status_livro;
 	}
 
-	public LivroModel getLivro_isbn() {
+	public LivroModel getLivro() {
 		return livro;
 	}
 
-	public void setLivro_isbn(LivroModel livro_isbn) {
-		this.livro = livro_isbn;
+	public void setLivro(LivroModel livro) {
+		this.livro = livro;
 	}
 
 }

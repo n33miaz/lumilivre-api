@@ -50,7 +50,7 @@ public class RelatorioService {
             for (EmprestimoModel e : emprestimos) {
                 table.addCell(String.valueOf(e.getId()));
                 table.addCell(e.getAluno().getNomeCompleto());
-                table.addCell(e.getExemplar().getLivro_isbn().getNome());
+                table.addCell(e.getExemplar().getLivro().getNome());
                 table.addCell(e.getDataEmprestimo() != null ? e.getDataEmprestimo().toString() : "");
             }
 
@@ -113,7 +113,7 @@ public class RelatorioService {
                 for (EmprestimoModel e : emprestimos) {
                     table.addCell(String.valueOf(e.getId()));
                     table.addCell(e.getAluno().getNomeCompleto());
-                    table.addCell(e.getExemplar().getLivro_isbn().getNome());
+                    table.addCell(e.getExemplar().getLivro().getNome());
                     table.addCell(e.getDataEmprestimo() != null ? e.getDataEmprestimo().toString() : "");
                 }
             }

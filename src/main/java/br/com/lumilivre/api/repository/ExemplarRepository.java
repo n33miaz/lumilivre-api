@@ -14,11 +14,7 @@ public interface ExemplarRepository extends JpaRepository<ExemplarModel, String>
 
     boolean existsByTombo(String tombo);
 
-    List<ExemplarModel> findAllByLivroIsbn(String isbn);
+    Long countByLivroId(Long livroId);
 
-    void deleteAllByLivroIsbn(String isbn);
-
-    @Query("SELECT COUNT(e) FROM ExemplarModel e WHERE e.livro.isbn = :isbn")
-    Long contarExemplaresPorLivro(String isbn);
-
+    void deleteAllByLivroId(Long livroId);
 }

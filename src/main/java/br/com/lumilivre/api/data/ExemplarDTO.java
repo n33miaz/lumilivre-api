@@ -4,7 +4,7 @@ public class ExemplarDTO {
 
 	private String tombo;
 	private String status_livro;
-	private String livro_isbn;
+	private Long livro_id;
 	private String localizacao_fisica;
 
 	public String getLocalizacao_fisica() {
@@ -31,12 +31,12 @@ public class ExemplarDTO {
 		this.status_livro = status_livro;
 	}
 
-	public String getLivro_isbn() {
-		return livro_isbn;
+	public Long getLivro_id() {
+		return livro_id;
 	}
 
-	public void setLivro_isbn(String livro_isbn) {
-		this.livro_isbn = livro_isbn;
+	public void setLivro_id(Long livro_id) {
+		this.livro_id = livro_id;
 	}
 
 }

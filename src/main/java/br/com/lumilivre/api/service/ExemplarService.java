@@ -37,41 +37,31 @@ public class ExemplarService {
     @Autowired
     private EmprestimoRepository emprestimoRepository;
 
-    /** Buscar todos os exemplares de um livro pelo ISBN */
     public ResponseEntity<?> buscarExemplaresPorIsbn(String isbn) {
-        rm.setMensagem("");
-
         if (isbn == null || isbn.trim().isEmpty()) {
             rm.setMensagem("O ISBN é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
-
         if (!lr.existsByIsbn(isbn)) {
             rm.setMensagem("Nenhum livro encontrado com esse ISBN.");
             return ResponseEntity.badRequest().body(rm);
         }
-
         List<ExemplarModel> exemplares = er.findAllByLivroIsbn(isbn);
-
         if (exemplares.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
-
-        // Converte a lista de Model para uma lista de DTO
         List<ListaLivroDTO> exemplaresDTO = exemplares.stream()
                 .map(this::converterParaDTO)
                 .collect(Collectors.toList());
-
         return ResponseEntity.ok(exemplaresDTO);
     }
 
-    /** Cadastrar um exemplar */
     @Transactional
     public ResponseEntity<?> cadastrar(ExemplarDTO dto) {
         rm.setMensagem("");
 
-        if (dto.getLivro_isbn() == null || dto.getLivro_isbn().trim().isEmpty()) {
-            rm.setMensagem("O ISBN é obrigatório.");
+        if (dto.getLivro_id() == null) {
+            rm.setMensagem("O ID do livro é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
 
@@ -80,15 +70,12 @@ public class ExemplarService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        if (!lr.existsByIsbn(dto.getLivro_isbn())) {
-            rm.setMensagem("Esse ISBN não está cadastrado.");
+        Optional<LivroModel> livroOpt = lr.findById(dto.getLivro_id());
+        if (livroOpt.isEmpty()) {
+            rm.setMensagem("Nenhum livro encontrado com o ID fornecido.");
             return ResponseEntity.badRequest().body(rm);
         }
-
-        if (dto.getStatus_livro() == null || dto.getStatus_livro().trim().isEmpty()) {
-            rm.setMensagem("O Status do Livro é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
+        LivroModel livro = livroOpt.get();
 
         StatusLivro status;
         try {
@@ -98,23 +85,20 @@ public class ExemplarService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        LivroModel livro = lr.findByIsbn(dto.getLivro_isbn()).get();
-
         ExemplarModel exemplar = new ExemplarModel();
         exemplar.setTombo(dto.getTombo());
         exemplar.setStatus_livro(status);
-        exemplar.setLivro_isbn(livro);
+        exemplar.setLivro(livro);
         exemplar.setLocalizacao_fisica(dto.getLocalizacao_fisica());
 
         er.save(exemplar);
 
-        atualizarQuantidadeExemplaresDoLivro(livro.getIsbn());
+        atualizarQuantidadeExemplaresDoLivro(livro.getId());
 
         rm.setMensagem("Exemplar cadastrado com sucesso.");
         return ResponseEntity.ok(rm);
     }
 
-    /** Atualizar um exemplar */
     @Transactional
     public ResponseEntity<?> atualizar(ExemplarDTO dto) {
         rm.setMensagem("");
@@ -124,20 +108,16 @@ public class ExemplarService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        if (dto.getLivro_isbn() == null || dto.getLivro_isbn().trim().isEmpty()) {
-            rm.setMensagem("O ISBN é obrigatório.");
+        if (dto.getLivro_id() == null) {
+            rm.setMensagem("O ID do livro é obrigatório.");
             return ResponseEntity.badRequest().body(rm);
         }
-
-        if (!lr.existsByIsbn(dto.getLivro_isbn())) {
-            rm.setMensagem("Esse ISBN não está cadastrado.");
+        Optional<LivroModel> livroOpt = lr.findById(dto.getLivro_id());
+        if (livroOpt.isEmpty()) {
+            rm.setMensagem("Nenhum livro encontrado com o ID fornecido.");
             return ResponseEntity.badRequest().body(rm);
         }
-
-        if (dto.getStatus_livro() == null || dto.getStatus_livro().trim().isEmpty()) {
-            rm.setMensagem("O Status do Livro é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
+        LivroModel livro = livroOpt.get();
 
         StatusLivro status;
         try {
@@ -147,54 +127,39 @@ public class ExemplarService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        LivroModel livro = lr.findByIsbn(dto.getLivro_isbn()).get();
-
         ExemplarModel exemplar = new ExemplarModel();
         exemplar.setTombo(dto.getTombo());
         exemplar.setStatus_livro(status);
-        exemplar.setLivro_isbn(livro);
+        exemplar.setLivro(livro);
         exemplar.setLocalizacao_fisica(dto.getLocalizacao_fisica());
 
         er.save(exemplar);
 
-        atualizarQuantidadeExemplaresDoLivro(livro.getIsbn());
+        atualizarQuantidadeExemplaresDoLivro(livro.getId());
 
         rm.setMensagem("Exemplar alterado com sucesso.");
         return ResponseEntity.ok(rm);
     }
 
-    /** Excluir um exemplar */
     @Transactional
     public ResponseEntity<ResponseModel> excluir(String tombo) {
-        rm.setMensagem("");
-
-        //  exemplar existe?
         Optional<ExemplarModel> exemplarOpt = er.findById(tombo);
         if (exemplarOpt.isEmpty()) {
             rm.setMensagem("Exemplar com o tombo '" + tombo + "' não foi encontrado.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
 
-        // ta em um empréstimo ativo?
-        boolean temEmprestimoAtivo = emprestimoRepository.existsByExemplarTomboAndStatusEmprestimo(tombo, StatusEmprestimo.ATIVO);
-        boolean temEmprestimoAtrasado = emprestimoRepository.existsByExemplarTomboAndStatusEmprestimo(tombo, StatusEmprestimo.ATRASADO);
-
-        if (temEmprestimoAtivo || temEmprestimoAtrasado) {
-            rm.setMensagem("Não é possível excluir. Este exemplar está atualmente emprestado.");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(rm);
-        }
-
         ExemplarModel exemplar = exemplarOpt.get();
-        LivroModel livro = exemplar.getLivro_isbn(); 
+        LivroModel livro = exemplar.getLivro();
 
         if (livro != null && livro.getExemplares() != null) {
             livro.getExemplares().remove(exemplar);
         }
-        
-        er.delete(exemplar); 
-        
+
+        er.delete(exemplar);
+
         if (livro != null) {
-            Long novaQuantidade = er.contarExemplaresPorLivro(livro.getIsbn());
+            Long novaQuantidade = er.countByLivroId(livro.getId());
             livro.setQuantidade(novaQuantidade.intValue());
             lr.save(livro);
         }
@@ -203,38 +168,35 @@ public class ExemplarService {
         return ResponseEntity.ok(rm);
     }
 
-    /** Buscar um exemplar pelo tombo */
     public ExemplarModel buscarPorTombo(String tombo) {
         return er.findByTombo(tombo).orElse(null);
     }
 
-    /** Atualizar a quantidade de exemplares de um livro */
     @Transactional
-    public void atualizarQuantidadeExemplaresDoLivro(String isbn) {
-        Long quantidade = er.contarExemplaresPorLivro(isbn);
-        lr.findById(isbn).ifPresent(livro -> {
+    public void atualizarQuantidadeExemplaresDoLivro(Long livroId) {
+        Long quantidade = er.countByLivroId(livroId);
+        lr.findById(livroId).ifPresent(livro -> {
             livro.setQuantidade(quantidade.intValue());
             lr.save(livro);
         });
     }
 
     private ListaLivroDTO converterParaDTO(ExemplarModel exemplar) {
-        LivroModel livro = exemplar.getLivro_isbn();
+        LivroModel livro = exemplar.getLivro();
 
         String generosFormatados = livro.getGeneros().stream()
-                    .map(GeneroModel::getNome)
-                    .collect(Collectors.joining(", "));
+                .map(GeneroModel::getNome)
+                .collect(Collectors.joining(", "));
 
         return new ListaLivroDTO(
-            exemplar.getStatus_livro(),
-            exemplar.getTombo(),
-            livro.getIsbn(),
-            livro.getCdd().getCodigo(),
-            livro.getNome(),
-            generosFormatados,
-            livro.getAutor(),
-            livro.getEditora(),
-            exemplar.getLocalizacao_fisica() 
-        );
+                exemplar.getStatus_livro(),
+                exemplar.getTombo(),
+                livro.getIsbn(),
+                livro.getCdd().getCodigo(),
+                livro.getNome(),
+                generosFormatados,
+                livro.getAutor(),
+                livro.getEditora(),
+                exemplar.getLocalizacao_fisica());
     }
 }
