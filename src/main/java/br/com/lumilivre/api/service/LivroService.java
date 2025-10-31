@@ -24,7 +24,8 @@ import br.com.lumilivre.api.data.LivroAgrupadoDTO;
 import br.com.lumilivre.api.data.LivroDTO;
 import br.com.lumilivre.api.data.LivroResponseMobileGeneroDTO;
 import br.com.lumilivre.api.data.GeneroCatalogoDTO;
-import br.com.lumilivre.api.enums.Cdd;
+import br.com.lumilivre.api.model.CddModel;
+import br.com.lumilivre.api.repository.CddRepository;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.model.GeneroModel;
@@ -50,6 +51,8 @@ public class LivroService {
     private GoogleBooksService googleBooksService;
     @Autowired
     private GeneroRepository gr;
+    @Autowired
+    private CddRepository cddRepository;
 
     private final String BASE_URL_CAPAS = "https://ylwmaozotaddmyhosiqc.supabase.co/storage/v1/object/capas/livros";
 
@@ -136,7 +139,7 @@ public class LivroService {
         catalogo.sort((g1, g2) -> Integer.compare(g2.getLivros().size(), g1.getLivros().size()));
 
         return catalogo;
-    }   
+    }
 
     // ------------------------ UPLOAD DE CAPA ------------------------
     public ResponseEntity<?> uploadCapa(String isbn, MultipartFile file) {
@@ -316,7 +319,7 @@ public class LivroService {
         if (isVazio(dto.getAutor()))
             return erro("O autor é obrigatório.");
         if (dto.getGeneros() == null || dto.getGeneros().isEmpty())
-        return erro("O gênero é obrigatório.");
+            return erro("O gênero é obrigatório.");
 
         System.out.println("VALIDAÇÃO OK");
         return null;
@@ -329,11 +332,14 @@ public class LivroService {
         livro.setData_lancamento(dto.getData_lancamento());
         livro.setNumero_paginas(dto.getNumero_paginas());
 
-        // Enums com segurança
+        CddModel cdd = cddRepository.findById(dto.getCdd())
+                .orElseThrow(() -> new IllegalArgumentException("Código CDD inválido: " + dto.getCdd()));
+        livro.setCdd(cdd);
+
         try {
-            livro.setCdd(Cdd.fromCode(dto.getCdd()));
+            livro.setClassificacao_etaria(ClassificacaoEtaria.valueOf(dto.getClassificacao_etaria().toUpperCase()));
         } catch (Exception e) {
-            throw new IllegalArgumentException("CDD inválido: " + dto.getCdd());
+            throw new IllegalArgumentException("Classificação etária inválida: " + dto.getClassificacao_etaria());
         }
         try {
             livro.setClassificacao_etaria(ClassificacaoEtaria.valueOf(dto.getClassificacao_etaria().toUpperCase()));
@@ -352,8 +358,8 @@ public class LivroService {
         livro.setQuantidade(dto.getQuantidade());
         livro.setSinopse(dto.getSinopse());
         livro.setAutor(dto.getAutor());
-        
-        Set<GeneroModel> generos = processarGeneros(dto.getGeneros());
+
+        Set<GeneroModel> generos = processarGeneros(dto.getCdd());
         livro.setGeneros(generos);
 
         // Imagem
@@ -383,25 +389,14 @@ public class LivroService {
         return ResponseEntity.badRequest().body(rm);
     }
 
-    private Set<GeneroModel> processarGeneros(Set<String> nomesGeneros) {
-    if (nomesGeneros == null || nomesGeneros.isEmpty()) {
-        return new HashSet<>();
+    private Set<GeneroModel> processarGeneros(String cddCodigo) {
+        if (cddCodigo == null || cddCodigo.isBlank()) {
+            return new HashSet<>();
+        }
+        // Usa o novo método do repositório para encontrar todos os gêneros associados
+        // ao CDD
+        return gr.findAllByCddCodigo(cddCodigo);
     }
-
-    Set<GeneroModel> generosProcessados = new HashSet<>();
-    for (String nomeGenero : nomesGeneros) {
-        // genero existe? ignorando case
-        GeneroModel genero = gr.findByNomeIgnoreCase(nomeGenero.trim())
-            .orElseGet(() -> {
-                // se não, cria um novo
-                GeneroModel novoGenero = new GeneroModel();
-                novoGenero.setNome(nomeGenero.trim());
-                return gr.save(novoGenero);
-            });
-        generosProcessados.add(genero);
-    }
-    return generosProcessados;
-}
 
     // ------------------------ EXCLUSÃO ------------------------
     public ResponseEntity<ResponseModel> excluir(String isbn) {
@@ -435,6 +430,4 @@ public class LivroService {
             lr.save(l);
         });
     }
-
-
 }

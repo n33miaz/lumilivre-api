@@ -121,8 +121,8 @@ public class GoogleBooksService {
             return null;
         }
     }
+
     public List<String> getCategories() {
         return this.categories;
     }
 }
-

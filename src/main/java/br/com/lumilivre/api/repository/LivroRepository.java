@@ -76,7 +76,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, String> {
                 e.status_livro,
                 e.tombo,
                 l.isbn,
-                l.cdd,
+                l.cdd.codigo,
                 l.nome,
                 STRING_AGG(g.nome, ', '), 
                 l.autor,
