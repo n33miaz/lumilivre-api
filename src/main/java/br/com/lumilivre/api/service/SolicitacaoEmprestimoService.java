@@ -49,7 +49,7 @@ public class SolicitacaoEmprestimoService {
                         s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
                         s.getExemplar().getTombo(),
-                        s.getExemplar().getLivro_isbn().getNome(),
+                        s.getExemplar().getLivro().getNome(),
                         s.getDataSolicitacao(),
                         s.getStatus(),
                         s.getObservacao()))
@@ -85,7 +85,7 @@ public class SolicitacaoEmprestimoService {
         solicitacaoRepository.save(solicitacao);
 
         emailService.enviarEmail(aluno.getEmail(), "Solicitação recebida",
-                "Sua solicitação do livro '" + exemplar.getLivro_isbn().getNome() + "' foi registrada.");
+                "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi registrada.");
 
         return ResponseEntity.ok("Solicitação registrada com sucesso.");
     }
@@ -114,14 +114,14 @@ public class SolicitacaoEmprestimoService {
             solicitacaoRepository.save(solicitacao);
 
             emailService.enviarEmail(aluno.getEmail(), "Solicitação aceita",
-                    "Sua solicitação do livro '" + exemplar.getLivro_isbn().getNome()
+                    "Sua solicitação do livro '" + exemplar.getLivro().getNome()
                             + "' foi aceita e o empréstimo registrado.");
         } else {
             solicitacao.setStatus(StatusSolicitacao.REJEITADA);
             solicitacaoRepository.save(solicitacao);
 
             emailService.enviarEmail(aluno.getEmail(), "Solicitação rejeitada",
-                    "Sua solicitação do livro '" + exemplar.getLivro_isbn().getNome() + "' foi rejeitada.");
+                    "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi rejeitada.");
         }
 
         return ResponseEntity.ok("Solicitação processada com sucesso.");
@@ -135,7 +135,7 @@ public class SolicitacaoEmprestimoService {
                         s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
                         s.getExemplar().getTombo(),
-                        s.getExemplar().getLivro_isbn().getNome(),
+                        s.getExemplar().getLivro().getNome(),
                         s.getDataSolicitacao(),
                         s.getStatus(),
                         s.getObservacao()))
@@ -150,7 +150,7 @@ public class SolicitacaoEmprestimoService {
                         s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
                         s.getExemplar().getTombo(),
-                        s.getExemplar().getLivro_isbn().getNome(),
+                        s.getExemplar().getLivro().getNome(),
                         s.getDataSolicitacao(),
                         s.getStatus(),
                         s.getObservacao()))

@@ -90,7 +90,7 @@ public class LivroModel {
     private List<ExemplarModel> exemplares;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "livro_genero", joinColumns = @JoinColumn(name = "livro_isbn"), inverseJoinColumns = @JoinColumn(name = "genero_id"))
+    @JoinTable(name = "livro_genero", joinColumns = @JoinColumn(name = "livro_id"), inverseJoinColumns = @JoinColumn(name = "genero_id"))
     private Set<GeneroModel> generos = new HashSet<>();
 
     public Long getId() {

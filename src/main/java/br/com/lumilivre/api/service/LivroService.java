@@ -142,10 +142,10 @@ public class LivroService {
     }
 
     // ------------------------ UPLOAD DE CAPA ------------------------
-    public ResponseEntity<?> uploadCapa(String isbn, MultipartFile file) {
-        Optional<LivroModel> livroOpt = lr.findByIsbn(isbn);
+    public ResponseEntity<?> uploadCapa(Long id, MultipartFile file) {
+        Optional<LivroModel> livroOpt = lr.findById(id); 
         if (livroOpt.isEmpty()) {
-            rm.setMensagem("Livro não encontrado para o ISBN: " + isbn);
+            rm.setMensagem("Livro não encontrado para o ID: " + id);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
 
@@ -410,12 +410,14 @@ public class LivroService {
     }
 
     @Transactional
-    public ResponseEntity<?> excluirLivroComExemplares(String isbn) {
-        Optional<LivroModel> livroOpt = lr.findByIsbn(isbn);
-        if (livroOpt.isEmpty())
+    public ResponseEntity<?> excluirLivroComExemplares(Long id) {
+        Optional<LivroModel> livroOpt = lr.findById(id);
+        if (livroOpt.isEmpty()) {
             return erro("Livro não encontrado.");
+        }
 
-        er.deleteAllByLivroIsbn(isbn);
+        er.deleteAllByLivroId(id);
+
         lr.delete(livroOpt.get());
 
         rm.setMensagem("Livro e todos os exemplares foram removidos com sucesso.");
@@ -423,11 +425,13 @@ public class LivroService {
     }
 
     @Transactional
-    public void atualizarQuantidadeExemplaresDoLivro(String isbn) {
-        Long quantidade = er.contarExemplaresPorLivro(isbn);
-        lr.findById(isbn).ifPresent(l -> {
-            l.setQuantidade(quantidade.intValue());
-            lr.save(l);
+    public void atualizarQuantidadeExemplaresDoLivro(Long livroId) {
+        if (livroId == null)
+            return;
+        Long quantidade = er.countByLivroId(livroId);
+        lr.findById(livroId).ifPresent(livro -> {
+            livro.setQuantidade(quantidade.intValue());
+            lr.save(livro);
         });
     }
 }
