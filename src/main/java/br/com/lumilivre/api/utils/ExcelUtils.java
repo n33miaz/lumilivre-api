@@ -13,7 +13,8 @@ public class ExcelUtils {
 
     // Retorna o valor da célula como String
     public static String getString(Cell cell) {
-        if (cell == null) return "";
+        if (cell == null)
+            return "";
         try {
             switch (cell.getCellType()) {
                 case STRING:
@@ -37,7 +38,8 @@ public class ExcelUtils {
 
     // Retorna o valor da célula como Integer (se aplicável)
     public static Integer getInteger(Cell cell) {
-        if (cell == null) return null;
+        if (cell == null)
+            return null;
         try {
             if (cell.getCellType() == CellType.NUMERIC) {
                 return (int) cell.getNumericCellValue();
@@ -52,7 +54,8 @@ public class ExcelUtils {
 
     // Retorna o valor da célula como LocalDate, tratando texto ou data do Excel
     public static LocalDate getLocalDate(Cell cell) {
-        if (cell == null) return null;
+        if (cell == null)
+            return null;
         try {
             if (cell.getCellType() == CellType.NUMERIC) {
                 return cell.getDateCellValue()
@@ -61,12 +64,42 @@ public class ExcelUtils {
                         .toLocalDate();
             } else if (cell.getCellType() == CellType.STRING) {
                 String valor = cell.getStringCellValue().trim();
-                if (valor.isBlank()) return null;
+                if (valor.isBlank())
+                    return null;
                 return LocalDate.parse(valor, FORMATTER);
             }
         } catch (Exception e) {
             // ignora erro de parse
         }
         return null;
+    }
+
+    public static Long getLong(Cell cell) {
+        if (cell == null)
+            return null;
+        try {
+            if (cell.getCellType() == CellType.NUMERIC) {
+                return (long) cell.getNumericCellValue();
+            } else {
+                String s = getString(cell);
+                return s.isBlank() ? null : Long.parseLong(s);
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static <T extends Enum<T>> T getEnum(Cell cell, Class<T> enumType, T defaultValue) {
+        String value = getString(cell);
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        try {
+            // Converte o valor da planilha (ex: "BROCHURA") para o Enum correspondente
+            return Enum.valueOf(enumType, value.trim().toUpperCase().replace(" ", "_"));
+        } catch (IllegalArgumentException e) {
+            // Se o valor não corresponder a nenhuma constante do Enum, retorna o padrão
+            return defaultValue;
+        }
     }
 }

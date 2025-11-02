@@ -57,6 +57,10 @@ public class LivroService {
     private final String BASE_URL_CAPAS = "https://ylwmaozotaddmyhosiqc.supabase.co/storage/v1/object/capas/livros";
 
     // ------------------------ BUSCAS ------------------------
+    public List<LivroModel> buscarTodos() {
+        return lr.findAll();
+    }
+
     public Page<ListaLivroDTO> buscarParaListaAdmin(Pageable pageable) {
         return lr.findLivrosParaListaAdmin(pageable);
     }
