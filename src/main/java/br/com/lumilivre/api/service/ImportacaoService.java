@@ -22,6 +22,7 @@ public class ImportacaoService {
 
     private static final Logger log = LoggerFactory.getLogger(ImportacaoService.class);
 
+    // Repositórios necessários
     private final AlunoRepository alunoRepository;
     private final CursoRepository cursoRepository;
     private final LivroRepository livroRepository;
@@ -31,6 +32,7 @@ public class ImportacaoService {
 
     private static final int BATCH_SIZE = 50;
 
+    // Construtor com todas as dependências
     public ImportacaoService(
             AlunoRepository alunoRepository,
             CursoRepository cursoRepository,
@@ -46,12 +48,11 @@ public class ImportacaoService {
         this.cddRepository = cddRepository;
     }
 
+    // Método principal que roteia para a importação correta
     public String importar(String tipo, MultipartFile file) throws Exception {
         log.info("Iniciando importação do tipo: {}", tipo);
-
         try {
             validarArquivo(file);
-
             switch (tipo.toLowerCase()) {
                 case "aluno":
                     return importarAlunos(file);
@@ -62,7 +63,6 @@ public class ImportacaoService {
                 default:
                     throw new IllegalArgumentException("Tipo de importação inválido: " + tipo);
             }
-
         } catch (Exception e) {
             log.error("Erro durante importação do tipo {}: {}", tipo, e.getMessage(), e);
             throw new Exception("Falha na importação: " + e.getMessage(), e);
@@ -366,9 +366,7 @@ public class ImportacaoService {
         return gerarResumoImportacao("livros", totalSalvos, logErros);
     }
 
-    // ==========================================================
-    // 🏷️ IMPORTAÇÃO DE EXEMPLARES
-    // ==========================================================
+    // =========================== IMPORTAÇÃO DE EXEMPLARES ===============================
     @Transactional
     private String importarExemplares(MultipartFile file) throws Exception {
         List<ExemplarModel> exemplaresParaSalvar = new ArrayList<>();

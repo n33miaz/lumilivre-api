@@ -61,20 +61,8 @@ public class LivroService {
         return lr.findLivrosParaListaAdmin(pageable);
     }
 
-    public Iterable<LivroModel> buscarLivrosDisponiveis() {
-        return lr.findLivrosDisponiveis();
-    }
-
-    public Page<LivroModel> buscarPorTexto(String texto, Pageable pageable) {
-        if (texto == null || texto.isBlank()) {
-            return lr.findAll(pageable);
-        }
-        return lr.buscarPorTexto(texto, pageable);
-    }
-
-    public Page<LivroModel> buscarAvancado(String nome, String isbn, String autor, String genero, String editora,
-            Pageable pageable) {
-        return lr.buscarAvancado(nome, isbn, autor, genero, editora, pageable);
+    public Page<LivroAgrupadoDTO> buscarLivrosAgrupados(Pageable pageable, String texto) {
+        return lr.findLivrosAgrupados(pageable, texto);
     }
 
     public ResponseEntity<LivroModel> findById(Long id) {
@@ -83,37 +71,12 @@ public class LivroService {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
     }
 
-    public ResponseEntity<List<LivroResponseMobileGeneroDTO>> listarPorGenero(String genero) {
-        List<LivroModel> livros = lr.findByGeneroNomeIgnoreCase(genero);
-
-        List<LivroResponseMobileGeneroDTO> resposta = livros.stream()
-                .map(l -> new LivroResponseMobileGeneroDTO(
-                        l.getImagem(),
-                        l.getNome(),
-                        l.getAutor()))
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(resposta);
-    }
-
-    public List<LivroModel> buscarTodos() {
-        return lr.findAll(); // retorna todos os livros
-    }
-
-    public Page<LivroAgrupadoDTO> buscarLivrosAgrupados(Pageable pageable, String texto) {
-        return lr.findLivrosAgrupados(pageable, texto); // retorna todos os livros agrupados (agrupa os exemplares)
-    }
-
     public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
         List<LivroModel> livrosDisponiveis = lr.findLivrosDisponiveis();
-
-        // Usaremos um Map para agrupar livros por nome de gênero
         Map<String, List<LivroModel>> livrosPorNomeGenero = new HashMap<>();
 
-        // Itera sobre cada livro e seus múltiplos gêneros
         for (LivroModel livro : livrosDisponiveis) {
             for (GeneroModel genero : livro.getGeneros()) {
-                // Adiciona o livro à lista correspondente ao nome do gênero
                 livrosPorNomeGenero.computeIfAbsent(genero.getNome(), k -> new ArrayList<>()).add(livro);
             }
         }
@@ -122,7 +85,7 @@ public class LivroService {
         for (Map.Entry<String, List<LivroModel>> entry : livrosPorNomeGenero.entrySet()) {
             String nomeGenero = entry.getKey();
             List<LivroResponseMobileGeneroDTO> livrosDoGenero = entry.getValue().stream()
-                    .distinct() // garante que um livro não apareça duas vezes no mesmo gênero
+                    .distinct()
                     .limit(10)
                     .map(livro -> new LivroResponseMobileGeneroDTO(
                             livro.getImagem(),
@@ -134,37 +97,27 @@ public class LivroService {
                 catalogo.add(new GeneroCatalogoDTO(nomeGenero, livrosDoGenero));
             }
         }
-
-        // ordena os carrosséis pelo que tem mais livros
         catalogo.sort((g1, g2) -> Integer.compare(g2.getLivros().size(), g1.getLivros().size()));
-
         return catalogo;
     }
 
     // ------------------------ UPLOAD DE CAPA ------------------------
     public ResponseEntity<?> uploadCapa(Long id, MultipartFile file) {
-        Optional<LivroModel> livroOpt = lr.findById(id); 
+        Optional<LivroModel> livroOpt = lr.findById(id);
         if (livroOpt.isEmpty()) {
             rm.setMensagem("Livro não encontrado para o ID: " + id);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
 
         LivroModel livro = livroOpt.get();
-
         try {
             String nomeArquivo = file.getOriginalFilename();
             String url = UrlUtils.gerarUrlValida(BASE_URL_CAPAS, "", nomeArquivo);
-
-            // Upload para o Supabase
             storageService.uploadFile(file);
-
-            // Atualiza apenas a URL da imagem
             livro.setImagem(url);
             lr.save(livro);
-
             rm.setMensagem("Capa atualizada com sucesso.");
             return ResponseEntity.ok(rm);
-
         } catch (Exception e) {
             rm.setMensagem("Erro ao fazer upload da capa: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(rm);
@@ -173,58 +126,51 @@ public class LivroService {
 
     // ------------------------ CADASTRO ------------------------
     public ResponseEntity<?> cadastrar(LivroDTO dto, MultipartFile file) {
-        System.out.println("INICIANDO CADASTRO PARA ISBN: " + dto.getIsbn());
-        System.out.println("TÍTULO ENVIADO PELO CLIENTE: " + dto.getNome());
-
         rm.setMensagem("");
 
-        if (isVazio(dto.getIsbn())) {
-            rm.setMensagem("O ISBN é obrigatório.");
+        if (!isVazio(dto.getIsbn()) && lr.findByIsbn(dto.getIsbn()).isPresent()) {
+            rm.setMensagem("Esse ISBN já está cadastrado em outro livro.");
             return ResponseEntity.badRequest().body(rm);
         }
 
-        if (lr.existsById(dto.getIsbn())) {
-            rm.setMensagem("Esse ISBN já está cadastrado.");
-            return ResponseEntity.badRequest().body(rm);
+        if (!isVazio(dto.getIsbn())) {
+            preencherComGoogleBooks(dto);
         }
-
-        preencherComGoogleBooks(dto);
 
         ResponseEntity<?> erroValidacao = validarCampos(dto);
         if (erroValidacao != null)
             return erroValidacao;
 
-        LivroModel livro = montarLivro(dto, file);
+        LivroModel livro = montarLivro(dto, file, null);
 
         lr.save(livro);
         rm.setMensagem("Livro cadastrado com sucesso.");
-        System.out.println("✅ LIVRO CADASTRADO COM SUCESSO: " + dto.getNome());
         return ResponseEntity.status(HttpStatus.CREATED).body(rm);
     }
 
     // ------------------------ ATUALIZAÇÃO ------------------------
-    public ResponseEntity<?> atualizar(LivroDTO dto, MultipartFile file) {
+    public ResponseEntity<?> atualizar(Long id, LivroDTO dto, MultipartFile file) {
         rm.setMensagem("");
 
-        if (isVazio(dto.getIsbn())) {
-            rm.setMensagem("O ISBN é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        Optional<LivroModel> livroExistente = lr.findByIsbn(dto.getIsbn());
-        if (livroExistente.isEmpty()) {
-            rm.setMensagem("Livro não encontrado.");
+        Optional<LivroModel> livroExistenteOpt = lr.findById(id);
+        if (livroExistenteOpt.isEmpty()) {
+            rm.setMensagem("Livro não encontrado para o ID: " + id);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
         }
 
-        preencherComGoogleBooks(dto);
+        if (!isVazio(dto.getIsbn())) {
+            Optional<LivroModel> livroComMesmoIsbn = lr.findByIsbn(dto.getIsbn());
+            if (livroComMesmoIsbn.isPresent() && !livroComMesmoIsbn.get().getId().equals(id)) {
+                rm.setMensagem("O ISBN informado já pertence a outro livro.");
+                return ResponseEntity.badRequest().body(rm);
+            }
+        }
 
         ResponseEntity<?> erroValidacao = validarCampos(dto);
         if (erroValidacao != null)
             return erroValidacao;
 
-        LivroModel livro = montarLivro(dto, file);
-        livro.setIsbn(dto.getIsbn()); // garante que o ISBN não muda
+        LivroModel livro = montarLivro(dto, file, id);
 
         lr.save(livro);
         rm.setMensagem("Livro atualizado com sucesso.");
@@ -233,77 +179,28 @@ public class LivroService {
 
     // ------------------------ MÉTODOS AUXILIARES ------------------------
     private void preencherComGoogleBooks(LivroDTO dto) {
-        System.out.println("BUSCANDO ISBN NO GOOGLE BOOKS: " + dto.getIsbn());
-
+        // Esta lógica continua a mesma, mas agora é chamada condicionalmente.
         LivroModel livroGoogle = googleBooksService.buscarLivroPorIsbn(dto.getIsbn());
-
-        if (livroGoogle == null) {
-            System.out.println("LIVRO NÃO ENCONTRADO NO GOOGLE BOOKS OU ERRO NA CONEXÃO");
+        if (livroGoogle == null)
             return;
-        }
 
-        System.out.println("LIVRO ENCONTRADO: " + livroGoogle.getNome());
-        System.out.println("DADOS DA API GOOGLE BOOKS:");
-        System.out.println("   Título: " + livroGoogle.getNome());
-        System.out.println("   Autor: " + livroGoogle.getAutor());
-        System.out.println("   Editora: " + livroGoogle.getEditora());
-        System.out.println("   Páginas: " + livroGoogle.getNumero_paginas());
-        System.out.println("   Data: " + livroGoogle.getData_lancamento());
-
-        // Preenche apenas campos que estão vazios/no DTO
-        if (isVazio(dto.getNome())) {
-            System.out.println("Preenchendo título: " + livroGoogle.getNome());
+        if (isVazio(dto.getNome()))
             dto.setNome(livroGoogle.getNome());
-        }
-        if (isVazio(dto.getEditora())) {
-            System.out.println("Preenchendo editora: " + livroGoogle.getEditora());
+        if (isVazio(dto.getEditora()))
             dto.setEditora(livroGoogle.getEditora());
-        }
-        if (dto.getNumero_paginas() == null) {
-            System.out.println("Preenchendo páginas: " + livroGoogle.getNumero_paginas());
+        if (dto.getNumero_paginas() == null)
             dto.setNumero_paginas(livroGoogle.getNumero_paginas());
-        }
-        if (dto.getData_lancamento() == null) {
-            System.out.println("Preenchendo data: " + livroGoogle.getData_lancamento());
+        if (dto.getData_lancamento() == null)
             dto.setData_lancamento(livroGoogle.getData_lancamento());
-        }
-        if (isVazio(dto.getSinopse())) {
-            System.out.println("Preenchendo sinopse");
+        if (isVazio(dto.getSinopse()))
             dto.setSinopse(livroGoogle.getSinopse());
-        }
-        if (isVazio(dto.getImagem())) {
-            System.out.println("Preenchendo imagem");
+        if (isVazio(dto.getImagem()))
             dto.setImagem(livroGoogle.getImagem());
-        }
-        if (isVazio(dto.getAutor()) && !isVazio(livroGoogle.getAutor())) {
-            System.out.println("👥 Preenchendo autor: " + livroGoogle.getAutor());
+        if (isVazio(dto.getAutor()) && !isVazio(livroGoogle.getAutor()))
             dto.setAutor(livroGoogle.getAutor());
-        }
-
-        if (dto.getGeneros() == null || dto.getGeneros().isEmpty()) {
-            List<String> categoriasDoGoogle = googleBooksService.getCategories();
-            if (categoriasDoGoogle != null && !categoriasDoGoogle.isEmpty()) {
-                System.out.println("Preenchendo gêneros: " + categoriasDoGoogle);
-                dto.setGeneros(new HashSet<>(categoriasDoGoogle));
-            }
-        }
-
-        System.out.println("DADOS APÓS PREENCHIMENTO:");
-        System.out.println("   Título: " + dto.getNome());
-        System.out.println("   Autor: " + dto.getAutor());
-        System.out.println("   Editora: " + dto.getEditora());
     }
 
     private ResponseEntity<?> validarCampos(LivroDTO dto) {
-        System.out.println("VALIDANDO CAMPOS DO DTO:");
-        System.out.println("   Título: " + dto.getNome());
-        System.out.println("   Autor: " + dto.getAutor());
-        System.out.println("   Editora: " + dto.getEditora());
-        System.out.println("   Data: " + dto.getData_lancamento());
-        System.out.println("   Páginas: " + dto.getNumero_paginas());
-        System.out.println("   CDD: " + dto.getCdd());
-        System.out.println("   Gênero: " + dto.getGeneros());
-
         if (isVazio(dto.getNome()))
             return erro("O título é obrigatório.");
         if (dto.getData_lancamento() == null)
@@ -318,15 +215,16 @@ public class LivroService {
             return erro("O CDD é obrigatório.");
         if (isVazio(dto.getAutor()))
             return erro("O autor é obrigatório.");
-        if (dto.getGeneros() == null || dto.getGeneros().isEmpty())
-            return erro("O gênero é obrigatório.");
 
-        System.out.println("VALIDAÇÃO OK");
         return null;
     }
 
-    private LivroModel montarLivro(LivroDTO dto, MultipartFile file) {
+    private LivroModel montarLivro(LivroDTO dto, MultipartFile file, Long id) {
         LivroModel livro = new LivroModel();
+        if (id != null) {
+            livro.setId(id);
+        }
+
         livro.setIsbn(dto.getIsbn());
         livro.setNome(dto.getNome());
         livro.setData_lancamento(dto.getData_lancamento());
@@ -338,18 +236,9 @@ public class LivroService {
 
         try {
             livro.setClassificacao_etaria(ClassificacaoEtaria.valueOf(dto.getClassificacao_etaria().toUpperCase()));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Classificação etária inválida: " + dto.getClassificacao_etaria());
-        }
-        try {
-            livro.setClassificacao_etaria(ClassificacaoEtaria.valueOf(dto.getClassificacao_etaria().toUpperCase()));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Classificação etária inválida: " + dto.getClassificacao_etaria());
-        }
-        try {
             livro.setTipo_capa(TipoCapa.valueOf(dto.getTipo_capa().toUpperCase()));
         } catch (Exception e) {
-            throw new IllegalArgumentException("Tipo de capa inválido: " + dto.getTipo_capa());
+            throw new IllegalArgumentException("Classificação etária ou Tipo de capa inválido.");
         }
 
         livro.setEditora(dto.getEditora());
@@ -362,7 +251,6 @@ public class LivroService {
         Set<GeneroModel> generos = processarGeneros(dto.getCdd());
         livro.setGeneros(generos);
 
-        // Imagem
         if (file != null && !file.isEmpty()) {
             try {
                 String nomeArquivo = file.getOriginalFilename();
@@ -384,7 +272,6 @@ public class LivroService {
     }
 
     private ResponseEntity<?> erro(String mensagem) {
-        System.out.println("ERRO DE VALIDAÇÃO: " + mensagem);
         rm.setMensagem(mensagem);
         return ResponseEntity.badRequest().body(rm);
     }
@@ -393,33 +280,18 @@ public class LivroService {
         if (cddCodigo == null || cddCodigo.isBlank()) {
             return new HashSet<>();
         }
-        // Usa o novo método do repositório para encontrar todos os gêneros associados
-        // ao CDD
         return gr.findAllByCddCodigo(cddCodigo);
     }
 
     // ------------------------ EXCLUSÃO ------------------------
-    public ResponseEntity<ResponseModel> excluir(String isbn) {
-        if (!lr.existsById(isbn)) {
-            rm.setMensagem("Livro não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-        lr.deleteById(isbn);
-        rm.setMensagem("Livro removido com sucesso.");
-        return ResponseEntity.ok(rm);
-    }
-
     @Transactional
     public ResponseEntity<?> excluirLivroComExemplares(Long id) {
         Optional<LivroModel> livroOpt = lr.findById(id);
         if (livroOpt.isEmpty()) {
             return erro("Livro não encontrado.");
         }
-
         er.deleteAllByLivroId(id);
-
         lr.delete(livroOpt.get());
-
         rm.setMensagem("Livro e todos os exemplares foram removidos com sucesso.");
         return ResponseEntity.ok(rm);
     }
