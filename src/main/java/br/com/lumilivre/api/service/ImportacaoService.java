@@ -212,6 +212,10 @@ public class ImportacaoService {
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> isbnsNoExcel = new HashSet<>();
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
@@ -219,6 +223,7 @@ public class ImportacaoService {
                     continue;
 
                 int linhaNum = row.getRowNum() + 1;
+<<<<<<< Updated upstream
                 try {
                     String isbn = getCellString(row, 1);
                     if (isbn != null && !isbn.isBlank()) {
@@ -237,6 +242,24 @@ public class ImportacaoService {
                 } catch (Exception e) {
                     logErros.add(new ErroImportacao(linhaNum, "Erro ao processar livro: " + e.getMessage()));
                 }
+=======
+                String isbn = getCellString(row, 0);
+
+                if (isBlank(isbn)) {
+                    logErros.add(new ErroImportacao(linhaNum, "ISBN vazio"));
+                    continue;
+                }
+                if (!isbnsNoExcel.add(isbn)) {
+                    logErros.add(new ErroImportacao(linhaNum, "ISBN duplicado no Excel: " + isbn));
+                    continue;
+                }
+                if (livroRepository.existsByIsbn(isbn)) {
+                    logErros.add(new ErroImportacao(linhaNum, "Livro já existe: " + isbn));
+                    continue;
+                }
+
+                
+>>>>>>> Stashed changes
             }
         }
         return salvarLivrosEmLotes(livrosParaSalvar, logErros);

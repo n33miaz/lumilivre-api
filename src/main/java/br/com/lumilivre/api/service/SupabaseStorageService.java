@@ -18,13 +18,32 @@ public class SupabaseStorageService {
     @Value("${supabase.key}")
     private String supabaseKey;
 
-    @Value("${supabase.bucket}")
-    private String bucketName;
+    @Value("${supabase.bucket.capas}")
+    private String bucketCapas;
+
+    @Value("${supabase.bucket.tccs}")
+    private String bucketTccs;
 
     private final HttpClient client = HttpClient.newHttpClient();
 
-    public String uploadFile(MultipartFile file) throws IOException, InterruptedException {
-        String fileName = "livros/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+    public String uploadFile(MultipartFile file, String tipo) throws IOException, InterruptedException {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("O arquivo está vazio.");
+        }
+
+        String bucketName;
+        if ("capas".equalsIgnoreCase(tipo)) {
+            bucketName = bucketCapas;
+        } else if ("tccs".equalsIgnoreCase(tipo)) {
+            bucketName = bucketTccs;
+            if (!"application/pdf".equalsIgnoreCase(file.getContentType())) {
+                throw new IllegalArgumentException("Apenas arquivos PDF são permitidos no bucket de TCCs.");
+            }
+        } else {
+            throw new IllegalArgumentException("Tipo de bucket inválido. Use 'capas' ou 'tccs'.");
+        }
+
+        String fileName = tipo.toLowerCase() + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(supabaseUrl + "/storage/v1/object/" + bucketName + "/" + fileName))
@@ -39,7 +58,7 @@ public class SupabaseStorageService {
         if (response.statusCode() == 200 || response.statusCode() == 201) {
             return supabaseUrl + "/storage/v1/object/public/" + bucketName + "/" + fileName;
         } else {
-            throw new RuntimeException("Erro ao enviar arquivo: " + response.body());
+            throw new RuntimeException("Erro ao enviar arquivo: " + response.statusCode() + " - " + response.body());
         }
     }
 }

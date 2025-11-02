@@ -1,38 +1,36 @@
 package br.com.lumilivre.api.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.service.RelatorioService;
+
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.*;
+
 import java.io.IOException;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/relatorios")
 public class RelatorioController {
-
 
     private final RelatorioService relatorioService;
 
     public RelatorioController(RelatorioService relatorioService) {
         this.relatorioService = relatorioService;
     }
-    
+
     @GetMapping("/emprestimos")
-    public void relatorioEmprestimos(HttpServletResponse response) throws IOException {
+    public void relatorioEmprestimos(
+            HttpServletResponse response,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) StatusEmprestimo status
+    ) throws IOException {
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=relatorio-emprestimos.pdf");
-        relatorioService.gerarRelatorioEmprestimos(response.getOutputStream());
+        relatorioService.gerarRelatorioEmprestimos(response.getOutputStream(), dataInicio, dataFim, status);
     }
-    
-    @GetMapping("/emprestimos-atrasados")
-    public void relatorioEmprestimosAtrasados(HttpServletResponse response) throws IOException {
-        response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition", "attachment; filename=relatorio-emprestimos-atrasados.pdf");
-        relatorioService.gerarRelatorioEmprestimosAtivosEAtrasados(response.getOutputStream());
-    }
-
 
     @GetMapping("/alunos")
     public void relatorioAlunos(HttpServletResponse response) throws IOException {
@@ -47,5 +45,11 @@ public class RelatorioController {
         response.setHeader("Content-Disposition", "attachment; filename=relatorio-livros.pdf");
         relatorioService.gerarRelatorioLivros(response.getOutputStream());
     }
-}
 
+    @GetMapping("/exemplares")
+    public void relatorioExemplares(HttpServletResponse response) throws IOException {
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=relatorio-exemplares.pdf");
+        relatorioService.gerarRelatorioExemplares(response.getOutputStream());
+    }
+}

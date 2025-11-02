@@ -80,9 +80,13 @@ public class LivroService {
         Map<String, List<LivroModel>> livrosPorNomeGenero = new HashMap<>();
 
         for (LivroModel livro : livrosDisponiveis) {
+<<<<<<< Updated upstream
             for (GeneroModel genero : livro.getGeneros()) {
                 livrosPorNomeGenero.computeIfAbsent(genero.getNome(), k -> new ArrayList<>()).add(livro);
             }
+=======
+            
+>>>>>>> Stashed changes
         }
 
         List<GeneroCatalogoDTO> catalogo = new ArrayList<>();
