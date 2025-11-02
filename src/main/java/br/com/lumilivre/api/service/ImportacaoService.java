@@ -213,7 +213,10 @@ public class ImportacaoService {
         Set<String> isbnsNoExcel = new HashSet<>();
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 
 >>>>>>> Stashed changes
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
@@ -259,6 +262,9 @@ public class ImportacaoService {
                 }
 
                 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
             }
         }

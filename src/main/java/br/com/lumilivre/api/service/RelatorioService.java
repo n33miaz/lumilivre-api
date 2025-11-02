@@ -11,6 +11,7 @@ import com.lowagie.text.pdf.*;
 import org.springframework.stereotype.Service;
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Font;
@@ -39,6 +40,14 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 >>>>>>> Stashed changes
+=======
+import java.io.OutputStream;
+import java.awt.Color;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+>>>>>>> Stashed changes
 
 @Service
 public class RelatorioService {
@@ -60,6 +69,9 @@ public class RelatorioService {
                             AlunoService alunoService,
                             LivroService livroService,
                             ExemplarService exemplarService) {
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         this.emprestimoService = emprestimoService;
         this.alunoService = alunoService;
@@ -67,6 +79,7 @@ public class RelatorioService {
         this.exemplarService = exemplarService;
     }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     // --- MÉTODOS PÚBLICOS ---
     public void gerarRelatorioEmprestimos(OutputStream out) throws IOException {
@@ -82,6 +95,8 @@ public class RelatorioService {
 
         gerarRelatorioPDF(out, "Relatório Geral de Empréstimos", headers, emprestimos, rowMapper);
 =======
+=======
+>>>>>>> Stashed changes
     // 🧾 Cabeçalho padrão de relatórios
     private void addCabecalho(Document document, String titulo, LocalDate inicio, LocalDate fim) throws DocumentException {
         Paragraph header = new Paragraph(titulo, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16));
@@ -156,6 +171,7 @@ public class RelatorioService {
     // 👩‍🎓 Relatório de Alunos
     public void gerarRelatorioAlunos(OutputStream out) throws IOException {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         List<AlunoModel> alunos = alunoService.buscarTodos();
         String[] headers = { "Matrícula", "Nome", "Qtd. Empréstimos" };
 
@@ -202,10 +218,13 @@ public class RelatorioService {
             Function<T, String[]> rowMapper) throws IOException {
 =======
 >>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
         Document document = new Document(PageSize.A4);
         try {
             PdfWriter.getInstance(document, out);
             document.open();
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 
             Paragraph pTitulo = new Paragraph(titulo, FONT_TITULO);
@@ -259,15 +278,45 @@ public class RelatorioService {
                 table.addCell(String.valueOf(a.getEmprestimosCount()));
             }
 
+=======
+            addCabecalho(document, "👩‍🎓 Relatório de Alunos", null, null);
+
+            List<AlunoModel> alunos = alunoService.buscarTodos();
+
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2, 5, 3, 3, 2});
+
+            String[] headers = {"Matrícula", "Nome", "Curso", "Penalidade", "Qtd. Empréstimos"};
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11)));
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setBackgroundColor(Color.LIGHT_GRAY);
+                table.addCell(cell);
+            }
+
+            for (AlunoModel a : alunos) {
+                table.addCell(a.getMatricula());
+                table.addCell(a.getNomeCompleto());
+                table.addCell(a.getCurso().getNome());
+                table.addCell(a.getPenalidade() != null ? a.getPenalidade().toString() : "-");
+                table.addCell(String.valueOf(a.getEmprestimosCount()));
+            }
+
+>>>>>>> Stashed changes
             document.add(table);
             document.add(new Paragraph("\nTotal de alunos: " + alunos.size()));
         } catch (Exception ex) {
             throw new IOException("Erro ao gerar relatório de alunos", ex);
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         } finally {
             document.close();
         }
     }
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 
     // --- MÉTODOS HELPERS PARA ESTILO E FORMATAÇÃO ---
@@ -293,6 +342,9 @@ public class RelatorioService {
             return "N/A";
 =======
 
+=======
+
+>>>>>>> Stashed changes
     // 📖 Relatório de Livros
     public void gerarRelatorioLivros(OutputStream out) throws IOException {
         Document document = new Document(PageSize.A4.rotate());
@@ -330,6 +382,47 @@ public class RelatorioService {
             document.add(new Paragraph("\nTotal de livros: " + livros.size()));
         } catch (Exception ex) {
             throw new IOException("Erro ao gerar relatório de livros", ex);
+<<<<<<< Updated upstream
+=======
+        } finally {
+            document.close();
+        }
+    }
+
+    // 🏷️ Relatório de Exemplares
+    public void gerarRelatorioExemplares(OutputStream out) throws IOException {
+        Document document = new Document(PageSize.A4.rotate());
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+            addCabecalho(document, "🏷️ Relatório de Exemplares", null, null);
+
+            List<ExemplarModel> exemplares = exemplarService.buscarTodos();
+
+            PdfPTable table = new PdfPTable(4);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{2, 5, 3, 4});
+
+            String[] headers = {"Tombo", "Livro", "Status", "Localização"};
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11)));
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setBackgroundColor(Color.LIGHT_GRAY);
+                table.addCell(cell);
+            }
+
+            for (ExemplarModel e : exemplares) {
+                table.addCell(e.getTombo());
+                table.addCell(e.getLivro_isbn().getNome());
+                table.addCell(e.getStatus_livro().toString());
+                table.addCell(e.getLocalizacao_fisica());
+            }
+
+            document.add(table);
+            document.add(new Paragraph("\nTotal de exemplares: " + exemplares.size()));
+        } catch (Exception ex) {
+            throw new IOException("Erro ao gerar relatório de exemplares", ex);
+>>>>>>> Stashed changes
         } finally {
             document.close();
         }

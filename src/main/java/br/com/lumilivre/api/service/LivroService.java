@@ -81,9 +81,13 @@ public class LivroService {
 
         for (LivroModel livro : livrosDisponiveis) {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             for (GeneroModel genero : livro.getGeneros()) {
                 livrosPorNomeGenero.computeIfAbsent(genero.getNome(), k -> new ArrayList<>()).add(livro);
             }
+=======
+            
+>>>>>>> Stashed changes
 =======
             
 >>>>>>> Stashed changes
