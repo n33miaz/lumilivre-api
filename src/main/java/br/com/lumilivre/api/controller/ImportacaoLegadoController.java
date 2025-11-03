@@ -35,7 +35,7 @@ public class ImportacaoLegadoController {
             return ResponseEntity.ok(mensagem);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("❌ Erro ao importar livros legados: " + e.getMessage());
+                    .body("Erro ao importar livros legados: " + e.getMessage());
         }
     }
 
@@ -48,7 +48,7 @@ public class ImportacaoLegadoController {
             return ResponseEntity.ok(mensagem);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("❌ Erro ao importar exemplares legados: " + e.getMessage());
+                    .body("Erro ao importar exemplares legados: " + e.getMessage());
         }
     }
 }

@@ -2,10 +2,11 @@ package br.com.lumilivre.api.enums;
 
 public enum TipoCapa implements EnumStatus {
     DURA("Capa dura"),
-    FLEXIVEL("Capa Flexivel"),
+    FLEXIVEL("Capa Flexível"),
     CARTONADA("Capa Cartonada"),
     CAPA_COM_ORELHAS("Capa com Orelhas"),
-    ESPIRAL("Capa Espiral");
+    ESPIRAL("Capa Espiral"),
+    BROCHURA("Brochura");
 
     private final String status;
 

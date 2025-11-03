@@ -1,8 +1,11 @@
 package br.com.lumilivre.api.service;
 
-import java.io.InputStream;
-import java.util.*;
-import java.util.stream.Collectors;
+import br.com.lumilivre.api.enums.ClassificacaoEtaria;
+import br.com.lumilivre.api.enums.StatusLivro;
+import br.com.lumilivre.api.enums.TipoCapa;
+import br.com.lumilivre.api.model.*;
+import br.com.lumilivre.api.repository.*;
+import br.com.lumilivre.api.utils.ExcelUtils;
 
 import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
@@ -12,12 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import br.com.lumilivre.api.enums.ClassificacaoEtaria;
-import br.com.lumilivre.api.enums.StatusLivro;
-import br.com.lumilivre.api.enums.TipoCapa;
-import br.com.lumilivre.api.model.*;
-import br.com.lumilivre.api.repository.*;
-import br.com.lumilivre.api.utils.ExcelUtils;
+import java.io.InputStream;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ImportacaoService {
@@ -68,7 +68,7 @@ public class ImportacaoService {
         }
     }
 
-    // =============== IMPORTAÇÃO DE ALUNOS
+    // =============== IMPORTAÇÃO DE ALUNOS ===============
     @Transactional
     private String importarAlunos(MultipartFile file) throws Exception {
         List<AlunoModel> alunosParaSalvar = new ArrayList<>();
@@ -203,7 +203,7 @@ public class ImportacaoService {
         return gerarResumoImportacao("alunos", totalSalvos, logErros);
     }
 
-    // ======== IMPORTAÇÃO DE LIVROS
+    // ======== IMPORTAÇÃO DE LIVROS ========
     @Transactional
     private String importarLivros(MultipartFile file) throws Exception {
         List<LivroModel> livrosParaSalvar = new ArrayList<>();
@@ -235,21 +235,6 @@ public class ImportacaoService {
                 } catch (Exception e) {
                     logErros.add(new ErroImportacao(linhaNum, "Erro ao processar livro: " + e.getMessage()));
                 }
-                String isbn = getCellString(row, 0);
-
-                if (isBlank(isbn)) {
-                    logErros.add(new ErroImportacao(linhaNum, "ISBN vazio"));
-                    continue;
-                }
-                if (!isbnsNoExcel.add(isbn)) {
-                    logErros.add(new ErroImportacao(linhaNum, "ISBN duplicado no Excel: " + isbn));
-                    continue;
-                }
-                if (livroRepository.existsByIsbn(isbn)) {
-                    logErros.add(new ErroImportacao(linhaNum, "Livro já existe: " + isbn));
-                    continue;
-                }
-
             }
         }
         return salvarLivrosEmLotes(livrosParaSalvar, logErros);
@@ -304,7 +289,7 @@ public class ImportacaoService {
         return gerarResumoImportacao("livros", totalSalvos, logErros);
     }
 
-    // ======== IMPORTAÇÃO DE EXEMPLARES
+    // ======== IMPORTAÇÃO DE EXEMPLARES ========
     @Transactional
     private String importarExemplares(MultipartFile file) throws Exception {
         List<ExemplarModel> exemplaresParaSalvar = new ArrayList<>();
@@ -394,7 +379,7 @@ public class ImportacaoService {
         return gerarResumoImportacao("exemplares", totalSalvos, logErros);
     }
 
-    // ========= MÉTODOS AUXILIARES E CLASSE DE ERRO
+    // ========= MÉTODOS AUXILIARES E CLASSE DE ERRO =========
     private void validarArquivo(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Arquivo vazio ou nulo");

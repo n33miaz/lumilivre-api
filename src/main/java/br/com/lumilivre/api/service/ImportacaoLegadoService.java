@@ -1,8 +1,17 @@
-package br.com.lumilivre.api.service; // Criar um Novo Serviço para a Migração
+package br.com.lumilivre.api.service;
 
-import java.io.InputStream;
-import java.util.*;
-import java.util.stream.Collectors;
+import br.com.lumilivre.api.enums.ClassificacaoEtaria;
+import br.com.lumilivre.api.enums.StatusLivro;
+import br.com.lumilivre.api.enums.TipoCapa;
+import br.com.lumilivre.api.model.CddModel;
+import br.com.lumilivre.api.model.ExemplarModel;
+import br.com.lumilivre.api.model.GeneroModel;
+import br.com.lumilivre.api.model.LivroModel;
+import br.com.lumilivre.api.repository.CddRepository;
+import br.com.lumilivre.api.repository.ExemplarRepository;
+import br.com.lumilivre.api.repository.GeneroRepository;
+import br.com.lumilivre.api.repository.LivroRepository;
+import br.com.lumilivre.api.utils.ExcelUtils;
 
 import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
@@ -11,12 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import br.com.lumilivre.api.enums.ClassificacaoEtaria;
-import br.com.lumilivre.api.enums.StatusLivro;
-import br.com.lumilivre.api.enums.TipoCapa;
-import br.com.lumilivre.api.model.*;
-import br.com.lumilivre.api.repository.*;
-import br.com.lumilivre.api.utils.ExcelUtils;
+import java.io.InputStream;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ImportacaoLegadoService {
@@ -28,7 +34,7 @@ public class ImportacaoLegadoService {
     private final CddRepository cddRepository;
     private final GeneroRepository generoRepository;
 
-    private static final int BATCH_SIZE = 50;
+    private static final int BATCH_SIZE = 100;
 
     public ImportacaoLegadoService(
             LivroRepository livroRepository,
@@ -41,19 +47,20 @@ public class ImportacaoLegadoService {
         this.generoRepository = generoRepository;
     }
 
-    // ==========================================================
-    // 📚 IMPORTAÇÃO DE LIVROS (LÓGICA LEGADA)
-    // ==========================================================
+    // =============== IMPORTAÇÃO DE LIVROS (LÓGICA LEGADA) ===============
     @Transactional
     public String importarLivros(MultipartFile file) throws Exception {
         List<LivroModel> livrosParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> isbnsNoExcel = new HashSet<>();
 
+        Map<String, CddModel> cddCache = new HashMap<>();
+
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Pula cabeçalho
+                if (row.getRowNum() == 0)
+                    continue; // Pula cabeçalho
 
                 int linhaNum = row.getRowNum() + 1;
                 try {
@@ -69,11 +76,12 @@ public class ImportacaoLegadoService {
                         }
                     }
 
-                    LivroModel livro = criarLivroFromRow(row);
+                    LivroModel livro = criarLivroFromRow(row, cddCache);
                     livrosParaSalvar.add(livro);
 
                 } catch (Exception e) {
                     logErros.add(new ErroImportacao(linhaNum, "Erro ao processar livro: " + e.getMessage()));
+                    log.warn("Falha na linha {}: {}", linhaNum, e.getMessage());
                 }
             }
         }
@@ -81,34 +89,32 @@ public class ImportacaoLegadoService {
         return salvarLivrosEmLotes(livrosParaSalvar, logErros);
     }
 
-    private LivroModel criarLivroFromRow(Row row) {
+    private LivroModel criarLivroFromRow(Row row, Map<String, CddModel> cddCache) {
         LivroModel livro = new LivroModel();
-        // Coluna 0 (id da planilha) é ignorada.
         livro.setIsbn(ExcelUtils.getString(row.getCell(1)));
 
         String cddCodigo = ExcelUtils.getString(row.getCell(2));
         if (cddCodigo == null || cddCodigo.isBlank()) {
             throw new IllegalArgumentException("cdd_codigo (coluna 3) é obrigatório.");
         }
-        CddModel cdd = cddRepository.findById(cddCodigo)
-                .orElseThrow(() -> new IllegalArgumentException("CDD '" + cddCodigo + "' não encontrado no banco."));
+
+        CddModel cdd = cddCache.computeIfAbsent(cddCodigo, key -> cddRepository.findById(key)
+                .orElseThrow(() -> new IllegalArgumentException("CDD '" + key + "' não encontrado no banco.")));
         livro.setCdd(cdd);
 
-        // Coluna 3 (CDD descrição) é ignorada.
         livro.setNome(ExcelUtils.getString(row.getCell(4)));
         livro.setAutor(ExcelUtils.getString(row.getCell(5)));
         livro.setEditora(ExcelUtils.getString(row.getCell(6)));
         livro.setData_lancamento(ExcelUtils.getLocalDate(row.getCell(7)));
         livro.setEdicao(ExcelUtils.getString(row.getCell(8)));
-        // Coluna 9 (quantidade) é ignorada, será calculada pelos exemplares.
         livro.setNumero_paginas(ExcelUtils.getInteger(row.getCell(10)));
-        livro.setClassificacao_etaria(ExcelUtils.getEnum(row.getCell(11), ClassificacaoEtaria.class, ClassificacaoEtaria.LIVRE));
+        livro.setClassificacao_etaria(
+                ExcelUtils.getEnum(row.getCell(11), ClassificacaoEtaria.class, ClassificacaoEtaria.LIVRE));
         livro.setVolume(ExcelUtils.getInteger(row.getCell(12)));
         livro.setSinopse(ExcelUtils.getString(row.getCell(13)));
         livro.setTipo_capa(ExcelUtils.getEnum(row.getCell(14), TipoCapa.class, TipoCapa.BROCHURA));
         livro.setImagem(ExcelUtils.getString(row.getCell(15)));
 
-        // Lógica automática de gênero baseada no CDD
         Set<GeneroModel> generos = generoRepository.findAllByCddCodigo(cddCodigo);
         livro.setGeneros(generos);
 
@@ -124,25 +130,28 @@ public class ImportacaoLegadoService {
                 livroRepository.saveAll(subLista);
                 totalSalvos += subLista.size();
             } catch (Exception e) {
-                logErros.add(new ErroImportacao(-1, "Erro no lote " + (i / BATCH_SIZE + 1) + ": " + extrairRootCause(e)));
+                String erroMsg = "Erro no lote " + (i / BATCH_SIZE + 1) + ": " + extrairRootCause(e);
+                logErros.add(new ErroImportacao(-1, erroMsg));
+                log.error(erroMsg, e);
             }
         }
         return gerarResumoImportacao("livros legados", totalSalvos, logErros);
     }
 
-    // ==========================================================
-    // 📦 IMPORTAÇÃO DE EXEMPLARES (LÓGICA LEGADA)
-    // ==========================================================
+    // =============== IMPORTAÇÃO DE EXEMPLARES (LÓGICA LEGADA) ===============
     @Transactional
     public String importarExemplares(MultipartFile file) throws Exception {
         List<ExemplarModel> exemplaresParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> tombosNoExcel = new HashSet<>();
 
+        Map<Long, LivroModel> livroCache = new HashMap<>();
+
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
+                if (row.getRowNum() == 0)
+                    continue;
 
                 int linhaNum = row.getRowNum() + 1;
                 try {
@@ -160,11 +169,12 @@ public class ImportacaoLegadoService {
                         continue;
                     }
 
-                    ExemplarModel exemplar = criarExemplarFromRow(row);
+                    ExemplarModel exemplar = criarExemplarFromRow(row, livroCache);
                     exemplaresParaSalvar.add(exemplar);
 
                 } catch (Exception e) {
                     logErros.add(new ErroImportacao(linhaNum, "Erro ao processar exemplar: " + e.getMessage()));
+                    log.warn("Falha na linha {}: {}", linhaNum, e.getMessage());
                 }
             }
         }
@@ -172,20 +182,22 @@ public class ImportacaoLegadoService {
         return salvarExemplaresEmLotes(exemplaresParaSalvar, logErros);
     }
 
-    private ExemplarModel criarExemplarFromRow(Row row) {
+    private ExemplarModel criarExemplarFromRow(Row row, Map<Long, LivroModel> livroCache) {
         Long livroId = ExcelUtils.getLong(row.getCell(0));
         if (livroId == null) {
             throw new IllegalArgumentException("livro_id (coluna 1) é obrigatório.");
         }
-        LivroModel livro = livroRepository.findById(livroId)
-                .orElseThrow(() -> new IllegalArgumentException("Livro com ID '" + livroId + "' não encontrado no banco."));
+
+        LivroModel livro = livroCache.computeIfAbsent(livroId, key -> livroRepository.findById(key)
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Livro com ID '" + key + "' não encontrado no banco.")));
 
         ExemplarModel exemplar = new ExemplarModel();
         exemplar.setLivro(livro);
         exemplar.setTombo(ExcelUtils.getString(row.getCell(1)));
         exemplar.setStatus_livro(ExcelUtils.getEnum(row.getCell(2), StatusLivro.class, StatusLivro.DISPONIVEL));
         exemplar.setLocalizacao_fisica(ExcelUtils.getString(row.getCell(3)));
-        
+
         return exemplar;
     }
 
@@ -198,32 +210,40 @@ public class ImportacaoLegadoService {
                 exemplarRepository.saveAll(subLista);
                 totalSalvos += subLista.size();
             } catch (Exception e) {
-                logErros.add(new ErroImportacao(-1, "Erro no lote " + (i / BATCH_SIZE + 1) + ": " + extrairRootCause(e)));
+                String erroMsg = "Erro no lote " + (i / BATCH_SIZE + 1) + ": " + extrairRootCause(e);
+                logErros.add(new ErroImportacao(-1, erroMsg));
+                log.error(erroMsg, e);
             }
         }
 
-        // Após salvar todos os lotes, atualiza a contagem
         if (totalSalvos > 0) {
-            log.info("Atualizando contagem de exemplares nos livros...");
-            Set<Long> livroIdsAfetados = exemplares.stream()
-                                        .map(e -> e.getLivro().getId())
-                                        .collect(Collectors.toSet());
-            for (Long livroId : livroIdsAfetados) {
-                Long contagem = exemplarRepository.countByLivroId(livroId);
-                livroRepository.findById(livroId).ifPresent(livro -> {
-                    livro.setQuantidade(contagem.intValue());
-                    livroRepository.save(livro);
-                });
-            }
-            log.info("Contagem de exemplares atualizada para {} livros.", livroIdsAfetados.size());
+            atualizarContagemDeExemplares(exemplares);
         }
 
         return gerarResumoImportacao("exemplares legados", totalSalvos, logErros);
     }
 
-    // ==========================================================
-    // 🔹 MÉTODOS AUXILIARES E CLASSE DE ERRO
-    // ==========================================================
+    private void atualizarContagemDeExemplares(List<ExemplarModel> exemplaresProcessados) {
+        log.info("Atualizando contagem de exemplares nos livros...");
+        Map<Long, Long> contagemPorLivroId = exemplaresProcessados.stream()
+                .collect(Collectors.groupingBy(e -> e.getLivro().getId(), Collectors.counting()));
+
+        List<LivroModel> livrosParaAtualizar = new ArrayList<>();
+        for (Map.Entry<Long, Long> entry : contagemPorLivroId.entrySet()) {
+            livroRepository.findById(entry.getKey()).ifPresent(livro -> {
+                long novaQuantidade = exemplarRepository.countByLivroId(livro.getId());
+                livro.setQuantidade((int) novaQuantidade);
+                livrosParaAtualizar.add(livro);
+            });
+        }
+
+        if (!livrosParaAtualizar.isEmpty()) {
+            livroRepository.saveAll(livrosParaAtualizar);
+            log.info("Contagem de exemplares atualizada para {} livros.", livrosParaAtualizar.size());
+        }
+    }
+
+    // =============== MÉTODOS AUXILIARES E CLASSE DE ERRO ===============
     private String extrairRootCause(Exception e) {
         Throwable rootCause = e;
         while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
@@ -233,7 +253,8 @@ public class ImportacaoLegadoService {
     }
 
     private String gerarResumoImportacao(String tipo, int totalSalvos, List<ErroImportacao> logErros) {
-        String resumo = String.format("✅ Importação de %s concluída. Salvos: %d | Erros: %d", tipo, totalSalvos, logErros.size());
+        String resumo = String.format("✅ Importação de %s concluída. Salvos: %d | Erros: %d", tipo, totalSalvos,
+                logErros.size());
         if (!logErros.isEmpty()) {
             String detalhes = logErros.stream()
                     .map(ErroImportacao::toString)
