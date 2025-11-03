@@ -1,128 +1,120 @@
 package br.com.lumilivre.api.service;
 
+import br.com.lumilivre.api.dto.googlebooks.GoogleBooksResponse;
+import br.com.lumilivre.api.dto.googlebooks.ImageLinks;
+import br.com.lumilivre.api.dto.googlebooks.VolumeInfo;
 import br.com.lumilivre.api.model.LivroModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class GoogleBooksService {
 
     private static final String GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
+    private static final Logger log = LoggerFactory.getLogger(GoogleBooksService.class);
 
-    // novo campo para guardar as categorias
-    private List<String> categories = new ArrayList<>();
+    private final RestTemplate restTemplate;
 
-    public LivroModel buscarLivroPorIsbn(String isbn) {
+    // Injeção de dependência via construtor
+    public GoogleBooksService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    // DTO interno para o retorno combinado, tornando o serviço stateless
+    public record GoogleBookData(LivroModel livro, List<String> categories) {
+    }
+
+    // O método agora se chama buscarDadosPorIsbn e retorna um Optional
+    public Optional<GoogleBookData> buscarDadosPorIsbn(String isbn) {
+        String url = UriComponentsBuilder.fromHttpUrl(GOOGLE_BOOKS_API)
+                .queryParam("q", "isbn:" + isbn)
+                .toUriString();
+
+        log.info("Buscando ISBN no Google Books: {}", isbn);
+
         try {
-            RestTemplate restTemplate = new RestTemplate();
-            String url = UriComponentsBuilder.fromHttpUrl(GOOGLE_BOOKS_API)
-                    .queryParam("q", "isbn:" + isbn)
-                    .toUriString();
+            // Usa os DTOs para deserialização automática e segura
+            GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
 
-            System.out.println("Buscando ISBN no Google Books: " + url);
-
-            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
-
-            // Verifica se a resposta é válida e contém items
-            if (response == null || !response.containsKey("items")) {
-                System.out.println("Nenhum livro encontrado para ISBN: " + isbn);
-                return null;
+            if (response == null || response.items() == null || response.items().isEmpty()) {
+                log.warn("Nenhum livro encontrado para ISBN: {}", isbn);
+                return Optional.empty();
             }
 
-            List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
-            if (items.isEmpty()) {
-                System.out.println("Lista de items vazia para ISBN: " + isbn);
-                return null;
-            }
-
-            Map<String, Object> primeiroItem = items.get(0);
-            Map<String, Object> volumeInfo = (Map<String, Object>) primeiroItem.get("volumeInfo");
-
+            VolumeInfo volumeInfo = response.items().get(0).volumeInfo();
             if (volumeInfo == null) {
-                System.out.println("VolumeInfo não encontrado para ISBN: " + isbn);
-                return null;
-            }
-
-            if (volumeInfo.containsKey("categories")) {
-                this.categories = (List<String>) volumeInfo.get("categories");
-            } else {
-                this.categories.clear();
+                log.warn("VolumeInfo não encontrado para ISBN: {}", isbn);
+                return Optional.empty();
             }
 
             LivroModel livro = new LivroModel();
             livro.setIsbn(isbn);
-            livro.setNome((String) volumeInfo.get("title"));
-            livro.setEditora((String) volumeInfo.get("publisher"));
-            livro.setSinopse((String) volumeInfo.get("description"));
+            livro.setNome(volumeInfo.title());
+            livro.setEditora(volumeInfo.publisher());
+            livro.setSinopse(volumeInfo.description());
 
-            // AUTORES: Lista completa separada por vírgula
-            Object autoresObj = volumeInfo.get("authors");
-            if (autoresObj instanceof List) {
-                List<String> autores = ((List<?>) autoresObj).stream()
-                        .map(Object::toString)
-                        .collect(Collectors.toList());
-
-                if (!autores.isEmpty()) {
-                    String autoresString = String.join(", ", autores);
-                    livro.setAutor(autoresString);
-                    System.out.println("Autores encontrados: " + autoresString);
-                }
+            if (volumeInfo.authors() != null && !volumeInfo.authors().isEmpty()) {
+                livro.setAutor(String.join(", ", volumeInfo.authors()));
             }
 
-            // Número de páginas
-            Object pageCount = volumeInfo.get("pageCount");
-            if (pageCount instanceof Number) {
-                livro.setNumero_paginas(((Number) pageCount).intValue());
+            if (volumeInfo.pageCount() != null) {
+                livro.setNumero_paginas(volumeInfo.pageCount());
             }
 
-            // Data de publicação
-            String publishedDate = (String) volumeInfo.get("publishedDate");
-            if (publishedDate != null) {
-                try {
-                    if (publishedDate.length() == 4) {
-                        livro.setData_lancamento(LocalDate.parse(publishedDate + "-01-01"));
-                    } else if (publishedDate.length() == 7) {
-                        livro.setData_lancamento(LocalDate.parse(publishedDate + "-01"));
-                    } else {
-                        livro.setData_lancamento(
-                                LocalDate.parse(publishedDate, DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-                    }
-                } catch (Exception e) {
-                    System.out.println("Erro ao parsear data: " + publishedDate);
-                }
-            }
+            parsearDataPublicacao(volumeInfo.publishedDate()).ifPresent(livro::setData_lancamento);
 
-            // Imagens
-            Object imageLinks = volumeInfo.get("imageLinks");
-            if (imageLinks instanceof Map) {
-                Map<String, String> img = (Map<String, String>) imageLinks;
-                String imagem = img.getOrDefault("extraLarge",
-                        img.getOrDefault("large",
-                                img.getOrDefault("medium",
-                                        img.getOrDefault("thumbnail",
-                                                img.get("smallThumbnail")))));
-                livro.setImagem(imagem);
-            }
+            obterUrlImagem(volumeInfo.imageLinks()).ifPresent(livro::setImagem);
 
-            System.out.println("Livro encontrado: " + livro.getNome());
-            return livro;
+            List<String> categories = volumeInfo.categories() != null ? volumeInfo.categories()
+                    : Collections.emptyList();
+
+            log.info("Livro encontrado: {}", livro.getNome());
+            return Optional.of(new GoogleBookData(livro, categories));
 
         } catch (Exception e) {
-            System.out.println("Erro ao buscar livro no Google Books: " + e.getMessage());
-            e.printStackTrace();
-            return null;
+            log.error("Erro ao buscar livro no Google Books para ISBN {}: {}", isbn, e.getMessage());
+            return Optional.empty();
         }
     }
 
-    public List<String> getCategories() {
-        return this.categories;
+    private Optional<LocalDate> parsearDataPublicacao(String publishedDate) {
+        if (publishedDate == null || publishedDate.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(LocalDate.parse(publishedDate));
+        } catch (DateTimeParseException e1) {
+            try {
+                return Optional.of(YearMonth.parse(publishedDate).atDay(1));
+            } catch (DateTimeParseException e2) {
+                try {
+                    return Optional.of(Year.parse(publishedDate).atDay(1));
+                } catch (DateTimeParseException e3) {
+                    log.warn("Formato de data não suportado: {}", publishedDate);
+                    return Optional.empty();
+                }
+            }
+        }
+    }
+
+    private Optional<String> obterUrlImagem(ImageLinks links) {
+        if (links == null)
+            return Optional.empty();
+        return Optional.ofNullable(links.extraLarge())
+                .or(() -> Optional.ofNullable(links.large()))
+                .or(() -> Optional.ofNullable(links.medium()))
+                .or(() -> Optional.ofNullable(links.thumbnail()))
+                .or(() -> Optional.ofNullable(links.smallThumbnail()));
     }
 }

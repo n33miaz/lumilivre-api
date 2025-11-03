@@ -68,8 +68,7 @@ public class ImportacaoService {
         }
     }
 
-    // ============================= IMPORTAÇÃO DE ALUNOS
-    // =============================
+    // =============== IMPORTAÇÃO DE ALUNOS
     @Transactional
     private String importarAlunos(MultipartFile file) throws Exception {
         List<AlunoModel> alunosParaSalvar = new ArrayList<>();
@@ -204,21 +203,13 @@ public class ImportacaoService {
         return gerarResumoImportacao("alunos", totalSalvos, logErros);
     }
 
-    // ============================= IMPORTAÇÃO DE LIVROS
-    // =============================
+    // ======== IMPORTAÇÃO DE LIVROS
     @Transactional
     private String importarLivros(MultipartFile file) throws Exception {
         List<LivroModel> livrosParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> isbnsNoExcel = new HashSet<>();
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-
->>>>>>> Stashed changes
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
@@ -226,7 +217,6 @@ public class ImportacaoService {
                     continue;
 
                 int linhaNum = row.getRowNum() + 1;
-<<<<<<< Updated upstream
                 try {
                     String isbn = getCellString(row, 1);
                     if (isbn != null && !isbn.isBlank()) {
@@ -245,7 +235,6 @@ public class ImportacaoService {
                 } catch (Exception e) {
                     logErros.add(new ErroImportacao(linhaNum, "Erro ao processar livro: " + e.getMessage()));
                 }
-=======
                 String isbn = getCellString(row, 0);
 
                 if (isBlank(isbn)) {
@@ -261,11 +250,6 @@ public class ImportacaoService {
                     continue;
                 }
 
-                
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
             }
         }
         return salvarLivrosEmLotes(livrosParaSalvar, logErros);
@@ -320,8 +304,7 @@ public class ImportacaoService {
         return gerarResumoImportacao("livros", totalSalvos, logErros);
     }
 
-    // ============================= IMPORTAÇÃO DE EXEMPLARES
-    // =============================
+    // ======== IMPORTAÇÃO DE EXEMPLARES
     @Transactional
     private String importarExemplares(MultipartFile file) throws Exception {
         List<ExemplarModel> exemplaresParaSalvar = new ArrayList<>();
@@ -411,8 +394,7 @@ public class ImportacaoService {
         return gerarResumoImportacao("exemplares", totalSalvos, logErros);
     }
 
-    // ============================= MÉTODOS AUXILIARES E CLASSE DE ERRO
-    // =============================
+    // ========= MÉTODOS AUXILIARES E CLASSE DE ERRO
     private void validarArquivo(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Arquivo vazio ou nulo");

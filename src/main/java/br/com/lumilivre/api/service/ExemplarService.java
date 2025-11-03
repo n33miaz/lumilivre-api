@@ -1,15 +1,5 @@
 package br.com.lumilivre.api.service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import br.com.lumilivre.api.data.ExemplarDTO;
 import br.com.lumilivre.api.data.ListaLivroDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
@@ -22,34 +12,53 @@ import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Service
 public class ExemplarService {
 
-    @Autowired
-    private ExemplarRepository er;
+    private static final Logger log = LoggerFactory.getLogger(ExemplarService.class);
 
-    @Autowired
-    private LivroRepository lr;
+    private final ExemplarRepository exemplarRepository;
+    private final LivroRepository livroRepository;
+    private final EmprestimoRepository emprestimoRepository;
+    private final LivroService livroService; // Injetando o LivroService para reutilizar a lógica
 
-    @Autowired
-    private ResponseModel rm;
+    // Injeção de dependências via construtor
+    public ExemplarService(ExemplarRepository er, LivroRepository lr, EmprestimoRepository emprestimoRepository,
+            LivroService livroService) {
+        this.exemplarRepository = er;
+        this.livroRepository = lr;
+        this.emprestimoRepository = emprestimoRepository;
+        this.livroService = livroService;
+    }
 
-    @Autowired
-    private EmprestimoRepository emprestimoRepository;
+    public List<ExemplarModel> buscarTodos() {
+        return exemplarRepository.findAll();
+    }
 
-    public ResponseEntity<?> buscarExemplaresPorIsbn(String isbn) {
-        if (isbn == null || isbn.trim().isEmpty()) {
-            rm.setMensagem("O ISBN é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
+    public ResponseEntity<?> buscarExemplaresPorLivroId(Long livroId) {
+        if (livroId == null) {
+            return erro("O ID do livro é obrigatório.");
         }
-        if (!lr.existsByIsbn(isbn)) {
-            rm.setMensagem("Nenhum livro encontrado com esse ISBN.");
-            return ResponseEntity.badRequest().body(rm);
+        if (!livroRepository.existsById(livroId)) {
+            return erro("Nenhum livro encontrado com o ID fornecido.");
         }
-        List<ExemplarModel> exemplares = er.findAllByLivroIsbn(isbn);
+
+        List<ExemplarModel> exemplares = exemplarRepository.findAllByLivroId(livroId);
         if (exemplares.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
+
         List<ListaLivroDTO> exemplaresDTO = exemplares.stream()
                 .map(this::converterParaDTO)
                 .collect(Collectors.toList());
@@ -57,132 +66,119 @@ public class ExemplarService {
     }
 
     @Transactional
-    public ResponseEntity<?> cadastrar(ExemplarDTO dto) {
-        rm.setMensagem("");
-
+    public ResponseEntity<ResponseModel> cadastrar(ExemplarDTO dto) {
         if (dto.getLivro_id() == null) {
-            rm.setMensagem("O ID do livro é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
+            return erro("O ID do livro é obrigatório.");
+        }
+        if (dto.getTombo() == null || dto.getTombo().isBlank()) {
+            return erro("O tombo do exemplar é obrigatório.");
+        }
+        if (exemplarRepository.existsById(dto.getTombo())) {
+            return erro("Já existe um exemplar com este tombo.");
         }
 
-        if (er.existsByTombo(dto.getTombo())) {
-            rm.setMensagem("Esse tombo já existe.");
-            return ResponseEntity.badRequest().body(rm);
-        }
-
-        Optional<LivroModel> livroOpt = lr.findById(dto.getLivro_id());
+        Optional<LivroModel> livroOpt = livroRepository.findById(dto.getLivro_id());
         if (livroOpt.isEmpty()) {
-            rm.setMensagem("Nenhum livro encontrado com o ID fornecido.");
-            return ResponseEntity.badRequest().body(rm);
+            return erro("Nenhum livro encontrado com o ID fornecido.");
         }
-        LivroModel livro = livroOpt.get();
 
-        StatusLivro status;
         try {
-            status = StatusLivro.valueOf(dto.getStatus_livro().toUpperCase());
+            ExemplarModel exemplar = new ExemplarModel();
+            exemplar.setTombo(dto.getTombo());
+            exemplar.setStatus_livro(StatusLivro.valueOf(dto.getStatus_livro().toUpperCase()));
+            exemplar.setLivro(livroOpt.get());
+            exemplar.setLocalizacao_fisica(dto.getLocalizacao_fisica());
+
+            exemplarRepository.save(exemplar);
+            livroService.atualizarQuantidadeExemplaresDoLivro(livroOpt.get().getId());
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ResponseModel("Exemplar cadastrado com sucesso."));
         } catch (IllegalArgumentException e) {
-            rm.setMensagem("Status do livro inválido.");
-            return ResponseEntity.badRequest().body(rm);
+            return erro("Status do livro inválido. Valores permitidos: DISPONIVEL, EMPRESTADO, PERDIDO, DANIFICADO.");
+        } catch (Exception e) {
+            log.error("Erro ao cadastrar exemplar: {}", e.getMessage(), e);
+            return erro("Erro interno ao cadastrar o exemplar.");
         }
-
-        ExemplarModel exemplar = new ExemplarModel();
-        exemplar.setTombo(dto.getTombo());
-        exemplar.setStatus_livro(status);
-        exemplar.setLivro(livro);
-        exemplar.setLocalizacao_fisica(dto.getLocalizacao_fisica());
-
-        er.save(exemplar);
-
-        atualizarQuantidadeExemplaresDoLivro(livro.getId());
-
-        rm.setMensagem("Exemplar cadastrado com sucesso.");
-        return ResponseEntity.ok(rm);
     }
 
     @Transactional
-    public ResponseEntity<?> atualizar(ExemplarDTO dto) {
-        rm.setMensagem("");
-
-        if (!er.existsById(dto.getTombo())) {
-            rm.setMensagem("Exemplar com esse tombo não existe.");
-            return ResponseEntity.badRequest().body(rm);
+    public ResponseEntity<ResponseModel> atualizar(String tombo, ExemplarDTO dto) {
+        Optional<ExemplarModel> exemplarOpt = exemplarRepository.findById(tombo);
+        if (exemplarOpt.isEmpty()) {
+            return erro("Exemplar com o tombo '" + tombo + "' não foi encontrado.");
         }
 
         if (dto.getLivro_id() == null) {
-            rm.setMensagem("O ID do livro é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
+            return erro("O ID do livro é obrigatório.");
         }
-        Optional<LivroModel> livroOpt = lr.findById(dto.getLivro_id());
+        Optional<LivroModel> livroOpt = livroRepository.findById(dto.getLivro_id());
         if (livroOpt.isEmpty()) {
-            rm.setMensagem("Nenhum livro encontrado com o ID fornecido.");
-            return ResponseEntity.badRequest().body(rm);
+            return erro("Nenhum livro encontrado com o ID fornecido.");
         }
-        LivroModel livro = livroOpt.get();
 
-        StatusLivro status;
         try {
-            status = StatusLivro.valueOf(dto.getStatus_livro().toUpperCase());
+            ExemplarModel exemplar = exemplarOpt.get();
+            Long idLivroAntigo = exemplar.getLivro().getId();
+
+            exemplar.setStatus_livro(StatusLivro.valueOf(dto.getStatus_livro().toUpperCase()));
+            exemplar.setLivro(livroOpt.get());
+            exemplar.setLocalizacao_fisica(dto.getLocalizacao_fisica());
+
+            exemplarRepository.save(exemplar);
+
+            // Atualiza a contagem para o livro antigo e para o novo (caso tenha mudado)
+            livroService.atualizarQuantidadeExemplaresDoLivro(idLivroAntigo);
+            if (!idLivroAntigo.equals(livroOpt.get().getId())) {
+                livroService.atualizarQuantidadeExemplaresDoLivro(livroOpt.get().getId());
+            }
+
+            return ResponseEntity.ok(new ResponseModel("Exemplar alterado com sucesso."));
         } catch (IllegalArgumentException e) {
-            rm.setMensagem("Status do livro inválido.");
-            return ResponseEntity.badRequest().body(rm);
+            return erro("Status do livro inválido.");
+        } catch (Exception e) {
+            log.error("Erro ao atualizar exemplar {}: {}", tombo, e.getMessage(), e);
+            return erro("Erro interno ao atualizar o exemplar.");
         }
-
-        ExemplarModel exemplar = new ExemplarModel();
-        exemplar.setTombo(dto.getTombo());
-        exemplar.setStatus_livro(status);
-        exemplar.setLivro(livro);
-        exemplar.setLocalizacao_fisica(dto.getLocalizacao_fisica());
-
-        er.save(exemplar);
-
-        atualizarQuantidadeExemplaresDoLivro(livro.getId());
-
-        rm.setMensagem("Exemplar alterado com sucesso.");
-        return ResponseEntity.ok(rm);
     }
 
     @Transactional
     public ResponseEntity<ResponseModel> excluir(String tombo) {
-        Optional<ExemplarModel> exemplarOpt = er.findById(tombo);
+        Optional<ExemplarModel> exemplarOpt = exemplarRepository.findById(tombo);
         if (exemplarOpt.isEmpty()) {
-            rm.setMensagem("Exemplar com o tombo '" + tombo + "' não foi encontrado.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseModel("Exemplar com o tombo '" + tombo + "' não foi encontrado."));
+        }
+
+        // VALIDAÇÃO CRÍTICA: Verifica se o exemplar está em um empréstimo ativo
+        boolean estaEmprestado = emprestimoRepository.existsByExemplarTomboAndStatusEmprestimoIn(tombo,
+                List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
+
+        if (estaEmprestado) {
+            return erro(
+                    "Não é possível excluir este exemplar, pois ele está associado a um empréstimo ativo ou atrasado.");
         }
 
         ExemplarModel exemplar = exemplarOpt.get();
-        LivroModel livro = exemplar.getLivro();
+        Long livroId = exemplar.getLivro().getId();
 
-        if (livro != null && livro.getExemplares() != null) {
-            livro.getExemplares().remove(exemplar);
-        }
+        exemplarRepository.delete(exemplar);
+        livroService.atualizarQuantidadeExemplaresDoLivro(livroId);
 
-        er.delete(exemplar);
-
-        if (livro != null) {
-            Long novaQuantidade = er.countByLivroId(livro.getId());
-            livro.setQuantidade(novaQuantidade.intValue());
-            lr.save(livro);
-        }
-
-        rm.setMensagem("O exemplar foi removido com sucesso.");
-        return ResponseEntity.ok(rm);
+        return ResponseEntity.ok(new ResponseModel("O exemplar foi removido com sucesso."));
     }
 
-    public ExemplarModel buscarPorTombo(String tombo) {
-        return er.findByTombo(tombo).orElse(null);
-    }
-
-    @Transactional
-    public void atualizarQuantidadeExemplaresDoLivro(Long livroId) {
-        Long quantidade = er.countByLivroId(livroId);
-        lr.findById(livroId).ifPresent(livro -> {
-            livro.setQuantidade(quantidade.intValue());
-            lr.save(livro);
-        });
+    public Optional<ExemplarModel> buscarPorTombo(String tombo) {
+        return exemplarRepository.findById(tombo);
     }
 
     private ListaLivroDTO converterParaDTO(ExemplarModel exemplar) {
         LivroModel livro = exemplar.getLivro();
+        if (livro == null) {
+            // Fallback para o caso de dados inconsistentes
+            return new ListaLivroDTO(exemplar.getStatus_livro(), exemplar.getTombo(), "N/A", "N/A",
+                    "Livro não associado", "N/A", "N/A", "N/A", exemplar.getLocalizacao_fisica());
+        }
 
         String generosFormatados = livro.getGeneros().stream()
                 .map(GeneroModel::getNome)
@@ -192,11 +188,15 @@ public class ExemplarService {
                 exemplar.getStatus_livro(),
                 exemplar.getTombo(),
                 livro.getIsbn(),
-                livro.getCdd().getCodigo(),
+                livro.getCdd() != null ? livro.getCdd().getCodigo() : "N/A",
                 livro.getNome(),
                 generosFormatados,
                 livro.getAutor(),
                 livro.getEditora(),
                 exemplar.getLocalizacao_fisica());
+    }
+
+    private ResponseEntity<ResponseModel> erro(String mensagem) {
+        return ResponseEntity.badRequest().body(new ResponseModel(mensagem));
     }
 }

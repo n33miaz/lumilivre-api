@@ -39,7 +39,8 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     List<EmprestimoModel> findByDataDevolucaoBetween(LocalDateTime inicio, LocalDateTime fim);
 
     boolean existsByExemplarTomboAndStatusEmprestimo(String tombo, StatusEmprestimo status);
-
+    boolean existsByExemplarTomboAndStatusEmprestimoIn(String tombo, List<StatusEmprestimo> statuses);
+    
     long countByAlunoMatriculaAndStatusEmprestimo(String matricula, StatusEmprestimo status);
 
     // Busca por texto genérica

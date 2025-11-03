@@ -24,4 +24,6 @@ public interface ExemplarRepository extends JpaRepository<ExemplarModel, String>
     Long countByLivroId(Long livroId);
 
     void deleteAllByLivroId(Long livroId);
+
+    List<ExemplarModel> findAllByLivroId(Long livroId);
 }

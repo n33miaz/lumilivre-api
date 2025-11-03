@@ -2,58 +2,51 @@ package br.com.lumilivre.api.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.config.annotation.CorsRegistry; 
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.Arrays;
 import br.com.lumilivre.api.security.JwtAuthenticationFilter;
 
 @Configuration
+@EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) { // Apenas o filtro
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.disable()) 
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Rotas públicas
-                        .requestMatchers("/auth/login", "/auth/esqueci-senha", "/auth/validar-token/**",
-                                "/auth/mudar-senha")
-                        .permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // rotas
-                                                                                                              // para
-                                                                                                              // acessar
-                                                                                                              // a
-                                                                                                              // documentação
-                                                                                                              // mo
-                                                                                                              // swagger
-
-                        // Apenas ADMIN
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/usuarios/**").hasRole("ADMIN")
-
-                        // ADMIN ou BIBLIOTECARIO
-                        .requestMatchers("/livros/**", "/generos/**", "/autores/**", "/cursos/**", "/emprestimos/**")
-                        .hasAnyRole("ADMIN", "BIBLIOTECARIO")
-                        .requestMatchers("/alunos/**").hasAnyRole("ADMIN", "BIBLIOTECARIO")
-
-                        // Qualquer outra rota precisa estar autenticada
+                        .requestMatchers(
+                                "/livros/**", 
+                                "/generos/**", 
+                                "/autores/**", 
+                                "/cursos/**", 
+                                "/emprestimos/**",
+                                "/alunos/**"
+                        ).hasAnyRole("ADMIN", "BIBLIOTECARIO")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -72,16 +65,16 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173",
-                "http://localhost:3000", "http://127.0.0.1:3000", "https://lumilivre-web.onrender.com"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
-        configuration.setAllowedOrigins(Arrays.asList("https://lumilivre-web.onrender.com"));
-        configuration.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**") 
+                        .allowedOrigins("http://localhost:5173", "http://localhost:8081", "http://10.0.2.2:8080", "http://10.0.2.1:8080", "http://10.0.2.1:8081", "http://10.0.2.2:8081", "http://localhost:63960")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedHeaders("*") 
+                        .allowCredentials(true);
+            }
+        };
     }
 }
