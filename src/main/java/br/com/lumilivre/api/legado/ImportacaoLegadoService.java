@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.service;
+package br.com.lumilivre.api.legado;
 
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.StatusLivro;
@@ -60,7 +60,7 @@ public class ImportacaoLegadoService {
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
                 if (row.getRowNum() == 0)
-                    continue; // Pula cabeçalho
+                    continue;
 
                 int linhaNum = row.getRowNum() + 1;
                 try {
@@ -253,7 +253,7 @@ public class ImportacaoLegadoService {
     }
 
     private String gerarResumoImportacao(String tipo, int totalSalvos, List<ErroImportacao> logErros) {
-        String resumo = String.format("✅ Importação de %s concluída. Salvos: %d | Erros: %d", tipo, totalSalvos,
+        String resumo = String.format("Importação de %s concluída. Salvos: %d | Erros: %d", tipo, totalSalvos,
                 logErros.size());
         if (!logErros.isEmpty()) {
             String detalhes = logErros.stream()

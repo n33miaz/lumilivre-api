@@ -72,7 +72,7 @@ public class LivroModel {
     @Column(name = "quantidade")
     private Integer quantidade;
 
-    @Column(name = "sinopse", columnDefinition = "VARCHAR(MAX)")
+    @Column(name = "sinopse", columnDefinition = "TEXT")
     private String sinopse;
 
     @Column(name = "autor", length = 255)

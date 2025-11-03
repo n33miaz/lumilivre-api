@@ -1,8 +1,5 @@
 package br.com.lumilivre.api.model;
 
-import org.springframework.stereotype.Component;
-
-@Component
 public class ResponseModel {
 
 	private String mensagem;
