@@ -30,39 +30,32 @@ import br.com.lumilivre.api.utils.CpfValidator;
 @Service
 public class AlunoService {
 
-    @Autowired
-    private AlunoRepository ar;
-
-    @Autowired
-    private CursoRepository cursoRepository;
-
-    @Autowired
-    private UsuarioRepository ur;
-
-    @Autowired
-    private EmailService emailService;
-
+    private final AlunoRepository ar;
+    private final CursoRepository cursoRepository;
+    private final UsuarioRepository ur;
+    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final CepService cepService;
 
+    // Injeção de dependência via construtor
     @Autowired
-    private ResponseModel rm;
-
-    @Autowired
-    private CepService cepService;
-
-    AlunoService(PasswordEncoder passwordEncoder) {
+    public AlunoService(AlunoRepository ar, CursoRepository cursoRepository, UsuarioRepository ur,
+            EmailService emailService, PasswordEncoder passwordEncoder, CepService cepService) {
+        this.ar = ar;
+        this.cursoRepository = cursoRepository;
+        this.ur = ur;
+        this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
+        this.cepService = cepService;
     }
 
     public Page<ListaAlunoDTO> buscarAlunosParaListaAdmin(String texto, Pageable pageable) {
-    if (texto != null && !texto.isBlank()) {
-        // se tem texto, chama a query de filtro
-        return ar.findAlunosParaListaAdminComFiltro(texto, pageable);
-    } else {
-        // se não, chama a query que lista todos
-        return ar.findAlunosParaListaAdmin(pageable);
+        if (texto != null && !texto.isBlank()) {
+            return ar.findAlunosParaListaAdminComFiltro(texto, pageable);
+        } else {
+            return ar.findAlunosParaListaAdmin(pageable);
+        }
     }
-}
 
     public Page<AlunoModel> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
@@ -74,13 +67,13 @@ public class AlunoService {
     public Page<AlunoModel> buscarAvancado(String penalidadeStr, String matricula, String nome,
             String cursoNome, String turnoStr, String modulo, LocalDate dataNascimento,
             String email, String celular, Pageable pageable) {
-                
+
         Penalidade penalidadeEnum = null;
         if (penalidadeStr != null && !penalidadeStr.isBlank()) {
             try {
                 penalidadeEnum = Penalidade.valueOf(penalidadeStr.toUpperCase());
             } catch (IllegalArgumentException e) {
-                penalidadeEnum = null;
+                // Ignora se o valor for inválido
             }
         }
 
@@ -89,7 +82,7 @@ public class AlunoService {
             try {
                 turnoEnum = Turno.valueOf(turnoStr.toUpperCase());
             } catch (IllegalArgumentException e) {
-                turnoEnum = null;
+                // Ignora se o valor for inválido
             }
         }
 
@@ -99,60 +92,49 @@ public class AlunoService {
         String emailFiltro = (email != null && !email.isBlank()) ? "%" + email + "%" : null;
 
         return ar.buscarAvancado(
-                penalidadeEnum, matricula, nomeFiltro, cursoNomeFiltro, turnoEnum, moduloFiltro, dataNascimento, emailFiltro, celular, pageable);
+                penalidadeEnum, matricula, nomeFiltro, cursoNomeFiltro, turnoEnum, moduloFiltro, dataNascimento,
+                emailFiltro, celular, pageable);
     }
 
     @Transactional
     public ResponseEntity<?> cadastrar(AlunoDTO dto) {
         if (dto.getMatricula() == null || dto.getMatricula().trim().isEmpty()) {
-            rm.setMensagem("A matrícula é obrigatória.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("A matrícula é obrigatória."));
         }
         if (!dto.getMatricula().matches("\\d{5}")) {
-            rm.setMensagem("A matrícula deve conter 5 dígitos numéricos.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("A matrícula deve conter 5 dígitos numéricos."));
         }
         if (ar.existsById(dto.getMatricula())) {
-            rm.setMensagem("Essa matrícula já está cadastrada.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("Essa matrícula já está cadastrada."));
         }
         if (dto.getNomeCompleto() == null || dto.getNomeCompleto().trim().isEmpty()) {
-            rm.setMensagem("O nome completo é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("O nome completo é obrigatório."));
         }
         if (dto.getCpf() == null || dto.getCpf().trim().isEmpty()) {
-            rm.setMensagem("O CPF é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("O CPF é obrigatório."));
         }
         if (!CpfValidator.isCpfValido(dto.getCpf())) {
-            rm.setMensagem("CPF inválido.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("CPF inválido."));
         }
-        if (ar.existsById(dto.getCpf())) {
-            rm.setMensagem("CPF já cadastrado.");
-            return ResponseEntity.badRequest().body(rm);
+        if (ar.existsByCpf(dto.getCpf())) {
+            return ResponseEntity.badRequest().body(new ResponseModel("CPF já cadastrado."));
         }
         if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
-            rm.setMensagem("O email é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("O email é obrigatório."));
         }
         if (dto.getCelular() == null || dto.getCelular().trim().isEmpty()) {
-            rm.setMensagem("O celular é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("O celular é obrigatório."));
         }
         if (dto.getCursoId() == null) {
-            rm.setMensagem("O curso é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("O curso é obrigatório."));
         }
 
         Optional<CursoModel> cursoOpt = cursoRepository.findById(dto.getCursoId());
         if (cursoOpt.isEmpty()) {
-            rm.setMensagem("Curso não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("Curso não encontrado."));
         }
 
         AlunoModel aluno = new AlunoModel();
-
         aluno.setMatricula(dto.getMatricula());
         aluno.setNomeCompleto(dto.getNomeCompleto());
         aluno.setCpf(dto.getCpf());
@@ -165,8 +147,8 @@ public class AlunoService {
 
         if (dto.getCep() != null && !dto.getCep().trim().isEmpty()) {
             if (dto.getCep().length() != 8) {
-                rm.setMensagem("O CEP deve conter 8 dígitos.");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(rm);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ResponseModel("O CEP deve conter 8 dígitos."));
             }
             try {
                 AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
@@ -177,18 +159,18 @@ public class AlunoService {
                     aluno.setBairro(enderecoDTO.getBairro());
                     aluno.setUf(enderecoDTO.getUf());
                 } else {
-                    rm.setMensagem("CEP inválido ou não encontrado.");
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(rm);
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new ResponseModel("CEP inválido ou não encontrado."));
                 }
             } catch (Exception e) {
-                rm.setMensagem("Erro ao consultar o serviço de CEP.");
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(rm);
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body(new ResponseModel("Erro ao consultar o serviço de CEP."));
             }
         }
 
         UsuarioModel usuario = new UsuarioModel();
-        usuario.setEmail(dto.getMatricula());
-        usuario.setSenha(passwordEncoder.encode(dto.getCpf()));
+        usuario.setEmail(dto.getEmail()); // Usando email como login
+        usuario.setSenha(passwordEncoder.encode(dto.getCpf())); // Senha inicial é o CPF
         usuario.setRole(Role.ALUNO);
         usuario.setAluno(aluno);
         aluno.setUsuario(usuario);
@@ -202,35 +184,31 @@ public class AlunoService {
     public ResponseEntity<?> atualizar(String matricula, AlunoDTO dto) {
         Optional<AlunoModel> alunoOpt = ar.findById(matricula);
         if (alunoOpt.isEmpty()) {
-            rm.setMensagem("Aluno não encontrado para a matrícula: " + matricula);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseModel("Aluno não encontrado para a matrícula: " + matricula));
         }
 
         AlunoModel aluno = alunoOpt.get();
 
         if (dto.getNomeCompleto() == null || dto.getNomeCompleto().trim().isEmpty()) {
-            rm.setMensagem("O nome completo é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("O nome completo é obrigatório."));
         }
         if (dto.getCpf() == null || dto.getCpf().trim().isEmpty()) {
-            rm.setMensagem("O CPF é obrigatório.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("O CPF é obrigatório."));
         }
         if (!CpfValidator.isCpfValido(dto.getCpf())) {
-            rm.setMensagem("CPF inválido.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("CPF inválido."));
         }
 
         var curso = cursoRepository.findById(dto.getCursoId());
         if (curso.isEmpty()) {
-            rm.setMensagem("Curso não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
+            return ResponseEntity.badRequest().body(new ResponseModel("Curso não encontrado."));
         }
 
         AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
         if (enderecoDTO == null || enderecoDTO.getCep() == null) {
-            rm.setMensagem("CEP inválido ou não encontrado.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseModel("CEP inválido ou não encontrado."));
         }
 
         boolean cpfAlterado = !aluno.getCpf().equals(dto.getCpf());
@@ -262,8 +240,7 @@ public class AlunoService {
         var alunoOpt = ar.findById(matricula);
 
         if (alunoOpt.isEmpty()) {
-            rm.setMensagem("Aluno não encontrado.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseModel("Aluno não encontrado."));
         }
 
         AlunoModel aluno = alunoOpt.get();
@@ -274,8 +251,7 @@ public class AlunoService {
 
         ar.delete(aluno);
 
-        rm.setMensagem("Aluno e usuário associados removidos com sucesso.");
-        return ResponseEntity.ok(rm);
+        return ResponseEntity.ok(new ResponseModel("Aluno e usuário associados removidos com sucesso."));
     }
 
     public Optional<AlunoModel> buscarPorNome(String nome) {
@@ -289,5 +265,4 @@ public class AlunoService {
     public List<AlunoModel> buscarTodos() {
         return ar.findAll();
     }
-
 }
