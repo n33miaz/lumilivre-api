@@ -98,6 +98,10 @@ public class LivroService {
                 .collect(Collectors.toList());
     }
 
+    public Page<LivroModel> buscarPorGenero(String nomeGenero, Pageable pageable) {
+        return livroRepository.findByGeneroNomeIgnoreCase(nomeGenero, pageable);
+    }
+
     // ------------------------ UPLOAD DE CAPA ------------------------
 
     @Transactional

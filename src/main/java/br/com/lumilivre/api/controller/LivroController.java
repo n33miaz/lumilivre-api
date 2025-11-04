@@ -79,6 +79,14 @@ public class LivroController {
         return catalogo.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(catalogo);
     }
 
+    @GetMapping("/genero/{nomeGenero}")
+    @Operation(summary = "Busca livros por nome do gênero com paginação")
+    public ResponseEntity<Page<LivroModel>> buscarPorGenero(
+            @PathVariable String nomeGenero, Pageable pageable) {
+        Page<LivroModel> livros = livroService.buscarPorGenero(nomeGenero, pageable);
+        return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
+    }
+
     // ==================== MÉTODOS POST ====================
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")

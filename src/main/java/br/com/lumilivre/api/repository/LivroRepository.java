@@ -18,6 +18,7 @@ import br.com.lumilivre.api.model.LivroModel;
 public interface LivroRepository extends JpaRepository<LivroModel, Long> {
 
     Optional<LivroModel> findByIsbn(String isbn);
+
     Optional<LivroModel> findByNomeIgnoreCase(String nome);
 
     boolean existsByIsbn(String isbn);
@@ -25,7 +26,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     void deleteByIsbn(String isbn);
 
     @Query("SELECT DISTINCT l FROM LivroModel l JOIN l.exemplares e WHERE e.status_livro = 'DISPONIVEL'")
-    List<LivroModel> findLivrosDisponiveis();   
+    List<LivroModel> findLivrosDisponiveis();
 
     @Query("""
                 SELECT DISTINCT l FROM LivroModel l
@@ -39,14 +40,14 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     Page<LivroModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-            SELECT DISTINCT l FROM LivroModel l
-            LEFT JOIN l.generos g
-            WHERE (:nome IS NULL OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
-              AND (:isbn IS NULL OR l.isbn = :isbn)
-              AND (:autor IS NULL OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :autor, '%')))
-              AND (:genero IS NULL OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :genero, '%')))
-              AND (:editora IS NULL OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :editora, '%')))
-        """)
+                SELECT DISTINCT l FROM LivroModel l
+                LEFT JOIN l.generos g
+                WHERE (:nome IS NULL OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
+                  AND (:isbn IS NULL OR l.isbn = :isbn)
+                  AND (:autor IS NULL OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :autor, '%')))
+                  AND (:genero IS NULL OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :genero, '%')))
+                  AND (:editora IS NULL OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :editora, '%')))
+            """)
     Page<LivroModel> buscarAvancado(
             @Param("nome") String nome,
             @Param("isbn") String isbn,
@@ -72,40 +73,43 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     Page<ListaLivroDTO> findLivrosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.data.ListaLivroDTO(
-                e.status_livro,
-                e.tombo,
-                l.isbn,
-                l.cdd.codigo,
-                l.nome,
-                STRING_AGG(g.nome, ', '), 
-                l.autor,
-                l.editora,
-                e.localizacao_fisica
-            )
-            FROM LivroModel l
-            JOIN l.exemplares e
-            LEFT JOIN l.generos g
-            GROUP BY e.status_livro, e.tombo, l.isbn, l.cdd, l.nome, l.autor, l.editora, e.localizacao_fisica
-            ORDER BY l.nome
-        """)
+                SELECT new br.com.lumilivre.api.data.ListaLivroDTO(
+                    e.status_livro,
+                    e.tombo,
+                    l.isbn,
+                    l.cdd.codigo,
+                    l.nome,
+                    STRING_AGG(g.nome, ', '),
+                    l.autor,
+                    l.editora,
+                    e.localizacao_fisica
+                )
+                FROM LivroModel l
+                JOIN l.exemplares e
+                LEFT JOIN l.generos g
+                GROUP BY e.status_livro, e.tombo, l.isbn, l.cdd, l.nome, l.autor, l.editora, e.localizacao_fisica
+                ORDER BY l.nome
+            """)
     Page<ListaLivroDTO> findLivrosParaListaAdmin(Pageable pageable);
 
     @Query("SELECT l FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
     List<LivroModel> findByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero);
 
     @Query("""
-        SELECT new br.com.lumilivre.api.data.LivroAgrupadoDTO(
-            l.isbn,
-            l.nome,
-            l.autor,
-            l.editora,
-            COUNT(e)
-        )
-        FROM LivroModel l
-        LEFT JOIN l.exemplares e
-        WHERE (:texto IS NULL OR l.nome ILIKE CONCAT('%', :texto, '%') OR l.isbn ILIKE CONCAT('%', :texto, '%'))
-        GROUP BY l.isbn, l.nome, l.autor, l.editora
-        """)
+            SELECT new br.com.lumilivre.api.data.LivroAgrupadoDTO(
+                l.isbn,
+                l.nome,
+                l.autor,
+                l.editora,
+                COUNT(e)
+            )
+            FROM LivroModel l
+            LEFT JOIN l.exemplares e
+            WHERE (:texto IS NULL OR l.nome ILIKE CONCAT('%', :texto, '%') OR l.isbn ILIKE CONCAT('%', :texto, '%'))
+            GROUP BY l.isbn, l.nome, l.autor, l.editora
+            """)
     Page<LivroAgrupadoDTO> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
+
+    @Query("SELECT l FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
+    Page<LivroModel> findByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero, Pageable pageable);
 }

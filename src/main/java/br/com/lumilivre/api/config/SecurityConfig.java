@@ -13,7 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.servlet.config.annotation.CorsRegistry; 
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import br.com.lumilivre.api.security.JwtAuthenticationFilter;
@@ -32,21 +32,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.disable()) 
+                .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/livros/catalogo-mobile", "/livros/{id}", "/livros/genero/**").permitAll()
                         .requestMatchers("/usuarios/**").hasRole("ADMIN")
                         .requestMatchers(
-                                "/livros/**", 
-                                "/generos/**", 
-                                "/autores/**", 
-                                "/cursos/**", 
+                                "/livros/**",
+                                "/generos/**",
+                                "/autores/**",
+                                "/cursos/**",
                                 "/emprestimos/**",
-                                "/alunos/**"
-                        ).hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                                "/alunos/**")
+                        .hasAnyRole("ADMIN", "BIBLIOTECARIO")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -69,10 +70,12 @@ public class SecurityConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") 
-                        .allowedOrigins("https://lumilivre-web.onrender.com", "http://localhost:5173", "http://localhost:8081", "http://10.0.2.2:8080", "http://10.0.2.1:8080", "http://10.0.2.1:8081", "http://10.0.2.2:8081", "http://localhost:63960")
+                registry.addMapping("/**")
+                        .allowedOrigins("https://lumilivre-web.onrender.com", "http://localhost:5173",
+                                "http://localhost:8081", "http://10.0.2.2:8080", "http://10.0.2.1:8080",
+                                "http://10.0.2.1:8081", "http://10.0.2.2:8081", "http://localhost:60389")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("*") 
+                        .allowedHeaders("*")
                         .allowCredentials(true);
             }
         };
