@@ -6,12 +6,15 @@ import java.time.format.DateTimeFormatter;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExcelUtils {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    // Retorna o valor da célula como String
+    private static final Logger log = LoggerFactory.getLogger(ExcelUtils.class);
+
     public static String getString(Cell cell) {
         if (cell == null)
             return "";
@@ -22,7 +25,6 @@ public class ExcelUtils {
                 case NUMERIC:
                     double val = cell.getNumericCellValue();
                     long asLong = (long) val;
-                    // remove o ".0" se for número inteiro (ex: matrícula, CPF, CEP etc)
                     return (val == asLong) ? String.valueOf(asLong) : String.valueOf(val);
                 case BOOLEAN:
                     return String.valueOf(cell.getBooleanCellValue());
@@ -36,23 +38,31 @@ public class ExcelUtils {
         }
     }
 
-    // Retorna o valor da célula como Integer (se aplicável)
     public static Integer getInteger(Cell cell) {
-        if (cell == null)
-            return null;
-        try {
-            if (cell.getCellType() == CellType.NUMERIC) {
-                return (int) cell.getNumericCellValue();
-            } else {
-                String s = getString(cell);
-                return s.isBlank() ? null : Integer.parseInt(s);
-            }
-        } catch (Exception e) {
+        if (cell == null) {
             return null;
         }
+        try {
+            if (cell.getCellType() == CellType.NUMERIC) {
+                return (int) Math.round(cell.getNumericCellValue());
+            } else if (cell.getCellType() == CellType.STRING) {
+                String s = cell.getStringCellValue().trim();
+                if (s.isBlank()) {
+                    return null;
+                }
+                try {
+                    return (int) Math.round(Double.parseDouble(s));
+                } catch (NumberFormatException e) {
+                    log.warn("Não foi possível converter a string '{}' para número na célula {}", s, cell.getAddress());
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Erro inesperado ao ler célula inteira em {}", cell.getAddress(), e);
+        }
+        return null;
     }
 
-    // Retorna o valor da célula como LocalDate, tratando texto ou data do Excel
     public static LocalDate getLocalDate(Cell cell) {
         if (cell == null)
             return null;
@@ -69,7 +79,6 @@ public class ExcelUtils {
                 return LocalDate.parse(valor, FORMATTER);
             }
         } catch (Exception e) {
-            // ignora erro de parse
         }
         return null;
     }
@@ -95,10 +104,8 @@ public class ExcelUtils {
             return defaultValue;
         }
         try {
-            // Converte o valor da planilha (ex: "BROCHURA") para o Enum correspondente
             return Enum.valueOf(enumType, value.trim().toUpperCase().replace(" ", "_"));
         } catch (IllegalArgumentException e) {
-            // Se o valor não corresponder a nenhuma constante do Enum, retorna o padrão
             return defaultValue;
         }
     }

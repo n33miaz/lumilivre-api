@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.legado;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,7 +26,7 @@ public class ImportacaoLegadoController {
         this.importacaoLegadoService = importacaoLegadoService;
     }
 
-    @PostMapping("/livros")
+    @PostMapping(value = "/livros", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Importa uma planilha de livros do sistema legado")
     public ResponseEntity<String> importarLivrosLegado(@RequestParam("file") MultipartFile file) {
@@ -38,7 +39,7 @@ public class ImportacaoLegadoController {
         }
     }
 
-    @PostMapping("/exemplares")
+    @PostMapping(value = "/exemplares", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Importa uma planilha de exemplares do sistema legado")
     public ResponseEntity<String> importarExemplaresLegado(@RequestParam("file") MultipartFile file) {

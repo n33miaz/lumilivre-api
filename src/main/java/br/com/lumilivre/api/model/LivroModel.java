@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
 
@@ -14,7 +16,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
@@ -31,7 +32,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class LivroModel {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(generator = "custom-generator")
+    @GenericGenerator(name = "custom-generator", strategy = "br.com.lumilivre.api.utils.AssignedIdentityGenerator")
     private Long id;
 
     @Column(name = "isbn", length = 20, unique = true)
@@ -45,7 +47,7 @@ public class LivroModel {
     @Column(name = "data_lancamento", nullable = false)
     private LocalDate data_lancamento;
 
-    @NotNull
+    // @NotNull
     @Column(name = "numero_paginas", nullable = false)
     private Integer numero_paginas;
 
