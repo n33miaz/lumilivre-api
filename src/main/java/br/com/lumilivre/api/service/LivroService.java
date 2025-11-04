@@ -87,6 +87,7 @@ public class LivroService {
                     List<LivroResponseMobileGeneroDTO> livrosDoGenero = entry.getValue().stream()
                             .limit(10)
                             .map(livro -> new LivroResponseMobileGeneroDTO(
+                                    livro.getId(),
                                     livro.getImagem(),
                                     livro.getNome(),
                                     livro.getAutor()))

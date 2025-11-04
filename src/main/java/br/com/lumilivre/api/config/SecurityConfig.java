@@ -35,11 +35,22 @@ public class SecurityConfig {
                 .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // rotas publicas
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/livros/catalogo-mobile", "/livros/{id}", "/livros/genero/**").permitAll()
+
+                        // rotas GET especificas para o mobile
+                        .requestMatchers(HttpMethod.GET,
+                                "/livros/catalogo-mobile",
+                                "/livros/{id}", // detalhes do livro
+                                "/livros/genero/**" // tela de categoria
+                        ).permitAll()
+
+                        // rotas de ADMIN
                         .requestMatchers("/usuarios/**").hasRole("ADMIN")
+
+                        // rotas de BIBLIOTECARIO/ADMIN
                         .requestMatchers(
                                 "/livros/**",
                                 "/generos/**",
@@ -48,6 +59,8 @@ public class SecurityConfig {
                                 "/emprestimos/**",
                                 "/alunos/**")
                         .hasAnyRole("ADMIN", "BIBLIOTECARIO")
+
+                        // qualquer outra rota
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -73,7 +86,7 @@ public class SecurityConfig {
                 registry.addMapping("/**")
                         .allowedOrigins("https://lumilivre-web.onrender.com", "http://localhost:5173",
                                 "http://localhost:8081", "http://10.0.2.2:8080", "http://10.0.2.1:8080",
-                                "http://10.0.2.1:8081", "http://10.0.2.2:8081", "http://localhost:60389")
+                                "http://10.0.2.1:8081", "http://10.0.2.2:8081", "http://localhost:58636", "http://192.168.56.1:8080")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

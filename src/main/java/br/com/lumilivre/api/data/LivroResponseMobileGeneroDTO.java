@@ -1,15 +1,24 @@
 package br.com.lumilivre.api.data;
 
 public class LivroResponseMobileGeneroDTO {
-
+    private Long id;
     private String imagem;
     private String titulo;
     private String autor;
 
-    public LivroResponseMobileGeneroDTO(String imagem, String titulo, String autor) {
+    public LivroResponseMobileGeneroDTO(Long id, String imagem, String titulo, String autor) {
+        this.id = id;
         this.imagem = imagem;
         this.titulo = titulo;
         this.autor = autor;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getImagem() {
