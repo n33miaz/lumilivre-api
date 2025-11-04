@@ -1,44 +1,16 @@
-package br.com.lumilivre.api.model;
+package br.com.lumilivre.api.data;
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "tcc")
-public class TccModel {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
+public class TccRequestDTO {
     private String titulo;
-
-    @Column(nullable = false)
     private String alunos;
-
     private String orientadores;
-
-    @Column(nullable = false)
     private String curso;
-
-    @Column(name = "ano_conclusao")
     private String anoConclusao;
-
-    @Column(name = "semestre_conclusao")
     private String semestreConclusao;
-
-    @Column(name = "arquivo_pdf")
-    private String arquivoPdf;
-
-    @Column(name = "link_externo")
     private String linkExterno;
-
     private Boolean ativo = true;
 
     // Getters e Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
 
@@ -56,9 +28,6 @@ public class TccModel {
 
     public String getSemestreConclusao() { return semestreConclusao; }
     public void setSemestreConclusao(String semestreConclusao) { this.semestreConclusao = semestreConclusao; }
-
-    public String getArquivoPdf() { return arquivoPdf; }
-    public void setArquivoPdf(String arquivoPdf) { this.arquivoPdf = arquivoPdf; }
 
     public String getLinkExterno() { return linkExterno; }
     public void setLinkExterno(String linkExterno) { this.linkExterno = linkExterno; }

@@ -70,7 +70,7 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**") 
-                        .allowedOrigins("http://localhost:5173", "http://localhost:8081", "http://10.0.2.2:8080", "http://10.0.2.1:8080", "http://10.0.2.1:8081", "http://10.0.2.2:8081", "http://localhost:63960")
+                        .allowedOrigins("https://lumilivre-web.onrender.com", "http://localhost:5173", "http://localhost:8081", "http://10.0.2.2:8080", "http://10.0.2.1:8080", "http://10.0.2.1:8081", "http://10.0.2.2:8081", "http://localhost:63960")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*") 
                         .allowCredentials(true);

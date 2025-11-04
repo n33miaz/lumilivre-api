@@ -5,8 +5,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.http.*;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Service
@@ -26,6 +30,13 @@ public class SupabaseStorageService {
 
     private final HttpClient client = HttpClient.newHttpClient();
 
+    /**
+     * Faz upload de arquivo para Supabase Storage
+     *
+     * @param file MultipartFile
+     * @param tipo "capas" ou "tccs"
+     * @return URL pública do arquivo
+     */
     public String uploadFile(MultipartFile file, String tipo) throws IOException, InterruptedException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("O arquivo está vazio.");
@@ -43,8 +54,10 @@ public class SupabaseStorageService {
             throw new IllegalArgumentException("Tipo de bucket inválido. Use 'capas' ou 'tccs'.");
         }
 
+        // Nome único do arquivo, mantendo caracteres originais
         String fileName = tipo.toLowerCase() + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
 
+        // Upload
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(supabaseUrl + "/storage/v1/object/" + bucketName + "/" + fileName))
                 .header("apikey", supabaseKey)
@@ -56,7 +69,10 @@ public class SupabaseStorageService {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() == 200 || response.statusCode() == 201) {
-            return supabaseUrl + "/storage/v1/object/public/" + bucketName + "/" + fileName;
+            // Codifica URL apenas para exibição pública
+            String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                    .replace("+", "%20"); // substitui + por %20
+            return supabaseUrl + "/storage/v1/object/public/" + bucketName + "/" + encodedFileName;
         } else {
             throw new RuntimeException("Erro ao enviar arquivo: " + response.statusCode() + " - " + response.body());
         }
