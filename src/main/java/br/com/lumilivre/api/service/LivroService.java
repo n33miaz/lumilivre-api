@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -67,40 +68,39 @@ public class LivroService {
     }
 
     public ResponseEntity<LivroModel> findById(Long id) {
-        return livroRepository.findById(id)
+        return livroRepository.findByIdWithGeneros(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
-        List<LivroModel> livrosDisponiveis = livroRepository.findLivrosDisponiveis();
-        Map<String, Set<LivroModel>> livrosPorNomeGenero = new HashMap<>();
+        List<Map<String, Object>> results = livroRepository.findCatalogoMobile();
 
-        for (LivroModel livro : livrosDisponiveis) {
-            for (GeneroModel genero : livro.getGeneros()) {
-                livrosPorNomeGenero.computeIfAbsent(genero.getNome(), k -> new HashSet<>()).add(livro);
-            }
-        }
+        Map<String, List<LivroResponseMobileGeneroDTO>> livrosPorGenero = results.stream()
+                .collect(Collectors.groupingBy(
+                        row -> (String) row.get("genero_nome"),
+                        Collectors.mapping(row -> new LivroResponseMobileGeneroDTO(
+                                ((Number) row.get("id")).longValue(),
+                                (String) row.get("imagem"),
+                                (String) row.get("nome"),
+                                (String) row.get("autor")), Collectors.toList())));
 
-        return livrosPorNomeGenero.entrySet().stream()
-                .map(entry -> {
-                    List<LivroResponseMobileGeneroDTO> livrosDoGenero = entry.getValue().stream()
-                            .limit(10)
-                            .map(livro -> new LivroResponseMobileGeneroDTO(
-                                    livro.getId(),
-                                    livro.getImagem(),
-                                    livro.getNome(),
-                                    livro.getAutor()))
-                            .collect(Collectors.toList());
-                    return new GeneroCatalogoDTO(entry.getKey(), livrosDoGenero);
-                })
-                .filter(dto -> !dto.getLivros().isEmpty())
-                .sorted(Comparator.comparingInt(g -> -g.getLivros().size()))
+        return livrosPorGenero.entrySet().stream()
+                .map(entry -> new GeneroCatalogoDTO(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparing(GeneroCatalogoDTO::getNome))
                 .collect(Collectors.toList());
     }
 
     public Page<LivroModel> buscarPorGenero(String nomeGenero, Pageable pageable) {
-        return livroRepository.findByGeneroNomeIgnoreCase(nomeGenero, pageable);
+        Page<LivroModel> paginaDeLivros = livroRepository.findIdsByGeneroNomeIgnoreCase(nomeGenero, pageable);
+        List<LivroModel> livrosComGeneros = livroRepository.findWithGeneros(paginaDeLivros.getContent());
+        return new PageImpl<>(livrosComGeneros, pageable, paginaDeLivros.getTotalElements());
+    }
+
+    public Page<LivroModel> buscarPorTexto(String texto, Pageable pageable) {
+        Page<LivroModel> paginaDeLivros = livroRepository.findIdsPorTexto(texto, pageable);
+        List<LivroModel> livrosComGeneros = livroRepository.findWithGeneros(paginaDeLivros.getContent());
+        return new PageImpl<>(livrosComGeneros, pageable, paginaDeLivros.getTotalElements());
     }
 
     // ------------------------ UPLOAD DE CAPA ------------------------

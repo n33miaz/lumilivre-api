@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -28,16 +29,24 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     @Query("SELECT DISTINCT l FROM LivroModel l JOIN FETCH l.generos g JOIN l.exemplares e")
     List<LivroModel> findLivrosDisponiveis();
 
-    @Query("""
+    @Query(value = """
                 SELECT DISTINCT l FROM LivroModel l
-                LEFT JOIN FETCH l.generos g
+                LEFT JOIN l.generos g
+                WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+                OR LOWER(l.sinopse) LIKE LOWER(CONCAT('%', :texto, '%'))
+                OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :texto, '%'))
+                OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+                OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :texto, '%'))
+            """, countQuery = """
+                SELECT COUNT(DISTINCT l) FROM LivroModel l
+                LEFT JOIN l.generos g
                 WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
                 OR LOWER(l.sinopse) LIKE LOWER(CONCAT('%', :texto, '%'))
                 OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :texto, '%'))
                 OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
                 OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :texto, '%'))
             """)
-    Page<LivroModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
+    Page<LivroModel> findIdsPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
                 SELECT DISTINCT l FROM LivroModel l
@@ -107,6 +116,38 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             """)
     Page<LivroAgrupadoDTO> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
 
-    @Query("SELECT DISTINCT l FROM LivroModel l JOIN FETCH l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
-    Page<LivroModel> findByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero, Pageable pageable);
+    @Query(value = "SELECT l FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)", countQuery = "SELECT count(l) FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
+    Page<LivroModel> findIdsByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero, Pageable pageable);
+
+    @Query("SELECT DISTINCT l FROM LivroModel l JOIN FETCH l.generos WHERE l IN :livros")
+    List<LivroModel> findWithGeneros(@Param("livros") List<LivroModel> livros);
+
+    @Query("SELECT l FROM LivroModel l JOIN FETCH l.generos WHERE l.id = :id")
+    Optional<LivroModel> findByIdWithGeneros(@Param("id") Long id);
+
+    @Query(value = """
+                WITH RankedLivros AS (
+                    SELECT
+                        l.id,
+                        l.nome,
+                        l.autor,
+                        l.imagem,
+                        g.nome AS genero_nome,
+                        ROW_NUMBER() OVER(PARTITION BY g.nome ORDER BY l.data_lancamento DESC, l.id DESC) as rn
+                    FROM livro l
+                    JOIN livro_genero lg ON l.id = lg.livro_id
+                    JOIN genero g ON lg.genero_id = g.id
+                    WHERE EXISTS (SELECT 1 FROM exemplar e WHERE e.livro_id = l.id)
+                )
+                SELECT
+                    id,
+                    nome,
+                    autor,
+                    imagem,
+                    genero_nome
+                FROM RankedLivros
+                WHERE rn <= 10
+                ORDER BY genero_nome, rn
+            """, nativeQuery = true)
+    List<Map<String, Object>> findCatalogoMobile();
 }
