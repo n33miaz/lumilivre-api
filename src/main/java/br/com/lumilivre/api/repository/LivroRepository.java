@@ -25,12 +25,12 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
 
     void deleteByIsbn(String isbn);
 
-    @Query("SELECT DISTINCT l FROM LivroModel l JOIN l.exemplares e WHERE e.status_livro = 'DISPONIVEL'")
+    @Query("SELECT DISTINCT l FROM LivroModel l JOIN FETCH l.generos g JOIN l.exemplares e")
     List<LivroModel> findLivrosDisponiveis();
 
     @Query("""
                 SELECT DISTINCT l FROM LivroModel l
-                LEFT JOIN l.generos g
+                LEFT JOIN FETCH l.generos g
                 WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
                 OR LOWER(l.sinopse) LIKE LOWER(CONCAT('%', :texto, '%'))
                 OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :texto, '%'))
@@ -41,7 +41,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
 
     @Query("""
                 SELECT DISTINCT l FROM LivroModel l
-                LEFT JOIN l.generos g
+                LEFT JOIN FETCH l.generos g
                 WHERE (:nome IS NULL OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
                   AND (:isbn IS NULL OR l.isbn = :isbn)
                   AND (:autor IS NULL OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :autor, '%')))
@@ -92,9 +92,6 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             """)
     Page<ListaLivroDTO> findLivrosParaListaAdmin(Pageable pageable);
 
-    @Query("SELECT l FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
-    List<LivroModel> findByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero);
-
     @Query("""
             SELECT new br.com.lumilivre.api.data.LivroAgrupadoDTO(
                 l.isbn,
@@ -110,6 +107,6 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             """)
     Page<LivroAgrupadoDTO> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
 
-    @Query("SELECT l FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
+    @Query("SELECT DISTINCT l FROM LivroModel l JOIN FETCH l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
     Page<LivroModel> findByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero, Pageable pageable);
 }

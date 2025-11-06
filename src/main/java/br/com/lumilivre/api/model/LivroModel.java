@@ -47,7 +47,7 @@ public class LivroModel {
     @Column(name = "data_lancamento", nullable = false)
     private LocalDate data_lancamento;
 
-    // @NotNull
+    @NotNull
     @Column(name = "numero_paginas", nullable = false)
     private Integer numero_paginas;
 
@@ -87,11 +87,11 @@ public class LivroModel {
     @Column(name = "imagem", length = 5000)
     private String imagem;
 
-    @OneToMany(mappedBy = "livro", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "livro", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<ExemplarModel> exemplares;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "livro_genero", joinColumns = @JoinColumn(name = "livro_id"), inverseJoinColumns = @JoinColumn(name = "genero_id"))
     private Set<GeneroModel> generos = new HashSet<>();
 
