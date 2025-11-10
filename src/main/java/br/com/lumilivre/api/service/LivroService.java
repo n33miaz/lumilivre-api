@@ -2,6 +2,7 @@ package br.com.lumilivre.api.service;
 
 import br.com.lumilivre.api.data.*;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
+import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.model.CddModel;
 import br.com.lumilivre.api.model.GeneroModel;
@@ -60,7 +61,18 @@ public class LivroService {
     }
 
     public Page<ListaLivroDTO> buscarParaListaAdmin(Pageable pageable) {
-        return livroRepository.findLivrosParaListaAdmin(pageable);
+        Page<ListaLivroProjection> projecoes = livroRepository.findLivrosParaListaAdmin(pageable);
+
+        return projecoes.map(p -> new ListaLivroDTO(
+                StatusLivro.valueOf(p.getStatus()),
+                p.getTomboExemplar(),
+                p.getIsbn(),
+                p.getCdd(),
+                p.getNome(),
+                p.getGenero(),
+                p.getAutor(),
+                p.getEditora(),
+                p.getLocalizacao_fisica()));
     }
 
     public Page<LivroAgrupadoDTO> buscarLivrosAgrupados(Pageable pageable, String texto) {

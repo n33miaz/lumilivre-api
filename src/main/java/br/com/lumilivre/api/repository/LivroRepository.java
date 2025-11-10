@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import br.com.lumilivre.api.data.ListaLivroDTO;
+import br.com.lumilivre.api.data.ListaLivroProjection;
 import br.com.lumilivre.api.data.LivroAgrupadoDTO;
 import br.com.lumilivre.api.model.LivroModel;
 
@@ -81,25 +82,21 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             """)
     Page<ListaLivroDTO> findLivrosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 
-    @Query("""
-                SELECT new br.com.lumilivre.api.data.ListaLivroDTO(
-                    e.status_livro,
-                    e.tombo,
-                    l.isbn,
-                    l.cdd.codigo,
-                    l.nome,
-                    STRING_AGG(g.nome, ', '),
-                    l.autor,
-                    l.editora,
-                    e.localizacao_fisica
-                )
-                FROM LivroModel l
-                JOIN l.exemplares e
-                LEFT JOIN l.generos g
-                GROUP BY e.status_livro, e.tombo, l.isbn, l.cdd, l.nome, l.autor, l.editora, e.localizacao_fisica
-                ORDER BY l.nome
-            """)
-    Page<ListaLivroDTO> findLivrosParaListaAdmin(Pageable pageable);
+    @Query(value = """
+                SELECT
+                    e.status_livro AS status,
+                    e.tombo AS tomboExemplar,
+                    l.isbn AS isbn,
+                    l.cdd_codigo AS cdd,
+                    l.nome AS nome,
+                    COALESCE((SELECT STRING_AGG(g.nome, ', ') FROM genero g JOIN livro_genero lg ON g.id = lg.genero_id WHERE lg.livro_id = l.id), '') AS genero,
+                    l.autor AS autor,
+                    l.editora AS editora,
+                    e.localizacao_fisica AS localizacao_fisica
+                FROM exemplar e
+                JOIN livro l ON e.livro_id = l.id
+            """, countQuery = "SELECT COUNT(*) FROM exemplar", nativeQuery = true)
+    Page<ListaLivroProjection> findLivrosParaListaAdmin(Pageable pageable);
 
     @Query("""
             SELECT new br.com.lumilivre.api.data.LivroAgrupadoDTO(
