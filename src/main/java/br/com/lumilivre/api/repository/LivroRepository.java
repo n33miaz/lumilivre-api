@@ -100,6 +100,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
 
     @Query("""
             SELECT new br.com.lumilivre.api.data.LivroAgrupadoDTO(
+                l.id,
                 l.isbn,
                 l.nome,
                 l.autor,
@@ -109,7 +110,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             FROM LivroModel l
             LEFT JOIN l.exemplares e
             WHERE (:texto IS NULL OR l.nome ILIKE CONCAT('%', :texto, '%') OR l.isbn ILIKE CONCAT('%', :texto, '%'))
-            GROUP BY l.isbn, l.nome, l.autor, l.editora
+            GROUP BY l.id, l.isbn, l.nome, l.autor, l.editora
             """)
     Page<LivroAgrupadoDTO> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
 
