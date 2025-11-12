@@ -21,6 +21,9 @@ public interface ExemplarRepository extends JpaRepository<ExemplarModel, String>
     @Query("SELECT e FROM ExemplarModel e WHERE e.livro.isbn = :isbn")
     List<ExemplarModel> findAllByLivroIsbn(@Param("isbn") String isbn);
 
+    @Query("SELECT e FROM ExemplarModel e JOIN FETCH e.livro l LEFT JOIN FETCH l.generos WHERE l.id = :livroId")
+    List<ExemplarModel> findAllByLivroIdWithDetails(@Param("livroId") Long livroId);
+
     Long countByLivroId(Long livroId);
 
     void deleteAllByLivroId(Long livroId);

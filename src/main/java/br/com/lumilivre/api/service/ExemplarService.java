@@ -54,7 +54,8 @@ public class ExemplarService {
             return erro("Nenhum livro encontrado com o ID fornecido.");
         }
 
-        List<ExemplarModel> exemplares = exemplarRepository.findAllByLivroId(livroId);
+        List<ExemplarModel> exemplares = exemplarRepository.findAllByLivroIdWithDetails(livroId);
+
         if (exemplares.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
