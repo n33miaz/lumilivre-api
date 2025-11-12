@@ -93,4 +93,8 @@ public class CursoService {
     public List<String> buscarModulosDistintos() {
         return cr.findDistinctModulos();
     }
+    
+    public List<CursoModel> buscarTodos() {
+        return cr.findAll();
+    }
 }

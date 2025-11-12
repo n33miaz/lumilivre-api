@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "curso")
@@ -27,37 +30,49 @@ public class CursoModel {
     @Column(name = "modulo", length = 55)
     private String modulo;
 
-	public Integer getId() {
-		return id;
-	}
+    // 🔹 Relacionamento com AlunoModel
+    @OneToMany(mappedBy = "curso", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<AlunoModel> alunos = new ArrayList<>();
 
-	public void setId(Integer id) {
-		this.id = id;
-	}
+    // 🔹 Getters e Setters manuais (mantendo seu estilo)
+    public Integer getId() {
+        return id;
+    }
 
-	public String getNome() {
-		return nome;
-	}
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-	public void setNome(String nome) {
-		this.nome = nome;
-	}
+    public String getNome() {
+        return nome;
+    }
 
-	public Turno getTurno() {
-		return turno;
-	}
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
 
-	public void setTurno(Turno turno) {
-		this.turno = turno;
-	}
+    public Turno getTurno() {
+        return turno;
+    }
 
-	public String getModulo() {
-		return modulo;
-	}
+    public void setTurno(Turno turno) {
+        this.turno = turno;
+    }
 
-	public void setModulo(String modulo) {
-		this.modulo = modulo;
-	}
-    
-    
+    public String getModulo() {
+        return modulo;
+    }
+
+    public void setModulo(String modulo) {
+        this.modulo = modulo;
+    }
+
+    public List<AlunoModel> getAlunos() {
+        return alunos;
+    }
+
+    public void setAlunos(List<AlunoModel> alunos) {
+        this.alunos = alunos;
+    }
 }
