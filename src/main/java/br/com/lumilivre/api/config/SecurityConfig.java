@@ -84,9 +84,11 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("https://lumilivre-web.onrender.com", "http://localhost:5173",
-                                "http://localhost:8081", "http://10.0.2.2:8080", "http://10.0.2.1:8080",
-                                "http://10.0.2.1:8081", "http://10.0.2.2:8081", "http://localhost:58636", "http://192.168.56.1:8080")
+                        .allowedOrigins(
+                            "https://www.lumilivre.com.br", // produção 
+                                "http://localhost:5173", // desenv. web
+                                "http://localhost:58636", "http://192.168.56.1:8080" // desenv. mobile
+                                )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
