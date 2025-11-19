@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.dto.ListaSolicitacaoCompletaDTO;
@@ -13,6 +14,7 @@ import br.com.lumilivre.api.service.SolicitacaoEmprestimoService;
 
 @RestController
 @RequestMapping("solicitacoes")
+@PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
 public class SolicitacaoEmprestimoController {
 
     @Autowired
@@ -29,6 +31,7 @@ public class SolicitacaoEmprestimoController {
         return ResponseEntity.ok(solicitacaoService.listarTodasSolicitacoes());
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @PostMapping("/solicitar")
     public ResponseEntity<String> solicitar(@RequestParam String matriculaAluno,
             @RequestParam String tomboExemplar) {
@@ -46,6 +49,7 @@ public class SolicitacaoEmprestimoController {
         return solicitacaoService.listarPendentesDTO();
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @GetMapping("/aluno/{matricula}")
     public List<SolicitacaoEmprestimoDTO> listarDoAluno(@PathVariable String matricula) {
         return solicitacaoService.listarSolicitacoesDoAlunoDTO(matricula);

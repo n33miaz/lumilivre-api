@@ -1,13 +1,16 @@
 package br.com.lumilivre.api.controller;
 
 import br.com.lumilivre.api.service.TccService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/tccs")
+@RequestMapping("/tcc")
+@PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
 public class TccController {
 
     @Autowired
