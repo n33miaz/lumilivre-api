@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import br.com.lumilivre.api.dto.AlterarSenhaDTO;
 import br.com.lumilivre.api.dto.ListaUsuarioDTO;
 import br.com.lumilivre.api.dto.UsuarioDTO;
+import br.com.lumilivre.api.dto.responses.UsuarioResponseDTO;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.model.UsuarioModel;
@@ -81,7 +82,7 @@ public class UsuarioService {
 
         emailService.enviarSenhaInicial(dto.getEmail(), "Admin", dto.getSenha());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new UsuarioResponseDTO(salvo));
     }
 
     @Transactional
@@ -108,12 +109,12 @@ public class UsuarioService {
 
         if (dto.getSenha() != null && !dto.getSenha().isBlank()) {
             usuarioModel.setSenha(passwordEncoder.encode(dto.getSenha()));
-
             emailService.enviarSenhaInicial(dto.getEmail(), "Admin", dto.getSenha());
         }
 
         UsuarioModel salvo = ur.save(usuarioModel);
-        return ResponseEntity.ok(salvo);
+
+        return ResponseEntity.ok(new UsuarioResponseDTO(salvo));
     }
 
     @Transactional

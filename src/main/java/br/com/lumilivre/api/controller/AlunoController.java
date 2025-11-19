@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.controller;
 
 import br.com.lumilivre.api.dto.AlunoDTO;
-import br.com.lumilivre.api.dto.responses.AlunoResponseDTO; // Importe o novo DTO
+import br.com.lumilivre.api.dto.responses.AlunoResponseDTO;
 import br.com.lumilivre.api.dto.ListaAlunoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -34,8 +34,6 @@ public class AlunoController {
     public AlunoController(AlunoService alunoService) {
         this.alunoService = alunoService;
     }
-
-    // --- (GET) ---
 
     @GetMapping("/home")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -84,8 +82,6 @@ public class AlunoController {
         AlunoModel aluno = alunoService.buscarPorMatricula(matricula);
         return ResponseEntity.ok(new AlunoResponseDTO(aluno));
     }
-
-    // --- (POST, PUT, DELETE) ---
 
     @PostMapping("/cadastrar")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
