@@ -8,7 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.ListaCursoDTO; // <-- Importação necessária
+import br.com.lumilivre.api.dto.requests.CursoRequestDTO;
+import br.com.lumilivre.api.dto.responses.CursoResponseDTO;
+import br.com.lumilivre.api.dto.ListaCursoDTO;
+import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.CursoRepository;
@@ -33,36 +36,37 @@ public class CursoService {
     }
 
     @Transactional
-    public ResponseEntity<?> cadastrar(CursoModel cursoModel) {
-        if (isNomeInvalido(cursoModel)) {
-            ResponseModel rm = new ResponseModel();
-            rm.setMensagem("O Nome é Obrigatório");
-            return ResponseEntity.badRequest().body(rm);
-        }
-        CursoModel salvo = cr.save(cursoModel);
-        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+    public ResponseEntity<CursoResponseDTO> cadastrar(CursoRequestDTO dto) {
+        CursoModel curso = new CursoModel();
+        curso.setNome(dto.getNome());
+
+        CursoModel salvo = cr.save(curso);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(new CursoResponseDTO(salvo));
     }
 
     @Transactional
-    public ResponseEntity<?> atualizar(CursoModel cursoModel) {
-        if (isNomeInvalido(cursoModel)) {
-            ResponseModel rm = new ResponseModel();
-            rm.setMensagem("O Nome é Obrigatório");
-            return ResponseEntity.badRequest().body(rm);
-        }
-        CursoModel salvo = cr.save(cursoModel);
-        return ResponseEntity.ok(salvo);
+    public ResponseEntity<CursoResponseDTO> atualizar(Integer id, CursoRequestDTO dto) {
+        CursoModel curso = cr.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Curso não encontrado com ID: " + id));
+
+        curso.setNome(dto.getNome());
+
+        CursoModel salvo = cr.save(curso);
+
+        return ResponseEntity.ok(new CursoResponseDTO(salvo));
     }
 
     @Transactional
     public ResponseEntity<ResponseModel> excluir(Integer id) {
+        if (!cr.existsById(id)) {
+            throw new RecursoNaoEncontradoException("Curso não encontrado com ID: " + id);
+        }
+
         cr.deleteById(id);
+
         ResponseModel rm = new ResponseModel();
         rm.setMensagem("O Curso foi removido com sucesso");
         return new ResponseEntity<>(rm, HttpStatus.OK);
-    }
-
-    private boolean isNomeInvalido(CursoModel cursoModel) {
-        return cursoModel.getNome() == null || cursoModel.getNome().trim().isEmpty();
     }
 }
