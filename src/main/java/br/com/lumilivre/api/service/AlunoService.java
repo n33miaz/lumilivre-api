@@ -57,14 +57,14 @@ public class AlunoService {
         return alunoRepository.findAlunosParaListaAdmin(pageable);
     }
 
-    public Page<AlunoModel> buscarPorTexto(String texto, Pageable pageable) {
+    public Page<ListaAlunoDTO> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
-            return alunoRepository.findAll(pageable);
+            return alunoRepository.findAlunosParaListaAdmin(pageable);
         }
-        return alunoRepository.buscarPorTexto(texto, pageable);
+        return alunoRepository.findAlunosParaListaAdminComFiltro(texto, pageable);
     }
 
-    public Page<AlunoModel> buscarAvancado(String penalidadeStr, String matricula, String nome,
+    public Page<ListaAlunoDTO> buscarAvancado(String penalidadeStr, String matricula, String nome,
             String cursoNome, Integer turnoId, Integer moduloId, LocalDate dataNascimento,
             String email, String celular, Pageable pageable) {
         Penalidade penalidadeEnum = parseEnum(penalidadeStr, Penalidade.class);
@@ -72,7 +72,7 @@ public class AlunoService {
         String cursoNomeFiltro = criarFiltroLike(cursoNome);
         String emailFiltro = criarFiltroLike(email);
 
-        return alunoRepository.buscarAvancado(
+        return alunoRepository.buscarAvancadoComDTO(
                 penalidadeEnum, matricula, nomeFiltro, cursoNomeFiltro, turnoId, moduloId, dataNascimento,
                 emailFiltro, celular, pageable);
     }

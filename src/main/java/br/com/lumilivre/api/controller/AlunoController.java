@@ -46,23 +46,23 @@ public class AlunoController {
 
     @GetMapping("/buscar")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @Operation(summary = "Busca alunos com paginação e filtro de texto", description = "Retorna uma página de alunos com detalhes completos.")
+    @Operation(summary = "Busca alunos com paginação e filtro de texto", description = "Retorna uma página de alunos com dados resumidos.")
     @ApiResponse(responseCode = "200", description = "Página de alunos retornada com sucesso")
-    public ResponseEntity<Page<AlunoModel>> buscarPorTexto(
+    public ResponseEntity<Page<ListaAlunoDTO>> buscarPorTexto( // <-- MUDANÇA AQUI
             @Parameter(description = "Texto para busca genérica (em nome, matrícula, etc.)") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<AlunoModel> alunos = alunoService.buscarPorTexto(texto, pageable);
+        Page<ListaAlunoDTO> alunos = alunoService.buscarPorTexto(texto, pageable); // <-- MUDANÇA AQUI
         return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
     }
 
     @GetMapping("/buscar/avancado")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @Operation(summary = "Busca avançada e paginada de alunos", description = "Filtra alunos por campos específicos.")
+    @Operation(summary = "Busca avançada e paginada de alunos", description = "Filtra alunos por campos específicos e retorna dados resumidos.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Página de alunos encontrada"),
             @ApiResponse(responseCode = "204", description = "Nenhum aluno encontrado para os filtros fornecidos")
     })
-    public ResponseEntity<Page<AlunoModel>> buscarAvancado(
+    public ResponseEntity<Page<ListaAlunoDTO>> buscarAvancado( // <-- MUDANÇA AQUI
             @Parameter(description = "Status da Penalidade (ADVERTENCIA, SUSPENSAO, etc)") @RequestParam(required = false) String penalidade,
             @Parameter(description = "Matrícula exata do aluno") @RequestParam(required = false) String matricula,
             @Parameter(description = "Nome parcial do aluno") @RequestParam(required = false) String nome,
@@ -74,7 +74,8 @@ public class AlunoController {
             @Parameter(description = "Número parcial ou completo do celular") @RequestParam(required = false) String celular,
             Pageable pageable) {
 
-        Page<AlunoModel> alunos = alunoService.buscarAvancado(penalidade, matricula, nome, cursoNome, turnoId, moduloId,
+        Page<ListaAlunoDTO> alunos = alunoService.buscarAvancado(penalidade, matricula, nome, cursoNome, turnoId,
+                moduloId, // <-- MUDANÇA AQUI
                 dataNascimento, email, celular, pageable);
         return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
     }
@@ -88,7 +89,8 @@ public class AlunoController {
             @ApiResponse(responseCode = "409", description = "Conflito de dados (matrícula ou CPF já existe)")
     })
     public ResponseEntity<?> cadastrar(@RequestBody AlunoDTO alunoDTO) {
-        return alunoService.cadastrar(alunoDTO);
+        // O service já retorna um ResponseEntity<AlunoModel> ou um erro, está correto.
+        return ResponseEntity.ok(alunoService.cadastrar(alunoDTO));
     }
 
     @PutMapping("/atualizar/{matricula}")
@@ -101,7 +103,8 @@ public class AlunoController {
     public ResponseEntity<?> atualizar(
             @Parameter(description = "Matrícula do aluno a ser atualizado") @PathVariable String matricula,
             @RequestBody AlunoDTO alunoDTO) {
-        return alunoService.atualizar(matricula, alunoDTO);
+        // O service já retorna um ResponseEntity<AlunoModel> ou um erro, está correto.
+        return ResponseEntity.ok(alunoService.atualizar(matricula, alunoDTO));
     }
 
     @DeleteMapping("/excluir/{matricula}")
@@ -111,8 +114,9 @@ public class AlunoController {
             @ApiResponse(responseCode = "200", description = "Aluno excluído com sucesso"),
             @ApiResponse(responseCode = "404", description = "Aluno não encontrado")
     })
-    public ResponseEntity<ResponseModel> excluir(
+    public ResponseEntity<?> excluir(
             @Parameter(description = "Matrícula do aluno a ser excluído") @PathVariable String matricula) {
-        return alunoService.excluir(matricula);
+        alunoService.excluir(matricula);
+        return ResponseEntity.ok(new ResponseModel("Aluno excluído com sucesso."));
     }
 }

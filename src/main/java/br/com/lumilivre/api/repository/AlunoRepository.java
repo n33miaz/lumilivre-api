@@ -127,4 +127,40 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
             @Param("idCurso") Integer idCurso,
             @Param("idTurno") Integer idTurno,
             @Param("penalidade") Penalidade penalidade);
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.ListaAlunoDTO(
+                a.penalidade,
+                a.matricula,
+                c.nome,
+                a.nomeCompleto,
+                a.dataNascimento,
+                a.email,
+                a.celular
+            )
+            FROM AlunoModel a
+            JOIN a.curso c
+            LEFT JOIN a.turno t
+            LEFT JOIN a.modulo m
+            WHERE (:penalidadeEnum IS NULL OR a.penalidade = :penalidadeEnum)
+              AND (:matricula IS NULL OR a.matricula = :matricula)
+              AND (:nomeCompleto IS NULL OR a.nomeCompleto ILIKE :nomeCompleto)
+              AND (:cursoNome IS NULL OR c.nome ILIKE :cursoNome)
+              AND (:turnoId IS NULL OR t.id = :turnoId)
+              AND (:moduloId IS NULL OR m.id = :moduloId)
+              AND (:dataNascimento IS NULL OR a.dataNascimento = :dataNascimento)
+              AND (:email IS NULL OR a.email ILIKE :email)
+              AND (:celular IS NULL OR a.celular = :celular)
+            """)
+    Page<ListaAlunoDTO> buscarAvancadoComDTO(
+            @Param("penalidadeEnum") Penalidade penalidadeEnum,
+            @Param("matricula") String matricula,
+            @Param("nomeCompleto") String nomeCompleto,
+            @Param("cursoNome") String cursoNome,
+            @Param("turnoId") Integer turnoId,
+            @Param("moduloId") Integer moduloId,
+            @Param("dataNascimento") LocalDate dataNascimento,
+            @Param("email") String email,
+            @Param("celular") String celular,
+            Pageable pageable);
 }
