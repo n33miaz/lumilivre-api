@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -89,10 +90,12 @@ public class LivroController {
             @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso", content = @Content(schema = @Schema(implementation = LivroResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")
     })
-    public ResponseEntity<?> cadastrarLivro(
+    public ResponseEntity<LivroResponseDTO> cadastrarLivro(
             @Parameter(description = "Dados do livro em formato JSON") @RequestPart("livro") LivroDTO livroDTO,
             @Parameter(description = "Arquivo de imagem da capa (opcional)") @RequestPart(value = "file", required = false) MultipartFile file) {
-        return livroService.cadastrar(livroDTO, file);
+
+        LivroResponseDTO novoLivro = livroService.cadastrar(livroDTO, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(novoLivro);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -105,7 +108,9 @@ public class LivroController {
     public ResponseEntity<ResponseModel> uploadCapa(
             @Parameter(description = "ID do livro") @PathVariable Long id,
             @Parameter(description = "Arquivo de imagem da capa") @RequestParam("file") MultipartFile file) {
-        return livroService.uploadCapa(id, file);
+
+        livroService.uploadCapa(id, file);
+        return ResponseEntity.ok(new ResponseModel("Capa atualizada com sucesso."));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -115,11 +120,13 @@ public class LivroController {
             @ApiResponse(responseCode = "200", description = "Livro atualizado com sucesso", content = @Content(schema = @Schema(implementation = LivroResponseDTO.class))),
             @ApiResponse(responseCode = "404", description = "Livro não encontrado")
     })
-    public ResponseEntity<?> atualizar(
+    public ResponseEntity<LivroResponseDTO> atualizar(
             @Parameter(description = "ID do livro a ser atualizado") @PathVariable Long id,
             @Parameter(description = "Dados do livro em formato JSON") @RequestPart("livro") LivroDTO livroDTO,
             @Parameter(description = "Novo arquivo de imagem da capa (opcional)") @RequestPart(value = "file", required = false) MultipartFile file) {
-        return livroService.atualizar(id, livroDTO, file);
+
+        LivroResponseDTO livroAtualizado = livroService.atualizar(id, livroDTO, file);
+        return ResponseEntity.ok(livroAtualizado);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -127,6 +134,8 @@ public class LivroController {
     @Operation(summary = "Exclui um livro e todos os seus exemplares associados")
     public ResponseEntity<ResponseModel> excluirComExemplares(
             @Parameter(description = "ID do livro a ser excluído") @PathVariable Long id) {
-        return livroService.excluirLivroComExemplares(id);
+
+        livroService.excluirLivroComExemplares(id);
+        return ResponseEntity.ok(new ResponseModel("Livro e todos os exemplares foram removidos com sucesso."));
     }
 }
