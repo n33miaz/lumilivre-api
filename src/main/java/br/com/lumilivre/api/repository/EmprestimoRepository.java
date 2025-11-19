@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import br.com.lumilivre.api.dto.EmprestimoResponseDTO;
+import br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
@@ -184,4 +185,42 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             @Param("idCurso") Integer idCurso,
             @Param("isbnOuTombo") String isbnOuTombo,
             @Param("idModulo") Integer idModulo);
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO(
+                e.id,
+                l.nome,
+                a.nomeCompleto,
+                a.matricula,
+                ex.tombo,
+                CAST(e.dataDevolucao AS LocalDate),
+                e.statusEmprestimo
+            )
+            FROM EmprestimoModel e
+            JOIN e.aluno a
+            JOIN e.exemplar ex
+            JOIN ex.livro l
+            WHERE e.statusEmprestimo IN (br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO, br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO)
+            ORDER BY e.dataDevolucao ASC
+            """)
+    List<ListaEmprestimoAtivoDTO> findAtivosEAtrasadosDTO();
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO(
+                e.id,
+                l.nome,
+                a.nomeCompleto,
+                a.matricula,
+                ex.tombo,
+                CAST(e.dataDevolucao AS LocalDate),
+                e.statusEmprestimo
+            )
+            FROM EmprestimoModel e
+            JOIN e.aluno a
+            JOIN e.exemplar ex
+            JOIN ex.livro l
+            WHERE e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO
+            ORDER BY e.dataDevolucao ASC
+            """)
+    List<ListaEmprestimoAtivoDTO> findApenasAtrasadosDTO();
 }

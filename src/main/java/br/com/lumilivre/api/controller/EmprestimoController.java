@@ -13,6 +13,7 @@ import br.com.lumilivre.api.dto.EmprestimoDTO;
 import br.com.lumilivre.api.dto.EmprestimoResponseDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
+import br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -49,14 +50,16 @@ public class EmprestimoController {
 
     @GetMapping("/buscar/ativos-e-atrasados")
     @Operation(summary = "Lista todos os empréstimos ativos e atrasados", description = "Retorna uma lista de todos os empréstimos que não foram concluídos.")
-    public ResponseEntity<List<EmprestimoModel>> buscarAtivosEAtrasados() {
-        return ResponseEntity.ok(es.buscarAtivosEAtrasados());
+    public ResponseEntity<List<ListaEmprestimoAtivoDTO>> buscarAtivosEAtrasados() {
+        List<ListaEmprestimoAtivoDTO> emprestimos = es.buscarAtivosEAtrasados();
+        return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
 
     @GetMapping("/buscar/apenas-atrasados")
     @Operation(summary = "Lista apenas os empréstimos com status ATRASADO")
-    public ResponseEntity<List<EmprestimoModel>> buscarApenasAtrasados() {
-        return ResponseEntity.ok(es.buscarApenasAtrasados());
+    public ResponseEntity<List<ListaEmprestimoAtivoDTO>> buscarApenasAtrasados() {
+        List<ListaEmprestimoAtivoDTO> emprestimos = es.buscarApenasAtrasados();
+        return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")

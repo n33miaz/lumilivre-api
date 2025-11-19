@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.lumilivre.api.dto.AlunoRankingDTO;
 import br.com.lumilivre.api.dto.EmprestimoDTO;
 import br.com.lumilivre.api.dto.EmprestimoResponseDTO;
+import br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
 import br.com.lumilivre.api.enums.Penalidade;
@@ -70,9 +71,8 @@ public class EmprestimoService {
         return emprestimoRepository.findEmprestimosAtivosEAtrasados();
     }
 
-    public List<EmprestimoModel> buscarAtivosEAtrasados() {
-        return emprestimoRepository.findByStatusEmprestimoIn(
-                List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
+    public List<ListaEmprestimoAtivoDTO> buscarAtivosEAtrasados() {
+        return emprestimoRepository.findAtivosEAtrasadosDTO();
     }
 
     public long getContagemEmprestimosAtivosEAtrasados() {
@@ -80,8 +80,8 @@ public class EmprestimoService {
                 List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
     }
 
-    public List<EmprestimoModel> buscarApenasAtrasados() {
-        return emprestimoRepository.findByStatusEmprestimo(StatusEmprestimo.ATRASADO);
+    public List<ListaEmprestimoAtivoDTO> buscarApenasAtrasados() {
+        return emprestimoRepository.findApenasAtrasadosDTO();
     }
 
     public Page<ListaEmprestimoDTO> buscarAvancado(
