@@ -16,6 +16,9 @@ import br.com.lumilivre.api.repository.LivroRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -79,13 +82,17 @@ public class LivroService {
         return livroRepository.findLivrosAgrupados(pageable, texto);
     }
 
+    @Cacheable(value = "livro-detalhe", key = "#id")
     public ResponseEntity<LivroModel> findById(Long id) {
+        log.info("Buscando livro ID {} no banco de dados (sem cache)...", id);
         return livroRepository.findByIdWithGeneros(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
+    @Cacheable("catalogo-mobile")
     public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
+        log.info("Buscando catálogo mobile no banco de dados (sem cache)...");
         List<Map<String, Object>> results = livroRepository.findCatalogoMobile();
 
         Map<String, List<LivroResponseMobileGeneroDTO>> livrosPorGenero = results.stream()
@@ -118,10 +125,13 @@ public class LivroService {
     // ------------------------ UPLOAD DE CAPA ------------------------
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "livro-detalhe", key = "#id"),
+            @CacheEvict(value = "catalogo-mobile", allEntries = true)
+    })
     public ResponseEntity<ResponseModel> uploadCapa(Long id, MultipartFile file) {
         return livroRepository.findById(id).map(livro -> {
             try {
-                // Corrigido para usar o método correto do SupabaseStorageService
                 String url = storageService.uploadFile(file, "livros");
                 livro.setImagem(url);
                 livroRepository.save(livro);
@@ -138,6 +148,7 @@ public class LivroService {
     // ------------------------ CADASTRO ------------------------
 
     @Transactional
+    @CacheEvict(value = "catalogo-mobile", allEntries = true)
     public ResponseEntity<ResponseModel> cadastrar(LivroDTO dto, MultipartFile file) {
         if (isNaoVazio(dto.getIsbn()) && livroRepository.findByIsbn(dto.getIsbn()).isPresent()) {
             return erro("Esse ISBN já está cadastrado em outro livro.");
@@ -164,6 +175,10 @@ public class LivroService {
     // ------------------------ ATUALIZAÇÃO ------------------------
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "livro-detalhe", key = "#id"),
+            @CacheEvict(value = "catalogo-mobile", allEntries = true)
+    })
     public ResponseEntity<ResponseModel> atualizar(Long id, LivroDTO dto, MultipartFile file) {
         Optional<LivroModel> livroExistenteOpt = livroRepository.findById(id);
         if (livroExistenteOpt.isEmpty()) {
@@ -195,6 +210,10 @@ public class LivroService {
     // ------------------------ EXCLUSÃO ------------------------
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "livro-detalhe", key = "#id"),
+            @CacheEvict(value = "catalogo-mobile", allEntries = true)
+    })
     public ResponseEntity<ResponseModel> excluirLivroComExemplares(Long id) {
         if (!livroRepository.existsById(id)) {
             return erro("Livro não encontrado.");
@@ -206,6 +225,7 @@ public class LivroService {
 
     // ------------------------ MÉTODOS AUXILIARES ------------------------
 
+    // (O restante dos métodos auxiliares permanece o mesmo)
     private void preencherComGoogleBooks(LivroDTO dto) {
         googleBooksService.buscarDadosPorIsbn(dto.getIsbn()).ifPresent(googleData -> {
             LivroModel livroGoogle = googleData.livro();
