@@ -1,20 +1,10 @@
 package br.com.lumilivre.api.controller;
 
-import java.time.LocalDate;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
 import br.com.lumilivre.api.data.AlunoDTO;
 import br.com.lumilivre.api.data.ListaAlunoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.AlunoService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,124 +13,106 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/alunos")
-
 @Tag(name = "6. Alunos")
 @SecurityRequirement(name = "bearerAuth")
-
 public class AlunoController {
 
-    @Autowired
-    private AlunoService as;
+    private final AlunoService alunoService;
 
-    public AlunoController(AlunoService AlunoService) {
-        this.as = AlunoService;
+    public AlunoController(AlunoService alunoService) {
+        this.alunoService = alunoService;
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
-
-    @Operation(summary = "Lista alunos para a tela principal do admin", description = "Retorna uma lista paginada de alunos com dados resumidos (usando ListaAlunoDTO) para a exibição no dashboard do admin. Suporta filtro de texto.")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @Operation(summary = "Lista alunos para a tela principal do admin", description = "Retorna uma lista paginada de alunos com dados resumidos para a exibição no dashboard. Suporta filtro de texto.")
     @ApiResponse(responseCode = "200", description = "Página de alunos retornada com sucesso")
-
     public ResponseEntity<Page<ListaAlunoDTO>> listarParaAdmin(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaAlunoDTO> alunos = as.buscarAlunosParaListaAdmin(texto, pageable);
-
+        Page<ListaAlunoDTO> alunos = alunoService.buscarAlunosParaListaAdmin(texto, pageable);
         return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
     }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     @GetMapping("/buscar")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-
-    @Operation(summary = "Busca alunos com paginação e filtro de texto", description = "Retorna uma página de alunos. Pode filtrar por um texto genérico que busca em múltiplos campos. Acesso: ADMIN, BIBLIOTECARIO.")
+    @Operation(summary = "Busca alunos com paginação e filtro de texto", description = "Retorna uma página de alunos com detalhes completos.")
     @ApiResponse(responseCode = "200", description = "Página de alunos retornada com sucesso")
-
     public ResponseEntity<Page<AlunoModel>> buscarPorTexto(
             @Parameter(description = "Texto para busca genérica (em nome, matrícula, etc.)") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<AlunoModel> alunos = as.buscarPorTexto(texto, pageable);
-
+        Page<AlunoModel> alunos = alunoService.buscarPorTexto(texto, pageable);
         return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @GetMapping("/buscar/avancado")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-
-    @Operation(summary = "Busca avançada e paginada de alunos", description = "Filtra alunos por campos específicos como nome, matrícula, data de nascimento e nome do curso. Acesso: ADMIN, BIBLIOTECARIO.")
+    @Operation(summary = "Busca avançada e paginada de alunos", description = "Filtra alunos por campos específicos.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Página de alunos encontrada"),
             @ApiResponse(responseCode = "204", description = "Nenhum aluno encontrado para os filtros fornecidos")
     })
-
     public ResponseEntity<Page<AlunoModel>> buscarAvancado(
-        @Parameter(description = "Status da Penalidade (ADVERTENCIA, SUSPENSAO, etc)") @RequestParam(required = false) String penalidade,
-        @Parameter(description = "Matrícula exata do aluno") @RequestParam(required = false) String matricula,
-        @Parameter(description = "Nome parcial do aluno") @RequestParam(required = false) String nome,
-        @Parameter(description = "Nome parcial do curso") @RequestParam(required = false) String cursoNome,
-        @Parameter(description = "Turno do curso (MANHA, TARDE, NOITE, INTEGRAL)") @RequestParam(required = false) String turno, // Adicionado
-        @Parameter(description = "Módulo ou série do curso") @RequestParam(required = false) String modulo, // Adicionado
-        @Parameter(description = "Data de nascimento no formato YYYY-MM-DD") @RequestParam(required = false) LocalDate dataNascimento,
-        @Parameter(description = "Texto parcial ou completo do email") @RequestParam(required = false) String email,
-        @Parameter(description = "Numero parcial ou completo") @RequestParam(required = false) String celular,
-        Pageable pageable) {
-            
-    Page<AlunoModel> alunos = as.buscarAvancado(penalidade, matricula, nome, cursoNome, turno, modulo, dataNascimento, email,
-            celular, pageable); // <--- Chamada atualizada com todos os parâmetros
+            @Parameter(description = "Status da Penalidade (ADVERTENCIA, SUSPENSAO, etc)") @RequestParam(required = false) String penalidade,
+            @Parameter(description = "Matrícula exata do aluno") @RequestParam(required = false) String matricula,
+            @Parameter(description = "Nome parcial do aluno") @RequestParam(required = false) String nome,
+            @Parameter(description = "Nome parcial do curso") @RequestParam(required = false) String cursoNome,
+            @Parameter(description = "ID do turno do aluno") @RequestParam(required = false) Integer turnoId,
+            @Parameter(description = "ID do módulo do aluno") @RequestParam(required = false) Integer moduloId,
+            @Parameter(description = "Data de nascimento no formato YYYY-MM-DD") @RequestParam(required = false) LocalDate dataNascimento,
+            @Parameter(description = "Texto parcial ou completo do email") @RequestParam(required = false) String email,
+            @Parameter(description = "Número parcial ou completo do celular") @RequestParam(required = false) String celular,
+            Pageable pageable) {
 
-    return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
+        Page<AlunoModel> alunos = alunoService.buscarAvancado(penalidade, matricula, nome, cursoNome, turnoId, moduloId,
+                dataNascimento, email, celular, pageable);
+        return alunos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(alunos);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PostMapping("/cadastrar")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-
-    @Operation(summary = "Cadastra um novo aluno", description = "Cria um novo aluno e seu usuário correspondente no sistema. Acesso: ADMIN, BIBLIOTECARIO.")
+    @Operation(summary = "Cadastra um novo aluno", description = "Cria um novo aluno e seu usuário correspondente no sistema.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Aluno cadastrado com sucesso", content = @Content(schema = @Schema(implementation = AlunoModel.class))),
-            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos (ex: CPF inválido, matrícula duplicada)")
+            @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos"),
+            @ApiResponse(responseCode = "409", description = "Conflito de dados (matrícula ou CPF já existe)")
     })
-
     public ResponseEntity<?> cadastrar(@RequestBody AlunoDTO alunoDTO) {
-        return as.cadastrar(alunoDTO);
+        return alunoService.cadastrar(alunoDTO);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @PutMapping("/atualizar/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
-
-    @Operation(summary = "Atualiza um aluno existente", description = "Altera os dados de um aluno com base na sua matrícula. Um ALUNO só pode alterar seus próprios dados (lógica a ser validada no serviço), enquanto ADMIN/BIBLIOTECARIO podem alterar qualquer um.")
+    @PutMapping("/atualizar/{matricula}")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @Operation(summary = "Atualiza um aluno existente", description = "Altera os dados de um aluno com base na sua matrícula.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Aluno atualizado com sucesso", content = @Content(schema = @Schema(implementation = AlunoModel.class))),
             @ApiResponse(responseCode = "404", description = "Aluno não encontrado para a matrícula fornecida")
     })
-
     public ResponseEntity<?> atualizar(
-            @Parameter(description = "Matrícula do aluno a ser atualizado") @PathVariable String id,
+            @Parameter(description = "Matrícula do aluno a ser atualizado") @PathVariable String matricula,
             @RequestBody AlunoDTO alunoDTO) {
-        return as.atualizar(id, alunoDTO);
+        return alunoService.atualizar(matricula, alunoDTO);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @DeleteMapping("/excluir/{id}")
+    @DeleteMapping("/excluir/{matricula}")
     @PreAuthorize("hasRole('ADMIN')")
-
-    @Operation(summary = "Exclui um aluno (Acesso: ADMIN)", description = "Remove um aluno do sistema. Esta é uma operação destrutiva e requer permissão de Administrador.")
+    @Operation(summary = "Exclui um aluno (Acesso: ADMIN)", description = "Remove um aluno e seu usuário associado do sistema.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Aluno excluído com sucesso"),
-            @ApiResponse(responseCode = "403", description = "Acesso negado (usuário não é ADMIN)")
+            @ApiResponse(responseCode = "404", description = "Aluno não encontrado")
     })
-
     public ResponseEntity<ResponseModel> excluir(
-            @Parameter(description = "Matrícula do aluno a ser excluído") @PathVariable String id) {
-        return as.excluir(id);
+            @Parameter(description = "Matrícula do aluno a ser excluído") @PathVariable String matricula) {
+        return alunoService.excluir(matricula);
     }
 }

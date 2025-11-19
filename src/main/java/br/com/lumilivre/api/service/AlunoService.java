@@ -1,10 +1,12 @@
 package br.com.lumilivre.api.service;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import br.com.lumilivre.api.data.AlunoDTO;
+import br.com.lumilivre.api.data.ListaAlunoDTO;
+import br.com.lumilivre.api.enums.Penalidade;
+import br.com.lumilivre.api.enums.Role;
+import br.com.lumilivre.api.model.*;
+import br.com.lumilivre.api.repository.*;
+import br.com.lumilivre.api.utils.CpfValidator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -13,256 +15,244 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.data.AlunoDTO;
-import br.com.lumilivre.api.data.ListaAlunoDTO;
-import br.com.lumilivre.api.enums.Penalidade;
-import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.enums.Turno;
-import br.com.lumilivre.api.model.AlunoModel;
-import br.com.lumilivre.api.model.CursoModel;
-import br.com.lumilivre.api.model.ResponseModel;
-import br.com.lumilivre.api.model.UsuarioModel;
-import br.com.lumilivre.api.repository.AlunoRepository;
-import br.com.lumilivre.api.repository.CursoRepository;
-import br.com.lumilivre.api.repository.UsuarioRepository;
-import br.com.lumilivre.api.utils.CpfValidator;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AlunoService {
 
-    private final AlunoRepository ar;
+    private final AlunoRepository alunoRepository;
     private final CursoRepository cursoRepository;
-    private final UsuarioRepository ur;
+    private final UsuarioRepository usuarioRepository;
+    private final TurnoRepository turnoRepository;
+    private final ModuloRepository moduloRepository;
+
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final CepService cepService;
 
-    // Injeção de dependência via construtor
-    @Autowired
-    public AlunoService(AlunoRepository ar, CursoRepository cursoRepository, UsuarioRepository ur,
+    private record EntidadesRelacionadas(CursoModel curso, TurnoModel turno, ModuloModel modulo) {
+    }
+
+    public AlunoService(AlunoRepository alunoRepository, CursoRepository cursoRepository,
+            UsuarioRepository usuarioRepository,
+            TurnoRepository turnoRepository, ModuloRepository moduloRepository,
             EmailService emailService, PasswordEncoder passwordEncoder, CepService cepService) {
-        this.ar = ar;
+        this.alunoRepository = alunoRepository;
         this.cursoRepository = cursoRepository;
-        this.ur = ur;
+        this.usuarioRepository = usuarioRepository;
+        this.turnoRepository = turnoRepository;
+        this.moduloRepository = moduloRepository;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
         this.cepService = cepService;
     }
 
+    // ================= MÉTODOS DE BUSCA (READ) =================
+
     public Page<ListaAlunoDTO> buscarAlunosParaListaAdmin(String texto, Pageable pageable) {
         if (texto != null && !texto.isBlank()) {
-            return ar.findAlunosParaListaAdminComFiltro(texto, pageable);
-        } else {
-            return ar.findAlunosParaListaAdmin(pageable);
+            return alunoRepository.findAlunosParaListaAdminComFiltro(texto, pageable);
         }
+        return alunoRepository.findAlunosParaListaAdmin(pageable);
     }
 
     public Page<AlunoModel> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
-            return ar.findAll(pageable);
+            return alunoRepository.findAll(pageable);
         }
-        return ar.buscarPorTexto(texto, pageable);
+        return alunoRepository.buscarPorTexto(texto, pageable);
     }
 
     public Page<AlunoModel> buscarAvancado(String penalidadeStr, String matricula, String nome,
-            String cursoNome, String turnoStr, String modulo, LocalDate dataNascimento,
+            String cursoNome, Integer turnoId, Integer moduloId, LocalDate dataNascimento,
             String email, String celular, Pageable pageable) {
 
-        Penalidade penalidadeEnum = null;
-        if (penalidadeStr != null && !penalidadeStr.isBlank()) {
-            try {
-                penalidadeEnum = Penalidade.valueOf(penalidadeStr.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // Ignora se o valor for inválido
-            }
-        }
+        Penalidade penalidadeEnum = parseEnum(penalidadeStr, Penalidade.class);
+        String nomeFiltro = criarFiltroLike(nome);
+        String cursoNomeFiltro = criarFiltroLike(cursoNome);
+        String emailFiltro = criarFiltroLike(email);
 
-        Turno turnoEnum = null;
-        if (turnoStr != null && !turnoStr.isBlank()) {
-            try {
-                turnoEnum = Turno.valueOf(turnoStr.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // Ignora se o valor for inválido
-            }
-        }
-
-        String nomeFiltro = (nome != null && !nome.isBlank()) ? "%" + nome + "%" : null;
-        String cursoNomeFiltro = (cursoNome != null && !cursoNome.isBlank()) ? "%" + cursoNome + "%" : null;
-        String moduloFiltro = (modulo != null && !modulo.isBlank()) ? "%" + modulo + "%" : null;
-        String emailFiltro = (email != null && !email.isBlank()) ? "%" + email + "%" : null;
-
-        return ar.buscarAvancado(
-                penalidadeEnum, matricula, nomeFiltro, cursoNomeFiltro, turnoEnum, moduloFiltro, dataNascimento,
+        return alunoRepository.buscarAvancado(
+                penalidadeEnum, matricula, nomeFiltro, cursoNomeFiltro, turnoId, moduloId, dataNascimento,
                 emailFiltro, celular, pageable);
     }
 
+    // ================= MÉTODOS DE ESCRITA (CREATE, UPDATE, DELETE) =================
+
     @Transactional
     public ResponseEntity<?> cadastrar(AlunoDTO dto) {
-        if (dto.getMatricula() == null || dto.getMatricula().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(new ResponseModel("A matrícula é obrigatória."));
-        }
-        if (!dto.getMatricula().matches("\\d{5}")) {
-            return ResponseEntity.badRequest().body(new ResponseModel("A matrícula deve conter 5 dígitos numéricos."));
-        }
-        if (ar.existsById(dto.getMatricula())) {
-            return ResponseEntity.badRequest().body(new ResponseModel("Essa matrícula já está cadastrada."));
-        }
-        if (dto.getNomeCompleto() == null || dto.getNomeCompleto().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(new ResponseModel("O nome completo é obrigatório."));
-        }
-        if (dto.getCpf() == null || dto.getCpf().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(new ResponseModel("O CPF é obrigatório."));
-        }
-        if (!CpfValidator.isCpfValido(dto.getCpf())) {
-            return ResponseEntity.badRequest().body(new ResponseModel("CPF inválido."));
-        }
-        if (ar.existsByCpf(dto.getCpf())) {
-            return ResponseEntity.badRequest().body(new ResponseModel("CPF já cadastrado."));
-        }
-        if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(new ResponseModel("O email é obrigatório."));
-        }
-        if (dto.getCelular() == null || dto.getCelular().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(new ResponseModel("O celular é obrigatório."));
-        }
-        if (dto.getCursoId() == null) {
-            return ResponseEntity.badRequest().body(new ResponseModel("O curso é obrigatório."));
-        }
+        try {
+            validarDadosAluno(dto, false);
+            EntidadesRelacionadas entidades = buscarEntidadesRelacionadas(dto);
 
-        Optional<CursoModel> cursoOpt = cursoRepository.findById(dto.getCursoId());
-        if (cursoOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body(new ResponseModel("Curso não encontrado."));
-        }
+            AlunoModel aluno = new AlunoModel();
+            mapearDtoParaEntidade(aluno, dto, entidades);
+            preencherEnderecoPorCep(aluno, dto.getCep());
 
-        AlunoModel aluno = new AlunoModel();
-        aluno.setMatricula(dto.getMatricula());
+            UsuarioModel usuario = criarUsuarioParaAluno(aluno);
+            aluno.setUsuario(usuario);
+
+            AlunoModel alunoSalvo = alunoRepository.save(aluno);
+            emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNomeCompleto(), dto.getMatricula());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(alunoSalvo);
+        } catch (IllegalArgumentException e) {
+            return errorResponse(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (RuntimeException e) {
+            return errorResponse("Erro ao consultar serviço externo (CEP).", HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<?> atualizar(String matricula, AlunoDTO dto) {
+        return alunoRepository.findById(matricula).map(aluno -> {
+            try {
+                validarDadosAluno(dto, true);
+                EntidadesRelacionadas entidades = buscarEntidadesRelacionadas(dto);
+                boolean cpfAlterado = !aluno.getCpf().equals(dto.getCpf());
+
+                mapearDtoParaEntidade(aluno, dto, entidades);
+                preencherEnderecoPorCep(aluno, dto.getCep());
+
+                if (cpfAlterado && aluno.getUsuario() != null) {
+                    aluno.getUsuario().setSenha(passwordEncoder.encode(dto.getCpf()));
+                    emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNomeCompleto(), dto.getCpf());
+                }
+
+                AlunoModel alunoSalvo = alunoRepository.save(aluno);
+                return ResponseEntity.ok(alunoSalvo);
+            } catch (IllegalArgumentException e) {
+                return errorResponse(e.getMessage(), HttpStatus.BAD_REQUEST);
+            } catch (RuntimeException e) {
+                return errorResponse("Erro ao consultar serviço externo (CEP).", HttpStatus.SERVICE_UNAVAILABLE);
+            }
+        }).orElseGet(() -> errorResponse("Aluno não encontrado para a matrícula: " + matricula, HttpStatus.NOT_FOUND));
+    }
+
+    @Transactional
+    public ResponseEntity<ResponseModel> excluir(String matricula) {
+        return alunoRepository.findById(matricula).map(aluno -> {
+            if (aluno.getUsuario() != null) {
+                usuarioRepository.delete(aluno.getUsuario());
+            }
+            alunoRepository.delete(aluno);
+            return ResponseEntity.ok(new ResponseModel("Aluno e usuário associados removidos com sucesso."));
+        }).orElseGet(() -> new ResponseEntity<>(new ResponseModel("Aluno não encontrado."), HttpStatus.NOT_FOUND));
+    }
+
+    // ================= MÉTODOS PRIVADOS (HELPERS) =================
+
+    private void validarDadosAluno(AlunoDTO dto, boolean isUpdate) {
+        if (!isUpdate) {
+            if (dto.getMatricula() == null || dto.getMatricula().isBlank())
+                throw new IllegalArgumentException("A matrícula é obrigatória.");
+            if (!dto.getMatricula().matches("\\d{5}"))
+                throw new IllegalArgumentException("A matrícula deve conter 5 dígitos numéricos.");
+            if (alunoRepository.existsById(dto.getMatricula()))
+                throw new IllegalArgumentException("Essa matrícula já está cadastrada.");
+        }
+        if (dto.getNomeCompleto() == null || dto.getNomeCompleto().isBlank())
+            throw new IllegalArgumentException("O nome completo é obrigatório.");
+        if (dto.getCpf() == null || dto.getCpf().isBlank())
+            throw new IllegalArgumentException("O CPF é obrigatório.");
+        if (!CpfValidator.isCpfValido(dto.getCpf()))
+            throw new IllegalArgumentException("CPF inválido.");
+        if (!isUpdate && alunoRepository.existsByCpf(dto.getCpf()))
+            throw new IllegalArgumentException("CPF já cadastrado.");
+        if (dto.getEmail() == null || dto.getEmail().isBlank())
+            throw new IllegalArgumentException("O email é obrigatório.");
+        if (dto.getCelular() == null || dto.getCelular().isBlank())
+            throw new IllegalArgumentException("O celular é obrigatório.");
+        if (dto.getCursoId() == null)
+            throw new IllegalArgumentException("O curso é obrigatório.");
+        if (dto.getTurnoId() == null)
+            throw new IllegalArgumentException("O turno é obrigatório.");
+        if (dto.getModuloId() == null)
+            throw new IllegalArgumentException("O módulo é obrigatório.");
+    }
+
+    private EntidadesRelacionadas buscarEntidadesRelacionadas(AlunoDTO dto) {
+        CursoModel curso = cursoRepository.findById(dto.getCursoId())
+                .orElseThrow(() -> new IllegalArgumentException("Curso não encontrado."));
+        TurnoModel turno = turnoRepository.findById(dto.getTurnoId())
+                .orElseThrow(() -> new IllegalArgumentException("Turno não encontrado."));
+        ModuloModel modulo = moduloRepository.findById(dto.getModuloId())
+                .orElseThrow(() -> new IllegalArgumentException("Módulo não encontrado."));
+        return new EntidadesRelacionadas(curso, turno, modulo);
+    }
+
+    private void mapearDtoParaEntidade(AlunoModel aluno, AlunoDTO dto, EntidadesRelacionadas entidades) {
+        if (dto.getMatricula() != null)
+            aluno.setMatricula(dto.getMatricula());
         aluno.setNomeCompleto(dto.getNomeCompleto());
         aluno.setCpf(dto.getCpf());
         aluno.setDataNascimento(dto.getDataNascimento());
         aluno.setCelular(dto.getCelular());
         aluno.setEmail(dto.getEmail());
-        aluno.setCurso(cursoOpt.get());
-        aluno.setNumero_casa(dto.getNumero_casa());
+        aluno.setNumero_casa(dto.getNumeroCasa());
         aluno.setComplemento(dto.getComplemento());
+        aluno.setCurso(entidades.curso());
+        aluno.setTurno(entidades.turno());
+        aluno.setModulo(entidades.modulo());
+    }
 
-        if (dto.getCep() != null && !dto.getCep().trim().isEmpty()) {
-            if (dto.getCep().length() != 8) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ResponseModel("O CEP deve conter 8 dígitos."));
-            }
-            try {
-                AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
-                if (enderecoDTO != null && enderecoDTO.getCep() != null) {
-                    aluno.setCep(enderecoDTO.getCep().replace("-", ""));
-                    aluno.setLogradouro(enderecoDTO.getLogradouro());
-                    aluno.setLocalidade(enderecoDTO.getLocalidade());
-                    aluno.setBairro(enderecoDTO.getBairro());
-                    aluno.setUf(enderecoDTO.getUf());
-                } else {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(new ResponseModel("CEP inválido ou não encontrado."));
-                }
-            } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                        .body(new ResponseModel("Erro ao consultar o serviço de CEP."));
+    private void preencherEnderecoPorCep(AlunoModel aluno, String cep) {
+        if (cep != null && !cep.isBlank()) {
+            if (cep.length() != 8)
+                throw new IllegalArgumentException("O CEP deve conter 8 dígitos.");
+
+            AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(cep);
+            if (enderecoDTO != null && enderecoDTO.getCep() != null) {
+                aluno.setCep(enderecoDTO.getCep().replace("-", ""));
+                aluno.setLogradouro(enderecoDTO.getLogradouro());
+                aluno.setLocalidade(enderecoDTO.getLocalidade());
+                aluno.setBairro(enderecoDTO.getBairro());
+                aluno.setUf(enderecoDTO.getUf());
+            } else {
+                throw new IllegalArgumentException("CEP inválido ou não encontrado.");
             }
         }
+    }
 
+    private UsuarioModel criarUsuarioParaAluno(AlunoModel aluno) {
         UsuarioModel usuario = new UsuarioModel();
-        usuario.setEmail(dto.getEmail()); // Usando email como login
-        usuario.setSenha(passwordEncoder.encode(dto.getMatricula())); // Senha inicial é a matricula
+        usuario.setEmail(aluno.getEmail());
+        usuario.setSenha(passwordEncoder.encode(aluno.getMatricula())); // Senha inicial é a matrícula
         usuario.setRole(Role.ALUNO);
         usuario.setAluno(aluno);
-        aluno.setUsuario(usuario);
-
-        AlunoModel salvo = ar.save(aluno);
-        emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNomeCompleto(), dto.getMatricula());
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+        return usuario;
     }
 
-    public ResponseEntity<?> atualizar(String matricula, AlunoDTO dto) {
-        Optional<AlunoModel> alunoOpt = ar.findById(matricula);
-        if (alunoOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseModel("Aluno não encontrado para a matrícula: " + matricula));
+    private <T extends Enum<T>> T parseEnum(String value, Class<T> enumClass) {
+        if (value == null || value.isBlank())
+            return null;
+        try {
+            return Enum.valueOf(enumClass, value.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
         }
-
-        AlunoModel aluno = alunoOpt.get();
-
-        if (dto.getNomeCompleto() == null || dto.getNomeCompleto().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(new ResponseModel("O nome completo é obrigatório."));
-        }
-        if (dto.getCpf() == null || dto.getCpf().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(new ResponseModel("O CPF é obrigatório."));
-        }
-        if (!CpfValidator.isCpfValido(dto.getCpf())) {
-            return ResponseEntity.badRequest().body(new ResponseModel("CPF inválido."));
-        }
-
-        var curso = cursoRepository.findById(dto.getCursoId());
-        if (curso.isEmpty()) {
-            return ResponseEntity.badRequest().body(new ResponseModel("Curso não encontrado."));
-        }
-
-        AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(dto.getCep());
-        if (enderecoDTO == null || enderecoDTO.getCep() == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseModel("CEP inválido ou não encontrado."));
-        }
-
-        boolean cpfAlterado = !aluno.getCpf().equals(dto.getCpf());
-
-        aluno.setNomeCompleto(dto.getNomeCompleto());
-        aluno.setCpf(dto.getCpf());
-        aluno.setDataNascimento(dto.getDataNascimento());
-        aluno.setCelular(dto.getCelular());
-        aluno.setEmail(dto.getEmail());
-        aluno.setCurso(curso.get());
-        aluno.setCep(dto.getCep());
-        aluno.setLogradouro(enderecoDTO.getLogradouro());
-        aluno.setComplemento(enderecoDTO.getComplemento());
-        aluno.setLocalidade(enderecoDTO.getLocalidade());
-        aluno.setBairro(enderecoDTO.getBairro());
-        aluno.setUf(enderecoDTO.getUf());
-        aluno.setNumero_casa(dto.getNumero_casa());
-
-        if (cpfAlterado && aluno.getUsuario() != null) {
-            aluno.getUsuario().setSenha(passwordEncoder.encode(dto.getCpf()));
-            emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNomeCompleto(), dto.getCpf());
-        }
-
-        AlunoModel salvo = ar.save(aluno);
-        return ResponseEntity.ok(salvo);
     }
 
-    public ResponseEntity<ResponseModel> excluir(String matricula) {
-        var alunoOpt = ar.findById(matricula);
-
-        if (alunoOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ResponseModel("Aluno não encontrado."));
-        }
-
-        AlunoModel aluno = alunoOpt.get();
-
-        if (aluno.getUsuario() != null) {
-            ur.delete(aluno.getUsuario());
-        }
-
-        ar.delete(aluno);
-
-        return ResponseEntity.ok(new ResponseModel("Aluno e usuário associados removidos com sucesso."));
+    private String criarFiltroLike(String valor) {
+        return (valor != null && !valor.isBlank()) ? "%" + valor + "%" : null;
     }
 
+    private ResponseEntity<ResponseModel> errorResponse(String message, HttpStatus status) {
+        return ResponseEntity.status(status).body(new ResponseModel(message));
+    }
+
+    // Métodos de busca simples que não precisam de refatoração
     public Optional<AlunoModel> buscarPorNome(String nome) {
-        return ar.findByNomeCompletoIgnoreCase(nome);
+        return alunoRepository.findByNomeCompletoIgnoreCase(nome);
     }
 
     public Optional<AlunoModel> buscarPorCPF(String cpf) {
-        return ar.findByCpf(cpf);
+        return alunoRepository.findByCpf(cpf);
     }
 
     public List<AlunoModel> buscarTodos() {
-        return ar.findAll();
+        return alunoRepository.findAll();
     }
 }
