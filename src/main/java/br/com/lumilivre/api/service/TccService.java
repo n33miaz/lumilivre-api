@@ -9,6 +9,7 @@ import br.com.lumilivre.api.repository.CursoRepository;
 import br.com.lumilivre.api.repository.TccRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,7 +31,7 @@ public class TccService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ResponseEntity<?> cadastrarTcc(String dadosJson, MultipartFile arquivoPdf) {
+    public ResponseEntity<ApiResponse<TccResponseDTO>> cadastrarTcc(String dadosJson, MultipartFile arquivoPdf) {
         try {
             TccRequestDTO dto = mapper.readValue(dadosJson, TccRequestDTO.class);
 
@@ -43,7 +44,8 @@ public class TccService {
                         .body(new ApiResponse<>(false, "O campo 'alunos' é obrigatório.", null));
             }
             if (dto.getCursoId() == null) {
-                return ResponseEntity.badRequest().body(new ApiResponse<>(false, "O ID do curso é obrigatório.", null));
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>(false, "O ID do curso é obrigatório.", null));
             }
 
             CursoModel curso = cursoRepository.findById(dto.getCursoId())
@@ -68,10 +70,12 @@ public class TccService {
             TccModel novoTcc = tccRepository.save(tcc);
             TccResponseDTO response = new TccResponseDTO(novoTcc);
 
-            return ResponseEntity.ok(new ApiResponse<>(true, "TCC cadastrado com sucesso.", response));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse<>(true, "TCC cadastrado com sucesso.", response));
 
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError()
@@ -79,23 +83,25 @@ public class TccService {
         }
     }
 
-    public ResponseEntity<?> listarTccs() {
+    public ResponseEntity<ApiResponse<List<TccResponseDTO>>> listarTccs() {
         List<TccResponseDTO> tccs = tccRepository.findAll().stream()
                 .map(TccResponseDTO::new)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(new ApiResponse<>(true, "Lista de TCCs obtida com sucesso.", tccs));
     }
 
-    public ResponseEntity<?> buscarPorId(Long id) {
+    public ResponseEntity<ApiResponse<TccResponseDTO>> buscarPorId(Long id) {
         return tccRepository.findById(id)
                 .map(tcc -> ResponseEntity.ok(new ApiResponse<>(true, "TCC encontrado.", new TccResponseDTO(tcc))))
-                .orElseGet(
-                        () -> ResponseEntity.status(404).body(new ApiResponse<>(false, "TCC não encontrado.", null)));
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(false, "TCC não encontrado.", null)));
     }
 
-    public ResponseEntity<?> excluirTcc(Long id) {
+    public ResponseEntity<ApiResponse<Void>> excluirTcc(Long id) {
         if (!tccRepository.existsById(id)) {
-            return ResponseEntity.status(404).body(new ApiResponse<>(false, "TCC não encontrado.", null));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, "TCC não encontrado.", null));
         }
         tccRepository.deleteById(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "TCC excluído com sucesso.", null));
