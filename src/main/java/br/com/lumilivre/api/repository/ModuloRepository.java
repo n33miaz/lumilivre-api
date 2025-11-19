@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.repository;
 
-import br.com.lumilivre.api.dto.ListaModuloDTO;
+import br.com.lumilivre.api.dto.modulo.ModuloResumoResponse;
 import br.com.lumilivre.api.model.ModuloModel;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -28,5 +28,5 @@ public interface ModuloRepository extends JpaRepository<ModuloModel, Integer> {
             GROUP BY m.id, m.nome
             ORDER BY m.nome
             """)
-    Page<ListaModuloDTO> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
+    Page<ModuloResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 }

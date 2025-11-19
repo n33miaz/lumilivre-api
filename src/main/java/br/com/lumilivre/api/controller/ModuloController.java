@@ -1,9 +1,9 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.ListaModuloDTO;
 import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
-import br.com.lumilivre.api.dto.requests.ModuloRequestDTO;
-import br.com.lumilivre.api.dto.responses.ModuloResponseDTO;
+import br.com.lumilivre.api.dto.modulo.ModuloResumoResponse;
+import br.com.lumilivre.api.dto.modulo.ModuloRequest;
+import br.com.lumilivre.api.dto.modulo.ModuloResponse;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.ModuloRepository;
 import br.com.lumilivre.api.service.ModuloService;
@@ -44,23 +44,23 @@ public class ModuloController {
 
     @GetMapping("/home")
     @Operation(summary = "Lista módulos para a tela principal do admin (com paginação)")
-    public ResponseEntity<Page<ListaModuloDTO>> buscarModulosAdmin(
+    public ResponseEntity<Page<ModuloResumoResponse>> buscarModulosAdmin(
             @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaModuloDTO> modulos = moduloService.buscarPorTexto(texto, pageable);
+        Page<ModuloResumoResponse> modulos = moduloService.buscarPorTexto(texto, pageable);
         return modulos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(modulos);
     }
 
     @PostMapping("/cadastrar")
     @Operation(summary = "Cadastra um novo módulo")
-    public ResponseEntity<ModuloResponseDTO> cadastrar(@RequestBody @Valid ModuloRequestDTO dto) {
+    public ResponseEntity<ModuloResponse> cadastrar(@RequestBody @Valid ModuloRequest dto) {
         return moduloService.cadastrar(dto);
     }
 
     @PutMapping("/atualizar/{id}")
     @Operation(summary = "Atualiza um módulo existente")
-    public ResponseEntity<ModuloResponseDTO> atualizar(@PathVariable Integer id,
-            @RequestBody @Valid ModuloRequestDTO dto) {
+    public ResponseEntity<ModuloResponse> atualizar(@PathVariable Integer id,
+            @RequestBody @Valid ModuloRequest dto) {
         return moduloService.atualizar(id, dto);
     }
 

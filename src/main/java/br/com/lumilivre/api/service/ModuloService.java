@@ -1,8 +1,8 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.ListaModuloDTO;
-import br.com.lumilivre.api.dto.requests.ModuloRequestDTO;
-import br.com.lumilivre.api.dto.responses.ModuloResponseDTO;
+import br.com.lumilivre.api.dto.modulo.ModuloResumoResponse;
+import br.com.lumilivre.api.dto.modulo.ModuloRequest;
+import br.com.lumilivre.api.dto.modulo.ModuloResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.ModuloModel;
@@ -23,31 +23,31 @@ public class ModuloService {
     @Autowired
     private ModuloRepository moduloRepository;
 
-    public Page<ListaModuloDTO> buscarPorTexto(String texto, Pageable pageable) {
+    public Page<ModuloResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
         return moduloRepository.buscarPorTextoComDTO(texto, pageable);
     }
 
     @Transactional
     @CacheEvict(value = "modulos", allEntries = true)
-    public ResponseEntity<ModuloResponseDTO> cadastrar(ModuloRequestDTO dto) {
+    public ResponseEntity<ModuloResponse> cadastrar(ModuloRequest dto) {
         if (moduloRepository.existsByNomeIgnoreCase(dto.getNome())) {
             throw new RegraDeNegocioException("Já existe um módulo com este nome.");
         }
         ModuloModel modulo = new ModuloModel();
         modulo.setNome(dto.getNome());
         ModuloModel salvo = moduloRepository.save(modulo);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ModuloResponseDTO(salvo));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ModuloResponse(salvo));
     }
 
     @Transactional
     @CacheEvict(value = "modulos", allEntries = true)
-    public ResponseEntity<ModuloResponseDTO> atualizar(Integer id, ModuloRequestDTO dto) {
+    public ResponseEntity<ModuloResponse> atualizar(Integer id, ModuloRequest dto) {
         ModuloModel modulo = moduloRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Módulo não encontrado."));
 
         modulo.setNome(dto.getNome());
         ModuloModel salvo = moduloRepository.save(modulo);
-        return ResponseEntity.ok(new ModuloResponseDTO(salvo));
+        return ResponseEntity.ok(new ModuloResponse(salvo));
     }
 
     @Transactional
