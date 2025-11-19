@@ -1,9 +1,7 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.model.GeneroModel;
-import br.com.lumilivre.api.repository.GeneroRepository;
+import br.com.lumilivre.api.dto.GeneroDTO;
 import br.com.lumilivre.api.service.GeneroService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,24 +23,22 @@ import java.util.Set;
 public class GeneroController {
 
     @Autowired
-    private GeneroRepository generoRepository;
-
-    @Autowired
     private GeneroService generoService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
     @Operation(summary = "Lista todos os gêneros cadastrados")
-    public ResponseEntity<List<GeneroModel>> listarTodos() {
-        List<GeneroModel> generos = generoRepository.findAll();
+    public ResponseEntity<List<GeneroDTO>> listarTodos() {
+        List<GeneroDTO> generos = generoService.listarTodos();
         return ResponseEntity.ok(generos);
     }
 
     @GetMapping("/sugestao-por-cdd/{cddCodigo}")
     @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
     @Operation(summary = "Sugere gêneros com base em um código CDD")
-    public ResponseEntity<Set<GeneroModel>> sugerirPorCdd(@PathVariable String cddCodigo) {
-        Set<GeneroModel> generosSugeridos = generoService.sugerirGenerosPorCdd(cddCodigo);
+    public ResponseEntity<Set<GeneroDTO>> sugerirPorCdd(@PathVariable String cddCodigo) {
+        Set<GeneroDTO> generosSugeridos = generoService.sugerirGenerosPorCdd(cddCodigo);
+
         if (generosSugeridos.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
