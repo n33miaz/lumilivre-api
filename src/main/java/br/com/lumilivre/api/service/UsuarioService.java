@@ -1,27 +1,24 @@
 package br.com.lumilivre.api.service;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.dto.AlterarSenhaDTO;
 import br.com.lumilivre.api.dto.ListaUsuarioDTO;
 import br.com.lumilivre.api.dto.UsuarioDTO;
 import br.com.lumilivre.api.dto.responses.UsuarioResponseDTO;
 import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.model.ResponseModel;
+import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
+import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.UsuarioRepository;
-import jakarta.transaction.Transactional;
-
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 public class UsuarioService {
@@ -46,31 +43,22 @@ public class UsuarioService {
         return ur.buscarPorTextoComDTO(texto, pageable);
     }
 
-    public Page<ListaUsuarioDTO> buscarAvancado(
-            Integer id,
-            String email,
-            Role role,
-            Pageable pageable) {
+    public Page<ListaUsuarioDTO> buscarAvancado(Integer id, String email, Role role, Pageable pageable) {
         return ur.buscarAvancadoComDTO(id, email, role, pageable);
     }
 
     @Transactional
-    public ResponseEntity<?> cadastrarAdmin(UsuarioDTO dto) {
-        ResponseModel rm = new ResponseModel();
-
+    public UsuarioResponseDTO cadastrarAdmin(UsuarioDTO dto) {
         if (dto.getEmail() == null || dto.getEmail().isBlank()) {
-            rm.setMensagem("O e-mail é obrigatório");
-            return ResponseEntity.badRequest().body(rm);
+            throw new RegraDeNegocioException("O e-mail é obrigatório");
         }
 
         if (ur.existsByEmail(dto.getEmail())) {
-            rm.setMensagem("E-mail já está em uso");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(rm);
+            throw new RegraDeNegocioException("E-mail já está em uso");
         }
 
         if (dto.getSenha() == null || dto.getSenha().isBlank()) {
-            rm.setMensagem("A senha é obrigatória");
-            return ResponseEntity.badRequest().body(rm);
+            throw new RegraDeNegocioException("A senha é obrigatória");
         }
 
         UsuarioModel usuarioModel = new UsuarioModel();
@@ -80,89 +68,68 @@ public class UsuarioService {
 
         UsuarioModel salvo = ur.save(usuarioModel);
 
-        emailService.enviarSenhaInicial(dto.getEmail(), "Admin", dto.getSenha());
+        try {
+            emailService.enviarSenhaInicial(dto.getEmail(), "Admin", dto.getSenha());
+        } catch (Exception e) {
+            System.err.println("Erro ao enviar email: " + e.getMessage());
+        }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(new UsuarioResponseDTO(salvo));
+        return new UsuarioResponseDTO(salvo);
     }
 
     @Transactional
-    public ResponseEntity<?> atualizar(Integer id, UsuarioDTO dto) {
-        ResponseModel rm = new ResponseModel();
-        Optional<UsuarioModel> optionalUsuario = ur.findById(id);
-
-        if (optionalUsuario.isEmpty()) {
-            rm.setMensagem("Usuário não encontrado.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(rm);
-        }
-
-        UsuarioModel usuarioModel = optionalUsuario.get();
+    public UsuarioResponseDTO atualizar(Integer id, UsuarioDTO dto) {
+        UsuarioModel usuarioModel = ur.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado."));
 
         if (dto.getEmail() == null || dto.getEmail().isBlank()) {
-            rm.setMensagem("O e-mail é obrigatório");
-            return ResponseEntity.badRequest().body(rm);
+            throw new RegraDeNegocioException("O e-mail é obrigatório");
         }
+
         if (!dto.getEmail().equals(usuarioModel.getEmail()) && ur.existsByEmail(dto.getEmail())) {
-            rm.setMensagem("E-mail já está em uso");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(rm);
+            throw new RegraDeNegocioException("E-mail já está em uso");
         }
+
         usuarioModel.setEmail(dto.getEmail());
 
         if (dto.getSenha() != null && !dto.getSenha().isBlank()) {
             usuarioModel.setSenha(passwordEncoder.encode(dto.getSenha()));
-            emailService.enviarSenhaInicial(dto.getEmail(), "Admin", dto.getSenha());
         }
 
         UsuarioModel salvo = ur.save(usuarioModel);
 
-        return ResponseEntity.ok(new UsuarioResponseDTO(salvo));
+        return new UsuarioResponseDTO(salvo);
     }
 
     @Transactional
-    public ResponseEntity<ResponseModel> excluir(Integer id) {
-        Optional<UsuarioModel> optUsuario = ur.findById(id);
-        if (optUsuario.isEmpty()) {
-            ResponseModel rm = new ResponseModel();
-            rm.setMensagem("Usuário não encontrado.");
-            return new ResponseEntity<>(rm, HttpStatus.NOT_FOUND);
-        }
-
-        UsuarioModel usuario = optUsuario.get();
+    public void excluir(Integer id) {
+        UsuarioModel usuario = ur.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado."));
 
         if (usuario.getRole() == Role.ALUNO && usuario.getAluno() != null) {
             usuario.getAluno().setUsuario(null);
         }
 
         ur.delete(usuario);
-
-        ResponseModel rm = new ResponseModel();
-        rm.setMensagem("Usuário removido com sucesso");
-        return new ResponseEntity<>(rm, HttpStatus.OK);
     }
 
-    public ResponseEntity<?> alterarSenha(AlterarSenhaDTO dto) {
+    @Transactional
+    public void alterarSenha(AlterarSenhaDTO dto) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String usernameLogado = userDetails.getUsername();
 
-        Optional<UsuarioModel> opt = ur.findByEmailOrAluno_Matricula(usernameLogado, usernameLogado);
-
-        if (opt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário logado não encontrado no sistema.");
-        }
-
-        UsuarioModel usuario = opt.get();
+        UsuarioModel usuario = ur.findByEmailOrAluno_Matricula(usernameLogado, usernameLogado)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário logado não encontrado no sistema."));
 
         if (usuario.getAluno() != null && !usuario.getAluno().getMatricula().equals(dto.getMatricula())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Você não tem permissão para alterar a senha de outro usuário.");
+            throw new AccessDeniedException("Você não tem permissão para alterar a senha de outro usuário.");
         }
 
         if (!passwordEncoder.matches(dto.getSenhaAtual(), usuario.getSenha())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Senha atual incorreta");
+            throw new RegraDeNegocioException("Senha atual incorreta");
         }
 
         usuario.setSenha(passwordEncoder.encode(dto.getNovaSenha()));
         ur.save(usuario);
-
-        return ResponseEntity.ok("Senha alterada com sucesso");
     }
 }

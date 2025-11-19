@@ -29,9 +29,6 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
 
     void deleteByIsbn(String isbn);
 
-    @Query("SELECT DISTINCT l FROM LivroModel l JOIN FETCH l.generos g JOIN l.exemplares e")
-    List<LivroModel> findLivrosDisponiveis();
-
     @Query(value = """
                 SELECT DISTINCT l FROM LivroModel l
                 LEFT JOIN l.generos g

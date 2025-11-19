@@ -3,6 +3,7 @@ package br.com.lumilivre.api.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -74,11 +75,12 @@ public class UsuarioController {
     @Operation(summary = "Cadastra um novo usuário (Acesso: ADMIN)", description = "Cria um novo usuário com perfil de ADMIN ou BIBLIOTECARIO.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuário cadastrado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada"),
             @ApiResponse(responseCode = "409", description = "E-mail já está em uso")
     })
-    public ResponseEntity<?> cadastrar(@RequestBody @Valid UsuarioDTO dto) {
-        return us.cadastrarAdmin(dto);
+    public ResponseEntity<UsuarioResponseDTO> cadastrar(@RequestBody @Valid UsuarioDTO dto) {
+        UsuarioResponseDTO novoUsuario = us.cadastrarAdmin(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -88,10 +90,11 @@ public class UsuarioController {
             @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponseDTO.class))),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<?> atualizar(
+    public ResponseEntity<UsuarioResponseDTO> atualizar(
             @Parameter(description = "ID do usuário a ser atualizado") @PathVariable Integer id,
             @RequestBody @Valid UsuarioDTO dto) {
-        return us.atualizar(id, dto);
+        UsuarioResponseDTO usuarioAtualizado = us.atualizar(id, dto);
+        return ResponseEntity.ok(usuarioAtualizado);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -100,7 +103,8 @@ public class UsuarioController {
     @ApiResponse(responseCode = "200", description = "Usuário excluído com sucesso")
     public ResponseEntity<ResponseModel> excluir(
             @Parameter(description = "ID do usuário a ser excluído") @PathVariable Integer id) {
-        return us.excluir(id);
+        us.excluir(id);
+        return ResponseEntity.ok(new ResponseModel("Usuário removido com sucesso"));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -108,10 +112,12 @@ public class UsuarioController {
     @Operation(summary = "Altera a própria senha")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Senha alterada com sucesso"),
-            @ApiResponse(responseCode = "401", description = "Senha atual incorreta"),
+            @ApiResponse(responseCode = "400", description = "Senha atual incorreta"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado a alterar senha de outro usuário"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<?> alterarSenha(@RequestBody AlterarSenhaDTO dto) {
-        return us.alterarSenha(dto);
+    public ResponseEntity<ResponseModel> alterarSenha(@RequestBody AlterarSenhaDTO dto) {
+        us.alterarSenha(dto);
+        return ResponseEntity.ok(new ResponseModel("Senha alterada com sucesso"));
     }
 }
