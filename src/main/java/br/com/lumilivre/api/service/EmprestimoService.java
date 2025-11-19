@@ -121,7 +121,7 @@ public class EmprestimoService {
                 pageable);
     }
 
-    // MÉTODOS DE CADASTRO, ATUALIZAÇÃO E EXCLUSÃO (SEM ALTERAÇÕES)
+    // ================ MÉTODOS DE ESCRITA ================
 
     @Transactional
     public ResponseEntity<ResponseModel> cadastrar(EmprestimoDTO dto) {
@@ -220,11 +220,13 @@ public class EmprestimoService {
         AlunoModel aluno = emprestimo.getAluno();
 
         if (emprestimo.getDataDevolucao().isBefore(agora)) {
-            Penalidade penalidade = calcularPenalidade(Duration.between(emprestimo.getDataDevolucao(), agora).toDays());
-            emprestimo.setPenalidade(penalidade);
+            long diasDeAtraso = Duration.between(emprestimo.getDataDevolucao(), agora).toDays();
 
-            if (aluno.getPenalidade() == null || penalidadeMaisGrave(penalidade, aluno.getPenalidade())) {
-                aluno.setPenalidade(penalidade);
+            Penalidade novaPenalidade = Penalidade.fromDiasDeAtraso(diasDeAtraso);
+            emprestimo.setPenalidade(novaPenalidade);
+
+            if (novaPenalidade.isMaisGraveQue(aluno.getPenalidade())) {
+                aluno.setPenalidade(novaPenalidade);
                 aluno.setPenalidadeExpiraEm(agora.plusDays(7));
                 alunoRepository.save(aluno);
             }
@@ -242,7 +244,7 @@ public class EmprestimoService {
                         "Status da penalidade: %s\\n\\nAtenciosamente,\\nBiblioteca LumiLivre",
                 aluno.getNomeCompleto(),
                 exemplar.getLivro().getNome(),
-                emprestimo.getPenalidade() != null ? emprestimo.getPenalidade().name() : "Nenhuma");
+                emprestimo.getPenalidade() != null ? emprestimo.getPenalidade().getStatus() : "Nenhuma");
         emailService.enviarEmail(aluno.getEmail(), "Empréstimo concluído", mensagemEmail);
 
         rm.setMensagem("Empréstimo concluído com sucesso.");
@@ -267,39 +269,7 @@ public class EmprestimoService {
         return ResponseEntity.ok(rm);
     }
 
-    // ================ MÉTODOS AUXILIARES (SEM ALTERAÇÕES) ================
-
-    private static Penalidade calcularPenalidade(long diasAtraso) {
-        if (diasAtraso <= 1)
-            return Penalidade.REGISTRO;
-        if (diasAtraso <= 5)
-            return Penalidade.ADVERTENCIA;
-        if (diasAtraso <= 7)
-            return Penalidade.SUSPENSAO;
-        if (diasAtraso <= 10)
-            return Penalidade.BLOQUEIO;
-        if (diasAtraso <= 90)
-            return Penalidade.BLOQUEIO;
-        return Penalidade.BANIMENTO;
-    }
-
-    private static boolean penalidadeMaisGrave(Penalidade nova, Penalidade atual) {
-        if (nova == null)
-            return false;
-        if (atual == null)
-            return true;
-        return gravidade(nova) > gravidade(atual);
-    }
-
-    private static int gravidade(Penalidade p) {
-        return switch (p) {
-            case REGISTRO -> 1;
-            case ADVERTENCIA -> 2;
-            case SUSPENSAO -> 3;
-            case BLOQUEIO -> 4;
-            case BANIMENTO -> 5;
-        };
-    }
+    // ================ MÉTODOS AUXILIARES E RANKING ================
 
     public List<AlunoRankingDTO> gerarRankingAlunos(int top) {
         List<AlunoModel> alunos = alunoRepository.findAllByOrderByEmprestimosCountDesc();
