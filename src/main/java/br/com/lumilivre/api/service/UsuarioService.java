@@ -10,9 +10,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.AlterarSenhaDTO;
 import br.com.lumilivre.api.dto.ListaUsuarioDTO;
 import br.com.lumilivre.api.dto.UsuarioDTO;
+import br.com.lumilivre.api.dto.auth.AlterarSenhaRequest;
 import br.com.lumilivre.api.dto.responses.UsuarioResponseDTO;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
@@ -114,7 +114,7 @@ public class UsuarioService {
     }
 
     @Transactional
-    public void alterarSenha(AlterarSenhaDTO dto) {
+    public void alterarSenha(AlterarSenhaRequest dto) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String usernameLogado = userDetails.getUsername();
 

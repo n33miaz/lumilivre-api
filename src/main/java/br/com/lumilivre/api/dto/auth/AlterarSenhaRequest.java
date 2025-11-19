@@ -1,6 +1,6 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.auth;
 
-public class AlterarSenhaDTO {
+public class AlterarSenhaRequest {
 	private String matricula;
 	private String senhaAtual;
 	private String novaSenha;

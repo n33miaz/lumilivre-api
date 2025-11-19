@@ -1,8 +1,8 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 
-public class LoginDTO {
+public class LoginRequest {
 
     @NotBlank(message = "user não deve estar em branco")
     private String user;

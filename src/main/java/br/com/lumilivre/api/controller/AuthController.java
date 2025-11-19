@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.dto.LoginDTO;
-import br.com.lumilivre.api.dto.LoginResponseDTO;
 import br.com.lumilivre.api.dto.MudarSenhaComTokenDTO;
+import br.com.lumilivre.api.dto.auth.LoginRequest;
+import br.com.lumilivre.api.dto.auth.LoginResponse;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.AuthService;
 import jakarta.validation.Valid;
@@ -31,12 +31,12 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Realiza o login do usuário", description = "Autentica via matrícula ou email.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Login bem-sucedido", content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Login bem-sucedido", content = @Content(schema = @Schema(implementation = LoginResponse.class))),
             @ApiResponse(responseCode = "401", description = "Credenciais inválidas"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginDTO dto) {
-        LoginResponseDTO response = authService.login(dto);
+    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest dto) {
+        LoginResponse response = authService.login(dto);
         return ResponseEntity.ok(response);
     }
 

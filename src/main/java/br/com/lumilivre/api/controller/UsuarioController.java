@@ -8,9 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-import br.com.lumilivre.api.dto.AlterarSenhaDTO;
 import br.com.lumilivre.api.dto.ListaUsuarioDTO;
 import br.com.lumilivre.api.dto.UsuarioDTO;
+import br.com.lumilivre.api.dto.auth.AlterarSenhaRequest;
 import br.com.lumilivre.api.dto.responses.UsuarioResponseDTO;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -116,7 +116,7 @@ public class UsuarioController {
             @ApiResponse(responseCode = "403", description = "Não autorizado a alterar senha de outro usuário"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<ResponseModel> alterarSenha(@RequestBody AlterarSenhaDTO dto) {
+    public ResponseEntity<ResponseModel> alterarSenha(@RequestBody AlterarSenhaRequest dto) {
         us.alterarSenha(dto);
         return ResponseEntity.ok(new ResponseModel("Senha alterada com sucesso"));
     }

@@ -12,9 +12,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.LoginDTO;
-import br.com.lumilivre.api.dto.LoginResponseDTO;
 import br.com.lumilivre.api.dto.MudarSenhaComTokenDTO;
+import br.com.lumilivre.api.dto.auth.LoginRequest;
+import br.com.lumilivre.api.dto.auth.LoginResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.model.TokenResetSenhaModel;
 import br.com.lumilivre.api.model.UsuarioModel;
@@ -40,7 +40,7 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
-    public LoginResponseDTO login(LoginDTO dto) {
+    public LoginResponse login(LoginRequest dto) {
         UsuarioModel usuario = ur.findByEmailOrAluno_Matricula(dto.getUser(), dto.getUser())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
 
@@ -58,7 +58,7 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(userDetails);
 
-        return new LoginResponseDTO(usuario, token);
+        return new LoginResponse(usuario, token);
     }
 
     @Transactional

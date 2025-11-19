@@ -1,8 +1,8 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.auth;
 
 import br.com.lumilivre.api.model.UsuarioModel;
 
-public class LoginResponseDTO {
+public class LoginResponse {
 
     private Integer id;
     private String email;
@@ -10,7 +10,7 @@ public class LoginResponseDTO {
     private String matriculaAluno;
     private String token;
 
-    public LoginResponseDTO(UsuarioModel usuario, String token) {
+    public LoginResponse(UsuarioModel usuario, String token) {
         this.id = usuario.getId();
         this.email = usuario.getEmail();
         this.role = usuario.getRole().name();

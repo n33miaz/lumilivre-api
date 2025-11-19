@@ -1,9 +1,9 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.auth;
 
-public class JwtResponse {
+public class TokenResponse {
     private String token;
 
-    public JwtResponse(String token) {
+    public TokenResponse(String token) {
         this.token = token;
     }
 
