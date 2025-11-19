@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.controller;
 
+import br.com.lumilivre.api.dto.responses.ModuloResponseDTO;
 import br.com.lumilivre.api.model.ModuloModel;
 import br.com.lumilivre.api.repository.ModuloRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/modulos")
@@ -28,8 +30,17 @@ public class ModuloController {
 
     @GetMapping
     @Operation(summary = "Lista todos os módulos cadastrados")
-    public ResponseEntity<List<ModuloModel>> listarTodos() {
+    public ResponseEntity<List<ModuloResponseDTO>> listarTodos() {
         List<ModuloModel> modulos = moduloRepository.findAll();
-        return modulos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(modulos);
+
+        if (modulos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        List<ModuloResponseDTO> dtos = modulos.stream()
+                .map(ModuloResponseDTO::new)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 }
