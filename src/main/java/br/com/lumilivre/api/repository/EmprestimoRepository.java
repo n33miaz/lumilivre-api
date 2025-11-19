@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -39,8 +40,9 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     List<EmprestimoModel> findByDataDevolucaoBetween(LocalDateTime inicio, LocalDateTime fim);
 
     boolean existsByExemplarTomboAndStatusEmprestimo(String tombo, StatusEmprestimo status);
+
     boolean existsByExemplarTomboAndStatusEmprestimoIn(String tombo, List<StatusEmprestimo> statuses);
-    
+
     long countByAlunoMatriculaAndStatusEmprestimo(String matricula, StatusEmprestimo status);
 
     // Busca por texto genérica
@@ -67,11 +69,11 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             @Param("statusEmprestimo") StatusEmprestimo statusEmprestimo,
             @Param("tombo") String tombo,
             @Param("livroNome") String livroNome,
-            @Param("alunoNomeCompleto") String alunoNomeCompleto, 
-            @Param("dataEmprestimoInicio") LocalDateTime dataEmprestimoInicio, 
-            @Param("dataEmprestimoFim") LocalDateTime dataEmprestimoFim, 
-            @Param("dataDevolucaoInicio") LocalDateTime dataDevolucaoInicio, 
-            @Param("dataDevolucaoFim") LocalDateTime dataDevolucaoFim, 
+            @Param("alunoNomeCompleto") String alunoNomeCompleto,
+            @Param("dataEmprestimoInicio") LocalDateTime dataEmprestimoInicio,
+            @Param("dataEmprestimoFim") LocalDateTime dataEmprestimoFim,
+            @Param("dataDevolucaoInicio") LocalDateTime dataDevolucaoInicio,
+            @Param("dataDevolucaoFim") LocalDateTime dataDevolucaoFim,
             Pageable pageable);
 
     @Query("""
@@ -131,6 +133,26 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             """)
     List<ListaEmprestimoDashboardDTO> findEmprestimosAtivosEAtrasados();
 
-	List<EmprestimoModel> findByStatusEmprestimo(StatusEmprestimo atrasado);
+    List<EmprestimoModel> findByStatusEmprestimo(StatusEmprestimo atrasado);
 
+    @Query("""
+                SELECT e FROM EmprestimoModel e
+                JOIN e.aluno a
+                JOIN e.exemplar ex
+                WHERE (:inicio IS NULL OR e.dataEmprestimo >= :inicio)
+                  AND (:fim IS NULL OR e.dataEmprestimo <= :fim)
+                  AND (:status IS NULL OR e.statusEmprestimo = :status)
+                  AND (:matriculaAluno IS NULL OR a.matricula = :matriculaAluno)
+                  AND (:idCurso IS NULL OR a.curso.id = :idCurso)
+                  AND (:idModulo IS NULL OR a.modulo.id = :idModulo)
+                  AND (:isbnOuTombo IS NULL OR ex.tombo = :isbnOuTombo OR ex.livro.isbn = :isbnOuTombo)
+            """)
+    List<EmprestimoModel> findForReport(
+            @Param("inicio") LocalDate inicio,
+            @Param("fim") LocalDate fim,
+            @Param("status") StatusEmprestimo status,
+            @Param("matriculaAluno") String matriculaAluno,
+            @Param("idCurso") Integer idCurso,
+            @Param("isbnOuTombo") String isbnOuTombo,
+            @Param("idModulo") Integer idModulo);
 }

@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.data.ListaCursoDTO;
-import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.CursoRepository;
@@ -33,25 +32,9 @@ public class CursoService {
         return cr.buscarPorTexto(texto, pageable);
     }
 
-    public Page<CursoModel> buscarAvancado(
-            String nome,
-            String turnoStr,
-            String modulo,
-            Pageable pageable) {
-        
-        Turno turnoEnum = null;
-        if (turnoStr != null && !turnoStr.isBlank()) {
-            try {
-                turnoEnum = Turno.valueOf(turnoStr.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                turnoEnum = null;
-            }
-        }
-
+    public Page<CursoModel> buscarAvancado(String nome, Pageable pageable) {
         String nomeFiltro = (nome != null && !nome.isBlank()) ? "%" + nome + "%" : null;
-        String moduloFiltro = (modulo != null && !modulo.isBlank()) ? "%" + modulo + "%" : null;
-        
-        return cr.buscarAvancado(nomeFiltro, turnoEnum, moduloFiltro, pageable);
+        return cr.buscarAvancado(nomeFiltro, pageable);
     }
 
     @Transactional
@@ -90,10 +73,6 @@ public class CursoService {
         return cursoModel.getNome() == null || cursoModel.getNome().trim().isEmpty();
     }
 
-    public List<String> buscarModulosDistintos() {
-        return cr.findDistinctModulos();
-    }
-    
     public List<CursoModel> buscarTodos() {
         return cr.findAll();
     }

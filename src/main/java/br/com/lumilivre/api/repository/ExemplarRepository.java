@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.ExemplarModel;
 
 @Repository
@@ -29,4 +31,17 @@ public interface ExemplarRepository extends JpaRepository<ExemplarModel, String>
     void deleteAllByLivroId(Long livroId);
 
     List<ExemplarModel> findAllByLivroId(Long livroId);
+
+    @Query("""
+                SELECT ex FROM ExemplarModel ex
+                JOIN FETCH ex.livro l
+                WHERE (:status IS NULL OR ex.status_livro = :status)
+                  AND (:isbnOuTombo IS NULL
+                       OR ex.tombo ILIKE %:isbnOuTombo%
+                       OR l.isbn ILIKE %:isbnOuTombo%)
+                ORDER BY l.nome, ex.tombo
+            """)
+    List<ExemplarModel> findForReport(
+            @Param("status") StatusLivro status,
+            @Param("isbnOuTombo") String isbnOuTombo);
 }

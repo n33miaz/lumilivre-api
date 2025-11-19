@@ -13,7 +13,6 @@ import org.springframework.data.repository.query.Param;
 
 import br.com.lumilivre.api.data.ListaAlunoDTO;
 import br.com.lumilivre.api.enums.Penalidade;
-import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.model.AlunoModel;
 
 public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
@@ -96,7 +95,19 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
     @Query("SELECT a.matricula FROM AlunoModel a")
     Set<String> findAllMatriculas();
 
-    // ATUALIZAÇÃO: somente CPFs não nulos
     @Query("SELECT a.cpf FROM AlunoModel a WHERE a.cpf IS NOT NULL")
     Set<String> findAllCpfs();
+
+    @Query("""
+                SELECT a FROM AlunoModel a
+                WHERE (:idModulo IS NULL OR a.modulo.id = :idModulo)
+                  AND (:idCurso IS NULL OR a.curso.id = :idCurso)
+                  AND (:idTurno IS NULL OR a.turno.id = :idTurno)
+                  AND (:penalidade IS NULL OR a.penalidade = :penalidade)
+            """)
+    List<AlunoModel> findForReport(
+            @Param("idModulo") Integer idModulo,
+            @Param("idCurso") Integer idCurso,
+            @Param("idTurno") Integer idTurno,
+            @Param("penalidade") Penalidade penalidade);
 }

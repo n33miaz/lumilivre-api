@@ -1,7 +1,5 @@
 package br.com.lumilivre.api.controller;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -70,20 +68,15 @@ public class CursoController {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
-
-    @Operation(summary = "Busca avançada e paginada de cursos", description = "Filtra cursos por campos específicos como nome, turno e módulo.")
+    @Operation(summary = "Busca avançada e paginada de cursos", description = "Filtra cursos por nome.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Página de cursos encontrada"),
-            @ApiResponse(responseCode = "204", description = "Nenhum curso encontrado para os filtros")
+            @ApiResponse(responseCode = "204", description = "Nenhum curso encontrado para o filtro")
     })
-
     public ResponseEntity<Page<CursoModel>> buscarAvancado(
             @Parameter(description = "Nome parcial do curso") @RequestParam(required = false) String nome,
-            @Parameter(description = "Turno do curso (MANHA, TARDE, NOITE, INTEGRAL)") @RequestParam(required = false) String turno,
-            @Parameter(description = "Módulo ou série do curso") @RequestParam(required = false) String modulo,
             Pageable pageable) {
-        Page<CursoModel> cursos = cs.buscarAvancado(nome, turno, modulo, pageable);
-
+        Page<CursoModel> cursos = cs.buscarAvancado(nome, pageable);
         return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
     }
 
@@ -131,15 +124,5 @@ public class CursoController {
     public ResponseEntity<ResponseModel> excluir(
             @Parameter(description = "ID do curso a ser excluído") @PathVariable Integer id) {
         return cs.excluir(id);
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
-    @GetMapping("/modulos")
-
-    @Operation(summary = "Lista todos os módulos distintos existentes")
-    public ResponseEntity<List<String>> listarModulosDistintos() {
-        List<String> modulos = cs.buscarModulosDistintos();
-        return modulos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(modulos);
     }
 }

@@ -10,8 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import br.com.lumilivre.api.data.CursoEstatisticasDTO;
 import br.com.lumilivre.api.data.ListaCursoDTO;
-import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.model.CursoModel;
 
 @Repository
@@ -20,41 +20,42 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 	boolean existsByNomeIgnoreCase(String nome);
 
 	boolean existsByNomeIgnoreCaseAndIdNot(String nome, Integer id);
-    Optional<CursoModel> findByNomeIgnoreCase(String nome);
 
-	List<CursoModel> findByTurno(Turno turno);
+	Optional<CursoModel> findByNomeIgnoreCase(String nome);	
 
 	@Query("""
 			    SELECT c FROM CursoModel c
 			    WHERE c.nome ILIKE :texto
-			       OR CAST(c.turno AS text) ILIKE :texto
-			       OR c.modulo ILIKE :texto
 			""")
 	Page<CursoModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
 	@Query("""
-            SELECT c FROM CursoModel c
-            WHERE (:nome IS NULL OR c.nome ILIKE :nome)
-              AND (:turno IS NULL OR c.turno = :turno)
-              AND (:modulo IS NULL OR c.modulo ILIKE :modulo)
-        """)
+			    SELECT c FROM CursoModel c
+			    WHERE (:nome IS NULL OR c.nome ILIKE :nome)
+			""")
 	Page<CursoModel> buscarAvancado(
 			@Param("nome") String nome,
-			@Param("turno") Turno turno,
-			@Param("modulo") String modulo,
 			Pageable pageable);
 
 	@Query("""
 			SELECT new br.com.lumilivre.api.data.ListaCursoDTO(
-			    c.nome,
-			    c.turno,
-			    c.modulo
+			    c.nome
 			)
 			FROM CursoModel c
 			ORDER BY c.nome
 			""")
 	Page<ListaCursoDTO> findCursoParaListaAdmin(Pageable pageable);
 
-	@Query("SELECT DISTINCT c.modulo FROM CursoModel c WHERE c.modulo IS NOT NULL AND c.modulo <> '' ORDER BY c.modulo")
-	List<String> findDistinctModulos();
+	@Query("""
+			    SELECT new br.com.lumilivre.api.data.CursoEstatisticasDTO(
+			        c.nome,
+			        COUNT(a.id),
+			        SUM(a.emprestimosCount)
+			    )
+			    FROM CursoModel c
+			    LEFT JOIN c.alunos a
+			    GROUP BY c.id, c.nome
+			    ORDER BY c.nome
+			""")
+	List<CursoEstatisticasDTO> findEstatisticasCursos();
 }

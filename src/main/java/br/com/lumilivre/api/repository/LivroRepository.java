@@ -148,4 +148,41 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                 ORDER BY genero_nome, rn
             """, nativeQuery = true)
     List<Map<String, Object>> findCatalogoMobile();
+
+    @Query("""
+                SELECT l FROM LivroModel l
+                LEFT JOIN l.generos g
+                LEFT JOIN l.cdd c
+                WHERE (:genero IS NULL OR g.nome ILIKE :genero)
+                  AND (:autor IS NULL OR l.autor ILIKE %:autor%)
+                  AND (:cdd IS NULL OR c.codigo = :cdd)
+                  AND (:classificacaoEtaria IS NULL OR CAST(l.classificacao_etaria AS text) ILIKE :classificacaoEtaria)
+                  AND (:tipoCapa IS NULL OR CAST(l.tipo_capa AS text) ILIKE :tipoCapa)
+                GROUP BY l.id
+                ORDER BY l.nome
+            """)
+    List<LivroModel> findForReport(
+            @Param("genero") String genero,
+            @Param("autor") String autor,
+            @Param("cdd") String cdd,
+            @Param("classificacaoEtaria") String classificacaoEtaria,
+            @Param("tipoCapa") String tipoCapa);
+
+    @Query("""
+                SELECT l.autor as autor, COUNT(l.id) as total
+                FROM LivroModel l
+                WHERE l.autor IS NOT NULL
+                GROUP BY l.autor
+                ORDER BY total DESC
+            """)
+    List<Map<String, Object>> countByAutor();
+
+    @Query("""
+                SELECT g.nome as genero, COUNT(l.id) as total
+                FROM LivroModel l
+                JOIN l.generos g
+                GROUP BY g.nome
+                ORDER BY total DESC
+            """)
+    List<Map<String, Object>> countByGenero();
 }
