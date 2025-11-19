@@ -45,27 +45,55 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
 
     long countByAlunoMatriculaAndStatusEmprestimo(String matricula, StatusEmprestimo status);
 
-    // Busca por texto genérica
+    List<EmprestimoModel> findByStatusEmprestimo(StatusEmprestimo atrasado);
+
     @Query(value = """
-                SELECT *
+                SELECT
+                    e.status_emprestimo as statusEmprestimo,
+                    l.nome as livroNome,
+                    ex.tombo as livroTombo,
+                    a.nome_completo as nomeAluno,
+                    c.nome as curso,
+                    e.data_emprestimo as dataEmprestimo,
+                    e.data_devolucao as dataDevolucao
+                FROM emprestimo e
+                JOIN aluno a ON e.aluno_matricula = a.matricula
+                JOIN exemplar ex ON e.exemplar_tombo = ex.tombo
+                JOIN livro l ON ex.livro_id = l.id
+                JOIN curso c ON a.curso_id = c.id
+                WHERE e.texto_busca @@ plainto_tsquery('portuguese', :texto)
+            """, countQuery = """
+                SELECT count(e.id)
                 FROM emprestimo e
                 WHERE e.texto_busca @@ plainto_tsquery('portuguese', :texto)
             """, nativeQuery = true)
-    Page<EmprestimoModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
+    Page<ListaEmprestimoDTO> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
-    // Busca avançada agora com LocalDateTime
     @Query("""
-                SELECT e FROM EmprestimoModel e
+                SELECT new br.com.lumilivre.api.dto.ListaEmprestimoDTO(
+                    e.statusEmprestimo,
+                    l.nome,
+                    ex.tombo,
+                    a.nomeCompleto,
+                    c.nome,
+                    e.dataEmprestimo,
+                    e.dataDevolucao
+                )
+                FROM EmprestimoModel e
+                JOIN e.aluno a
+                JOIN e.exemplar ex
+                JOIN ex.livro l
+                JOIN a.curso c
                 WHERE (:statusEmprestimo IS NULL OR e.statusEmprestimo = :statusEmprestimo)
-                AND (:tombo IS NULL OR e.exemplar.tombo ILIKE :tombo)
-                AND (:livroNome IS NULL OR e.exemplar.livro.nome ILIKE :livroNome)
-                AND (:alunoNomeCompleto IS NULL OR e.aluno.nomeCompleto ILIKE :alunoNomeCompleto)
+                AND (:tombo IS NULL OR ex.tombo ILIKE :tombo)
+                AND (:livroNome IS NULL OR l.nome ILIKE :livroNome)
+                AND (:alunoNomeCompleto IS NULL OR a.nomeCompleto ILIKE :alunoNomeCompleto)
                 AND (:dataEmprestimoInicio IS NULL OR e.dataEmprestimo >= :dataEmprestimoInicio)
                 AND (:dataEmprestimoFim IS NULL OR e.dataEmprestimo <= :dataEmprestimoFim)
                 AND (:dataDevolucaoInicio IS NULL OR e.dataDevolucao >= :dataDevolucaoInicio)
                 AND (:dataDevolucaoFim IS NULL OR e.dataDevolucao <= :dataDevolucaoFim)
             """)
-    Page<EmprestimoModel> buscarAvancado(
+    Page<ListaEmprestimoDTO> buscarAvancado(
             @Param("statusEmprestimo") StatusEmprestimo statusEmprestimo,
             @Param("tombo") String tombo,
             @Param("livroNome") String livroNome,
@@ -133,12 +161,13 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             """)
     List<ListaEmprestimoDashboardDTO> findEmprestimosAtivosEAtrasados();
 
-    List<EmprestimoModel> findByStatusEmprestimo(StatusEmprestimo atrasado);
-
     @Query("""
                 SELECT e FROM EmprestimoModel e
-                JOIN e.aluno a
-                JOIN e.exemplar ex
+                JOIN FETCH e.aluno a
+                JOIN FETCH a.curso
+                LEFT JOIN FETCH a.modulo
+                JOIN FETCH e.exemplar ex
+                JOIN FETCH ex.livro
                 WHERE (:inicio IS NULL OR e.dataEmprestimo >= :inicio)
                   AND (:fim IS NULL OR e.dataEmprestimo <= :fim)
                   AND (:status IS NULL OR e.statusEmprestimo = :status)

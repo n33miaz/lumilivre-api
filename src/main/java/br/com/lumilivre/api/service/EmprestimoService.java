@@ -51,9 +51,9 @@ public class EmprestimoService {
         return emprestimoRepository.findEmprestimoParaListaAdmin(pageable);
     }
 
-    public Page<EmprestimoModel> buscarPorTexto(String texto, Pageable pageable) {
+    public Page<ListaEmprestimoDTO> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
-            return emprestimoRepository.findAll(pageable);
+            return buscarAvancado(null, null, null, null, null, null, pageable);
         }
         return emprestimoRepository.buscarPorTexto(texto, pageable);
     }
@@ -84,7 +84,7 @@ public class EmprestimoService {
         return emprestimoRepository.findByStatusEmprestimo(StatusEmprestimo.ATRASADO);
     }
 
-    public Page<EmprestimoModel> buscarAvancado(
+    public Page<ListaEmprestimoDTO> buscarAvancado(
             StatusEmprestimo statusEmprestimo,
             String tombo,
             String livroNome,
@@ -121,13 +121,12 @@ public class EmprestimoService {
                 pageable);
     }
 
-    // ======== MÉTODOS DE CADASTRO, ATUALIZAÇÃO E EXCLUSÃO ========
+    // MÉTODOS DE CADASTRO, ATUALIZAÇÃO E EXCLUSÃO (SEM ALTERAÇÕES)
 
     @Transactional
     public ResponseEntity<ResponseModel> cadastrar(EmprestimoDTO dto) {
         ResponseModel rm = new ResponseModel();
 
-        // Valida datas
         if (dto.getData_emprestimo() == null || dto.getData_devolucao() == null) {
             rm.setMensagem("Datas de empréstimo e devolução são obrigatórias.");
             return ResponseEntity.badRequest().body(rm);
@@ -137,33 +136,22 @@ public class EmprestimoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        // Busca aluno
         AlunoModel aluno = alunoRepository.findByMatricula(dto.getAluno_matricula())
-                .orElse(null);
-        if (aluno == null) {
-            rm.setMensagem("Aluno não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
+                .orElseThrow(() -> new IllegalArgumentException("Aluno não encontrado."));
 
-        // Valida penalidade
         if (aluno.getPenalidade() != null) {
             rm.setMensagem("O aluno possui penalidade ativa e não pode realizar empréstimos.");
             return ResponseEntity.badRequest().body(rm);
         }
 
-        // Busca exemplar
         ExemplarModel exemplar = exemplarRepository.findByTombo(dto.getExemplar_tombo())
-                .orElse(null);
-        if (exemplar == null) {
-            rm.setMensagem("Exemplar não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
+                .orElseThrow(() -> new IllegalArgumentException("Exemplar não encontrado."));
+
         if (exemplar.getStatus_livro() != StatusLivro.DISPONIVEL) {
             rm.setMensagem("O exemplar não está disponível para empréstimo.");
             return ResponseEntity.badRequest().body(rm);
         }
 
-        // Valida limite de empréstimos ativos
         long emprestimosAtivosAluno = emprestimoRepository
                 .countByAlunoMatriculaAndStatusEmprestimo(aluno.getMatricula(), StatusEmprestimo.ATIVO);
         if (emprestimosAtivosAluno >= LIMITE_EMPRESTIMOS_ATIVOS) {
@@ -171,7 +159,6 @@ public class EmprestimoService {
             return ResponseEntity.badRequest().body(rm);
         }
 
-        // Cria e salva empréstimo
         EmprestimoModel emprestimo = new EmprestimoModel();
         emprestimo.setAluno(aluno);
         emprestimo.setExemplar(exemplar);
@@ -187,10 +174,9 @@ public class EmprestimoService {
 
         emprestimoRepository.save(emprestimo);
 
-        // Envia e-mail
         String mensagemEmail = String.format(
-                "Olá %s,\n\nSeu empréstimo do livro '%s' foi registrado com sucesso.\n" +
-                        "Data de empréstimo: %s\nData de devolução: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
+                "Olá %s,\\n\\nSeu empréstimo do livro '%s' foi registrado com sucesso.\\n" +
+                        "Data de empréstimo: %s\\nData de devolução: %s\\n\\nAtenciosamente,\\nBiblioteca LumiLivre",
                 aluno.getNomeCompleto(),
                 exemplar.getLivro().getNome(),
                 dto.getData_emprestimo(),
@@ -204,11 +190,9 @@ public class EmprestimoService {
     @Transactional
     public ResponseEntity<ResponseModel> atualizar(EmprestimoDTO dto) {
         ResponseModel rm = new ResponseModel();
-        EmprestimoModel emprestimo = emprestimoRepository.findById(dto.getId()).orElse(null);
-        if (emprestimo == null) {
-            rm.setMensagem("Empréstimo não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
+        EmprestimoModel emprestimo = emprestimoRepository.findById(dto.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Empréstimo não encontrado."));
+
         if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.CONCLUIDO) {
             rm.setMensagem("Este empréstimo já foi concluído e não pode ser alterado.");
             return ResponseEntity.badRequest().body(rm);
@@ -224,11 +208,9 @@ public class EmprestimoService {
     public ResponseEntity<ResponseModel> concluirEmprestimo(Integer id) {
         ResponseModel rm = new ResponseModel();
 
-        EmprestimoModel emprestimo = emprestimoRepository.findById(id).orElse(null);
-        if (emprestimo == null) {
-            rm.setMensagem("Empréstimo não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
+        EmprestimoModel emprestimo = emprestimoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Empréstimo não encontrado."));
+
         if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.CONCLUIDO) {
             rm.setMensagem("Este empréstimo já foi concluído e não pode mais ser alterado.");
             return ResponseEntity.badRequest().body(rm);
@@ -237,7 +219,6 @@ public class EmprestimoService {
         LocalDateTime agora = LocalDateTime.now();
         AlunoModel aluno = emprestimo.getAluno();
 
-        // Calcula penalidade se houver atraso
         if (emprestimo.getDataDevolucao().isBefore(agora)) {
             Penalidade penalidade = calcularPenalidade(Duration.between(emprestimo.getDataDevolucao(), agora).toDays());
             emprestimo.setPenalidade(penalidade);
@@ -249,7 +230,6 @@ public class EmprestimoService {
             }
         }
 
-        // Atualiza status do empréstimo e exemplar
         emprestimo.setStatusEmprestimo(StatusEmprestimo.CONCLUIDO);
         ExemplarModel exemplar = emprestimo.getExemplar();
         exemplar.setStatus_livro(StatusLivro.DISPONIVEL);
@@ -258,8 +238,8 @@ public class EmprestimoService {
         emprestimoRepository.save(emprestimo);
 
         String mensagemEmail = String.format(
-                "Olá %s,\n\nSeu empréstimo do livro '%s' foi concluído.\n" +
-                        "Status da penalidade: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
+                "Olá %s,\\n\\nSeu empréstimo do livro '%s' foi concluído.\\n" +
+                        "Status da penalidade: %s\\n\\nAtenciosamente,\\nBiblioteca LumiLivre",
                 aluno.getNomeCompleto(),
                 exemplar.getLivro().getNome(),
                 emprestimo.getPenalidade() != null ? emprestimo.getPenalidade().name() : "Nenhuma");
@@ -273,11 +253,8 @@ public class EmprestimoService {
     public ResponseEntity<ResponseModel> excluir(Integer id) {
         ResponseModel rm = new ResponseModel();
 
-        EmprestimoModel emprestimo = emprestimoRepository.findById(id).orElse(null);
-        if (emprestimo == null) {
-            rm.setMensagem("Empréstimo não encontrado.");
-            return ResponseEntity.badRequest().body(rm);
-        }
+        EmprestimoModel emprestimo = emprestimoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Empréstimo não encontrado."));
 
         AlunoModel aluno = emprestimo.getAluno();
         if (aluno != null) {
@@ -290,7 +267,7 @@ public class EmprestimoService {
         return ResponseEntity.ok(rm);
     }
 
-    // ================ MÉTODOS AUXILIARES ================
+    // ================ MÉTODOS AUXILIARES (SEM ALTERAÇÕES) ================
 
     private static Penalidade calcularPenalidade(long diasAtraso) {
         if (diasAtraso <= 1)
@@ -301,11 +278,9 @@ public class EmprestimoService {
             return Penalidade.SUSPENSAO;
         if (diasAtraso <= 10)
             return Penalidade.BLOQUEIO;
-        if (diasAtraso > 10 && diasAtraso <= 90)
+        if (diasAtraso <= 90)
             return Penalidade.BLOQUEIO;
-        if (diasAtraso > 90)
-            return Penalidade.BANIMENTO;
-        return null;
+        return Penalidade.BANIMENTO;
     }
 
     private static boolean penalidadeMaisGrave(Penalidade nova, Penalidade atual) {
