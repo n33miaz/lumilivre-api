@@ -36,8 +36,22 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
             """, nativeQuery = true)
     Page<AlunoModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
-    @Query("""
+    @Query(value = """
                 SELECT a FROM AlunoModel a
+                JOIN FETCH a.curso c
+                LEFT JOIN FETCH a.turno
+                LEFT JOIN FETCH a.modulo
+                WHERE (:penalidadeEnum IS NULL OR a.penalidade = :penalidadeEnum)
+                  AND (:matricula IS NULL OR a.matricula = :matricula)
+                  AND (:nomeCompleto IS NULL OR a.nomeCompleto ILIKE :nomeCompleto)
+                  AND (:cursoNome IS NULL OR c.nome ILIKE :cursoNome)
+                  AND (:turnoId IS NULL OR a.turno.id = :turnoId)
+                  AND (:moduloId IS NULL OR a.modulo.id = :moduloId)
+                  AND (:dataNascimento IS NULL OR a.dataNascimento = :dataNascimento)
+                  AND (:email IS NULL OR a.email ILIKE :email)
+                  AND (:celular IS NULL OR a.celular = :celular)
+            """, countQuery = """
+                SELECT COUNT(a) FROM AlunoModel a
                 LEFT JOIN a.curso c
                 WHERE (:penalidadeEnum IS NULL OR a.penalidade = :penalidadeEnum)
                   AND (:matricula IS NULL OR a.matricula = :matricula)
@@ -100,6 +114,9 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
 
     @Query("""
                 SELECT a FROM AlunoModel a
+                JOIN FETCH a.curso
+                LEFT JOIN FETCH a.turno
+                LEFT JOIN FETCH a.modulo
                 WHERE (:idModulo IS NULL OR a.modulo.id = :idModulo)
                   AND (:idCurso IS NULL OR a.curso.id = :idCurso)
                   AND (:idTurno IS NULL OR a.turno.id = :idTurno)
