@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.curso;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ListaCursoDTO {
+public class CursoResumoResponse {
 
     private Integer id;
     private String nome;

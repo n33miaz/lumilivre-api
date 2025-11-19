@@ -10,8 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.dto.CursoEstatisticasDTO;
-import br.com.lumilivre.api.dto.ListaCursoDTO;
+import br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse;
+import br.com.lumilivre.api.dto.curso.CursoResumoResponse;
 import br.com.lumilivre.api.model.CursoModel;
 
 @Repository
@@ -44,7 +44,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			FROM CursoModel c
 			ORDER BY c.nome
 			""")
-	Page<ListaCursoDTO> findCursoParaListaAdmin(Pageable pageable);
+	Page<CursoResumoResponse> findCursoParaListaAdmin(Pageable pageable);
 
 	@Query("""
 			    SELECT new br.com.lumilivre.api.dto.CursoEstatisticasDTO(
@@ -57,7 +57,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			    GROUP BY c.id, c.nome
 			    ORDER BY c.nome
 			""")
-	List<CursoEstatisticasDTO> findEstatisticasCursos();
+	List<CursoEstatisticaResponse> findEstatisticasCursos();
 
 	@Query("""
 			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(c.id, c.nome, COUNT(a))
@@ -66,7 +66,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			WHERE (:texto IS NULL OR c.nome ILIKE CONCAT('%', :texto, '%'))
 			GROUP BY c.id, c.nome
 			""")
-	Page<ListaCursoDTO> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
+	Page<CursoResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
 	@Query("""
 			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(c.id, c.nome, COUNT(a))
@@ -75,7 +75,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			WHERE (:nome IS NULL OR c.nome ILIKE :nome)
 			GROUP BY c.id, c.nome
 			""")
-	Page<ListaCursoDTO> buscarAvancadoComDTO(@Param("nome") String nome, Pageable pageable);
+	Page<CursoResumoResponse> buscarAvancadoComDTO(@Param("nome") String nome, Pageable pageable);
 
 	@Query("""
 			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(c.id, c.nome, COUNT(a))
@@ -85,5 +85,5 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			GROUP BY c.id, c.nome
 			ORDER BY c.nome
 			""")
-	Page<ListaCursoDTO> findCursoParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
+	Page<CursoResumoResponse> findCursoParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 }

@@ -7,9 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.dto.requests.CursoRequestDTO;
-import br.com.lumilivre.api.dto.responses.CursoResponseDTO;
-import br.com.lumilivre.api.dto.ListaCursoDTO;
+import br.com.lumilivre.api.dto.curso.CursoRequest;
+import br.com.lumilivre.api.dto.curso.CursoResponse;
+import br.com.lumilivre.api.dto.curso.CursoResumoResponse;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.CursoService;
 
@@ -34,30 +34,30 @@ public class CursoController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
     @Operation(summary = "Lista cursos para a tela principal do admin")
-    public ResponseEntity<Page<ListaCursoDTO>> buscarCursosAdmin(
+    public ResponseEntity<Page<CursoResumoResponse>> buscarCursosAdmin(
             @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaCursoDTO> cursos = cs.buscarCursoParaListaAdmin(texto, pageable);
+        Page<CursoResumoResponse> cursos = cs.buscarCursoParaListaAdmin(texto, pageable);
         return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
     @Operation(summary = "Busca cursos com paginação e filtro de texto")
-    public ResponseEntity<Page<ListaCursoDTO>> buscarPorTexto(
+    public ResponseEntity<Page<CursoResumoResponse>> buscarPorTexto(
             @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaCursoDTO> cursos = cs.buscarPorTexto(texto, pageable);
+        Page<CursoResumoResponse> cursos = cs.buscarPorTexto(texto, pageable);
         return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
     @Operation(summary = "Busca avançada e paginada de cursos")
-    public ResponseEntity<Page<ListaCursoDTO>> buscarAvancado(
+    public ResponseEntity<Page<CursoResumoResponse>> buscarAvancado(
             @RequestParam(required = false) String nome,
             Pageable pageable) {
-        Page<ListaCursoDTO> cursos = cs.buscarAvancado(nome, pageable);
+        Page<CursoResumoResponse> cursos = cs.buscarAvancado(nome, pageable);
         return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
     }
 
@@ -65,10 +65,10 @@ public class CursoController {
     @PostMapping("/cadastrar")
     @Operation(summary = "Cadastra um novo curso")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Curso cadastrado", content = @Content(schema = @Schema(implementation = CursoResponseDTO.class))),
+            @ApiResponse(responseCode = "201", description = "Curso cadastrado", content = @Content(schema = @Schema(implementation = CursoResponse.class))),
             @ApiResponse(responseCode = "400", description = "Dados inválidos")
     })
-    public ResponseEntity<CursoResponseDTO> cadastrar(@RequestBody @Valid CursoRequestDTO dto) {
+    public ResponseEntity<CursoResponse> cadastrar(@RequestBody @Valid CursoRequest dto) {
         return cs.cadastrar(dto);
     }
 
@@ -76,12 +76,12 @@ public class CursoController {
     @PutMapping("atualizar/{id}")
     @Operation(summary = "Atualiza um curso existente")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Curso atualizado", content = @Content(schema = @Schema(implementation = CursoResponseDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Curso atualizado", content = @Content(schema = @Schema(implementation = CursoResponse.class))),
             @ApiResponse(responseCode = "404", description = "Curso não encontrado")
     })
-    public ResponseEntity<CursoResponseDTO> atualizar(
+    public ResponseEntity<CursoResponse> atualizar(
             @PathVariable Integer id,
-            @RequestBody @Valid CursoRequestDTO dto) {
+            @RequestBody @Valid CursoRequest dto) {
         return cs.atualizar(id, dto);
     }
 

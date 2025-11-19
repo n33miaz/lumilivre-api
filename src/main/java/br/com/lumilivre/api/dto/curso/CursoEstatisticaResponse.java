@@ -1,12 +1,12 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.curso;
 
-public class CursoEstatisticasDTO {
+public class CursoEstatisticaResponse {
 
     private final String nomeCurso;
     private final long quantidadeAlunos;
     private final long totalEmprestimos;
 
-    public CursoEstatisticasDTO(String nomeCurso, long quantidadeAlunos, Long totalEmprestimos) {
+    public CursoEstatisticaResponse(String nomeCurso, long quantidadeAlunos, Long totalEmprestimos) {
         this.nomeCurso = nomeCurso;
         this.quantidadeAlunos = quantidadeAlunos;
         this.totalEmprestimos = (totalEmprestimos == null) ? 0L : totalEmprestimos;

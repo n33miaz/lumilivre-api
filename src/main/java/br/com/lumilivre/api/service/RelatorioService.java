@@ -6,7 +6,7 @@ import br.com.lumilivre.api.repository.CursoRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
-import br.com.lumilivre.api.dto.CursoEstatisticasDTO;
+import br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
@@ -152,7 +152,7 @@ public class RelatorioService {
             document.open();
             adicionarCabecalhoRelatorio(document, "Relatório Geral de Cursos", null, null);
 
-            List<CursoEstatisticasDTO> estatisticas = cursoRepository.findEstatisticasCursos();
+            List<CursoEstatisticaResponse> estatisticas = cursoRepository.findEstatisticasCursos();
 
             PdfPTable table = new PdfPTable(4);
             table.setWidthPercentage(100);
@@ -163,7 +163,7 @@ public class RelatorioService {
             adicionarCelulaHeader(table, "Qtd. Empréstimos");
             adicionarCelulaHeader(table, "Média Empréstimos/Aluno");
 
-            for (CursoEstatisticasDTO dto : estatisticas) {
+            for (CursoEstatisticaResponse dto : estatisticas) {
                 table.addCell(criarCelulaDados(dto.getNomeCurso()));
                 table.addCell(criarCelulaDados(String.valueOf(dto.getQuantidadeAlunos())));
                 table.addCell(criarCelulaDados(String.valueOf(dto.getTotalEmprestimos())));

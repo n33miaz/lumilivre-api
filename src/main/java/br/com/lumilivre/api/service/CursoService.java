@@ -8,9 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.requests.CursoRequestDTO;
-import br.com.lumilivre.api.dto.responses.CursoResponseDTO;
-import br.com.lumilivre.api.dto.ListaCursoDTO;
+import br.com.lumilivre.api.dto.curso.CursoRequest;
+import br.com.lumilivre.api.dto.curso.CursoResponse;
+import br.com.lumilivre.api.dto.curso.CursoResumoResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -22,31 +22,31 @@ public class CursoService {
     @Autowired
     private CursoRepository cr;
 
-    public Page<ListaCursoDTO> buscarCursoParaListaAdmin(String texto, Pageable pageable) {
+    public Page<CursoResumoResponse> buscarCursoParaListaAdmin(String texto, Pageable pageable) {
         return cr.findCursoParaListaAdminComFiltro(texto, pageable);
     }
 
-    public Page<ListaCursoDTO> buscarPorTexto(String texto, Pageable pageable) {
+    public Page<CursoResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
         return cr.buscarPorTextoComDTO(texto, pageable);
     }
 
-    public Page<ListaCursoDTO> buscarAvancado(String nome, Pageable pageable) {
+    public Page<CursoResumoResponse> buscarAvancado(String nome, Pageable pageable) {
         String nomeFiltro = (nome != null && !nome.isBlank()) ? "%" + nome + "%" : null;
         return cr.buscarAvancadoComDTO(nomeFiltro, pageable);
     }
 
     @Transactional
-    public ResponseEntity<CursoResponseDTO> cadastrar(CursoRequestDTO dto) {
+    public ResponseEntity<CursoResponse> cadastrar(CursoRequest dto) {
         CursoModel curso = new CursoModel();
         curso.setNome(dto.getNome());
 
         CursoModel salvo = cr.save(curso);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(new CursoResponseDTO(salvo));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new CursoResponse(salvo));
     }
 
     @Transactional
-    public ResponseEntity<CursoResponseDTO> atualizar(Integer id, CursoRequestDTO dto) {
+    public ResponseEntity<CursoResponse> atualizar(Integer id, CursoRequest dto) {
         CursoModel curso = cr.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Curso não encontrado com ID: " + id));
 
@@ -54,7 +54,7 @@ public class CursoService {
 
         CursoModel salvo = cr.save(curso);
 
-        return ResponseEntity.ok(new CursoResponseDTO(salvo));
+        return ResponseEntity.ok(new CursoResponse(salvo));
     }
 
     @Transactional
