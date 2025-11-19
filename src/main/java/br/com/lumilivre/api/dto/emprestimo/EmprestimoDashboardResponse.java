@@ -1,16 +1,16 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.emprestimo;
 
 import java.time.LocalDateTime;
 
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 
-public class ListaEmprestimoDashboardDTO {
+public class EmprestimoDashboardResponse {
 	private String livroNome;
 	private String alunoNome;
 	private LocalDateTime dataDevolucao;
 	private StatusEmprestimo statusEmprestimo;
 
-	public ListaEmprestimoDashboardDTO(String livroNome, String alunoNome, LocalDateTime dataDevolucao,
+	public EmprestimoDashboardResponse(String livroNome, String alunoNome, LocalDateTime dataDevolucao,
 			StatusEmprestimo statusEmprestimo) {
 		this.livroNome = livroNome;
 		this.alunoNome = alunoNome;

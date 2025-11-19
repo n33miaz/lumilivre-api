@@ -1,10 +1,10 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.emprestimo;
 
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-public class EmprestimoDTO {
+public class EmprestimoRequest {
 
 	private Integer id;
 

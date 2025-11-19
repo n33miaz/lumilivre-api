@@ -11,10 +11,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.dto.EmprestimoResponseDTO;
-import br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
-import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse;
+import br.com.lumilivre.api.dto.emprestimo.ListaEmprestimoAtivoDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
 
@@ -113,7 +113,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 WHERE e.aluno.matricula = :matricula
                   AND e.statusEmprestimo = 'ATIVO'
             """)
-    List<EmprestimoResponseDTO> findEmprestimosAtivos(@Param("matricula") String matricula);
+    List<EmprestimoResponse> findEmprestimosAtivos(@Param("matricula") String matricula);
 
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.EmprestimoResponseDTO(
@@ -123,7 +123,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 WHERE e.aluno.matricula = :matricula
                   AND e.statusEmprestimo = 'CONCLUIDO'
             """)
-    List<EmprestimoResponseDTO> findHistoricoEmprestimos(@Param("matricula") String matricula);
+    List<EmprestimoResponse> findHistoricoEmprestimos(@Param("matricula") String matricula);
 
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.ListaEmprestimoDTO(
@@ -160,7 +160,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 )
                 ORDER BY emprestimo.dataDevolucao ASC
             """)
-    List<ListaEmprestimoDashboardDTO> findEmprestimosAtivosEAtrasados();
+    List<EmprestimoDashboardResponse> findEmprestimosAtivosEAtrasados();
 
     @Query("""
                 SELECT e FROM EmprestimoModel e

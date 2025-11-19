@@ -7,10 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import br.com.lumilivre.api.dto.EmprestimoDTO;
 import br.com.lumilivre.api.dto.ListaSolicitacaoCompletaDTO;
 import br.com.lumilivre.api.dto.ListaSolicitacaoDashboardDTO;
 import br.com.lumilivre.api.dto.SolicitacaoEmprestimoDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 import br.com.lumilivre.api.model.AlunoModel;
@@ -102,7 +102,7 @@ public class SolicitacaoEmprestimoService {
 
         if (aceitar) {
             // Cria empréstimo automaticamente
-            EmprestimoDTO dto = new EmprestimoDTO();
+            EmprestimoRequest dto = new EmprestimoRequest();
             dto.setAluno_matricula(aluno.getMatricula());
             dto.setExemplar_tombo(exemplar.getTombo());
             dto.setData_emprestimo(LocalDateTime.now());

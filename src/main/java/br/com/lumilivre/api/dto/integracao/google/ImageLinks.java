@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto.googlebooks;
+package br.com.lumilivre.api.dto.integracao.google;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

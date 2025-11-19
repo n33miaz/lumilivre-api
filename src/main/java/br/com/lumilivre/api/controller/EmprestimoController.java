@@ -10,11 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.dto.EmprestimoDTO;
-import br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
-import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
+import br.com.lumilivre.api.dto.emprestimo.ListaEmprestimoAtivoDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
 import br.com.lumilivre.api.dto.responses.EmprestimoResponseDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -97,7 +97,7 @@ public class EmprestimoController {
 
     @GetMapping("/aluno/{matricula}")
     @Operation(summary = "Lista os empréstimos ativos de um aluno")
-    public ResponseEntity<List<br.com.lumilivre.api.dto.EmprestimoResponseDTO>> listarEmprestimos(
+    public ResponseEntity<List<br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse>> listarEmprestimos(
             @PathVariable String matricula) {
         return ResponseEntity.ok(es.listarEmprestimosAluno(matricula));
     }
@@ -105,7 +105,7 @@ public class EmprestimoController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/aluno/{matricula}/historico")
     @Operation(summary = "Lista o histórico de empréstimos de um aluno")
-    public ResponseEntity<List<br.com.lumilivre.api.dto.EmprestimoResponseDTO>> historicoEmprestimos(
+    public ResponseEntity<List<br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse>> historicoEmprestimos(
             @PathVariable String matricula) {
         return ResponseEntity.ok(es.listarHistorico(matricula));
     }
@@ -113,7 +113,7 @@ public class EmprestimoController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/dashboard")
     @Operation(summary = "Lista os empréstimos que estão vencendo para o dashboard")
-    public List<ListaEmprestimoDashboardDTO> listarVencendo() {
+    public List<EmprestimoDashboardResponse> listarVencendo() {
         return es.listarEmprestimosAtivosEAtrasados();
     }
 
@@ -133,7 +133,7 @@ public class EmprestimoController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada"),
             @ApiResponse(responseCode = "404", description = "Aluno ou Exemplar não encontrado")
     })
-    public ResponseEntity<EmprestimoResponseDTO> cadastrar(@RequestBody EmprestimoDTO dto) {
+    public ResponseEntity<EmprestimoResponseDTO> cadastrar(@RequestBody EmprestimoRequest dto) {
         EmprestimoResponseDTO novoEmprestimo = es.cadastrar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(novoEmprestimo);
     }
@@ -148,7 +148,7 @@ public class EmprestimoController {
     })
     public ResponseEntity<EmprestimoResponseDTO> atualizar(
             @PathVariable Integer id,
-            @RequestBody EmprestimoDTO dto) {
+            @RequestBody EmprestimoRequest dto) {
         dto.setId(id);
         EmprestimoResponseDTO atualizado = es.atualizar(dto);
         return ResponseEntity.ok(atualizado);

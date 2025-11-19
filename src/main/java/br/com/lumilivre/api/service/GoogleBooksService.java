@@ -1,8 +1,8 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.googlebooks.GoogleBooksResponse;
-import br.com.lumilivre.api.dto.googlebooks.ImageLinks;
-import br.com.lumilivre.api.dto.googlebooks.VolumeInfo;
+import br.com.lumilivre.api.dto.integracao.google.GoogleBooksResponse;
+import br.com.lumilivre.api.dto.integracao.google.ImageLinks;
+import br.com.lumilivre.api.dto.integracao.google.VolumeInfo;
 import br.com.lumilivre.api.model.LivroModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

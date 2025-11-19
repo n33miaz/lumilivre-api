@@ -1,11 +1,11 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.emprestimo;
 
 import java.time.LocalDateTime;
 
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 
-public class EmprestimoResponseDTO {
+public class EmprestimoResponse {
 
 	private Integer id;
 	private LocalDateTime dataEmprestimo;
@@ -14,7 +14,7 @@ public class EmprestimoResponseDTO {
 	private Penalidade penalidade;
 	private String livroTitulo;
 
-	public EmprestimoResponseDTO(Integer id, LocalDateTime dataEmprestimo, LocalDateTime dataDevolucao,
+	public EmprestimoResponse(Integer id, LocalDateTime dataEmprestimo, LocalDateTime dataDevolucao,
 			StatusEmprestimo status, Penalidade penalidade, String livroTitulo) {
 		this.id = id;
 		this.dataEmprestimo = dataEmprestimo;

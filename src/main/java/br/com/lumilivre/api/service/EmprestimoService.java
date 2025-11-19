@@ -11,12 +11,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.EmprestimoDTO;
 import br.com.lumilivre.api.dto.responses.EmprestimoResponseDTO;
-import br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
-import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
+import br.com.lumilivre.api.dto.emprestimo.ListaEmprestimoAtivoDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
@@ -49,7 +49,7 @@ public class EmprestimoService {
     // ================ MÉTODOS DE ESCRITA ================
 
     @Transactional
-    public EmprestimoResponseDTO cadastrar(EmprestimoDTO dto) {
+    public EmprestimoResponseDTO cadastrar(EmprestimoRequest dto) {
         if (dto.getData_emprestimo() == null || dto.getData_devolucao() == null) {
             throw new RegraDeNegocioException("Datas de empréstimo e devolução são obrigatórias.");
         }
@@ -104,7 +104,7 @@ public class EmprestimoService {
     }
 
     @Transactional
-    public EmprestimoResponseDTO atualizar(EmprestimoDTO dto) {
+    public EmprestimoResponseDTO atualizar(EmprestimoRequest dto) {
         EmprestimoModel emprestimo = emprestimoRepository.findById(dto.getId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
 
@@ -194,15 +194,15 @@ public class EmprestimoService {
     }
 
     // Atenção: Aqui usamos o DTO antigo
-    public List<br.com.lumilivre.api.dto.EmprestimoResponseDTO> listarEmprestimosAluno(String matricula) {
+    public List<br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse> listarEmprestimosAluno(String matricula) {
         return emprestimoRepository.findEmprestimosAtivos(matricula);
     }
 
-    public List<br.com.lumilivre.api.dto.EmprestimoResponseDTO> listarHistorico(String matricula) {
+    public List<br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse> listarHistorico(String matricula) {
         return emprestimoRepository.findHistoricoEmprestimos(matricula);
     }
 
-    public List<ListaEmprestimoDashboardDTO> listarEmprestimosAtivosEAtrasados() {
+    public List<EmprestimoDashboardResponse> listarEmprestimosAtivosEAtrasados() {
         return emprestimoRepository.findEmprestimosAtivosEAtrasados();
     }
 
@@ -270,7 +270,7 @@ public class EmprestimoService {
 
     // ================ MÉTODOS AUXILIARES ================
 
-    private void enviarEmailEmprestimo(AlunoModel aluno, ExemplarModel exemplar, EmprestimoDTO dto) {
+    private void enviarEmailEmprestimo(AlunoModel aluno, ExemplarModel exemplar, EmprestimoRequest dto) {
         try {
             String mensagemEmail = String.format(
                     "Olá %s,\n\nSeu empréstimo do livro '%s' foi registrado com sucesso.\n" +

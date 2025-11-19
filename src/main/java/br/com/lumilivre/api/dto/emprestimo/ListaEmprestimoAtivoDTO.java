@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.emprestimo;
 
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import java.time.LocalDate;
