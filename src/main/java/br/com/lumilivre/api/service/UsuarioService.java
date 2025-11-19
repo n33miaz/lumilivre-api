@@ -41,20 +41,16 @@ public class UsuarioService {
         return ur.findUsuarioParaListaAdmin(pageable);
     }
 
-    public Page<UsuarioModel> buscarPorTexto(String texto, Pageable pageable) {
-        if (texto == null || texto.isBlank()) {
-            return ur.findAll(pageable);
-        }
-        return ur.buscarPorTexto(texto, pageable);
+    public Page<ListaUsuarioDTO> buscarPorTexto(String texto, Pageable pageable) {
+        return ur.buscarPorTextoComDTO(texto, pageable);
     }
 
-    public Page<UsuarioModel> buscarAvancado(
+    public Page<ListaUsuarioDTO> buscarAvancado(
             Integer id,
             String email,
             Role role,
-
             Pageable pageable) {
-        return ur.buscarAvancado(id, email, role, pageable);
+        return ur.buscarAvancadoComDTO(id, email, role, pageable);
     }
 
     @Transactional
