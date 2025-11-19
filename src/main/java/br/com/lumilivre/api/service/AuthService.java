@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.lumilivre.api.dto.LoginDTO;
 import br.com.lumilivre.api.dto.LoginResponseDTO;
 import br.com.lumilivre.api.dto.MudarSenhaComTokenDTO;
+import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.model.TokenResetSenhaModel;
 import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.TokenResetSenhaRepository;
@@ -39,17 +40,12 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
-    public ResponseEntity<?> login(LoginDTO dto) {
-        Optional<UsuarioModel> opt = ur.findByEmailOrAluno_Matricula(dto.getUser(), dto.getUser());
-
-        if (opt.isEmpty()) {
-            return ResponseEntity.status(404).body("Usuário não encontrado");
-        }
-
-        UsuarioModel usuario = opt.get();
+    public LoginResponseDTO login(LoginDTO dto) {
+        UsuarioModel usuario = ur.findByEmailOrAluno_Matricula(dto.getUser(), dto.getUser())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
 
         if (!passwordEncoder.matches(dto.getSenha(), usuario.getSenha())) {
-            return ResponseEntity.status(401).body("Senha incorreta");
+            throw new BadCredentialsException("Senha incorreta");
         }
 
         List<SimpleGrantedAuthority> authorities = List.of(
@@ -62,50 +58,40 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(userDetails);
 
-        return ResponseEntity.ok(new LoginResponseDTO(usuario, token));
+        return new LoginResponseDTO(usuario, token);
     }
 
-    // solicitar, validar e executar o reset de senha
     @Transactional
     public void solicitarResetSenha(String email) {
         Optional<UsuarioModel> usuarioOpt = ur.findByEmail(email);
 
-        // se o usuário não existe, nada é feito
         if (usuarioOpt.isPresent()) {
             UsuarioModel usuario = usuarioOpt.get();
-
-            // token aleatório
             String token = UUID.randomUUID().toString();
 
-            // salva o token, associado ao usuário
             TokenResetSenhaModel tokenReset = new TokenResetSenhaModel(token, usuario, 30);
             tokenRepository.save(tokenReset);
 
-            // alteraremos para o link do domínio + /mudar-senha?token=
-            String linkReset = "https://lumilivre-web.onrender.com/mudar-senha?token=" + token;
+            String linkReset = "https://www.lumilivre.com.br/mudar-senha?token=" + token;
             emailService.enviarEmailResetSenha(usuario.getEmail(), linkReset);
         }
     }
 
     public boolean validarTokenReset(String token) {
         Optional<TokenResetSenhaModel> tokenOpt = tokenRepository.findByToken(token);
-        if (tokenOpt.isEmpty() || tokenOpt.get().isExpirado()) {
-            return false; // Token não encontrado ou expirado
-        }
-        return true;
+        return tokenOpt.isPresent() && !tokenOpt.get().isExpirado();
     }
 
     @Transactional
     public void mudarSenhaComToken(MudarSenhaComTokenDTO dto) {
-        Optional<TokenResetSenhaModel> tokenOpt = tokenRepository.findByToken(dto.getToken());
+        TokenResetSenhaModel tokenReset = tokenRepository.findByToken(dto.getToken())
+                .orElseThrow(() -> new IllegalArgumentException("Token inválido ou não encontrado."));
 
-        if (tokenOpt.isEmpty() || tokenOpt.get().isExpirado()) {
-            throw new IllegalArgumentException("Token inválido ou expirado.");
+        if (tokenReset.isExpirado()) {
+            throw new IllegalArgumentException("Token expirado.");
         }
 
-        TokenResetSenhaModel tokenReset = tokenOpt.get();
         UsuarioModel usuario = tokenReset.getUsuario();
-
         usuario.setSenha(passwordEncoder.encode(dto.getNovaSenha()));
         ur.save(usuario);
 
