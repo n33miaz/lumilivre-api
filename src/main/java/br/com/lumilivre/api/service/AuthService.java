@@ -12,9 +12,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.data.LoginDTO;
-import br.com.lumilivre.api.data.LoginResponseDTO;
-import br.com.lumilivre.api.data.MudarSenhaComTokenDTO;
+import br.com.lumilivre.api.dto.LoginDTO;
+import br.com.lumilivre.api.dto.LoginResponseDTO;
+import br.com.lumilivre.api.dto.MudarSenhaComTokenDTO;
 import br.com.lumilivre.api.model.TokenResetSenhaModel;
 import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.TokenResetSenhaRepository;

@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import br.com.lumilivre.api.data.ListaSolicitacaoDashboardDTO;
+import br.com.lumilivre.api.dto.ListaSolicitacaoDashboardDTO;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;
 
@@ -18,7 +18,7 @@ public interface SolicitacaoEmprestimoRepository extends JpaRepository<Solicitac
 	List<SolicitacaoEmprestimoModel> findAllByOrderByDataSolicitacaoDesc();
 
 	@Query("""
-			    SELECT new br.com.lumilivre.api.data.ListaSolicitacaoDashboardDTO(
+			    SELECT new br.com.lumilivre.api.dto.ListaSolicitacaoDashboardDTO(
 			        a.nomeCompleto,
 			        l.nome,
 			        ex.tombo,

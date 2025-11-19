@@ -1,9 +1,9 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.data.GeneroCatalogoDTO;
-import br.com.lumilivre.api.data.ListaLivroDTO;
-import br.com.lumilivre.api.data.LivroAgrupadoDTO;
-import br.com.lumilivre.api.data.LivroDTO;
+import br.com.lumilivre.api.dto.GeneroCatalogoDTO;
+import br.com.lumilivre.api.dto.ListaLivroDTO;
+import br.com.lumilivre.api.dto.LivroAgrupadoDTO;
+import br.com.lumilivre.api.dto.LivroDTO;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.LivroService;

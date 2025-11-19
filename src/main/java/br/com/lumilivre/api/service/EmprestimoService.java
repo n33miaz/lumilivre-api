@@ -12,11 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.data.AlunoRankingDTO;
-import br.com.lumilivre.api.data.EmprestimoDTO;
-import br.com.lumilivre.api.data.EmprestimoResponseDTO;
-import br.com.lumilivre.api.data.ListaEmprestimoDTO;
-import br.com.lumilivre.api.data.ListaEmprestimoDashboardDTO;
+import br.com.lumilivre.api.dto.AlunoRankingDTO;
+import br.com.lumilivre.api.dto.EmprestimoDTO;
+import br.com.lumilivre.api.dto.EmprestimoResponseDTO;
+import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
+import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
@@ -45,9 +45,8 @@ public class EmprestimoService {
     @Autowired
     private EmailService emailService;
 
-    // ================================
-    // MÉTODOS DE BUSCA
-    // ================================
+    // ================ MÉTODOS DE BUSCA ================
+
     public Page<ListaEmprestimoDTO> buscarEmprestimoParaListaAdmin(Pageable pageable) {
         return emprestimoRepository.findEmprestimoParaListaAdmin(pageable);
     }
@@ -71,67 +70,59 @@ public class EmprestimoService {
         return emprestimoRepository.findEmprestimosAtivosEAtrasados();
     }
 
-
     public List<EmprestimoModel> buscarAtivosEAtrasados() {
         return emprestimoRepository.findByStatusEmprestimoIn(
-            List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO)
-        );
+                List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
     }
 
     public long getContagemEmprestimosAtivosEAtrasados() {
         return emprestimoRepository.countByStatusEmprestimoIn(
-            List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO)
-        );
+                List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
     }
 
     public List<EmprestimoModel> buscarApenasAtrasados() {
         return emprestimoRepository.findByStatusEmprestimo(StatusEmprestimo.ATRASADO);
     }
 
-
     public Page<EmprestimoModel> buscarAvancado(
-        StatusEmprestimo statusEmprestimo,
-        String tombo,
-        String livroNome,
-        String alunoNomeCompleto,
-        String dataEmprestimo, // Mantemos como String para o Controller
-        String dataDevolucao, // Mantemos como String para o Controller
-        Pageable pageable) {
+            StatusEmprestimo statusEmprestimo,
+            String tombo,
+            String livroNome,
+            String alunoNomeCompleto,
+            String dataEmprestimo,
+            String dataDevolucao,
+            Pageable pageable) {
 
-    // Prepara os parâmetros de texto para a busca com ILIKE
-    String tomboFiltro = (tombo != null && !tombo.isBlank()) ? "%" + tombo + "%" : null;
-    String livroNomeFiltro = (livroNome != null && !livroNome.isBlank()) ? "%" + livroNome + "%" : null;
-    String alunoNomeFiltro = (alunoNomeCompleto != null && !alunoNomeCompleto.isBlank()) ? "%" + alunoNomeCompleto + "%" : null;
+        String tomboFiltro = (tombo != null && !tombo.isBlank()) ? "%" + tombo + "%" : null;
+        String livroNomeFiltro = (livroNome != null && !livroNome.isBlank()) ? "%" + livroNome + "%" : null;
+        String alunoNomeFiltro = (alunoNomeCompleto != null && !alunoNomeCompleto.isBlank())
+                ? "%" + alunoNomeCompleto + "%"
+                : null;
 
-    // Converte as datas (se existirem)
-    LocalDateTime dataEmprestimoInicio = null;
-    if (dataEmprestimo != null && !dataEmprestimo.isBlank()) {
-        // Assumindo formato YYYY-MM-DD, pegamos o início do dia
-        dataEmprestimoInicio = LocalDate.parse(dataEmprestimo).atStartOfDay();
+        LocalDateTime dataEmprestimoInicio = null;
+        if (dataEmprestimo != null && !dataEmprestimo.isBlank()) {
+            dataEmprestimoInicio = LocalDate.parse(dataEmprestimo).atStartOfDay();
+        }
+
+        LocalDateTime dataDevolucaoFim = null;
+        if (dataDevolucao != null && !dataDevolucao.isBlank()) {
+            dataDevolucaoFim = LocalDate.parse(dataDevolucao).atTime(23, 59, 59);
+        }
+
+        return emprestimoRepository.buscarAvancado(
+                statusEmprestimo,
+                tomboFiltro,
+                livroNomeFiltro,
+                alunoNomeFiltro,
+                dataEmprestimoInicio,
+                null,
+                null,
+                dataDevolucaoFim,
+                pageable);
     }
 
-    LocalDateTime dataDevolucaoFim = null;
-    if (dataDevolucao != null && !dataDevolucao.isBlank()) {
-        // Assumindo formato YYYY-MM-DD, pegamos o fim do dia
-        dataDevolucaoFim = LocalDate.parse(dataDevolucao).atTime(23, 59, 59);
-    }
+    // ======== MÉTODOS DE CADASTRO, ATUALIZAÇÃO E EXCLUSÃO ========
 
-    // Chama o método do repositório com os parâmetros corretos
-    return emprestimoRepository.buscarAvancado(
-            statusEmprestimo,
-            tomboFiltro,
-            livroNomeFiltro,
-            alunoNomeFiltro,
-            dataEmprestimoInicio,
-            null, // não esta sendo usada (null)
-            null, // não esta sendo usada (null)
-            dataDevolucaoFim,
-            pageable);
-    }
-
-    // ================================
-    // MÉTODOS DE CADASTRO, ATUALIZAÇÃO E EXCLUSÃO
-    // ================================
     @Transactional
     public ResponseEntity<ResponseModel> cadastrar(EmprestimoDTO dto) {
         ResponseModel rm = new ResponseModel();
@@ -209,8 +200,6 @@ public class EmprestimoService {
         rm.setMensagem("Empréstimo cadastrado com sucesso.");
         return ResponseEntity.ok(rm);
     }
-
-
 
     @Transactional
     public ResponseEntity<ResponseModel> atualizar(EmprestimoDTO dto) {
@@ -301,9 +290,8 @@ public class EmprestimoService {
         return ResponseEntity.ok(rm);
     }
 
-    // ================================
-    // MÉTODOS AUXILIARES
-    // ================================
+    // ================ MÉTODOS AUXILIARES ================
+
     private static Penalidade calcularPenalidade(long diasAtraso) {
         if (diasAtraso <= 1)
             return Penalidade.REGISTRO;
@@ -345,6 +333,7 @@ public class EmprestimoService {
                 .map(a -> new AlunoRankingDTO(a.getMatricula(), a.getNomeCompleto(), a.getEmprestimosCount()))
                 .toList();
     }
+
     public List<EmprestimoModel> buscarTodos() {
         return emprestimoRepository.findAll();
     }

@@ -7,9 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-import br.com.lumilivre.api.data.AlterarSenhaDTO;
-import br.com.lumilivre.api.data.ListaUsuarioDTO;
-import br.com.lumilivre.api.data.UsuarioDTO;
+import br.com.lumilivre.api.dto.AlterarSenhaDTO;
+import br.com.lumilivre.api.dto.ListaUsuarioDTO;
+import br.com.lumilivre.api.dto.UsuarioDTO;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.model.UsuarioModel;

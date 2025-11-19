@@ -1,12 +1,12 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.data.CursoEstatisticasDTO;
 import br.com.lumilivre.api.model.*;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.CursoRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
+import br.com.lumilivre.api.dto.CursoEstatisticasDTO;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;

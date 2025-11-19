@@ -9,9 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import br.com.lumilivre.api.data.AlterarSenhaDTO;
-import br.com.lumilivre.api.data.ListaUsuarioDTO;
-import br.com.lumilivre.api.data.UsuarioDTO;
+import br.com.lumilivre.api.dto.AlterarSenhaDTO;
+import br.com.lumilivre.api.dto.ListaUsuarioDTO;
+import br.com.lumilivre.api.dto.UsuarioDTO;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.model.UsuarioModel;
@@ -154,7 +154,6 @@ public class UsuarioService {
 
         UsuarioModel usuario = opt.get();
 
-        // usuário só pode alterar a própria senha
         if (usuario.getAluno() != null && !usuario.getAluno().getMatricula().equals(dto.getMatricula())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Você não tem permissão para alterar a senha de outro usuário.");

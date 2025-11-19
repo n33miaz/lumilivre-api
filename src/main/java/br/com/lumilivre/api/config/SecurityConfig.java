@@ -85,10 +85,10 @@ public class SecurityConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedOrigins(
-                            "https://www.lumilivre.com.br", // produção 
+                                "https://www.lumilivre.com.br", // produção
                                 "http://localhost:5173", // desenv. web
                                 "http://localhost:58636", "http://192.168.56.1:8080" // desenv. mobile
-                                )
+                )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

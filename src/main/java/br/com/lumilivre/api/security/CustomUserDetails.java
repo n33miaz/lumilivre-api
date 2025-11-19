@@ -33,8 +33,6 @@ public class CustomUserDetails implements UserDetails {
         return usuario.getEmail();
     }
 
-    // Outros métodos podem retornar true diretamente, se não for necessário
-    // bloquear conta
     @Override
     public boolean isAccountNonExpired() {
         return true;

@@ -1,7 +1,8 @@
 package br.com.lumilivre.api.controller;
+
 import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.repository.GeneroRepository;
-import br.com.lumilivre.api.service.GeneroService; 
+import br.com.lumilivre.api.service.GeneroService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Set; 
+import java.util.Set;
 
 @RestController
 @RequestMapping("/generos")

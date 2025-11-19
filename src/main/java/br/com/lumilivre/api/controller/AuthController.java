@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.data.LoginDTO;
-import br.com.lumilivre.api.data.LoginResponseDTO;
-import br.com.lumilivre.api.data.MudarSenhaComTokenDTO;
+import br.com.lumilivre.api.dto.LoginDTO;
+import br.com.lumilivre.api.dto.LoginResponseDTO;
+import br.com.lumilivre.api.dto.MudarSenhaComTokenDTO;
 import br.com.lumilivre.api.service.AuthService;
 import jakarta.validation.Valid;
 

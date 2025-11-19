@@ -1,8 +1,8 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.data.ApiResponse;
-import br.com.lumilivre.api.data.TccRequestDTO;
-import br.com.lumilivre.api.data.TccResponseDTO;
+import br.com.lumilivre.api.dto.ApiResponse;
+import br.com.lumilivre.api.dto.TccRequestDTO;
+import br.com.lumilivre.api.dto.TccResponseDTO;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.TccModel;
 import br.com.lumilivre.api.repository.CursoRepository;

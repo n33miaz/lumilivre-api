@@ -11,9 +11,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.data.ListaLivroDTO;
-import br.com.lumilivre.api.data.ListaLivroProjection;
-import br.com.lumilivre.api.data.LivroAgrupadoDTO;
+import br.com.lumilivre.api.dto.ListaLivroDTO;
+import br.com.lumilivre.api.dto.ListaLivroProjection;
+import br.com.lumilivre.api.dto.LivroAgrupadoDTO;
 import br.com.lumilivre.api.model.LivroModel;
 
 @Repository
@@ -67,7 +67,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.data.ListaLivroDTO(
+            SELECT new br.com.lumilivre.api.dto.ListaLivroDTO(
                 l.nome,
                 l.isbn,
                 l.nome,
@@ -99,7 +99,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     Page<ListaLivroProjection> findLivrosParaListaAdmin(Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.data.LivroAgrupadoDTO(
+            SELECT new br.com.lumilivre.api.dto.LivroAgrupadoDTO(
                 l.id,
                 l.isbn,
                 l.nome,

@@ -3,7 +3,7 @@ package br.com.lumilivre.api.service;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import br.com.lumilivre.api.data.AlunoDTO;
+import br.com.lumilivre.api.dto.AlunoDTO;
 
 @Service
 public class CepService {

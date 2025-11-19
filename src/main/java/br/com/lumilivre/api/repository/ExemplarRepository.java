@@ -14,34 +14,34 @@ import br.com.lumilivre.api.model.ExemplarModel;
 @Repository
 public interface ExemplarRepository extends JpaRepository<ExemplarModel, String> {
 
-    Optional<ExemplarModel> findByTombo(String tombo);
+  Optional<ExemplarModel> findByTombo(String tombo);
 
-    boolean existsByTombo(String tombo);
+  boolean existsByTombo(String tombo);
 
-    List<ExemplarModel> findByLivroId(Long livroId);
+  List<ExemplarModel> findByLivroId(Long livroId);
 
-    @Query("SELECT e FROM ExemplarModel e WHERE e.livro.isbn = :isbn")
-    List<ExemplarModel> findAllByLivroIsbn(@Param("isbn") String isbn);
+  @Query("SELECT e FROM ExemplarModel e WHERE e.livro.isbn = :isbn")
+  List<ExemplarModel> findAllByLivroIsbn(@Param("isbn") String isbn);
 
-    @Query("SELECT e FROM ExemplarModel e JOIN FETCH e.livro l LEFT JOIN FETCH l.generos WHERE l.id = :livroId")
-    List<ExemplarModel> findAllByLivroIdWithDetails(@Param("livroId") Long livroId);
+  @Query("SELECT e FROM ExemplarModel e JOIN FETCH e.livro l LEFT JOIN FETCH l.generos WHERE l.id = :livroId")
+  List<ExemplarModel> findAllByLivroIdWithDetails(@Param("livroId") Long livroId);
 
-    Long countByLivroId(Long livroId);
+  Long countByLivroId(Long livroId);
 
-    void deleteAllByLivroId(Long livroId);
+  void deleteAllByLivroId(Long livroId);
 
-    List<ExemplarModel> findAllByLivroId(Long livroId);
+  List<ExemplarModel> findAllByLivroId(Long livroId);
 
-    @Query("""
-                SELECT ex FROM ExemplarModel ex
-                JOIN FETCH ex.livro l
-                WHERE (:status IS NULL OR ex.status_livro = :status)
-                  AND (:isbnOuTombo IS NULL
-                       OR ex.tombo ILIKE %:isbnOuTombo%
-                       OR l.isbn ILIKE %:isbnOuTombo%)
-                ORDER BY l.nome, ex.tombo
-            """)
-    List<ExemplarModel> findForReport(
-            @Param("status") StatusLivro status,
-            @Param("isbnOuTombo") String isbnOuTombo);
+  @Query("""
+          SELECT ex FROM ExemplarModel ex
+          JOIN FETCH ex.livro l
+          WHERE (:status IS NULL OR ex.status_livro = :status)
+            AND (:isbnOuTombo IS NULL
+                 OR ex.tombo ILIKE %:isbnOuTombo%
+                 OR l.isbn ILIKE %:isbnOuTombo%)
+          ORDER BY l.nome, ex.tombo
+      """)
+  List<ExemplarModel> findForReport(
+      @Param("status") StatusLivro status,
+      @Param("isbnOuTombo") String isbnOuTombo);
 }

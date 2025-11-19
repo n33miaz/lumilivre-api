@@ -19,45 +19,58 @@ public class OpenApiConfig {
 
         @Bean
         public OpenAPI customOpenAPI() {
-                Server localServer = new Server().url("http://localhost:8080").description("Ambiente de Desenvolvimento Local");
-                Server prodServerAws = new Server().url("http://18.229.126.245:8080").description("Ambiente de Produção (AWS)");
-                Server prodServerCustom = new Server().url("http://api.lumilivre.com.br:8080").description("Ambiente de Produção (Domínio)");
+                Server localServer = new Server().url("http://localhost:8080")
+                                .description("Ambiente de Desenvolvimento Local");
+                Server prodServerAws = new Server().url("http://18.229.126.245:8080")
+                                .description("Ambiente de Produção (AWS)");
+                Server prodServerCustom = new Server().url("http://api.lumilivre.com.br:8080")
+                                .description("Ambiente de Produção (Domínio)");
 
-        return new OpenAPI()
-                .info(new Info()
-                        .title("API Lumi Livre")
-                        .version("v1.0-PROD")
-                        .description("API RESTful para o sistema de gerenciamento bibliotecário Lumi Livre. Esta documentação descreve todos os endpoints disponíveis.")
-                        .termsOfService("http://swagger.io/terms/")
-                        .license(new License().name("Apache 2.0").url("http://springdoc.org")))
-                
-                // ordem de exibição no swagger ui + paragrafo e descrição
-                .tags(List.of( 
-                        new Tag().name("1. Autenticação").description("Endpoints para obter tokens de acesso"),
-                        new Tag().name("2. Home").description("Operações para exibição de dados na home"),
-                        new Tag().name("3. Enums").description("Endpoints utilitários para obter listas de valores de enums"),
-                        new Tag().name("4. Usuários").description("Operações para gerenciamento de contas de usuário"),
-                        new Tag().name("5. Empréstimos").description("Operações para registrar e gerenciar empréstimos de livros"),
-                        new Tag().name("6. Alunos").description("Operações para gerenciamento de alunos"),
-                        new Tag().name("7. Livros").description("Operações para gerenciamento de livros e consulta de disponibilidade"),
-                        new Tag().name("8. Exemplares").description("Operações para gerenciamento de exemplares (cópias físicas dos livros)"),
-                        new Tag().name("9. Autores").description("Operações para gerenciamento de autores"),
-                        new Tag().name("10. Gêneros").description("Operações para gerenciamento de gêneros literários"),
-                        new Tag().name("11. Cursos").description("Operações para gerenciamento de cursos")
-                ))
+                return new OpenAPI()
+                                .info(new Info()
+                                                .title("API Lumi Livre")
+                                                .version("v1.0-PROD")
+                                                .description("API RESTful para o sistema de gerenciamento bibliotecário Lumi Livre. Esta documentação descreve todos os endpoints disponíveis.")
+                                                .termsOfService("http://swagger.io/terms/")
+                                                .license(new License().name("Apache 2.0").url("http://springdoc.org")))
 
-                // lista de servidores
-                .servers(List.of(localServer, prodServerAws, prodServerCustom))
+                                // ordem de exibição no swagger ui + paragrafo e descrição
+                                .tags(List.of(
+                                                new Tag().name("1. Autenticação")
+                                                                .description("Endpoints para obter tokens de acesso"),
+                                                new Tag().name("2. Home").description(
+                                                                "Operações para exibição de dados na home"),
+                                                new Tag().name("3. Enums").description(
+                                                                "Endpoints utilitários para obter listas de valores de enums"),
+                                                new Tag().name("4. Usuários").description(
+                                                                "Operações para gerenciamento de contas de usuário"),
+                                                new Tag().name("5. Empréstimos").description(
+                                                                "Operações para registrar e gerenciar empréstimos de livros"),
+                                                new Tag().name("6. Alunos")
+                                                                .description("Operações para gerenciamento de alunos"),
+                                                new Tag().name("7. Livros").description(
+                                                                "Operações para gerenciamento de livros e consulta de disponibilidade"),
+                                                new Tag().name("8. Exemplares").description(
+                                                                "Operações para gerenciamento de exemplares (cópias físicas dos livros)"),
+                                                new Tag().name("9. Autores")
+                                                                .description("Operações para gerenciamento de autores"),
+                                                new Tag().name("10. Gêneros").description(
+                                                                "Operações para gerenciamento de gêneros literários"),
+                                                new Tag().name("11. Cursos")
+                                                                .description("Operações para gerenciamento de cursos")))
 
-                // configura a segurança JWT para o swagger
-                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
-                .components(new Components()
-                        .addSecuritySchemes("bearerAuth", new SecurityScheme()
-                                .name("bearerAuth")
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("bearer")
-                                .bearerFormat("JWT")
-                                .in(SecurityScheme.In.HEADER)
-                                .description("Insira o token JWT aqui para autorizar as requisições.")));
+                                // lista de servidores
+                                .servers(List.of(localServer, prodServerAws, prodServerCustom))
+
+                                // configura a segurança JWT para o swagger
+                                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                                .components(new Components()
+                                                .addSecuritySchemes("bearerAuth", new SecurityScheme()
+                                                                .name("bearerAuth")
+                                                                .type(SecurityScheme.Type.HTTP)
+                                                                .scheme("bearer")
+                                                                .bearerFormat("JWT")
+                                                                .in(SecurityScheme.In.HEADER)
+                                                                .description("Insira o token JWT aqui para autorizar as requisições.")));
         }
 }

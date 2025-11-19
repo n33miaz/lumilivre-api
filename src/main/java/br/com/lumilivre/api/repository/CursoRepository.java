@@ -10,8 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.data.CursoEstatisticasDTO;
-import br.com.lumilivre.api.data.ListaCursoDTO;
+import br.com.lumilivre.api.dto.CursoEstatisticasDTO;
+import br.com.lumilivre.api.dto.ListaCursoDTO;
 import br.com.lumilivre.api.model.CursoModel;
 
 @Repository
@@ -21,7 +21,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 
 	boolean existsByNomeIgnoreCaseAndIdNot(String nome, Integer id);
 
-	Optional<CursoModel> findByNomeIgnoreCase(String nome);	
+	Optional<CursoModel> findByNomeIgnoreCase(String nome);
 
 	@Query("""
 			    SELECT c FROM CursoModel c
@@ -38,7 +38,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			Pageable pageable);
 
 	@Query("""
-			SELECT new br.com.lumilivre.api.data.ListaCursoDTO(
+			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(
 			    c.nome
 			)
 			FROM CursoModel c
@@ -47,7 +47,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 	Page<ListaCursoDTO> findCursoParaListaAdmin(Pageable pageable);
 
 	@Query("""
-			    SELECT new br.com.lumilivre.api.data.CursoEstatisticasDTO(
+			    SELECT new br.com.lumilivre.api.dto.CursoEstatisticasDTO(
 			        c.nome,
 			        COUNT(a.id),
 			        SUM(a.emprestimosCount)

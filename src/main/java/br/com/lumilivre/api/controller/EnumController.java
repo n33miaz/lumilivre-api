@@ -4,8 +4,8 @@ import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.Penalidade;
+import br.com.lumilivre.api.dto.EnumDTO;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
-import br.com.lumilivre.api.data.EnumDTO;
 import br.com.lumilivre.api.repository.TurnoRepository;
 
 import io.swagger.v3.oas.annotations.Operation;

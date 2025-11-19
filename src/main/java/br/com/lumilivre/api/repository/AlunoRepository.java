@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import br.com.lumilivre.api.data.ListaAlunoDTO;
+import br.com.lumilivre.api.dto.ListaAlunoDTO;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.model.AlunoModel;
 
@@ -62,7 +62,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
             Pageable pageable);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.data.ListaAlunoDTO(
+                SELECT new br.com.lumilivre.api.dto.ListaAlunoDTO(
                     a.penalidade,
                     a.matricula,
                     c.nome,
@@ -78,7 +78,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
     Page<ListaAlunoDTO> findAlunosParaListaAdmin(Pageable pageable);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.data.ListaAlunoDTO(
+                SELECT new br.com.lumilivre.api.dto.ListaAlunoDTO(
                     a.penalidade, a.matricula, c.nome, a.nomeCompleto, a.dataNascimento, a.email, a.celular
                 )
                 FROM AlunoModel a

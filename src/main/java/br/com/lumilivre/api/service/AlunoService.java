@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.data.AlunoDTO;
-import br.com.lumilivre.api.data.ListaAlunoDTO;
+import br.com.lumilivre.api.dto.AlunoDTO;
+import br.com.lumilivre.api.dto.ListaAlunoDTO;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.*;
@@ -49,7 +49,7 @@ public class AlunoService {
         this.cepService = cepService;
     }
 
-    // ================= MÉTODOS DE BUSCA (READ) =================
+    // MÉTODOS DE BUSCA (READ)
 
     public Page<ListaAlunoDTO> buscarAlunosParaListaAdmin(String texto, Pageable pageable) {
         if (texto != null && !texto.isBlank()) {
@@ -79,7 +79,7 @@ public class AlunoService {
                 emailFiltro, celular, pageable);
     }
 
-    // ================= MÉTODOS DE ESCRITA (CREATE, UPDATE, DELETE) =================
+    // MÉTODOS DE ESCRITA (CREATE, UPDATE, DELETE)
 
     @Transactional
     public ResponseEntity<?> cadastrar(AlunoDTO dto) {
@@ -142,7 +142,7 @@ public class AlunoService {
         }).orElseGet(() -> new ResponseEntity<>(new ResponseModel("Aluno não encontrado."), HttpStatus.NOT_FOUND));
     }
 
-    // ================= MÉTODOS PRIVADOS (HELPERS) =================
+    // MÉTODOS PRIVADOS (HELPERS)
 
     private void validarDadosAluno(AlunoDTO dto, boolean isUpdate) {
         if (!isUpdate) {
@@ -243,7 +243,6 @@ public class AlunoService {
         return ResponseEntity.status(status).body(new ResponseModel(message));
     }
 
-    // Métodos de busca simples que não precisam de refatoração
     public Optional<AlunoModel> buscarPorNome(String nome) {
         return alunoRepository.findByNomeCompletoIgnoreCase(nome);
     }

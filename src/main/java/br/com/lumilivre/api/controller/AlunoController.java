@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.data.AlunoDTO;
-import br.com.lumilivre.api.data.ListaAlunoDTO;
+import br.com.lumilivre.api.dto.AlunoDTO;
+import br.com.lumilivre.api.dto.ListaAlunoDTO;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.AlunoService;

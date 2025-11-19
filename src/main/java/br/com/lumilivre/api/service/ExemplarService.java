@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.data.ExemplarDTO;
-import br.com.lumilivre.api.data.ListaLivroDTO;
+import br.com.lumilivre.api.dto.ExemplarDTO;
+import br.com.lumilivre.api.dto.ListaLivroDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.ExemplarModel;
@@ -31,9 +31,8 @@ public class ExemplarService {
     private final ExemplarRepository exemplarRepository;
     private final LivroRepository livroRepository;
     private final EmprestimoRepository emprestimoRepository;
-    private final LivroService livroService; // Injetando o LivroService para reutilizar a lógica
+    private final LivroService livroService;
 
-    // Injeção de dependências via construtor
     public ExemplarService(ExemplarRepository er, LivroRepository lr, EmprestimoRepository emprestimoRepository,
             LivroService livroService) {
         this.exemplarRepository = er;
@@ -128,7 +127,6 @@ public class ExemplarService {
 
             exemplarRepository.save(exemplar);
 
-            // Atualiza a contagem para o livro antigo e para o novo (caso tenha mudado)
             livroService.atualizarQuantidadeExemplaresDoLivro(idLivroAntigo);
             if (!idLivroAntigo.equals(livroOpt.get().getId())) {
                 livroService.atualizarQuantidadeExemplaresDoLivro(livroOpt.get().getId());
@@ -151,7 +149,6 @@ public class ExemplarService {
                     .body(new ResponseModel("Exemplar com o tombo '" + tombo + "' não foi encontrado."));
         }
 
-        // VALIDAÇÃO CRÍTICA: Verifica se o exemplar está em um empréstimo ativo
         boolean estaEmprestado = emprestimoRepository.existsByExemplarTomboAndStatusEmprestimoIn(tombo,
                 List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
 
@@ -176,7 +173,6 @@ public class ExemplarService {
     private ListaLivroDTO converterParaDTO(ExemplarModel exemplar) {
         LivroModel livro = exemplar.getLivro();
         if (livro == null) {
-            // Fallback para o caso de dados inconsistentes
             return new ListaLivroDTO(exemplar.getStatus_livro(), exemplar.getTombo(), "N/A", "N/A",
                     "Livro não associado", "N/A", "N/A", "N/A", exemplar.getLocalizacao_fisica());
         }

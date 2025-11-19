@@ -26,16 +26,13 @@ public class GoogleBooksService {
 
     private final RestTemplate restTemplate;
 
-    // Injeção de dependência via construtor
     public GoogleBooksService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
-    // DTO interno para o retorno combinado, tornando o serviço stateless
     public record GoogleBookData(LivroModel livro, List<String> categories) {
     }
 
-    // O método agora se chama buscarDadosPorIsbn e retorna um Optional
     public Optional<GoogleBookData> buscarDadosPorIsbn(String isbn) {
         String url = UriComponentsBuilder.fromHttpUrl(GOOGLE_BOOKS_API)
                 .queryParam("q", "isbn:" + isbn)
@@ -44,7 +41,6 @@ public class GoogleBooksService {
         log.info("Buscando ISBN no Google Books: {}", isbn);
 
         try {
-            // Usa os DTOs para deserialização automática e segura
             GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
 
             if (response == null || response.items() == null || response.items().isEmpty()) {

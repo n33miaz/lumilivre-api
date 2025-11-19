@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.data.ListaSolicitacaoCompletaDTO;
-import br.com.lumilivre.api.data.ListaSolicitacaoDashboardDTO;
-import br.com.lumilivre.api.data.SolicitacaoEmprestimoDTO;
+import br.com.lumilivre.api.dto.ListaSolicitacaoCompletaDTO;
+import br.com.lumilivre.api.dto.ListaSolicitacaoDashboardDTO;
+import br.com.lumilivre.api.dto.SolicitacaoEmprestimoDTO;
 import br.com.lumilivre.api.service.SolicitacaoEmprestimoService;
 
 @RestController

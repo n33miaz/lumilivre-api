@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/cdd")
-@Tag(name = "12. CDD") 
+@Tag(name = "12. CDD")
 public class CddController {
 
     @Autowired

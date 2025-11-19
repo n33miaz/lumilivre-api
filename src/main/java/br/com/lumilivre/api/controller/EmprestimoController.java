@@ -9,10 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.data.EmprestimoDTO;
-import br.com.lumilivre.api.data.EmprestimoResponseDTO;
-import br.com.lumilivre.api.data.ListaEmprestimoDTO;
-import br.com.lumilivre.api.data.ListaEmprestimoDashboardDTO;
+import br.com.lumilivre.api.dto.EmprestimoDTO;
+import br.com.lumilivre.api.dto.EmprestimoResponseDTO;
+import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
+import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ResponseModel;

@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.data.*;
+import br.com.lumilivre.api.dto.*;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.TipoCapa;

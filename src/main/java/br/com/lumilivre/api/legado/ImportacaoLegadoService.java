@@ -57,12 +57,14 @@ public class ImportacaoLegadoService {
 
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
-            
+
             Map<String, Integer> headerMap = mapearCabecalhos(sheet.getRow(0));
-            validarCabecalhosObrigatorios(headerMap, List.of("id", "cdd_codigo", "nome", "autor", "editora", "data_lancamento", "numero_paginas"));
+            validarCabecalhosObrigatorios(headerMap,
+                    List.of("id", "cdd_codigo", "nome", "autor", "editora", "data_lancamento", "numero_paginas"));
 
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
+                if (row.getRowNum() == 0)
+                    continue;
 
                 int linhaNum = row.getRowNum() + 1;
                 try {
@@ -113,7 +115,7 @@ public class ImportacaoLegadoService {
         LivroModel livro = new LivroModel();
 
         livro.setId(ExcelUtils.getLong(row.getCell(headerMap.get("id"))));
-        
+
         String isbn = ExcelUtils.getString(row.getCell(headerMap.get("isbn")));
         livro.setIsbn("0".equals(isbn) || isbn.isBlank() ? null : isbn);
 
@@ -121,11 +123,9 @@ public class ImportacaoLegadoService {
         if (cddCodigo == null || cddCodigo.isBlank()) {
             throw new IllegalArgumentException("Coluna 'cdd_codigo' é obrigatória.");
         }
-        
-        CddModel cdd = cddCache.computeIfAbsent(cddCodigo, key -> 
-            cddRepository.findById(key)
-                .orElseThrow(() -> new IllegalArgumentException("CDD '" + key + "' não encontrado no banco."))
-        );
+
+        CddModel cdd = cddCache.computeIfAbsent(cddCodigo, key -> cddRepository.findById(key)
+                .orElseThrow(() -> new IllegalArgumentException("CDD '" + key + "' não encontrado no banco.")));
         livro.setCdd(cdd);
 
         livro.setNome(ExcelUtils.getString(row.getCell(headerMap.get("nome"))));
@@ -133,17 +133,20 @@ public class ImportacaoLegadoService {
         livro.setEditora(ExcelUtils.getString(row.getCell(headerMap.get("editora"))));
         livro.setData_lancamento(ExcelUtils.getLocalDate(row.getCell(headerMap.get("data_lancamento"))));
         livro.setEdicao(ExcelUtils.getString(row.getCell(headerMap.get("edicao"))));
-        
+
         Integer numeroPaginas = ExcelUtils.getInteger(row.getCell(headerMap.get("numero_paginas")));
         if (numeroPaginas == null || numeroPaginas <= 0) {
-            throw new IllegalArgumentException("Coluna 'numero_paginas' é obrigatória e deve ser um número maior que zero.");
+            throw new IllegalArgumentException(
+                    "Coluna 'numero_paginas' é obrigatória e deve ser um número maior que zero.");
         }
         livro.setNumero_paginas(numeroPaginas);
 
-        livro.setClassificacao_etaria(ExcelUtils.getEnum(row.getCell(headerMap.get("classificacao_etaria")), ClassificacaoEtaria.class, ClassificacaoEtaria.LIVRE));
+        livro.setClassificacao_etaria(ExcelUtils.getEnum(row.getCell(headerMap.get("classificacao_etaria")),
+                ClassificacaoEtaria.class, ClassificacaoEtaria.LIVRE));
         livro.setVolume(ExcelUtils.getInteger(row.getCell(headerMap.get("volume"))));
         livro.setSinopse(ExcelUtils.getString(row.getCell(headerMap.get("sinopse"))));
-        livro.setTipo_capa(ExcelUtils.getEnum(row.getCell(headerMap.get("tipo_capa")), TipoCapa.class, TipoCapa.BROCHURA));
+        livro.setTipo_capa(
+                ExcelUtils.getEnum(row.getCell(headerMap.get("tipo_capa")), TipoCapa.class, TipoCapa.BROCHURA));
         livro.setImagem(ExcelUtils.getString(row.getCell(headerMap.get("imagem"))));
 
         Set<GeneroModel> generos = generoRepository.findAllByCddCodigo(cddCodigo);
@@ -180,10 +183,12 @@ public class ImportacaoLegadoService {
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             Map<String, Integer> headerMap = mapearCabecalhos(sheet.getRow(0));
-            validarCabecalhosObrigatorios(headerMap, List.of("livro_id", "tombo", "status_livro", "localizacao_fisica"));
+            validarCabecalhosObrigatorios(headerMap,
+                    List.of("livro_id", "tombo", "status_livro", "localizacao_fisica"));
 
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
+                if (row.getRowNum() == 0)
+                    continue;
                 int linhaNum = row.getRowNum() + 1;
                 try {
                     String tombo = ExcelUtils.getString(row.getCell(headerMap.get("tombo")));
@@ -210,18 +215,21 @@ public class ImportacaoLegadoService {
         return salvarExemplaresEmLotes(exemplaresParaSalvar, logErros);
     }
 
-    private ExemplarModel criarExemplarFromRow(Row row, Map<Long, LivroModel> livroCache, Map<String, Integer> headerMap) {
+    private ExemplarModel criarExemplarFromRow(Row row, Map<Long, LivroModel> livroCache,
+            Map<String, Integer> headerMap) {
         Long livroId = ExcelUtils.getLong(row.getCell(headerMap.get("livro_id")));
         if (livroId == null) {
             throw new IllegalArgumentException("Coluna 'livro_id' é obrigatória.");
         }
         LivroModel livro = livroCache.computeIfAbsent(livroId, key -> livroRepository.findById(key)
-                .orElseThrow(() -> new IllegalArgumentException("Livro com ID '" + key + "' não encontrado no banco.")));
-        
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Livro com ID '" + key + "' não encontrado no banco.")));
+
         ExemplarModel exemplar = new ExemplarModel();
         exemplar.setLivro(livro);
         exemplar.setTombo(ExcelUtils.getString(row.getCell(headerMap.get("tombo"))));
-        exemplar.setStatus_livro(ExcelUtils.getEnum(row.getCell(headerMap.get("status_livro")), StatusLivro.class, StatusLivro.DISPONIVEL));
+        exemplar.setStatus_livro(ExcelUtils.getEnum(row.getCell(headerMap.get("status_livro")), StatusLivro.class,
+                StatusLivro.DISPONIVEL));
         exemplar.setLocalizacao_fisica(ExcelUtils.getString(row.getCell(headerMap.get("localizacao_fisica"))));
         return exemplar;
     }
@@ -251,7 +259,7 @@ public class ImportacaoLegadoService {
         Set<Long> livroIdsAfetados = exemplaresProcessados.stream()
                 .map(e -> e.getLivro().getId())
                 .collect(Collectors.toSet());
-        
+
         List<LivroModel> livrosParaAtualizar = new ArrayList<>();
         for (Long livroId : livroIdsAfetados) {
             livroRepository.findById(livroId).ifPresent(livro -> {
@@ -267,14 +275,14 @@ public class ImportacaoLegadoService {
     }
 
     // =============== MÉTODOS AUXILIARES E CLASSE DE ERRO ===============
-    
+
     private Map<String, Integer> mapearCabecalhos(Row headerRow) {
         Map<String, Integer> map = new HashMap<>();
         if (headerRow == null) {
             throw new IllegalArgumentException("A planilha esta vazia ou nao possui uma linha de cabecalho.");
         }
         for (Cell cell : headerRow) {
-            if(cell != null && cell.getCellType() == CellType.STRING) {
+            if (cell != null && cell.getCellType() == CellType.STRING) {
                 String headerText = cell.getStringCellValue().trim().toLowerCase();
                 map.put(headerText, cell.getColumnIndex());
             }
@@ -299,7 +307,8 @@ public class ImportacaoLegadoService {
     }
 
     private String gerarResumoImportacao(String tipo, int totalSalvos, List<ErroImportacao> logErros) {
-        String resumo = String.format("Importacao de %s concluida. Salvos: %d | Erros: %d", tipo, totalSalvos, logErros.size());
+        String resumo = String.format("Importacao de %s concluida. Salvos: %d | Erros: %d", tipo, totalSalvos,
+                logErros.size());
         if (!logErros.isEmpty()) {
             String detalhes = logErros.stream()
                     .map(ErroImportacao::toString)
@@ -317,10 +326,12 @@ public class ImportacaoLegadoService {
     private static class ErroImportacao {
         private final int linha;
         private final String detalhe;
+
         public ErroImportacao(int linha, String detalhe) {
             this.linha = linha;
             this.detalhe = detalhe;
         }
+
         @Override
         public String toString() {
             return (linha > 0 ? "Linha " + linha + ": " : "") + detalhe;

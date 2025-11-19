@@ -10,10 +10,11 @@ import java.util.Set;
 
 public interface GeneroRepository extends JpaRepository<GeneroModel, Integer> {
     Optional<GeneroModel> findByNomeIgnoreCase(String nome);
+
     Set<GeneroModel> findByNomeIn(Set<String> nomes);
 
     @Query(value = "SELECT g.* FROM genero g " +
-                "JOIN genero_cdd gc ON g.id = gc.genero_id " +
-                "WHERE gc.cdd_codigo = :cddCodigo", nativeQuery = true)
+            "JOIN genero_cdd gc ON g.id = gc.genero_id " +
+            "WHERE gc.cdd_codigo = :cddCodigo", nativeQuery = true)
     Set<GeneroModel> findAllByCddCodigo(@Param("cddCodigo") String cddCodigo);
 }

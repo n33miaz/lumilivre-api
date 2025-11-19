@@ -10,12 +10,12 @@ import lombok.Setter;
 @Setter
 public class GeneroModel {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer id;
 
-    @Column(nullable = false, unique = true, length = 100)
-    private String nome;
+	@Column(nullable = false, unique = true, length = 100)
+	private String nome;
 
 	public Integer getId() {
 		return id;
@@ -32,6 +32,5 @@ public class GeneroModel {
 	public void setNome(String nome) {
 		this.nome = nome;
 	}
-    
-    
+
 }
