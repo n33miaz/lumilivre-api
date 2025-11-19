@@ -58,4 +58,32 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			    ORDER BY c.nome
 			""")
 	List<CursoEstatisticasDTO> findEstatisticasCursos();
+
+	@Query("""
+			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(c.id, c.nome, COUNT(a))
+			FROM CursoModel c
+			LEFT JOIN c.alunos a
+			WHERE (:texto IS NULL OR c.nome ILIKE CONCAT('%', :texto, '%'))
+			GROUP BY c.id, c.nome
+			""")
+	Page<ListaCursoDTO> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
+
+	@Query("""
+			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(c.id, c.nome, COUNT(a))
+			FROM CursoModel c
+			LEFT JOIN c.alunos a
+			WHERE (:nome IS NULL OR c.nome ILIKE :nome)
+			GROUP BY c.id, c.nome
+			""")
+	Page<ListaCursoDTO> buscarAvancadoComDTO(@Param("nome") String nome, Pageable pageable);
+
+	@Query("""
+			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(c.id, c.nome, COUNT(a))
+			FROM CursoModel c
+			LEFT JOIN c.alunos a
+			WHERE (:texto IS NULL OR c.nome ILIKE CONCAT('%', :texto, '%'))
+			GROUP BY c.id, c.nome
+			ORDER BY c.nome
+			""")
+	Page<ListaCursoDTO> findCursoParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 }

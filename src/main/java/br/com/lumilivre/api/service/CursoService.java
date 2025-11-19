@@ -1,19 +1,17 @@
 package br.com.lumilivre.api.service;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.ListaCursoDTO;
+import br.com.lumilivre.api.dto.ListaCursoDTO; // <-- Importação necessária
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.CursoRepository;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CursoService {
@@ -21,20 +19,17 @@ public class CursoService {
     @Autowired
     private CursoRepository cr;
 
-    public Page<ListaCursoDTO> buscarCursoParaListaAdmin(Pageable pageable) {
-        return cr.findCursoParaListaAdmin(pageable);
+    public Page<ListaCursoDTO> buscarCursoParaListaAdmin(String texto, Pageable pageable) {
+        return cr.findCursoParaListaAdminComFiltro(texto, pageable);
     }
 
-    public Page<CursoModel> buscarPorTexto(String texto, Pageable pageable) {
-        if (texto == null || texto.isBlank()) {
-            return cr.findAll(pageable);
-        }
-        return cr.buscarPorTexto(texto, pageable);
+    public Page<ListaCursoDTO> buscarPorTexto(String texto, Pageable pageable) {
+        return cr.buscarPorTextoComDTO(texto, pageable);
     }
 
-    public Page<CursoModel> buscarAvancado(String nome, Pageable pageable) {
+    public Page<ListaCursoDTO> buscarAvancado(String nome, Pageable pageable) {
         String nomeFiltro = (nome != null && !nome.isBlank()) ? "%" + nome + "%" : null;
-        return cr.buscarAvancado(nomeFiltro, pageable);
+        return cr.buscarAvancadoComDTO(nomeFiltro, pageable);
     }
 
     @Transactional
@@ -44,7 +39,6 @@ public class CursoService {
             rm.setMensagem("O Nome é Obrigatório");
             return ResponseEntity.badRequest().body(rm);
         }
-
         CursoModel salvo = cr.save(cursoModel);
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
@@ -56,7 +50,6 @@ public class CursoService {
             rm.setMensagem("O Nome é Obrigatório");
             return ResponseEntity.badRequest().body(rm);
         }
-
         CursoModel salvo = cr.save(cursoModel);
         return ResponseEntity.ok(salvo);
     }
@@ -71,9 +64,5 @@ public class CursoService {
 
     private boolean isNomeInvalido(CursoModel cursoModel) {
         return cursoModel.getNome() == null || cursoModel.getNome().trim().isEmpty();
-    }
-
-    public List<CursoModel> buscarTodos() {
-        return cr.findAll();
     }
 }

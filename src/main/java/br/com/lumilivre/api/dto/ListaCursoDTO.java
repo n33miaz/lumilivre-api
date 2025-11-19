@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ListaCursoDTO {
 
+    private Integer id;
     private String nome;
+    private Long quantidadeAlunos;
 
 }

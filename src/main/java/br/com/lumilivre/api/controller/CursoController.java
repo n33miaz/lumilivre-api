@@ -23,49 +23,39 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/cursos")
-
 @Tag(name = "11. Cursos")
 @SecurityRequirement(name = "bearerAuth")
-
 public class CursoController {
 
     @Autowired
     private CursoService cs;
 
-    public CursoController(CursoService CursoService) {
-        this.cs = CursoService;
+    public CursoController(CursoService cursoService) {
+        this.cs = cursoService;
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
-
-    @Operation(summary = "Lista cursos para a tela principal do admin", description = "Retorna uma lista paginada de cursos com dados resumidos para a exibição no dashboard. Suporta filtro de texto. Acesso: ADMIN, BIBLIOTECARIO.")
+    @Operation(summary = "Lista cursos para a tela principal do admin", description = "Retorna uma lista paginada de cursos com dados resumidos para a exibição no dashboard. Suporta filtro de texto.")
     @ApiResponse(responseCode = "200", description = "Página de cursos retornada com sucesso")
-
     public ResponseEntity<Page<ListaCursoDTO>> buscarCursosAdmin(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaCursoDTO> cursos = cs.buscarCursoParaListaAdmin(pageable);
-
+        Page<ListaCursoDTO> cursos = cs.buscarCursoParaListaAdmin(texto, pageable);
         return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
-
-    @Operation(summary = "Busca cursos com paginação e filtro de texto", description = "Retorna uma página de cursos. Pode filtrar por um texto genérico.")
+    @Operation(summary = "Busca cursos com paginação e filtro de texto", description = "Retorna uma página de cursos com dados resumidos. Pode filtrar por um texto genérico.")
     @ApiResponse(responseCode = "200", description = "Página de cursos retornada com sucesso")
-
-    public ResponseEntity<Page<CursoModel>> buscarPorTexto(
+    public ResponseEntity<Page<ListaCursoDTO>> buscarPorTexto(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<CursoModel> cursos = cs.buscarPorTexto(texto, pageable);
-
+        Page<ListaCursoDTO> cursos = cs.buscarPorTexto(texto, pageable);
         return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
     @Operation(summary = "Busca avançada e paginada de cursos", description = "Filtra cursos por nome.")
@@ -73,37 +63,31 @@ public class CursoController {
             @ApiResponse(responseCode = "200", description = "Página de cursos encontrada"),
             @ApiResponse(responseCode = "204", description = "Nenhum curso encontrado para o filtro")
     })
-    public ResponseEntity<Page<CursoModel>> buscarAvancado(
+    public ResponseEntity<Page<ListaCursoDTO>> buscarAvancado(
             @Parameter(description = "Nome parcial do curso") @RequestParam(required = false) String nome,
             Pageable pageable) {
-        Page<CursoModel> cursos = cs.buscarAvancado(nome, pageable);
+        Page<ListaCursoDTO> cursos = cs.buscarAvancado(nome, pageable);
         return cursos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(cursos);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PostMapping("/cadastrar")
-
     @Operation(summary = "Cadastra um novo curso", description = "Cria um novo curso no sistema.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Curso cadastrado com sucesso", content = @Content(schema = @Schema(implementation = CursoModel.class))),
             @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos (ex: nome em branco)")
     })
-
     public ResponseEntity<?> cadastrar(@RequestBody CursoModel cm) {
         return cs.cadastrar(cm);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PutMapping("atualizar/{id}")
-
     @Operation(summary = "Atualiza um curso existente", description = "Altera os dados de um curso com base no seu ID.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Curso atualizado com sucesso", content = @Content(schema = @Schema(implementation = CursoModel.class))),
             @ApiResponse(responseCode = "404", description = "Curso não encontrado para o ID fornecido")
     })
-
     public ResponseEntity<?> atualizar(
             @Parameter(description = "ID do curso a ser atualizado") @PathVariable Integer id,
             @RequestBody CursoModel cm) {
@@ -111,16 +95,13 @@ public class CursoController {
         return cs.atualizar(cm);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @DeleteMapping("/excluir/{id}")
-
     @Operation(summary = "Exclui um curso", description = "Remove um curso do sistema.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Curso excluído com sucesso"),
             @ApiResponse(responseCode = "404", description = "Curso não encontrado para o ID fornecido")
     })
-
     public ResponseEntity<ResponseModel> excluir(
             @Parameter(description = "ID do curso a ser excluído") @PathVariable Integer id) {
         return cs.excluir(id);
