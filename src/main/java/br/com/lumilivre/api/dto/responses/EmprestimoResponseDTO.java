@@ -1,0 +1,53 @@
+package br.com.lumilivre.api.dto.responses;
+
+import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import br.com.lumilivre.api.enums.Penalidade;
+import br.com.lumilivre.api.enums.StatusEmprestimo;
+import br.com.lumilivre.api.model.EmprestimoModel;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class EmprestimoResponseDTO {
+
+    private Integer id;
+
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+    private LocalDateTime dataEmprestimo;
+
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+    private LocalDateTime dataDevolucao;
+
+    private StatusEmprestimo status;
+    private Penalidade penalidade;
+
+    private String livroTitulo;
+    private String alunoNome;
+    private String alunoMatricula;
+    private String exemplarTombo;
+
+    public EmprestimoResponseDTO() {
+    }
+
+    public EmprestimoResponseDTO(EmprestimoModel model) {
+        this.id = model.getId();
+        this.dataEmprestimo = model.getDataEmprestimo();
+        this.dataDevolucao = model.getDataDevolucao();
+        this.status = model.getStatusEmprestimo();
+        this.penalidade = model.getPenalidade();
+
+        if (model.getExemplar() != null) {
+            this.exemplarTombo = model.getExemplar().getTombo();
+            if (model.getExemplar().getLivro() != null) {
+                this.livroTitulo = model.getExemplar().getLivro().getNome();
+            }
+        }
+
+        if (model.getAluno() != null) {
+            this.alunoNome = model.getAluno().getNomeCompleto();
+            this.alunoMatricula = model.getAluno().getMatricula();
+        }
+    }
+}
