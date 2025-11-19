@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.model.CddModel;
+import br.com.lumilivre.api.dto.ItemSimplesDTO;
 import br.com.lumilivre.api.repository.CddRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,8 +22,11 @@ public class CddController {
 
     @GetMapping
     @Operation(summary = "Lista todas as classificações CDD disponíveis")
-    public ResponseEntity<List<CddModel>> listarTodos() {
-        List<CddModel> lista = cddRepository.findAll();
+    public ResponseEntity<List<ItemSimplesDTO>> listarTodos() {
+        var lista = cddRepository.findAll().stream()
+                .map(cdd -> new ItemSimplesDTO(cdd.getCodigo(), cdd.getDescricao()))
+                .toList();
+
         return ResponseEntity.ok(lista);
     }
 }

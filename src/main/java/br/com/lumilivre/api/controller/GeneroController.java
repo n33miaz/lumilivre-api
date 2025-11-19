@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.GeneroDTO;
+import br.com.lumilivre.api.dto.ItemSimplesDTO;
+import br.com.lumilivre.api.repository.GeneroRepository;
 import br.com.lumilivre.api.service.GeneroService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/generos")
@@ -23,21 +24,28 @@ import java.util.Set;
 public class GeneroController {
 
     @Autowired
+    private GeneroRepository generoRepository;
+
+    @Autowired
     private GeneroService generoService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
     @Operation(summary = "Lista todos os gêneros cadastrados")
-    public ResponseEntity<List<GeneroDTO>> listarTodos() {
-        List<GeneroDTO> generos = generoService.listarTodos();
-        return ResponseEntity.ok(generos);
+    public ResponseEntity<List<ItemSimplesDTO>> listarTodos() {
+        var lista = generoRepository.findAll().stream()
+                .map(g -> new ItemSimplesDTO(g.getId(), g.getNome()))
+                .toList();
+        return ResponseEntity.ok(lista);
     }
 
     @GetMapping("/sugestao-por-cdd/{cddCodigo}")
     @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
     @Operation(summary = "Sugere gêneros com base em um código CDD")
-    public ResponseEntity<Set<GeneroDTO>> sugerirPorCdd(@PathVariable String cddCodigo) {
-        Set<GeneroDTO> generosSugeridos = generoService.sugerirGenerosPorCdd(cddCodigo);
+    public ResponseEntity<List<ItemSimplesDTO>> sugerirPorCdd(@PathVariable String cddCodigo) {
+        var generosSugeridos = generoService.sugerirGenerosPorCdd(cddCodigo).stream()
+                .map(g -> new ItemSimplesDTO(g.getId(), g.getNome()))
+                .collect(Collectors.toList());
 
         if (generosSugeridos.isEmpty()) {
             return ResponseEntity.noContent().build();

@@ -6,7 +6,6 @@ import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.dto.EnumDTO;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
-import br.com.lumilivre.api.repository.TurnoRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,20 +26,14 @@ import java.util.stream.Collectors;
 @SecurityRequirement(name = "bearerAuth")
 public class EnumController {
 
-    private final TurnoRepository turnoRepository;
-
-    public EnumController(TurnoRepository turnoRepository) {
-        this.turnoRepository = turnoRepository;
-    }
-
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/enums/{tipo}")
-    @Operation(summary = "Lista os valores de um Enum ou Tabela", description = "Endpoint genérico para obter listas de valores (de Enums ou tabelas) para preencher selects e filtros no frontend.")
+    @Operation(summary = "Lista os valores de um Enum", description = "Endpoint para obter listas de valores de Enums estáticos.")
     @ApiResponse(responseCode = "200", description = "Lista de valores retornada com sucesso")
     @ApiResponse(responseCode = "400", description = "Tipo de lista não encontrado", content = @Content)
     public List<EnumDTO> listarEnum(
-            // SUGESTÃO APLICADA AQUI
-            @Parameter(description = "O tipo de lista a ser retornada. Valores possíveis: STATUS_LIVRO, STATUS_EMPRESTIMO, PENALIDADE, TIPO_CAPA, CLASSIFICACAO_ETARIA, TURNO.", example = "TURNO") @PathVariable String tipo) {
+            @Parameter(description = "O tipo de lista. Valores: STATUS_LIVRO, STATUS_EMPRESTIMO, PENALIDADE, TIPO_CAPA, CLASSIFICACAO_ETARIA.", example = "STATUS_LIVRO") @PathVariable String tipo) {
+
         switch (tipo.toUpperCase()) {
             case "STATUS_LIVRO":
                 return listarStatusLivros();
@@ -48,8 +41,6 @@ public class EnumController {
                 return listarStatusEmprestimos();
             case "PENALIDADE":
                 return listarPenalidades();
-            case "TURNO":
-                return listarTurnosDaTabela();
             case "TIPO_CAPA":
                 return listarTipoCapa();
             case "CLASSIFICACAO_ETARIA":
@@ -80,12 +71,6 @@ public class EnumController {
     private List<EnumDTO> listarClassificacaoEtaria() {
         return Arrays.stream(ClassificacaoEtaria.values())
                 .map(c -> new EnumDTO(c.name(), c.getStatus()))
-                .collect(Collectors.toList());
-    }
-
-    private List<EnumDTO> listarTurnosDaTabela() {
-        return turnoRepository.findAll().stream()
-                .map(turno -> new EnumDTO(turno.getNome(), turno.getNome()))
                 .collect(Collectors.toList());
     }
 
