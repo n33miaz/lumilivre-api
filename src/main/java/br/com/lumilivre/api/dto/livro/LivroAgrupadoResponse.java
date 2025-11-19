@@ -1,6 +1,6 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.livro;
 
-public class LivroAgrupadoDTO {
+public class LivroAgrupadoResponse {
     private Long id;
     private String isbn;
     private String nome;
@@ -8,7 +8,7 @@ public class LivroAgrupadoDTO {
     private String editora;
     private Long quantidade;
 
-    public LivroAgrupadoDTO(Long id, String isbn, String nome, String autor, String editora, Long quantidade) {
+    public LivroAgrupadoResponse(Long id, String isbn, String nome, String autor, String editora, Long quantidade) {
         this.id = id;
         this.isbn = isbn;
         this.nome = nome;

@@ -1,10 +1,10 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.tcc;
 
 import br.com.lumilivre.api.model.TccModel;
 import lombok.Getter;
 
 @Getter
-public class TccResponseDTO {
+public class TccResponse {
     private Long id;
     private String titulo;
     private String alunos;
@@ -16,7 +16,7 @@ public class TccResponseDTO {
     private String linkExterno;
     private Boolean ativo;
 
-    public TccResponseDTO(TccModel tcc) {
+    public TccResponse(TccModel tcc) {
         this.id = tcc.getId();
         this.titulo = tcc.getTitulo();
         this.alunos = tcc.getAlunos();

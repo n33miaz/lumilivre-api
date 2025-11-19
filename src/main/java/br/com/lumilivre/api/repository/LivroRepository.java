@@ -11,9 +11,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.dto.ListaLivroDTO;
-import br.com.lumilivre.api.dto.ListaLivroProjection;
-import br.com.lumilivre.api.dto.LivroAgrupadoDTO;
+import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
+import br.com.lumilivre.api.dto.livro.LivroListagemProjection;
+import br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse;
 import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.LivroModel;
@@ -79,7 +79,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :texto, '%'))
             ORDER BY l.nome
             """)
-    Page<ListaLivroDTO> findLivrosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
+    Page<LivroListagemResponse> findLivrosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 
     @Query(value = """
                 SELECT
@@ -95,7 +95,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                 FROM exemplar e
                 JOIN livro l ON e.livro_id = l.id
             """, countQuery = "SELECT COUNT(*) FROM exemplar", nativeQuery = true)
-    Page<ListaLivroProjection> findLivrosParaListaAdmin(Pageable pageable);
+    Page<LivroListagemProjection> findLivrosParaListaAdmin(Pageable pageable);
 
     @Query("""
             SELECT new br.com.lumilivre.api.dto.LivroAgrupadoDTO(
@@ -111,7 +111,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             WHERE (:texto IS NULL OR l.nome ILIKE CONCAT('%', :texto, '%') OR l.isbn ILIKE CONCAT('%', :texto, '%'))
             GROUP BY l.id, l.isbn, l.nome, l.autor, l.editora
             """)
-    Page<LivroAgrupadoDTO> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
+    Page<LivroAgrupadoResponse> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
 
     @Query(value = "SELECT l FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)", countQuery = "SELECT count(l) FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
     Page<LivroModel> findIdsByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero, Pageable pageable);

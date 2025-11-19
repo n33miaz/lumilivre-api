@@ -1,8 +1,8 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.ListaTurnoDTO;
-import br.com.lumilivre.api.dto.requests.TurnoRequestDTO;
-import br.com.lumilivre.api.dto.responses.TurnoResponseDTO;
+import br.com.lumilivre.api.dto.turno.TurnoResumoResponse;
+import br.com.lumilivre.api.dto.turno.TurnoRequest;
+import br.com.lumilivre.api.dto.turno.TurnoResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.TurnoModel;
@@ -23,31 +23,31 @@ public class TurnoService {
     @Autowired
     private TurnoRepository turnoRepository;
 
-    public Page<ListaTurnoDTO> buscarPorTexto(String texto, Pageable pageable) {
+    public Page<TurnoResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
         return turnoRepository.buscarPorTextoComDTO(texto, pageable);
     }
 
     @Transactional
     @CacheEvict(value = "turnos", allEntries = true)
-    public ResponseEntity<TurnoResponseDTO> cadastrar(TurnoRequestDTO dto) {
+    public ResponseEntity<TurnoResponse> cadastrar(TurnoRequest dto) {
         if (turnoRepository.existsByNomeIgnoreCase(dto.getNome())) {
             throw new RegraDeNegocioException("Já existe um turno com este nome.");
         }
         TurnoModel turno = new TurnoModel();
         turno.setNome(dto.getNome());
         TurnoModel salvo = turnoRepository.save(turno);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new TurnoResponseDTO(salvo));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new TurnoResponse(salvo));
     }
 
     @Transactional
     @CacheEvict(value = "turnos", allEntries = true)
-    public ResponseEntity<TurnoResponseDTO> atualizar(Integer id, TurnoRequestDTO dto) {
+    public ResponseEntity<TurnoResponse> atualizar(Integer id, TurnoRequest dto) {
         TurnoModel turno = turnoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Turno não encontrado."));
 
         turno.setNome(dto.getNome());
         TurnoModel salvo = turnoRepository.save(turno);
-        return ResponseEntity.ok(new TurnoResponseDTO(salvo));
+        return ResponseEntity.ok(new TurnoResponse(salvo));
     }
 
     @Transactional

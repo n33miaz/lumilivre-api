@@ -8,10 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-import br.com.lumilivre.api.dto.ListaUsuarioDTO;
-import br.com.lumilivre.api.dto.UsuarioDTO;
 import br.com.lumilivre.api.dto.auth.AlterarSenhaRequest;
-import br.com.lumilivre.api.dto.responses.UsuarioResponseDTO;
+import br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse;
+import br.com.lumilivre.api.dto.usuario.UsuarioRequest;
+import br.com.lumilivre.api.dto.usuario.UsuarioResponse;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.UsuarioService;
@@ -39,34 +39,34 @@ public class UsuarioController {
     @GetMapping("/home")
     @Operation(summary = "Lista usuários para a tela principal do admin", description = "Retorna uma lista paginada de usuários com dados resumidos.")
     @ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso")
-    public ResponseEntity<Page<ListaUsuarioDTO>> buscarUsuariosAdmin(
+    public ResponseEntity<Page<UsuarioResumoResponse>> buscarUsuariosAdmin(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaUsuarioDTO> usuarios = us.buscarUsuarioParaListaAdmin(pageable);
+        Page<UsuarioResumoResponse> usuarios = us.buscarUsuarioParaListaAdmin(pageable);
         return usuarios.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(usuarios);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
     @Operation(summary = "Busca usuários com paginação e filtro de texto")
-    @ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso", content = @Content(schema = @Schema(implementation = ListaUsuarioDTO.class)))
-    public ResponseEntity<Page<ListaUsuarioDTO>> buscarPorTexto(
+    @ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResumoResponse.class)))
+    public ResponseEntity<Page<UsuarioResumoResponse>> buscarPorTexto(
             @Parameter(description = "Texto para busca genérica no e-mail ou matrícula") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaUsuarioDTO> usuarios = us.buscarPorTexto(texto, pageable);
+        Page<UsuarioResumoResponse> usuarios = us.buscarPorTexto(texto, pageable);
         return usuarios.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(usuarios);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
     @Operation(summary = "Busca avançada e paginada de usuários")
-    @ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso", content = @Content(schema = @Schema(implementation = ListaUsuarioDTO.class)))
-    public ResponseEntity<Page<ListaUsuarioDTO>> buscarAvancado(
+    @ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResumoResponse.class)))
+    public ResponseEntity<Page<UsuarioResumoResponse>> buscarAvancado(
             @Parameter(description = "ID exato do usuário") @RequestParam(required = false) Integer id,
             @Parameter(description = "E-mail parcial do usuário") @RequestParam(required = false) String email,
             @Parameter(description = "Perfil do usuário (ADMIN, BIBLIOTECARIO, ALUNO)") @RequestParam(required = false) Role role,
             Pageable pageable) {
-        Page<ListaUsuarioDTO> usuarios = us.buscarAvancado(id, email, role, pageable);
+        Page<UsuarioResumoResponse> usuarios = us.buscarAvancado(id, email, role, pageable);
         return usuarios.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(usuarios);
     }
 
@@ -74,12 +74,12 @@ public class UsuarioController {
     @PostMapping("/cadastrar")
     @Operation(summary = "Cadastra um novo usuário (Acesso: ADMIN)", description = "Cria um novo usuário com perfil de ADMIN ou BIBLIOTECARIO.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Usuário cadastrado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponseDTO.class))),
+            @ApiResponse(responseCode = "201", description = "Usuário cadastrado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada"),
             @ApiResponse(responseCode = "409", description = "E-mail já está em uso")
     })
-    public ResponseEntity<UsuarioResponseDTO> cadastrar(@RequestBody @Valid UsuarioDTO dto) {
-        UsuarioResponseDTO novoUsuario = us.cadastrarAdmin(dto);
+    public ResponseEntity<UsuarioResponse> cadastrar(@RequestBody @Valid UsuarioRequest dto) {
+        UsuarioResponse novoUsuario = us.cadastrarAdmin(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
     }
 
@@ -87,13 +87,13 @@ public class UsuarioController {
     @PutMapping("/atualizar/{id}")
     @Operation(summary = "Atualiza um usuário existente (Acesso: ADMIN)")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponseDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<UsuarioResponseDTO> atualizar(
+    public ResponseEntity<UsuarioResponse> atualizar(
             @Parameter(description = "ID do usuário a ser atualizado") @PathVariable Integer id,
-            @RequestBody @Valid UsuarioDTO dto) {
-        UsuarioResponseDTO usuarioAtualizado = us.atualizar(id, dto);
+            @RequestBody @Valid UsuarioRequest dto) {
+        UsuarioResponse usuarioAtualizado = us.atualizar(id, dto);
         return ResponseEntity.ok(usuarioAtualizado);
     }
 

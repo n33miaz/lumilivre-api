@@ -11,9 +11,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse;
 import br.com.lumilivre.api.dto.emprestimo.ListaEmprestimoAtivoDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
@@ -68,7 +68,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 FROM emprestimo e
                 WHERE e.texto_busca @@ plainto_tsquery('portuguese', :texto)
             """, nativeQuery = true)
-    Page<ListaEmprestimoDTO> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
+    Page<EmprestimoListagemResponse> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.ListaEmprestimoDTO(
@@ -94,7 +94,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 AND (:dataDevolucaoInicio IS NULL OR e.dataDevolucao >= :dataDevolucaoInicio)
                 AND (:dataDevolucaoFim IS NULL OR e.dataDevolucao <= :dataDevolucaoFim)
             """)
-    Page<ListaEmprestimoDTO> buscarAvancado(
+    Page<EmprestimoListagemResponse> buscarAvancado(
             @Param("statusEmprestimo") StatusEmprestimo statusEmprestimo,
             @Param("tombo") String tombo,
             @Param("livroNome") String livroNome,
@@ -141,7 +141,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 JOIN e.aluno a
                 ORDER BY e.statusEmprestimo
             """)
-    Page<ListaEmprestimoDTO> findEmprestimoParaListaAdmin(Pageable pageable);
+    Page<EmprestimoListagemResponse> findEmprestimoParaListaAdmin(Pageable pageable);
 
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO(

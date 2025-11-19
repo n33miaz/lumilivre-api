@@ -10,10 +10,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.ListaUsuarioDTO;
-import br.com.lumilivre.api.dto.UsuarioDTO;
 import br.com.lumilivre.api.dto.auth.AlterarSenhaRequest;
-import br.com.lumilivre.api.dto.responses.UsuarioResponseDTO;
+import br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse;
+import br.com.lumilivre.api.dto.usuario.UsuarioRequest;
+import br.com.lumilivre.api.dto.usuario.UsuarioResponse;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
@@ -35,20 +35,20 @@ public class UsuarioService {
         this.emailService = emailService;
     }
 
-    public Page<ListaUsuarioDTO> buscarUsuarioParaListaAdmin(Pageable pageable) {
+    public Page<UsuarioResumoResponse> buscarUsuarioParaListaAdmin(Pageable pageable) {
         return ur.findUsuarioParaListaAdmin(pageable);
     }
 
-    public Page<ListaUsuarioDTO> buscarPorTexto(String texto, Pageable pageable) {
+    public Page<UsuarioResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
         return ur.buscarPorTextoComDTO(texto, pageable);
     }
 
-    public Page<ListaUsuarioDTO> buscarAvancado(Integer id, String email, Role role, Pageable pageable) {
+    public Page<UsuarioResumoResponse> buscarAvancado(Integer id, String email, Role role, Pageable pageable) {
         return ur.buscarAvancadoComDTO(id, email, role, pageable);
     }
 
     @Transactional
-    public UsuarioResponseDTO cadastrarAdmin(UsuarioDTO dto) {
+    public UsuarioResponse cadastrarAdmin(UsuarioRequest dto) {
         if (dto.getEmail() == null || dto.getEmail().isBlank()) {
             throw new RegraDeNegocioException("O e-mail é obrigatório");
         }
@@ -74,11 +74,11 @@ public class UsuarioService {
             System.err.println("Erro ao enviar email: " + e.getMessage());
         }
 
-        return new UsuarioResponseDTO(salvo);
+        return new UsuarioResponse(salvo);
     }
 
     @Transactional
-    public UsuarioResponseDTO atualizar(Integer id, UsuarioDTO dto) {
+    public UsuarioResponse atualizar(Integer id, UsuarioRequest dto) {
         UsuarioModel usuarioModel = ur.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado."));
 
@@ -98,7 +98,7 @@ public class UsuarioService {
 
         UsuarioModel salvo = ur.save(usuarioModel);
 
-        return new UsuarioResponseDTO(salvo);
+        return new UsuarioResponse(salvo);
     }
 
     @Transactional

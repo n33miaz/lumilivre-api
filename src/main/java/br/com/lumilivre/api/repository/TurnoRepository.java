@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.repository;
 
-import br.com.lumilivre.api.dto.ListaTurnoDTO;
+import br.com.lumilivre.api.dto.turno.TurnoResumoResponse;
 import br.com.lumilivre.api.model.TurnoModel;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -28,5 +28,5 @@ public interface TurnoRepository extends JpaRepository<TurnoModel, Integer> {
             GROUP BY t.id, t.nome
             ORDER BY t.nome
             """)
-    Page<ListaTurnoDTO> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
+    Page<TurnoResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 }

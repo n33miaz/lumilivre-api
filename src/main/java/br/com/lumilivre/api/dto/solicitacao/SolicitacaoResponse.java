@@ -1,10 +1,10 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.solicitacao;
 
 import java.time.LocalDateTime;
 
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 
-public class SolicitacaoEmprestimoDTO {
+public class SolicitacaoResponse {
 
     private Integer id;
     private String alunoNome;
@@ -15,10 +15,10 @@ public class SolicitacaoEmprestimoDTO {
     private StatusSolicitacao status;
     private String observacao;
 
-    public SolicitacaoEmprestimoDTO() {
+    public SolicitacaoResponse() {
     }
 
-    public SolicitacaoEmprestimoDTO(Integer id, String alunoNome, String alunoMatricula,
+    public SolicitacaoResponse(Integer id, String alunoNome, String alunoMatricula,
             String exemplarTombo, String livroNome,
             LocalDateTime dataSolicitacao, StatusSolicitacao status,
             String observacao) {

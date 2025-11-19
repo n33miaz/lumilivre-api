@@ -1,6 +1,6 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.exemplar;
 
-public class ExemplarDTO {
+public class ExemplarRequest {
 
 	private String tombo;
 	private String status_livro;

@@ -1,14 +1,14 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.solicitacao;
 
 import java.time.LocalDateTime;
 
-public class ListaSolicitacaoDTO {
+public class SolicitacaoResumoResponse {
 
     private String alunoNome;
     private String livroNome;
     private LocalDateTime dataSolicitacao;
 
-    public ListaSolicitacaoDTO(String alunoNome, String livroNome, LocalDateTime dataSolicitacao) {
+    public SolicitacaoResumoResponse(String alunoNome, String livroNome, LocalDateTime dataSolicitacao) {
         this.alunoNome = alunoNome;
         this.livroNome = livroNome;
         this.dataSolicitacao = dataSolicitacao;

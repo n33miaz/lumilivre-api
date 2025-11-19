@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.TccResponseDTO;
+import br.com.lumilivre.api.dto.tcc.TccResponse;
 import br.com.lumilivre.api.service.TccService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,7 +36,7 @@ public class TccController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou arquivo incorreto", content = @Content(schema = @Schema(implementation = br.com.lumilivre.api.dto.comum.ApiResponse.class))),
             @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
     })
-    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<TccResponseDTO>> cadastrarTcc(
+    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<TccResponse>> cadastrarTcc(
             @Parameter(description = "JSON contendo os dados do TCC (titulo, alunos, curso_id, etc)", required = true) @RequestParam("dadosJson") String dadosJson,
 
             @Parameter(description = "Arquivo PDF do TCC (Opcional)") @RequestParam(value = "arquivoPdf", required = false) MultipartFile arquivoPdf) {
@@ -47,7 +47,7 @@ public class TccController {
     @GetMapping("/buscar")
     @Operation(summary = "Lista todos os TCCs cadastrados")
     @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
-    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<List<TccResponseDTO>>> listarTccs() {
+    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<List<TccResponse>>> listarTccs() {
         return tccService.listarTccs();
     }
 
@@ -57,7 +57,7 @@ public class TccController {
             @ApiResponse(responseCode = "200", description = "TCC encontrado"),
             @ApiResponse(responseCode = "404", description = "TCC não encontrado")
     })
-    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<TccResponseDTO>> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<TccResponse>> buscarPorId(@PathVariable Long id) {
         return tccService.buscarPorId(id);
     }
 

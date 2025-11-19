@@ -12,9 +12,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.MudarSenhaComTokenDTO;
 import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.LoginResponse;
+import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.model.TokenResetSenhaModel;
 import br.com.lumilivre.api.model.UsuarioModel;
@@ -83,7 +83,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void mudarSenhaComToken(MudarSenhaComTokenDTO dto) {
+    public void mudarSenhaComToken(MudarSenhaTokenRequest dto) {
         TokenResetSenhaModel tokenReset = tokenRepository.findByToken(dto.getToken())
                 .orElseThrow(() -> new IllegalArgumentException("Token inválido ou não encontrado."));
 

@@ -1,10 +1,10 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.solicitacao;
 
 import java.time.LocalDateTime;
 
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 
-public class ListaSolicitacaoCompletaDTO {
+public class SolicitacaoCompletaResponse {
     private Integer id;
     private String alunoNome;
     private String alunoMatricula;
@@ -14,7 +14,7 @@ public class ListaSolicitacaoCompletaDTO {
     private StatusSolicitacao status;
     private String observacao;
 
-    public ListaSolicitacaoCompletaDTO(Integer id, String alunoNome, String alunoMatricula,
+    public SolicitacaoCompletaResponse(Integer id, String alunoNome, String alunoMatricula,
             String exemplarTombo, String livroNome, LocalDateTime dataSolicitacao,
             StatusSolicitacao status, String observacao) {
         this.id = id;

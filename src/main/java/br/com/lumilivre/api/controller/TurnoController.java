@@ -1,9 +1,9 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.ListaTurnoDTO;
 import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
-import br.com.lumilivre.api.dto.requests.TurnoRequestDTO;
-import br.com.lumilivre.api.dto.responses.TurnoResponseDTO;
+import br.com.lumilivre.api.dto.turno.TurnoResumoResponse;
+import br.com.lumilivre.api.dto.turno.TurnoRequest;
+import br.com.lumilivre.api.dto.turno.TurnoResponse;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.repository.TurnoRepository;
 import br.com.lumilivre.api.service.TurnoService;
@@ -44,23 +44,23 @@ public class TurnoController {
 
     @GetMapping("/home")
     @Operation(summary = "Lista turnos para a tela principal do admin (com paginação)")
-    public ResponseEntity<Page<ListaTurnoDTO>> buscarTurnosAdmin(
+    public ResponseEntity<Page<TurnoResumoResponse>> buscarTurnosAdmin(
             @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaTurnoDTO> turnos = turnoService.buscarPorTexto(texto, pageable);
+        Page<TurnoResumoResponse> turnos = turnoService.buscarPorTexto(texto, pageable);
         return turnos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(turnos);
     }
 
     @PostMapping("/cadastrar")
     @Operation(summary = "Cadastra um novo turno")
-    public ResponseEntity<TurnoResponseDTO> cadastrar(@RequestBody @Valid TurnoRequestDTO dto) {
+    public ResponseEntity<TurnoResponse> cadastrar(@RequestBody @Valid TurnoRequest dto) {
         return turnoService.cadastrar(dto);
     }
 
     @PutMapping("/atualizar/{id}")
     @Operation(summary = "Atualiza um turno existente")
-    public ResponseEntity<TurnoResponseDTO> atualizar(@PathVariable Integer id,
-            @RequestBody @Valid TurnoRequestDTO dto) {
+    public ResponseEntity<TurnoResponse> atualizar(@PathVariable Integer id,
+            @RequestBody @Valid TurnoRequest dto) {
         return turnoService.atualizar(id, dto);
     }
 

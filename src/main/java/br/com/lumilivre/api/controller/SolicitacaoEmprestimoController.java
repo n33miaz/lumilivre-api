@@ -7,9 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.dto.ListaSolicitacaoCompletaDTO;
-import br.com.lumilivre.api.dto.ListaSolicitacaoDashboardDTO;
-import br.com.lumilivre.api.dto.SolicitacaoEmprestimoDTO;
+import br.com.lumilivre.api.dto.solicitacao.SolicitacaoCompletaResponse;
+import br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse;
+import br.com.lumilivre.api.dto.solicitacao.SolicitacaoResponse;
 import br.com.lumilivre.api.service.SolicitacaoEmprestimoService;
 
 @RestController
@@ -21,13 +21,13 @@ public class SolicitacaoEmprestimoController {
     private SolicitacaoEmprestimoService solicitacaoService;
 
     @GetMapping("/dashboard")
-    public ResponseEntity<List<ListaSolicitacaoDashboardDTO>> listarDashboard() {
-        List<ListaSolicitacaoDashboardDTO> pendentes = solicitacaoService.listarSolicitacoesPendentes();
+    public ResponseEntity<List<SolicitacaoDashboardResponse>> listarDashboard() {
+        List<SolicitacaoDashboardResponse> pendentes = solicitacaoService.listarSolicitacoesPendentes();
         return ResponseEntity.ok(pendentes);
     }
 
     @GetMapping("/todas")
-    public ResponseEntity<List<ListaSolicitacaoCompletaDTO>> listarTodas() {
+    public ResponseEntity<List<SolicitacaoCompletaResponse>> listarTodas() {
         return ResponseEntity.ok(solicitacaoService.listarTodasSolicitacoes());
     }
 
@@ -45,13 +45,13 @@ public class SolicitacaoEmprestimoController {
     }
 
     @GetMapping("/pendentes")
-    public List<SolicitacaoEmprestimoDTO> listarPendentes() {
+    public List<SolicitacaoResponse> listarPendentes() {
         return solicitacaoService.listarPendentesDTO();
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @GetMapping("/aluno/{matricula}")
-    public List<SolicitacaoEmprestimoDTO> listarDoAluno(@PathVariable String matricula) {
+    public List<SolicitacaoResponse> listarDoAluno(@PathVariable String matricula) {
         return solicitacaoService.listarSolicitacoesDoAlunoDTO(matricula);
     }
 

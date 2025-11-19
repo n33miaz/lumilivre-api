@@ -1,8 +1,8 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.TccRequestDTO;
-import br.com.lumilivre.api.dto.TccResponseDTO;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
+import br.com.lumilivre.api.dto.tcc.TccRequest;
+import br.com.lumilivre.api.dto.tcc.TccResponse;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.TccModel;
 import br.com.lumilivre.api.repository.CursoRepository;
@@ -31,9 +31,9 @@ public class TccService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ResponseEntity<ApiResponse<TccResponseDTO>> cadastrarTcc(String dadosJson, MultipartFile arquivoPdf) {
+    public ResponseEntity<ApiResponse<TccResponse>> cadastrarTcc(String dadosJson, MultipartFile arquivoPdf) {
         try {
-            TccRequestDTO dto = mapper.readValue(dadosJson, TccRequestDTO.class);
+            TccRequest dto = mapper.readValue(dadosJson, TccRequest.class);
 
             if (dto.getTitulo() == null || dto.getTitulo().isBlank()) {
                 return ResponseEntity.badRequest()
@@ -68,7 +68,7 @@ public class TccService {
             }
 
             TccModel novoTcc = tccRepository.save(tcc);
-            TccResponseDTO response = new TccResponseDTO(novoTcc);
+            TccResponse response = new TccResponse(novoTcc);
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ApiResponse<>(true, "TCC cadastrado com sucesso.", response));
@@ -83,17 +83,17 @@ public class TccService {
         }
     }
 
-    public ResponseEntity<ApiResponse<List<TccResponseDTO>>> listarTccs() {
-        List<TccResponseDTO> tccs = tccRepository.findAll().stream()
-                .map(TccResponseDTO::new)
+    public ResponseEntity<ApiResponse<List<TccResponse>>> listarTccs() {
+        List<TccResponse> tccs = tccRepository.findAll().stream()
+                .map(TccResponse::new)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(new ApiResponse<>(true, "Lista de TCCs obtida com sucesso.", tccs));
     }
 
-    public ResponseEntity<ApiResponse<TccResponseDTO>> buscarPorId(Long id) {
+    public ResponseEntity<ApiResponse<TccResponse>> buscarPorId(Long id) {
         return tccRepository.findById(id)
-                .map(tcc -> ResponseEntity.ok(new ApiResponse<>(true, "TCC encontrado.", new TccResponseDTO(tcc))))
+                .map(tcc -> ResponseEntity.ok(new ApiResponse<>(true, "TCC encontrado.", new TccResponse(tcc))))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse<>(false, "TCC não encontrado.", null)));
     }

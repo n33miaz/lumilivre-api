@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import br.com.lumilivre.api.dto.ListaSolicitacaoDashboardDTO;
+import br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;
 
@@ -31,5 +31,5 @@ public interface SolicitacaoEmprestimoRepository extends JpaRepository<Solicitac
 			    WHERE s.status = br.com.lumilivre.api.enums.StatusSolicitacao.PENDENTE
 			    ORDER BY s.dataSolicitacao ASC
 			""")
-	List<ListaSolicitacaoDashboardDTO> findSolicitacoesPendentes();
+	List<SolicitacaoDashboardResponse> findSolicitacoesPendentes();
 }

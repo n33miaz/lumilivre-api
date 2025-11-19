@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.ExemplarDTO;
-import br.com.lumilivre.api.dto.ListaLivroDTO;
+import br.com.lumilivre.api.dto.exemplar.ExemplarRequest;
+import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.ExemplarService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,14 +35,14 @@ public class ExemplarController {
     @GetMapping("/livro/{livroId}")
     @Operation(summary = "Busca todos os exemplares de um livro pelo ID do livro")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista de exemplares retornada com sucesso", content = @Content(schema = @Schema(implementation = ListaLivroDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Lista de exemplares retornada com sucesso", content = @Content(schema = @Schema(implementation = LivroListagemResponse.class))),
             @ApiResponse(responseCode = "204", description = "Nenhum exemplar encontrado para este livro"),
             @ApiResponse(responseCode = "404", description = "Livro não encontrado")
     })
-    public ResponseEntity<List<ListaLivroDTO>> buscarPorLivroId(
+    public ResponseEntity<List<LivroListagemResponse>> buscarPorLivroId(
             @Parameter(description = "ID do livro cujos exemplares serão listados") @PathVariable Long livroId) {
 
-        List<ListaLivroDTO> exemplares = exemplarService.buscarExemplaresPorLivroId(livroId);
+        List<LivroListagemResponse> exemplares = exemplarService.buscarExemplaresPorLivroId(livroId);
 
         if (exemplares.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -58,7 +58,7 @@ public class ExemplarController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada"),
             @ApiResponse(responseCode = "404", description = "Livro não encontrado")
     })
-    public ResponseEntity<ResponseModel> cadastrar(@RequestBody ExemplarDTO exemplarDTO) {
+    public ResponseEntity<ResponseModel> cadastrar(@RequestBody ExemplarRequest exemplarDTO) {
         exemplarService.cadastrar(exemplarDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ResponseModel("Exemplar cadastrado com sucesso."));
@@ -74,7 +74,7 @@ public class ExemplarController {
     })
     public ResponseEntity<ResponseModel> atualizar(
             @Parameter(description = "Código de tombo do exemplar a ser atualizado") @PathVariable String tombo,
-            @RequestBody ExemplarDTO exemplarDTO) {
+            @RequestBody ExemplarRequest exemplarDTO) {
 
         exemplarService.atualizar(tombo, exemplarDTO);
         return ResponseEntity.ok(new ResponseModel("Exemplar atualizado com sucesso."));

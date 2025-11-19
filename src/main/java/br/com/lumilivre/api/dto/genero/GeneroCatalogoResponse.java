@@ -1,14 +1,14 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.genero;
 
 import java.util.List;
 
 import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
 
-public class GeneroCatalogoDTO {
+public class GeneroCatalogoResponse {
     private String nome;
     private List<LivroMobileResponse> livros;
 
-    public GeneroCatalogoDTO(String nome, List<LivroMobileResponse> livros) {
+    public GeneroCatalogoResponse(String nome, List<LivroMobileResponse> livros) {
         this.nome = nome;
         this.livros = livros;
     }

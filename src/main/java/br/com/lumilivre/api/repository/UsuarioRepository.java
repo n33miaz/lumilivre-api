@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import br.com.lumilivre.api.dto.ListaUsuarioDTO;
+import br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.UsuarioModel;
@@ -55,7 +55,7 @@ public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer> 
             FROM UsuarioModel u
             ORDER BY u.id
             """)
-    Page<ListaUsuarioDTO> findUsuarioParaListaAdmin(Pageable pageable);
+    Page<UsuarioResumoResponse> findUsuarioParaListaAdmin(Pageable pageable);
 
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.ListaUsuarioDTO(u.id, u.email, u.role)
@@ -64,7 +64,7 @@ public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer> 
                    OR LOWER(u.email) LIKE LOWER(CONCAT('%', :texto, '%'))
                    OR LOWER(CAST(u.role AS string)) LIKE LOWER(CONCAT('%', :texto, '%')))
             """)
-    Page<ListaUsuarioDTO> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
+    Page<UsuarioResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.ListaUsuarioDTO(u.id, u.email, u.role)
@@ -73,7 +73,7 @@ public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer> 
                   AND (:email IS NULL OR u.email ILIKE CONCAT('%', :email, '%'))
                   AND (:role IS NULL OR u.role = :role)
             """)
-    Page<ListaUsuarioDTO> buscarAvancadoComDTO(
+    Page<UsuarioResumoResponse> buscarAvancadoComDTO(
             @Param("id") Integer id,
             @Param("email") String email,
             @Param("role") Role role,

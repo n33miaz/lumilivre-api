@@ -1,6 +1,6 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.livro;
 
-public interface ListaLivroProjection {
+public interface LivroListagemProjection {
     String getStatus();
 
     String getTomboExemplar();

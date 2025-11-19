@@ -12,10 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.dto.responses.EmprestimoResponseDTO;
-import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
 import br.com.lumilivre.api.dto.emprestimo.ListaEmprestimoAtivoDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
@@ -182,11 +182,11 @@ public class EmprestimoService {
 
     // ================ MÉTODOS DE BUSCA ================
 
-    public Page<ListaEmprestimoDTO> buscarEmprestimoParaListaAdmin(Pageable pageable) {
+    public Page<EmprestimoListagemResponse> buscarEmprestimoParaListaAdmin(Pageable pageable) {
         return emprestimoRepository.findEmprestimoParaListaAdmin(pageable);
     }
 
-    public Page<ListaEmprestimoDTO> buscarPorTexto(String texto, Pageable pageable) {
+    public Page<EmprestimoListagemResponse> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
             return buscarAvancado(null, null, null, null, null, null, pageable);
         }
@@ -219,7 +219,7 @@ public class EmprestimoService {
         return emprestimoRepository.findApenasAtrasadosDTO();
     }
 
-    public Page<ListaEmprestimoDTO> buscarAvancado(
+    public Page<EmprestimoListagemResponse> buscarAvancado(
             StatusEmprestimo statusEmprestimo,
             String tombo,
             String livroNome,

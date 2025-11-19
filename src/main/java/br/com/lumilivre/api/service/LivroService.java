@@ -1,7 +1,11 @@
 package br.com.lumilivre.api.service;
 
 import br.com.lumilivre.api.dto.*;
+import br.com.lumilivre.api.dto.genero.GeneroCatalogoResponse;
 import br.com.lumilivre.api.dto.livro.LivroRequest;
+import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
+import br.com.lumilivre.api.dto.livro.LivroListagemProjection;
+import br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse;
 import br.com.lumilivre.api.dto.livro.LivroDetalheResponse;
 import br.com.lumilivre.api.dto.livro.LivroResponseDTO;
 import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
@@ -62,15 +66,15 @@ public class LivroService {
 
     // ------------------------ BUSCAS ------------------------
 
-    public List<ListaLivroDTO> buscarTodos() {
+    public List<LivroListagemResponse> buscarTodos() {
         return livroRepository.findAll().stream()
                 .map(this::converterParaListaDTO)
                 .collect(Collectors.toList());
     }
 
-    public Page<ListaLivroDTO> buscarParaListaAdmin(Pageable pageable) {
-        Page<ListaLivroProjection> projecoes = livroRepository.findLivrosParaListaAdmin(pageable);
-        return projecoes.map(p -> new ListaLivroDTO(
+    public Page<LivroListagemResponse> buscarParaListaAdmin(Pageable pageable) {
+        Page<LivroListagemProjection> projecoes = livroRepository.findLivrosParaListaAdmin(pageable);
+        return projecoes.map(p -> new LivroListagemResponse(
                 StatusLivro.valueOf(p.getStatus()),
                 p.getTomboExemplar(),
                 p.getIsbn(),
@@ -82,7 +86,7 @@ public class LivroService {
                 p.getLocalizacao_fisica()));
     }
 
-    public Page<LivroAgrupadoDTO> buscarLivrosAgrupados(Pageable pageable, String texto) {
+    public Page<LivroAgrupadoResponse> buscarLivrosAgrupados(Pageable pageable, String texto) {
         return livroRepository.findLivrosAgrupados(pageable, texto);
     }
 
@@ -97,7 +101,7 @@ public class LivroService {
     }
 
     @Cacheable("catalogo-mobile")
-    public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
+    public List<GeneroCatalogoResponse> buscarCatalogoParaMobile() {
         log.info("Buscando catálogo mobile no banco de dados (sem cache)...");
         List<Map<String, Object>> results = livroRepository.findCatalogoMobile();
 
@@ -111,8 +115,8 @@ public class LivroService {
                                 (String) row.get("autor")), Collectors.toList())));
 
         return livrosPorGenero.entrySet().stream()
-                .map(entry -> new GeneroCatalogoDTO(entry.getKey(), entry.getValue()))
-                .sorted(Comparator.comparing(GeneroCatalogoDTO::getNome))
+                .map(entry -> new GeneroCatalogoResponse(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparing(GeneroCatalogoResponse::getNome))
                 .collect(Collectors.toList());
     }
 
@@ -120,11 +124,11 @@ public class LivroService {
         return livroRepository.findByGeneroAsCatalogoDTO(nomeGenero, pageable);
     }
 
-    public Page<ListaLivroDTO> buscarPorTexto(String texto, Pageable pageable) {
+    public Page<LivroListagemResponse> buscarPorTexto(String texto, Pageable pageable) {
         Page<LivroModel> paginaDeLivros = livroRepository.findIdsPorTexto(texto, pageable);
         List<LivroModel> livrosComGeneros = livroRepository.findWithGeneros(paginaDeLivros.getContent());
 
-        List<ListaLivroDTO> dtos = livrosComGeneros.stream()
+        List<LivroListagemResponse> dtos = livrosComGeneros.stream()
                 .map(this::converterParaListaDTO)
                 .collect(Collectors.toList());
 
@@ -230,9 +234,9 @@ public class LivroService {
 
     // ------------------------ MÉTODOS AUXILIARES ------------------------
 
-    private ListaLivroDTO converterParaListaDTO(LivroModel l) {
+    private LivroListagemResponse converterParaListaDTO(LivroModel l) {
         String generos = l.getGeneros().stream().map(GeneroModel::getNome).collect(Collectors.joining(", "));
-        return new ListaLivroDTO(
+        return new LivroListagemResponse(
                 StatusLivro.DISPONIVEL,
                 "N/A",
                 l.getIsbn(),

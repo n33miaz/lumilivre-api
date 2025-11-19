@@ -1,8 +1,8 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.usuario;
 
 import jakarta.validation.constraints.NotBlank;
 
-public class UsuarioDTO {
+public class UsuarioRequest {
 
 	@NotBlank
 	private String email;

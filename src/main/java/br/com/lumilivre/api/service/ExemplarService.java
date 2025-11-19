@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.ExemplarDTO;
-import br.com.lumilivre.api.dto.ListaLivroDTO;
+import br.com.lumilivre.api.dto.exemplar.ExemplarRequest;
+import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
@@ -42,7 +42,7 @@ public class ExemplarService {
         return exemplarRepository.findAll();
     }
 
-    public List<ListaLivroDTO> buscarExemplaresPorLivroId(Long livroId) {
+    public List<LivroListagemResponse> buscarExemplaresPorLivroId(Long livroId) {
         if (livroId == null) {
             throw new RegraDeNegocioException("O ID do livro é obrigatório.");
         }
@@ -58,7 +58,7 @@ public class ExemplarService {
     }
 
     @Transactional
-    public void cadastrar(ExemplarDTO dto) {
+    public void cadastrar(ExemplarRequest dto) {
         validarDadosExemplar(dto);
 
         if (exemplarRepository.existsById(dto.getTombo())) {
@@ -85,7 +85,7 @@ public class ExemplarService {
     }
 
     @Transactional
-    public void atualizar(String tombo, ExemplarDTO dto) {
+    public void atualizar(String tombo, ExemplarRequest dto) {
         ExemplarModel exemplar = exemplarRepository.findById(tombo)
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
                         "Exemplar com o tombo '" + tombo + "' não foi encontrado."));
@@ -138,7 +138,7 @@ public class ExemplarService {
 
     // --- METODOS AUXILIARES ---
 
-    private void validarDadosExemplar(ExemplarDTO dto) {
+    private void validarDadosExemplar(ExemplarRequest dto) {
         if (dto.getLivro_id() == null) {
             throw new RegraDeNegocioException("O ID do livro é obrigatório.");
         }
@@ -156,10 +156,10 @@ public class ExemplarService {
         }
     }
 
-    private ListaLivroDTO converterParaDTO(ExemplarModel exemplar) {
+    private LivroListagemResponse converterParaDTO(ExemplarModel exemplar) {
         LivroModel livro = exemplar.getLivro();
         if (livro == null) {
-            return new ListaLivroDTO(exemplar.getStatus_livro(), exemplar.getTombo(), "N/A", "N/A",
+            return new LivroListagemResponse(exemplar.getStatus_livro(), exemplar.getTombo(), "N/A", "N/A",
                     "Livro não associado", "N/A", "N/A", "N/A", exemplar.getLocalizacao_fisica());
         }
 
@@ -167,7 +167,7 @@ public class ExemplarService {
                 .map(GeneroModel::getNome)
                 .collect(Collectors.joining(", "));
 
-        return new ListaLivroDTO(
+        return new LivroListagemResponse(
                 exemplar.getStatus_livro(),
                 exemplar.getTombo(),
                 livro.getIsbn(),

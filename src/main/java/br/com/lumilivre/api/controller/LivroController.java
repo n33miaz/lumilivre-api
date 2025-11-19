@@ -1,7 +1,10 @@
 package br.com.lumilivre.api.controller;
 
 import br.com.lumilivre.api.dto.*;
+import br.com.lumilivre.api.dto.genero.GeneroCatalogoResponse;
 import br.com.lumilivre.api.dto.livro.LivroRequest;
+import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
+import br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse;
 import br.com.lumilivre.api.dto.livro.LivroDetalheResponse;
 import br.com.lumilivre.api.dto.livro.LivroResponseDTO;
 import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
@@ -41,18 +44,18 @@ public class LivroController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
     @Operation(summary = "Lista livros para a tela principal do admin (visão de exemplares)")
-    public ResponseEntity<Page<ListaLivroDTO>> listarParaAdmin(Pageable pageable) {
-        Page<ListaLivroDTO> livros = livroService.buscarParaListaAdmin(pageable);
+    public ResponseEntity<Page<LivroListagemResponse>> listarParaAdmin(Pageable pageable) {
+        Page<LivroListagemResponse> livros = livroService.buscarParaListaAdmin(pageable);
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home/agrupado")
     @Operation(summary = "Lista livros agrupados por título com contagem de exemplares e busca")
-    public ResponseEntity<Page<LivroAgrupadoDTO>> listarAgrupadoParaAdmin(
+    public ResponseEntity<Page<LivroAgrupadoResponse>> listarAgrupadoParaAdmin(
             @Parameter(description = "Texto para busca por nome ou ISBN") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<LivroAgrupadoDTO> livros = livroService.buscarLivrosAgrupados(pageable, texto);
+        Page<LivroAgrupadoResponse> livros = livroService.buscarLivrosAgrupados(pageable, texto);
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
@@ -72,8 +75,8 @@ public class LivroController {
     @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO', 'ALUNO')")
     @GetMapping("/catalogo-mobile")
     @Operation(summary = "Busca o catálogo de livros agrupados por gênero para o app mobile")
-    public ResponseEntity<List<GeneroCatalogoDTO>> buscarCatalogoMobile() {
-        List<GeneroCatalogoDTO> catalogo = livroService.buscarCatalogoParaMobile();
+    public ResponseEntity<List<GeneroCatalogoResponse>> buscarCatalogoMobile() {
+        List<GeneroCatalogoResponse> catalogo = livroService.buscarCatalogoParaMobile();
         return catalogo.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(catalogo);
     }
 

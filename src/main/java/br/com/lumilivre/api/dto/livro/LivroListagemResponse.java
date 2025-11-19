@@ -1,8 +1,8 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.livro;
 
 import br.com.lumilivre.api.enums.StatusLivro;
 
-public class ListaLivroDTO {
+public class LivroListagemResponse {
 
     private StatusLivro status;
     private String tomboExemplar;
@@ -14,7 +14,7 @@ public class ListaLivroDTO {
     private String editora;
     private String localizacao_fisica;
 
-    public ListaLivroDTO(StatusLivro status, String tomboExemplar, String isbn, String cdd, String nome,
+    public LivroListagemResponse(StatusLivro status, String tomboExemplar, String isbn, String cdd, String nome,
             String genero, String autor, String editora, String localizacao_fisica) {
         this.status = status;
         this.tomboExemplar = tomboExemplar;

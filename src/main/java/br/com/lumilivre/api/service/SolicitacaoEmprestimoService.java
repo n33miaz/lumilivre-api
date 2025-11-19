@@ -7,10 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import br.com.lumilivre.api.dto.ListaSolicitacaoCompletaDTO;
-import br.com.lumilivre.api.dto.ListaSolicitacaoDashboardDTO;
-import br.com.lumilivre.api.dto.SolicitacaoEmprestimoDTO;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
+import br.com.lumilivre.api.dto.solicitacao.SolicitacaoCompletaResponse;
+import br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse;
+import br.com.lumilivre.api.dto.solicitacao.SolicitacaoResponse;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 import br.com.lumilivre.api.model.AlunoModel;
@@ -41,10 +41,10 @@ public class SolicitacaoEmprestimoService {
 
     private static final int LIMITE_EMPRESTIMOS_ATIVOS = 3;
 
-    public List<ListaSolicitacaoCompletaDTO> listarTodasSolicitacoes() {
+    public List<SolicitacaoCompletaResponse> listarTodasSolicitacoes() {
         return solicitacaoRepository.findAllByOrderByDataSolicitacaoDesc()
                 .stream()
-                .map(s -> new ListaSolicitacaoCompletaDTO(
+                .map(s -> new SolicitacaoCompletaResponse(
                         s.getId(),
                         s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
@@ -56,7 +56,7 @@ public class SolicitacaoEmprestimoService {
                 .toList();
     }
 
-    public List<ListaSolicitacaoDashboardDTO> listarSolicitacoesPendentes() {
+    public List<SolicitacaoDashboardResponse> listarSolicitacoesPendentes() {
         return solicitacaoRepository.findSolicitacoesPendentes();
     }
 
@@ -127,10 +127,10 @@ public class SolicitacaoEmprestimoService {
         return ResponseEntity.ok("Solicitação processada com sucesso.");
     }
 
-    public List<SolicitacaoEmprestimoDTO> listarPendentesDTO() {
+    public List<SolicitacaoResponse> listarPendentesDTO() {
         return solicitacaoRepository.findByStatus(StatusSolicitacao.PENDENTE)
                 .stream()
-                .map(s -> new SolicitacaoEmprestimoDTO(
+                .map(s -> new SolicitacaoResponse(
                         s.getId(),
                         s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
@@ -142,10 +142,10 @@ public class SolicitacaoEmprestimoService {
                 .toList();
     }
 
-    public List<SolicitacaoEmprestimoDTO> listarSolicitacoesDoAlunoDTO(String matricula) {
+    public List<SolicitacaoResponse> listarSolicitacoesDoAlunoDTO(String matricula) {
         return solicitacaoRepository.findByAlunoMatriculaAndStatus(matricula, StatusSolicitacao.PENDENTE)
                 .stream()
-                .map(s -> new SolicitacaoEmprestimoDTO(
+                .map(s -> new SolicitacaoResponse(
                         s.getId(),
                         s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),

@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.dto.MudarSenhaComTokenDTO;
 import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.LoginResponse;
+import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.AuthService;
 import jakarta.validation.Valid;
@@ -69,7 +69,7 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Senha alterada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Token inválido ou expirado")
     })
-    public ResponseEntity<ResponseModel> mudarSenha(@RequestBody @Valid MudarSenhaComTokenDTO dto) {
+    public ResponseEntity<ResponseModel> mudarSenha(@RequestBody @Valid MudarSenhaTokenRequest dto) {
         authService.mudarSenhaComToken(dto);
         return ResponseEntity.ok(new ResponseModel("Senha alterada com sucesso."));
     }

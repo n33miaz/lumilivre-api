@@ -1,14 +1,14 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.usuario;
 
 import br.com.lumilivre.api.enums.Role;
 
-public class ListaUsuarioDTO {
+public class UsuarioResumoResponse {
 
 	private Integer id;
 	private String email;
 	private Role role;
 
-	public ListaUsuarioDTO(Integer id, String email, Role role) {
+	public UsuarioResumoResponse(Integer id, String email, Role role) {
 		this.id = id;
 		this.email = email;
 		this.role = role;

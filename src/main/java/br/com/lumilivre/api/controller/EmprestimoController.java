@@ -10,10 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
 import br.com.lumilivre.api.dto.emprestimo.ListaEmprestimoAtivoDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
 import br.com.lumilivre.api.dto.responses.EmprestimoResponseDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
@@ -41,10 +41,10 @@ public class EmprestimoController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
     @Operation(summary = "Lista empréstimos para a tela principal do admin")
-    public ResponseEntity<Page<ListaEmprestimoDTO>> listarParaAdmin(
+    public ResponseEntity<Page<EmprestimoListagemResponse>> listarParaAdmin(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaEmprestimoDTO> emprestimos = es.buscarEmprestimoParaListaAdmin(pageable);
+        Page<EmprestimoListagemResponse> emprestimos = es.buscarEmprestimoParaListaAdmin(pageable);
         return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
 
@@ -65,17 +65,17 @@ public class EmprestimoController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
     @Operation(summary = "Busca empréstimos com paginação e filtro de texto")
-    public ResponseEntity<Page<ListaEmprestimoDTO>> buscarPorTexto(
+    public ResponseEntity<Page<EmprestimoListagemResponse>> buscarPorTexto(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
-        Page<ListaEmprestimoDTO> emprestimos = es.buscarPorTexto(texto, pageable);
+        Page<EmprestimoListagemResponse> emprestimos = es.buscarPorTexto(texto, pageable);
         return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
     @Operation(summary = "Busca avançada e paginada de empréstimos")
-    public ResponseEntity<Page<ListaEmprestimoDTO>> buscarAvancado(
+    public ResponseEntity<Page<EmprestimoListagemResponse>> buscarAvancado(
             @RequestParam(required = false) StatusEmprestimo statusEmprestimo,
             @RequestParam(required = false) String tombo,
             @RequestParam(required = false) String livroNome,
@@ -84,7 +84,7 @@ public class EmprestimoController {
             @RequestParam(required = false) String dataDevolucao,
             Pageable pageable) {
 
-        Page<ListaEmprestimoDTO> emprestimos = es.buscarAvancado(
+        Page<EmprestimoListagemResponse> emprestimos = es.buscarAvancado(
                 statusEmprestimo, tombo, livroNome, alunoNome, dataEmprestimo, dataDevolucao, pageable);
         return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }

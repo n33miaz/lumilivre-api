@@ -1,8 +1,8 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 
-public class MudarSenhaComTokenDTO {
+public class MudarSenhaTokenRequest {
     @NotBlank
     private String token;
     @NotBlank
