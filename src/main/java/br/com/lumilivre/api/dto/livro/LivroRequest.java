@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.livro;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 
-public class LivroDTO {
+public class LivroRequest {
 
     private String isbn;
     private String nome;

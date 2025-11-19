@@ -1,7 +1,10 @@
 package br.com.lumilivre.api.controller;
 
 import br.com.lumilivre.api.dto.*;
-import br.com.lumilivre.api.dto.responses.LivroResponseDTO;
+import br.com.lumilivre.api.dto.livro.LivroRequest;
+import br.com.lumilivre.api.dto.livro.LivroDetalheResponse;
+import br.com.lumilivre.api.dto.livro.LivroResponseDTO;
+import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.LivroService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -57,10 +60,10 @@ public class LivroController {
     @GetMapping("/{id}")
     @Operation(summary = "Busca os detalhes de um livro específico pelo seu ID")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Livro encontrado", content = @Content(schema = @Schema(implementation = LivroDetalheDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Livro encontrado", content = @Content(schema = @Schema(implementation = LivroDetalheResponse.class))),
             @ApiResponse(responseCode = "404", description = "Nenhum livro encontrado para o ID fornecido")
     })
-    public ResponseEntity<LivroDetalheDTO> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<LivroDetalheResponse> buscarPorId(@PathVariable Long id) {
         return livroService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -77,9 +80,9 @@ public class LivroController {
     @GetMapping("/genero/{nomeGenero}")
     @Operation(summary = "Busca livros por nome do gênero com paginação")
     @ApiResponse(responseCode = "200", description = "Página de livros retornada", content = @Content(schema = @Schema(implementation = Page.class)))
-    public ResponseEntity<Page<LivroResponseMobileGeneroDTO>> buscarPorGenero(
+    public ResponseEntity<Page<LivroMobileResponse>> buscarPorGenero(
             @PathVariable String nomeGenero, Pageable pageable) {
-        Page<LivroResponseMobileGeneroDTO> livros = livroService.buscarPorGenero(nomeGenero, pageable);
+        Page<LivroMobileResponse> livros = livroService.buscarPorGenero(nomeGenero, pageable);
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
@@ -91,7 +94,7 @@ public class LivroController {
             @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")
     })
     public ResponseEntity<LivroResponseDTO> cadastrarLivro(
-            @Parameter(description = "Dados do livro em formato JSON") @RequestPart("livro") LivroDTO livroDTO,
+            @Parameter(description = "Dados do livro em formato JSON") @RequestPart("livro") LivroRequest livroDTO,
             @Parameter(description = "Arquivo de imagem da capa (opcional)") @RequestPart(value = "file", required = false) MultipartFile file) {
 
         LivroResponseDTO novoLivro = livroService.cadastrar(livroDTO, file);
@@ -122,7 +125,7 @@ public class LivroController {
     })
     public ResponseEntity<LivroResponseDTO> atualizar(
             @Parameter(description = "ID do livro a ser atualizado") @PathVariable Long id,
-            @Parameter(description = "Dados do livro em formato JSON") @RequestPart("livro") LivroDTO livroDTO,
+            @Parameter(description = "Dados do livro em formato JSON") @RequestPart("livro") LivroRequest livroDTO,
             @Parameter(description = "Novo arquivo de imagem da capa (opcional)") @RequestPart(value = "file", required = false) MultipartFile file) {
 
         LivroResponseDTO livroAtualizado = livroService.atualizar(id, livroDTO, file);

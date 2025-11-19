@@ -1,12 +1,12 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.livro;
 
-public class LivroResponseMobileGeneroDTO {
+public class LivroMobileResponse {
     private Long id;
     private String imagem;
     private String titulo;
     private String autor;
 
-    public LivroResponseMobileGeneroDTO(Long id, String imagem, String titulo, String autor) {
+    public LivroMobileResponse(Long id, String imagem, String titulo, String autor) {
         this.id = id;
         this.imagem = imagem;
         this.titulo = titulo;

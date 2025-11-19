@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
 import br.com.lumilivre.api.dto.ListaLivroDTO;
 import br.com.lumilivre.api.dto.ListaLivroProjection;
 import br.com.lumilivre.api.dto.LivroAgrupadoDTO;
-import br.com.lumilivre.api.dto.LivroResponseMobileGeneroDTO;
+import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.LivroModel;
 
@@ -207,6 +207,6 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             JOIN l.generos g
             WHERE LOWER(g.nome) = LOWER(:nomeGenero)
             """)
-    Page<LivroResponseMobileGeneroDTO> findByGeneroAsCatalogoDTO(@Param("nomeGenero") String nomeGenero,
+    Page<LivroMobileResponse> findByGeneroAsCatalogoDTO(@Param("nomeGenero") String nomeGenero,
             Pageable pageable);
 }

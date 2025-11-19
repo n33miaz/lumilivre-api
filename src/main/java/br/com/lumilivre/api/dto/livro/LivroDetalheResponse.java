@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.livro;
 
 import br.com.lumilivre.api.model.LivroModel;
 import lombok.Getter;
@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class LivroDetalheDTO {
+public class LivroDetalheResponse {
 
     private Long id;
     private String isbn;
@@ -26,7 +26,7 @@ public class LivroDetalheDTO {
     private long exemplaresDisponiveis;
     private long totalExemplares;
 
-    public LivroDetalheDTO(LivroModel livro, long exemplaresDisponiveis, long totalExemplares) {
+    public LivroDetalheResponse(LivroModel livro, long exemplaresDisponiveis, long totalExemplares) {
         this.id = livro.getId();
         this.isbn = livro.getIsbn();
         this.nome = livro.getNome();

@@ -2,11 +2,13 @@ package br.com.lumilivre.api.dto;
 
 import java.util.List;
 
+import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
+
 public class GeneroCatalogoDTO {
     private String nome;
-    private List<LivroResponseMobileGeneroDTO> livros;
+    private List<LivroMobileResponse> livros;
 
-    public GeneroCatalogoDTO(String nome, List<LivroResponseMobileGeneroDTO> livros) {
+    public GeneroCatalogoDTO(String nome, List<LivroMobileResponse> livros) {
         this.nome = nome;
         this.livros = livros;
     }
@@ -19,11 +21,11 @@ public class GeneroCatalogoDTO {
         this.nome = nome;
     }
 
-    public List<LivroResponseMobileGeneroDTO> getLivros() {
+    public List<LivroMobileResponse> getLivros() {
         return livros;
     }
 
-    public void setLivros(List<LivroResponseMobileGeneroDTO> livros) {
+    public void setLivros(List<LivroMobileResponse> livros) {
         this.livros = livros;
     }
 }

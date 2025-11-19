@@ -1,7 +1,10 @@
 package br.com.lumilivre.api.service;
 
 import br.com.lumilivre.api.dto.*;
-import br.com.lumilivre.api.dto.responses.LivroResponseDTO;
+import br.com.lumilivre.api.dto.livro.LivroRequest;
+import br.com.lumilivre.api.dto.livro.LivroDetalheResponse;
+import br.com.lumilivre.api.dto.livro.LivroResponseDTO;
+import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.enums.StatusLivro;
@@ -84,12 +87,12 @@ public class LivroService {
     }
 
     @Cacheable(value = "livro-detalhe", key = "#id")
-    public Optional<LivroDetalheDTO> findById(Long id) {
+    public Optional<LivroDetalheResponse> findById(Long id) {
         log.info("Buscando livro ID {} no banco de dados (sem cache)...", id);
         return livroRepository.findByIdWithDetails(id).map(livro -> {
             long disponiveis = exemplarRepository.countExemplaresByStatus(id, StatusLivro.DISPONIVEL);
             long total = exemplarRepository.countByLivroId(id);
-            return new LivroDetalheDTO(livro, disponiveis, total);
+            return new LivroDetalheResponse(livro, disponiveis, total);
         });
     }
 
@@ -98,10 +101,10 @@ public class LivroService {
         log.info("Buscando catálogo mobile no banco de dados (sem cache)...");
         List<Map<String, Object>> results = livroRepository.findCatalogoMobile();
 
-        Map<String, List<LivroResponseMobileGeneroDTO>> livrosPorGenero = results.stream()
+        Map<String, List<LivroMobileResponse>> livrosPorGenero = results.stream()
                 .collect(Collectors.groupingBy(
                         row -> (String) row.get("genero_nome"),
-                        Collectors.mapping(row -> new LivroResponseMobileGeneroDTO(
+                        Collectors.mapping(row -> new LivroMobileResponse(
                                 ((Number) row.get("id")).longValue(),
                                 (String) row.get("imagem"),
                                 (String) row.get("nome"),
@@ -113,7 +116,7 @@ public class LivroService {
                 .collect(Collectors.toList());
     }
 
-    public Page<LivroResponseMobileGeneroDTO> buscarPorGenero(String nomeGenero, Pageable pageable) {
+    public Page<LivroMobileResponse> buscarPorGenero(String nomeGenero, Pageable pageable) {
         return livroRepository.findByGeneroAsCatalogoDTO(nomeGenero, pageable);
     }
 
@@ -153,7 +156,7 @@ public class LivroService {
 
     @Transactional
     @CacheEvict(value = "catalogo-mobile", allEntries = true)
-    public LivroResponseDTO cadastrar(LivroDTO dto, MultipartFile file) {
+    public LivroResponseDTO cadastrar(LivroRequest dto, MultipartFile file) {
         if (isNaoVazio(dto.getIsbn()) && livroRepository.findByIsbn(dto.getIsbn()).isPresent()) {
             throw new RegraDeNegocioException("Esse ISBN já está cadastrado em outro livro.");
         }
@@ -184,7 +187,7 @@ public class LivroService {
             @CacheEvict(value = "livro-detalhe", key = "#id"),
             @CacheEvict(value = "catalogo-mobile", allEntries = true)
     })
-    public LivroResponseDTO atualizar(Long id, LivroDTO dto, MultipartFile file) {
+    public LivroResponseDTO atualizar(Long id, LivroRequest dto, MultipartFile file) {
         LivroModel livroParaAtualizar = livroRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Livro não encontrado para o ID: " + id));
 
@@ -241,7 +244,7 @@ public class LivroService {
                 "Ver Exemplares");
     }
 
-    private void preencherComGoogleBooks(LivroDTO dto) {
+    private void preencherComGoogleBooks(LivroRequest dto) {
         try {
             googleBooksService.buscarDadosPorIsbn(dto.getIsbn()).ifPresent(googleData -> {
                 LivroModel livroGoogle = googleData.livro();
@@ -265,7 +268,7 @@ public class LivroService {
         }
     }
 
-    private void validarCampos(LivroDTO dto) {
+    private void validarCampos(LivroRequest dto) {
         if (isVazio(dto.getNome()))
             throw new RegraDeNegocioException("O título é obrigatório.");
         if (dto.getData_lancamento() == null)
@@ -282,7 +285,7 @@ public class LivroService {
             throw new RegraDeNegocioException("O autor é obrigatório.");
     }
 
-    private LivroModel montarLivro(LivroModel livro, LivroDTO dto, MultipartFile file) {
+    private LivroModel montarLivro(LivroModel livro, LivroRequest dto, MultipartFile file) {
         livro.setIsbn(dto.getIsbn());
         livro.setNome(dto.getNome());
         livro.setData_lancamento(dto.getData_lancamento());

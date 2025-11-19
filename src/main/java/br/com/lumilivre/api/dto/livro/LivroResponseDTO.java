@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto.responses;
+package br.com.lumilivre.api.dto.livro;
 
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.GeneroModel;
