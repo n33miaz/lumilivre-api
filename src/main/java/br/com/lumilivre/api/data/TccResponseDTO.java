@@ -1,5 +1,9 @@
 package br.com.lumilivre.api.data;
 
+import br.com.lumilivre.api.model.TccModel;
+import lombok.Getter;
+
+@Getter
 public class TccResponseDTO {
     private Long id;
     private String titulo;
@@ -12,31 +16,16 @@ public class TccResponseDTO {
     private String linkExterno;
     private Boolean ativo;
 
-    // Construtor rápido (facilita conversão)
-    public TccResponseDTO(Long id, String titulo, String alunos, String orientadores,
-                          String curso, String anoConclusao, String semestreConclusao,
-                          String arquivoPdf, String linkExterno, Boolean ativo) {
-        this.id = id;
-        this.titulo = titulo;
-        this.alunos = alunos;
-        this.orientadores = orientadores;
-        this.curso = curso;
-        this.anoConclusao = anoConclusao;
-        this.semestreConclusao = semestreConclusao;
-        this.arquivoPdf = arquivoPdf;
-        this.linkExterno = linkExterno;
-        this.ativo = ativo;
+    public TccResponseDTO(TccModel tcc) {
+        this.id = tcc.getId();
+        this.titulo = tcc.getTitulo();
+        this.alunos = tcc.getAlunos();
+        this.orientadores = tcc.getOrientadores();
+        this.curso = tcc.getCurso() != null ? tcc.getCurso().getNome() : null;
+        this.anoConclusao = tcc.getAnoConclusao();
+        this.semestreConclusao = tcc.getSemestreConclusao();
+        this.arquivoPdf = tcc.getArquivoPdf();
+        this.linkExterno = tcc.getLinkExterno();
+        this.ativo = tcc.getAtivo();
     }
-
-    // Getters
-    public Long getId() { return id; }
-    public String getTitulo() { return titulo; }
-    public String getAlunos() { return alunos; }
-    public String getOrientadores() { return orientadores; }
-    public String getCurso() { return curso; }
-    public String getAnoConclusao() { return anoConclusao; }
-    public String getSemestreConclusao() { return semestreConclusao; }
-    public String getArquivoPdf() { return arquivoPdf; }
-    public String getLinkExterno() { return linkExterno; }
-    public Boolean getAtivo() { return ativo; }
 }

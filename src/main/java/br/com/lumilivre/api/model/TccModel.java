@@ -1,9 +1,13 @@
 package br.com.lumilivre.api.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "tcc")
+@Getter
+@Setter
 public class TccModel {
 
     @Id
@@ -18,8 +22,9 @@ public class TccModel {
 
     private String orientadores;
 
-    @Column(nullable = false)
-    private String curso;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "curso_id", nullable = false)
+    private CursoModel curso;
 
     @Column(name = "ano_conclusao")
     private String anoConclusao;
@@ -35,34 +40,4 @@ public class TccModel {
 
     private Boolean ativo = true;
 
-    // Getters e Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getTitulo() { return titulo; }
-    public void setTitulo(String titulo) { this.titulo = titulo; }
-
-    public String getAlunos() { return alunos; }
-    public void setAlunos(String alunos) { this.alunos = alunos; }
-
-    public String getOrientadores() { return orientadores; }
-    public void setOrientadores(String orientadores) { this.orientadores = orientadores; }
-
-    public String getCurso() { return curso; }
-    public void setCurso(String curso) { this.curso = curso; }
-
-    public String getAnoConclusao() { return anoConclusao; }
-    public void setAnoConclusao(String anoConclusao) { this.anoConclusao = anoConclusao; }
-
-    public String getSemestreConclusao() { return semestreConclusao; }
-    public void setSemestreConclusao(String semestreConclusao) { this.semestreConclusao = semestreConclusao; }
-
-    public String getArquivoPdf() { return arquivoPdf; }
-    public void setArquivoPdf(String arquivoPdf) { this.arquivoPdf = arquivoPdf; }
-
-    public String getLinkExterno() { return linkExterno; }
-    public void setLinkExterno(String linkExterno) { this.linkExterno = linkExterno; }
-
-    public Boolean getAtivo() { return ativo; }
-    public void setAtivo(Boolean ativo) { this.ativo = ativo; }
 }

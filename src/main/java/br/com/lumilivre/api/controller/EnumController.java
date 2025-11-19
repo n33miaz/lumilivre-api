@@ -4,9 +4,9 @@ import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.Penalidade;
-import br.com.lumilivre.api.enums.Turno;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.data.EnumDTO;
+import br.com.lumilivre.api.repository.TurnoRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,21 +23,24 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-
 @Tag(name = "3. Enums")
 @SecurityRequirement(name = "bearerAuth")
-
 public class EnumController {
+
+    private final TurnoRepository turnoRepository;
+
+    public EnumController(TurnoRepository turnoRepository) {
+        this.turnoRepository = turnoRepository;
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/enums/{tipo}")
-
-    @Operation(summary = "Lista os valores de um Enum específico", description = "Endpoint genérico para obter os valores possíveis de diferentes enums do sistema, formatados como uma lista de DTOs (nome/valor). Útil para preencher selects e filtros no frontend.")
+    @Operation(summary = "Lista os valores de um Enum ou Tabela", description = "Endpoint genérico para obter listas de valores (de Enums ou tabelas) para preencher selects e filtros no frontend.")
     @ApiResponse(responseCode = "200", description = "Lista de valores retornada com sucesso")
-    @ApiResponse(responseCode = "400", description = "Tipo de enum não encontrado", content = @Content)
-
+    @ApiResponse(responseCode = "400", description = "Tipo de lista não encontrado", content = @Content)
     public List<EnumDTO> listarEnum(
-            @Parameter(description = "O tipo do enum a ser listado. Valores possíveis: STATUS_LIVRO, STATUS_EMPRESTIMO, PENALIDADE, CDD, TURNO, TIPO_CAPA, CLASSIFICACAO_ETARIA.", example = "STATUS_LIVRO") @PathVariable String tipo) {
+            // SUGESTÃO APLICADA AQUI
+            @Parameter(description = "O tipo de lista a ser retornada. Valores possíveis: STATUS_LIVRO, STATUS_EMPRESTIMO, PENALIDADE, TIPO_CAPA, CLASSIFICACAO_ETARIA, TURNO.", example = "TURNO") @PathVariable String tipo) {
         switch (tipo.toUpperCase()) {
             case "STATUS_LIVRO":
                 return listarStatusLivros();
@@ -46,13 +49,13 @@ public class EnumController {
             case "PENALIDADE":
                 return listarPenalidades();
             case "TURNO":
-                return listarTurno();
+                return listarTurnosDaTabela();
             case "TIPO_CAPA":
                 return listarTipoCapa();
             case "CLASSIFICACAO_ETARIA":
                 return listarClassificacaoEtaria();
             default:
-                throw new IllegalArgumentException("Tipo de enum não encontrado: " + tipo);
+                throw new IllegalArgumentException("Tipo de lista não encontrado: " + tipo);
         }
     }
 
@@ -80,14 +83,14 @@ public class EnumController {
                 .collect(Collectors.toList());
     }
 
-    private List<EnumDTO> listarTipoCapa() {
-        return Arrays.stream(TipoCapa.values())
-                .map(c -> new EnumDTO(c.name(), c.getStatus()))
+    private List<EnumDTO> listarTurnosDaTabela() {
+        return turnoRepository.findAll().stream()
+                .map(turno -> new EnumDTO(turno.getNome(), turno.getNome()))
                 .collect(Collectors.toList());
     }
 
-    private List<EnumDTO> listarTurno() {
-        return Arrays.stream(Turno.values())
+    private List<EnumDTO> listarTipoCapa() {
+        return Arrays.stream(TipoCapa.values())
                 .map(c -> new EnumDTO(c.name(), c.getStatus()))
                 .collect(Collectors.toList());
     }
