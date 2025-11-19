@@ -1,8 +1,8 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.comum;
 
 import java.time.LocalDateTime;
 
-public class RespostaErroDTO {
+public class ErroResponse {
 
     private LocalDateTime timestamp;
     private int status;
@@ -10,7 +10,7 @@ public class RespostaErroDTO {
     private String mensagem;
     private String caminho;
 
-    public RespostaErroDTO(int status, String erro, String mensagem, String caminho) {
+    public ErroResponse(int status, String erro, String mensagem, String caminho) {
         this.timestamp = LocalDateTime.now();
         this.status = status;
         this.erro = erro;

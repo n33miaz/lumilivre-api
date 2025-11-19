@@ -4,7 +4,7 @@ import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.Penalidade;
-import br.com.lumilivre.api.dto.EnumDTO;
+import br.com.lumilivre.api.dto.comum.EnumResponse;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,7 +31,7 @@ public class EnumController {
     @Operation(summary = "Lista os valores de um Enum", description = "Endpoint para obter listas de valores de Enums estáticos.")
     @ApiResponse(responseCode = "200", description = "Lista de valores retornada com sucesso")
     @ApiResponse(responseCode = "400", description = "Tipo de lista não encontrado", content = @Content)
-    public List<EnumDTO> listarEnum(
+    public List<EnumResponse> listarEnum(
             @Parameter(description = "O tipo de lista. Valores: STATUS_LIVRO, STATUS_EMPRESTIMO, PENALIDADE, TIPO_CAPA, CLASSIFICACAO_ETARIA.", example = "STATUS_LIVRO") @PathVariable String tipo) {
 
         switch (tipo.toUpperCase()) {
@@ -50,33 +50,33 @@ public class EnumController {
         }
     }
 
-    private List<EnumDTO> listarStatusLivros() {
+    private List<EnumResponse> listarStatusLivros() {
         return Arrays.stream(StatusLivro.values())
-                .map(s -> new EnumDTO(s.name(), s.getStatus()))
+                .map(s -> new EnumResponse(s.name(), s.getStatus()))
                 .collect(Collectors.toList());
     }
 
-    private List<EnumDTO> listarStatusEmprestimos() {
+    private List<EnumResponse> listarStatusEmprestimos() {
         return Arrays.stream(StatusEmprestimo.values())
-                .map(s -> new EnumDTO(s.name(), s.getStatus()))
+                .map(s -> new EnumResponse(s.name(), s.getStatus()))
                 .collect(Collectors.toList());
     }
 
-    private List<EnumDTO> listarPenalidades() {
+    private List<EnumResponse> listarPenalidades() {
         return Arrays.stream(Penalidade.values())
-                .map(s -> new EnumDTO(s.name(), s.getStatus()))
+                .map(s -> new EnumResponse(s.name(), s.getStatus()))
                 .collect(Collectors.toList());
     }
 
-    private List<EnumDTO> listarClassificacaoEtaria() {
+    private List<EnumResponse> listarClassificacaoEtaria() {
         return Arrays.stream(ClassificacaoEtaria.values())
-                .map(c -> new EnumDTO(c.name(), c.getStatus()))
+                .map(c -> new EnumResponse(c.name(), c.getStatus()))
                 .collect(Collectors.toList());
     }
 
-    private List<EnumDTO> listarTipoCapa() {
+    private List<EnumResponse> listarTipoCapa() {
         return Arrays.stream(TipoCapa.values())
-                .map(c -> new EnumDTO(c.name(), c.getStatus()))
+                .map(c -> new EnumResponse(c.name(), c.getStatus()))
                 .collect(Collectors.toList());
     }
 }

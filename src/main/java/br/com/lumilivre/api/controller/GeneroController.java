@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.ItemSimplesDTO;
+import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
 import br.com.lumilivre.api.repository.GeneroRepository;
 import br.com.lumilivre.api.service.GeneroService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,9 +32,9 @@ public class GeneroController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
     @Operation(summary = "Lista todos os gêneros cadastrados")
-    public ResponseEntity<List<ItemSimplesDTO>> listarTodos() {
+    public ResponseEntity<List<ItemSimplesResponse>> listarTodos() {
         var lista = generoRepository.findAll().stream()
-                .map(g -> new ItemSimplesDTO(g.getId(), g.getNome()))
+                .map(g -> new ItemSimplesResponse(g.getId(), g.getNome()))
                 .toList();
         return ResponseEntity.ok(lista);
     }
@@ -42,9 +42,9 @@ public class GeneroController {
     @GetMapping("/sugestao-por-cdd/{cddCodigo}")
     @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
     @Operation(summary = "Sugere gêneros com base em um código CDD")
-    public ResponseEntity<List<ItemSimplesDTO>> sugerirPorCdd(@PathVariable String cddCodigo) {
+    public ResponseEntity<List<ItemSimplesResponse>> sugerirPorCdd(@PathVariable String cddCodigo) {
         var generosSugeridos = generoService.sugerirGenerosPorCdd(cddCodigo).stream()
-                .map(g -> new ItemSimplesDTO(g.getId(), g.getNome()))
+                .map(g -> new ItemSimplesResponse(g.getId(), g.getNome()))
                 .collect(Collectors.toList());
 
         if (generosSugeridos.isEmpty()) {

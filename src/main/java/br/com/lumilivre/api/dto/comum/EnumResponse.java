@@ -1,10 +1,10 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.comum;
 
-public class EnumDTO {
+public class EnumResponse {
     private String nome;
     private String status;
 
-    public EnumDTO(String nome, String status) {
+    public EnumResponse(String nome, String status) {
         this.nome = nome;
         this.status = status;
     }

@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.ItemSimplesDTO;
 import br.com.lumilivre.api.dto.ListaTurnoDTO;
+import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
 import br.com.lumilivre.api.dto.requests.TurnoRequestDTO;
 import br.com.lumilivre.api.dto.responses.TurnoResponseDTO;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -35,9 +35,9 @@ public class TurnoController {
 
     @GetMapping
     @Operation(summary = "Lista todos os turnos (Simples - para Combobox)")
-    public ResponseEntity<List<ItemSimplesDTO>> listarTodos() {
+    public ResponseEntity<List<ItemSimplesResponse>> listarTodos() {
         var lista = turnoRepository.findAll().stream()
-                .map(t -> new ItemSimplesDTO(t.getId(), t.getNome()))
+                .map(t -> new ItemSimplesResponse(t.getId(), t.getNome()))
                 .toList();
         return lista.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(lista);
     }

@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.exception;
 
-import br.com.lumilivre.api.dto.RespostaErroDTO;
+import br.com.lumilivre.api.dto.comum.ErroResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import org.springframework.http.HttpStatus;
@@ -31,9 +31,9 @@ public class TratadorDeExcecoesGlobal {
 
     // Retorna HTTP 404
     @ExceptionHandler(RecursoNaoEncontradoException.class)
-    public ResponseEntity<RespostaErroDTO> tratarRecursoNaoEncontrado(RecursoNaoEncontradoException ex,
+    public ResponseEntity<ErroResponse> tratarRecursoNaoEncontrado(RecursoNaoEncontradoException ex,
             WebRequest request) {
-        RespostaErroDTO resposta = new RespostaErroDTO(
+        ErroResponse resposta = new ErroResponse(
                 HttpStatus.NOT_FOUND.value(),
                 "Recurso Não Encontrado",
                 ex.getMessage(),
@@ -43,8 +43,8 @@ public class TratadorDeExcecoesGlobal {
 
     // Retorna HTTP 400
     @ExceptionHandler(RegraDeNegocioException.class)
-    public ResponseEntity<RespostaErroDTO> tratarRegraDeNegocio(RegraDeNegocioException ex, WebRequest request) {
-        RespostaErroDTO resposta = new RespostaErroDTO(
+    public ResponseEntity<ErroResponse> tratarRegraDeNegocio(RegraDeNegocioException ex, WebRequest request) {
+        ErroResponse resposta = new ErroResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Violação de Regra de Negócio",
                 ex.getMessage(),
@@ -54,9 +54,9 @@ public class TratadorDeExcecoesGlobal {
 
     // Retorna HTTP 400
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<RespostaErroDTO> tratarIllegalArgumentException(IllegalArgumentException ex,
+    public ResponseEntity<ErroResponse> tratarIllegalArgumentException(IllegalArgumentException ex,
             WebRequest request) {
-        RespostaErroDTO resposta = new RespostaErroDTO(
+        ErroResponse resposta = new ErroResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Requisição Inválida",
                 ex.getMessage(),
@@ -66,9 +66,9 @@ public class TratadorDeExcecoesGlobal {
 
     // Retorna HTTP 401
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<RespostaErroDTO> tratarAuthenticationException(AuthenticationException ex,
+    public ResponseEntity<ErroResponse> tratarAuthenticationException(AuthenticationException ex,
             WebRequest request) {
-        RespostaErroDTO resposta = new RespostaErroDTO(
+        ErroResponse resposta = new ErroResponse(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Não Autenticado",
                 "Token de autenticação inválido, expirado ou ausente.",
@@ -78,8 +78,8 @@ public class TratadorDeExcecoesGlobal {
 
     // Retorna HTTP 403
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<RespostaErroDTO> tratarAccessDeniedException(AccessDeniedException ex, WebRequest request) {
-        RespostaErroDTO resposta = new RespostaErroDTO(
+    public ResponseEntity<ErroResponse> tratarAccessDeniedException(AccessDeniedException ex, WebRequest request) {
+        ErroResponse resposta = new ErroResponse(
                 HttpStatus.FORBIDDEN.value(),
                 "Acesso Negado",
                 "Você não tem permissão para acessar este recurso.",
@@ -89,10 +89,10 @@ public class TratadorDeExcecoesGlobal {
 
     // Retorna HTTP 500
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<RespostaErroDTO> tratarExcecaoGlobal(Exception ex, WebRequest request) {
+    public ResponseEntity<ErroResponse> tratarExcecaoGlobal(Exception ex, WebRequest request) {
         ex.printStackTrace();
 
-        RespostaErroDTO resposta = new RespostaErroDTO(
+        ErroResponse resposta = new ErroResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Erro Interno do Servidor",
                 "Ocorreu um erro inesperado. Por favor, contate o suporte.",

@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.ItemSimplesDTO;
 import br.com.lumilivre.api.dto.ListaModuloDTO;
+import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
 import br.com.lumilivre.api.dto.requests.ModuloRequestDTO;
 import br.com.lumilivre.api.dto.responses.ModuloResponseDTO;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -35,9 +35,9 @@ public class ModuloController {
 
     @GetMapping
     @Operation(summary = "Lista todos os módulos (Simples - para Combobox)")
-    public ResponseEntity<List<ItemSimplesDTO>> listarTodos() {
+    public ResponseEntity<List<ItemSimplesResponse>> listarTodos() {
         var lista = moduloRepository.findAll().stream()
-                .map(m -> new ItemSimplesDTO(m.getId(), m.getNome()))
+                .map(m -> new ItemSimplesResponse(m.getId(), m.getNome()))
                 .toList();
         return lista.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(lista);
     }
