@@ -1,7 +1,16 @@
 package br.com.lumilivre.api.repository;
 
 import br.com.lumilivre.api.model.TurnoModel;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.lang.NonNull;
+
+import java.util.List;
 
 public interface TurnoRepository extends JpaRepository<TurnoModel, Integer> {
+
+    @Cacheable("turnos")
+    @Override
+    @NonNull
+    List<TurnoModel> findAll();
 }
