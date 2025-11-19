@@ -1,13 +1,8 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.GeneroCatalogoDTO;
-import br.com.lumilivre.api.dto.ListaLivroDTO;
-import br.com.lumilivre.api.dto.LivroAgrupadoDTO;
-import br.com.lumilivre.api.dto.LivroDTO;
-import br.com.lumilivre.api.model.LivroModel;
+import br.com.lumilivre.api.dto.*;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.LivroService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,7 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
@@ -35,12 +29,9 @@ public class LivroController {
 
     private final LivroService livroService;
 
-    // Injeção de dependência via construtor
     public LivroController(LivroService ls) {
         this.livroService = ls;
     }
-
-    // ==================== MÉTODOS GET ====================
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
@@ -62,13 +53,15 @@ public class LivroController {
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @GetMapping("/{id}")
-    @Operation(summary = "Busca um livro específico pelo seu ID numérico")
+    @Operation(summary = "Busca os detalhes de um livro específico pelo seu ID")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Livro encontrado", content = @Content(schema = @Schema(implementation = LivroModel.class))),
+            @ApiResponse(responseCode = "200", description = "Livro encontrado", content = @Content(schema = @Schema(implementation = LivroDetalheDTO.class))),
             @ApiResponse(responseCode = "404", description = "Nenhum livro encontrado para o ID fornecido")
     })
-    public ResponseEntity<LivroModel> buscarPorId(@PathVariable Long id) {
-        return livroService.findById(id);
+    public ResponseEntity<LivroDetalheDTO> buscarPorId(@PathVariable Long id) {
+        return livroService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO', 'ALUNO')")
@@ -81,13 +74,12 @@ public class LivroController {
 
     @GetMapping("/genero/{nomeGenero}")
     @Operation(summary = "Busca livros por nome do gênero com paginação")
-    public ResponseEntity<Page<LivroModel>> buscarPorGenero(
+    @ApiResponse(responseCode = "200", description = "Página de livros retornada", content = @Content(schema = @Schema(implementation = Page.class)))
+    public ResponseEntity<Page<LivroResponseMobileGeneroDTO>> buscarPorGenero(
             @PathVariable String nomeGenero, Pageable pageable) {
-        Page<LivroModel> livros = livroService.buscarPorGenero(nomeGenero, pageable);
+        Page<LivroResponseMobileGeneroDTO> livros = livroService.buscarPorGenero(nomeGenero, pageable);
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
-
-    // ==================== MÉTODOS POST ====================
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PostMapping(value = "/cadastrar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -115,8 +107,6 @@ public class LivroController {
         return livroService.uploadCapa(id, file);
     }
 
-    // ==================== MÉTODOS PUT ====================
-
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Atualiza um livro existente, opcionalmente com uma nova capa")
@@ -126,8 +116,6 @@ public class LivroController {
             @Parameter(description = "Novo arquivo de imagem da capa (opcional)") @RequestPart(value = "file", required = false) MultipartFile file) {
         return livroService.atualizar(id, livroDTO, file);
     }
-
-    // ==================== MÉTODOS DELETE ====================
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @DeleteMapping("/{id}/com-exemplares")

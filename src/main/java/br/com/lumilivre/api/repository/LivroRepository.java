@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
 import br.com.lumilivre.api.dto.ListaLivroDTO;
 import br.com.lumilivre.api.dto.ListaLivroProjection;
 import br.com.lumilivre.api.dto.LivroAgrupadoDTO;
+import br.com.lumilivre.api.dto.LivroResponseMobileGeneroDTO;
+import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.model.LivroModel;
 
 @Repository
@@ -185,4 +187,29 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                 ORDER BY total DESC
             """)
     List<Map<String, Object>> countByGenero();
+
+    @Query("""
+            SELECT l FROM LivroModel l
+            JOIN FETCH l.generos
+            JOIN FETCH l.cdd
+            WHERE l.id = :id
+            """)
+    Optional<LivroModel> findByIdWithDetails(@Param("id") Long id);
+
+    @Query("SELECT COUNT(e) FROM ExemplarModel e WHERE e.livro.id = :livroId AND e.status_livro = :status")
+    long countExemplaresByStatus(@Param("livroId") Long livroId, @Param("status") StatusLivro status);
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.LivroResponseMobileGeneroDTO(
+                l.id,
+                l.imagem,
+                l.nome,
+                l.autor
+            )
+            FROM LivroModel l
+            JOIN l.generos g
+            WHERE LOWER(g.nome) = LOWER(:nomeGenero)
+            """)
+    Page<LivroResponseMobileGeneroDTO> findByGeneroAsCatalogoDTO(@Param("nomeGenero") String nomeGenero,
+            Pageable pageable);
 }

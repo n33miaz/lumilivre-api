@@ -32,6 +32,9 @@ public interface ExemplarRepository extends JpaRepository<ExemplarModel, String>
 
   List<ExemplarModel> findAllByLivroId(Long livroId);
 
+  @Query("SELECT COUNT(e) FROM ExemplarModel e WHERE e.livro.id = :livroId AND e.status_livro = :status")
+  long countExemplaresByStatus(@Param("livroId") Long livroId, @Param("status") StatusLivro status);
+
   @Query("""
           SELECT ex FROM ExemplarModel ex
           JOIN FETCH ex.livro l

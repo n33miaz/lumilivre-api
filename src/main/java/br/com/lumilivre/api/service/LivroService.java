@@ -83,11 +83,13 @@ public class LivroService {
     }
 
     @Cacheable(value = "livro-detalhe", key = "#id")
-    public ResponseEntity<LivroModel> findById(Long id) {
+    public Optional<LivroDetalheDTO> findById(Long id) {
         log.info("Buscando livro ID {} no banco de dados (sem cache)...", id);
-        return livroRepository.findByIdWithGeneros(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        return livroRepository.findByIdWithDetails(id).map(livro -> {
+            long disponiveis = exemplarRepository.countExemplaresByStatus(id, StatusLivro.DISPONIVEL);
+            long total = exemplarRepository.countByLivroId(id);
+            return new LivroDetalheDTO(livro, disponiveis, total);
+        });
     }
 
     @Cacheable("catalogo-mobile")
@@ -110,10 +112,8 @@ public class LivroService {
                 .collect(Collectors.toList());
     }
 
-    public Page<LivroModel> buscarPorGenero(String nomeGenero, Pageable pageable) {
-        Page<LivroModel> paginaDeLivros = livroRepository.findIdsByGeneroNomeIgnoreCase(nomeGenero, pageable);
-        List<LivroModel> livrosComGeneros = livroRepository.findWithGeneros(paginaDeLivros.getContent());
-        return new PageImpl<>(livrosComGeneros, pageable, paginaDeLivros.getTotalElements());
+    public Page<LivroResponseMobileGeneroDTO> buscarPorGenero(String nomeGenero, Pageable pageable) {
+        return livroRepository.findByGeneroAsCatalogoDTO(nomeGenero, pageable);
     }
 
     public Page<LivroModel> buscarPorTexto(String texto, Pageable pageable) {
