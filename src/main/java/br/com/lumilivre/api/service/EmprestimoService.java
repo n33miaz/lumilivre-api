@@ -61,7 +61,11 @@ public class EmprestimoService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));
 
         if (aluno.getPenalidade() != null) {
-            throw new RegraDeNegocioException("O aluno possui penalidade ativa e não pode realizar empréstimos.");
+            if (aluno.getPenalidadeExpiraEm() != null && aluno.getPenalidadeExpiraEm().isAfter(LocalDateTime.now())) {
+                throw new RegraDeNegocioException(
+                        "O aluno possui penalidade ativa até " + aluno.getPenalidadeExpiraEm());
+            }
+            // TODO: Se já expirou, limpar a penalidade (Lazycleanup)
         }
 
         long emprestimosAtivosAluno = emprestimoRepository

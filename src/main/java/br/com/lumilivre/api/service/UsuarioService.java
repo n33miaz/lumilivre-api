@@ -121,8 +121,10 @@ public class UsuarioService {
         UsuarioModel usuario = ur.findByEmailOrAluno_Matricula(usernameLogado, usernameLogado)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário logado não encontrado no sistema."));
 
-        if (usuario.getAluno() != null && !usuario.getAluno().getMatricula().equals(dto.getMatricula())) {
-            throw new AccessDeniedException("Você não tem permissão para alterar a senha de outro usuário.");
+        if (usuario.getRole() == Role.ALUNO) {
+            if (usuario.getAluno() == null || !usuario.getAluno().getMatricula().equals(dto.getMatricula())) {
+                throw new AccessDeniedException("Você não tem permissão para alterar a senha de outro usuário.");
+            }
         }
 
         if (!passwordEncoder.matches(dto.getSenhaAtual(), usuario.getSenha())) {
