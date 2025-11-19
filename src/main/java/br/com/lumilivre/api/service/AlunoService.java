@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.AlunoDTO;
-import br.com.lumilivre.api.dto.ListaAlunoDTO;
+import br.com.lumilivre.api.dto.aluno.AlunoRequest;
+import br.com.lumilivre.api.dto.aluno.AlunoResumoResponse;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
@@ -47,21 +47,21 @@ public class AlunoService {
 
     // --- MÉTODOS DE LEITURA ---
 
-    public Page<ListaAlunoDTO> buscarAlunosParaListaAdmin(String texto, Pageable pageable) {
+    public Page<AlunoResumoResponse> buscarAlunosParaListaAdmin(String texto, Pageable pageable) {
         if (texto != null && !texto.isBlank()) {
             return alunoRepository.findAlunosParaListaAdminComFiltro(texto, pageable);
         }
         return alunoRepository.findAlunosParaListaAdmin(pageable);
     }
 
-    public Page<ListaAlunoDTO> buscarPorTexto(String texto, Pageable pageable) {
+    public Page<AlunoResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
         if (texto == null || texto.isBlank()) {
             return alunoRepository.findAlunosParaListaAdmin(pageable);
         }
         return alunoRepository.findAlunosParaListaAdminComFiltro(texto, pageable);
     }
 
-    public Page<ListaAlunoDTO> buscarAvancado(String penalidadeStr, String matricula, String nome,
+    public Page<AlunoResumoResponse> buscarAvancado(String penalidadeStr, String matricula, String nome,
             String cursoNome, Integer turnoId, Integer moduloId, LocalDate dataNascimento,
             String email, String celular, Pageable pageable) {
         Penalidade penalidadeEnum = parseEnum(penalidadeStr, Penalidade.class);
@@ -82,7 +82,7 @@ public class AlunoService {
     // --- MÉTODOS DE ESCRITA ---
 
     @Transactional
-    public AlunoModel cadastrar(AlunoDTO dto) {
+    public AlunoModel cadastrar(AlunoRequest dto) {
         if (alunoRepository.existsByMatricula(dto.getMatricula())) {
             throw new RegraDeNegocioException("Matrícula já cadastrada.");
         }
@@ -116,7 +116,7 @@ public class AlunoService {
     }
 
     @Transactional
-    public AlunoModel atualizar(String matricula, AlunoDTO dto) {
+    public AlunoModel atualizar(String matricula, AlunoRequest dto) {
         AlunoModel aluno = alunoRepository.findByMatricula(matricula)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));
 
@@ -155,7 +155,7 @@ public class AlunoService {
 
     // --- MÉTODOS PRIVADOS ---
 
-    private EntidadesRelacionadas buscarEntidadesRelacionadas(AlunoDTO dto) {
+    private EntidadesRelacionadas buscarEntidadesRelacionadas(AlunoRequest dto) {
         CursoModel curso = cursoRepository.findById(dto.getCursoId())
                 .orElseThrow(
                         () -> new RecursoNaoEncontradoException("Curso não encontrado (ID: " + dto.getCursoId() + ")"));
@@ -171,7 +171,7 @@ public class AlunoService {
         return new EntidadesRelacionadas(curso, turno, modulo);
     }
 
-    private void mapearDtoParaEntidade(AlunoModel aluno, AlunoDTO dto, EntidadesRelacionadas entidades) {
+    private void mapearDtoParaEntidade(AlunoModel aluno, AlunoRequest dto, EntidadesRelacionadas entidades) {
         if (dto.getMatricula() != null) {
             aluno.setMatricula(dto.getMatricula());
         }
@@ -196,7 +196,7 @@ public class AlunoService {
                 return;
 
             try {
-                AlunoDTO enderecoDTO = cepService.buscarEnderecoPorCep(cepLimpo);
+                AlunoRequest enderecoDTO = cepService.buscarEnderecoPorCep(cepLimpo);
                 if (enderecoDTO != null && enderecoDTO.getLogradouro() != null) {
                     aluno.setCep(cepLimpo);
                     aluno.setLogradouro(enderecoDTO.getLogradouro());

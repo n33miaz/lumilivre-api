@@ -10,11 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.lumilivre.api.dto.AlunoRankingDTO;
 import br.com.lumilivre.api.dto.EmprestimoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
+import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.responses.EmprestimoResponseDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.ResponseModel;
@@ -120,8 +120,8 @@ public class EmprestimoController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/ranking")
     @Operation(summary = "Ranking de alunos por quantidade de empréstimos")
-    public ResponseEntity<List<AlunoRankingDTO>> rankingAlunos(@RequestParam(defaultValue = "10") int top) {
-        List<AlunoRankingDTO> ranking = es.gerarRankingAlunos(top);
+    public ResponseEntity<List<AlunoRankingResponse>> rankingAlunos(@RequestParam(defaultValue = "10") int top) {
+        List<AlunoRankingResponse> ranking = es.gerarRankingAlunos(top);
         return ranking.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(ranking);
     }
 

@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.aluno;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -17,7 +17,7 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AlunoDTO {
+public class AlunoRequest {
 
     @Pattern(regexp = "\\d{5}", message = "A matrícula deve conter exatamente 5 dígitos numéricos")
     private String matricula;

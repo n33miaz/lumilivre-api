@@ -11,12 +11,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.AlunoRankingDTO;
 import br.com.lumilivre.api.dto.EmprestimoDTO;
 import br.com.lumilivre.api.dto.responses.EmprestimoResponseDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
+import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
@@ -256,11 +256,11 @@ public class EmprestimoService {
                 pageable);
     }
 
-    public List<AlunoRankingDTO> gerarRankingAlunos(int top) {
+    public List<AlunoRankingResponse> gerarRankingAlunos(int top) {
         List<AlunoModel> alunos = alunoRepository.findAllByOrderByEmprestimosCountDesc();
         return alunos.stream()
                 .limit(top)
-                .map(a -> new AlunoRankingDTO(a.getMatricula(), a.getNomeCompleto(), a.getEmprestimosCount()))
+                .map(a -> new AlunoRankingResponse(a.getMatricula(), a.getNomeCompleto(), a.getEmprestimosCount()))
                 .toList();
     }
 

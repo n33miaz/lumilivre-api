@@ -1,6 +1,6 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.aluno;
 
-public record AlunoRankingDTO(String matricula, String nome, int emprestimosCount) {
+public record AlunoRankingResponse(String matricula, String nome, int emprestimosCount) {
 
 	public String matricula() {
 		return matricula;

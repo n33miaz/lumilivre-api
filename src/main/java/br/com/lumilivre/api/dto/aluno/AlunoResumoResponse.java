@@ -1,10 +1,10 @@
-package br.com.lumilivre.api.dto;
+package br.com.lumilivre.api.dto.aluno;
 
 import java.time.LocalDate;
 
 import br.com.lumilivre.api.enums.Penalidade;
 
-public class ListaAlunoDTO {
+public class AlunoResumoResponse {
 	private Penalidade penalidade;
 	private String matricula;
 	private String cursoNome;
@@ -13,7 +13,7 @@ public class ListaAlunoDTO {
 	private String email;
 	private String celular; // contato
 
-	public ListaAlunoDTO(Penalidade penalidade, String matricula, String cursoNome, String nomeCompleto,
+	public AlunoResumoResponse(Penalidade penalidade, String matricula, String cursoNome, String nomeCompleto,
 			LocalDate dataNascimento, String email, String celular) {
 		this.penalidade = penalidade;
 		this.matricula = matricula;

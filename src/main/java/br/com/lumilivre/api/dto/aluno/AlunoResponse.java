@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto.responses;
+package br.com.lumilivre.api.dto.aluno;
 
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.model.AlunoModel;
@@ -10,7 +10,7 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-public class AlunoResponseDTO {
+public class AlunoResponse {
 
     private String matricula;
     private String nomeCompleto;
@@ -38,7 +38,7 @@ public class AlunoResponseDTO {
     private Penalidade penalidade;
     private Integer emprestimosCount;
 
-    public AlunoResponseDTO(AlunoModel aluno) {
+    public AlunoResponse(AlunoModel aluno) {
         this.matricula = aluno.getMatricula();
         this.nomeCompleto = aluno.getNomeCompleto();
         this.email = aluno.getEmail();
