@@ -170,13 +170,13 @@ public class AlunoService {
 
         UsuarioModel usuario = new UsuarioModel();
         usuario.setEmail(dto.getEmail()); // Usando email como login
-        usuario.setSenha(passwordEncoder.encode(dto.getCpf())); // Senha inicial é o CPF
+        usuario.setSenha(passwordEncoder.encode(dto.getMatricula())); // Senha inicial é a matricula
         usuario.setRole(Role.ALUNO);
         usuario.setAluno(aluno);
         aluno.setUsuario(usuario);
 
         AlunoModel salvo = ar.save(aluno);
-        emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNomeCompleto(), dto.getCpf());
+        emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNomeCompleto(), dto.getMatricula());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
