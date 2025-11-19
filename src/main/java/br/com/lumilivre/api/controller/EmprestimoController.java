@@ -10,23 +10,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import br.com.lumilivre.api.dto.AlunoRankingDTO;
 import br.com.lumilivre.api.dto.EmprestimoDTO;
-import br.com.lumilivre.api.dto.responses.EmprestimoResponseDTO;
+import br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDTO;
 import br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO;
-import br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO;
+import br.com.lumilivre.api.dto.responses.EmprestimoResponseDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.EmprestimoService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/emprestimos")
@@ -96,14 +97,16 @@ public class EmprestimoController {
 
     @GetMapping("/aluno/{matricula}")
     @Operation(summary = "Lista os empréstimos ativos de um aluno")
-    public ResponseEntity<?> listarEmprestimos(@PathVariable String matricula) {
+    public ResponseEntity<List<br.com.lumilivre.api.dto.EmprestimoResponseDTO>> listarEmprestimos(
+            @PathVariable String matricula) {
         return ResponseEntity.ok(es.listarEmprestimosAluno(matricula));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/aluno/{matricula}/historico")
     @Operation(summary = "Lista o histórico de empréstimos de um aluno")
-    public ResponseEntity<?> historicoEmprestimos(@PathVariable String matricula) {
+    public ResponseEntity<List<br.com.lumilivre.api.dto.EmprestimoResponseDTO>> historicoEmprestimos(
+            @PathVariable String matricula) {
         return ResponseEntity.ok(es.listarHistorico(matricula));
     }
 
@@ -117,8 +120,8 @@ public class EmprestimoController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/ranking")
     @Operation(summary = "Ranking de alunos por quantidade de empréstimos")
-    public ResponseEntity<List<?>> rankingAlunos(@RequestParam(defaultValue = "10") int top) {
-        List<?> ranking = es.gerarRankingAlunos(top);
+    public ResponseEntity<List<AlunoRankingDTO>> rankingAlunos(@RequestParam(defaultValue = "10") int top) {
+        List<AlunoRankingDTO> ranking = es.gerarRankingAlunos(top);
         return ranking.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(ranking);
     }
 
