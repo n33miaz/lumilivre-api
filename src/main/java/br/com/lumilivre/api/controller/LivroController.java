@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.controller;
 
 import br.com.lumilivre.api.dto.*;
+import br.com.lumilivre.api.dto.responses.LivroResponseDTO;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.LivroService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -85,10 +86,10 @@ public class LivroController {
     @PostMapping(value = "/cadastrar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Cadastra um novo livro, opcionalmente com a capa")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso"),
+            @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso", content = @Content(schema = @Schema(implementation = LivroResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")
     })
-    public ResponseEntity<ResponseModel> cadastrarLivro(
+    public ResponseEntity<?> cadastrarLivro(
             @Parameter(description = "Dados do livro em formato JSON") @RequestPart("livro") LivroDTO livroDTO,
             @Parameter(description = "Arquivo de imagem da capa (opcional)") @RequestPart(value = "file", required = false) MultipartFile file) {
         return livroService.cadastrar(livroDTO, file);
@@ -110,7 +111,11 @@ public class LivroController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Atualiza um livro existente, opcionalmente com uma nova capa")
-    public ResponseEntity<ResponseModel> atualizar(
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Livro atualizado com sucesso", content = @Content(schema = @Schema(implementation = LivroResponseDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Livro não encontrado")
+    })
+    public ResponseEntity<?> atualizar(
             @Parameter(description = "ID do livro a ser atualizado") @PathVariable Long id,
             @Parameter(description = "Dados do livro em formato JSON") @RequestPart("livro") LivroDTO livroDTO,
             @Parameter(description = "Novo arquivo de imagem da capa (opcional)") @RequestPart(value = "file", required = false) MultipartFile file) {

@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.service;
 
 import br.com.lumilivre.api.dto.*;
+import br.com.lumilivre.api.dto.responses.LivroResponseDTO;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.TipoCapa;
@@ -59,13 +60,14 @@ public class LivroService {
 
     // ------------------------ BUSCAS ------------------------
 
-    public List<LivroModel> buscarTodos() {
-        return livroRepository.findAll();
+    public List<ListaLivroDTO> buscarTodos() {
+        return livroRepository.findAll().stream()
+                .map(this::converterParaListaDTO)
+                .collect(Collectors.toList());
     }
 
     public Page<ListaLivroDTO> buscarParaListaAdmin(Pageable pageable) {
         Page<ListaLivroProjection> projecoes = livroRepository.findLivrosParaListaAdmin(pageable);
-
         return projecoes.map(p -> new ListaLivroDTO(
                 StatusLivro.valueOf(p.getStatus()),
                 p.getTomboExemplar(),
@@ -94,6 +96,7 @@ public class LivroService {
 
     @Cacheable("catalogo-mobile")
     public List<GeneroCatalogoDTO> buscarCatalogoParaMobile() {
+        // Mantido igual, pois já usa DTOs
         log.info("Buscando catálogo mobile no banco de dados (sem cache)...");
         List<Map<String, Object>> results = livroRepository.findCatalogoMobile();
 
@@ -116,10 +119,15 @@ public class LivroService {
         return livroRepository.findByGeneroAsCatalogoDTO(nomeGenero, pageable);
     }
 
-    public Page<LivroModel> buscarPorTexto(String texto, Pageable pageable) {
+    public Page<ListaLivroDTO> buscarPorTexto(String texto, Pageable pageable) {
         Page<LivroModel> paginaDeLivros = livroRepository.findIdsPorTexto(texto, pageable);
         List<LivroModel> livrosComGeneros = livroRepository.findWithGeneros(paginaDeLivros.getContent());
-        return new PageImpl<>(livrosComGeneros, pageable, paginaDeLivros.getTotalElements());
+
+        List<ListaLivroDTO> dtos = livrosComGeneros.stream()
+                .map(this::converterParaListaDTO)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(dtos, pageable, paginaDeLivros.getTotalElements());
     }
 
     // ------------------------ UPLOAD DE CAPA ------------------------
@@ -149,7 +157,7 @@ public class LivroService {
 
     @Transactional
     @CacheEvict(value = "catalogo-mobile", allEntries = true)
-    public ResponseEntity<ResponseModel> cadastrar(LivroDTO dto, MultipartFile file) {
+    public ResponseEntity<?> cadastrar(LivroDTO dto, MultipartFile file) {
         if (isNaoVazio(dto.getIsbn()) && livroRepository.findByIsbn(dto.getIsbn()).isPresent()) {
             return erro("Esse ISBN já está cadastrado em outro livro.");
         }
@@ -164,8 +172,11 @@ public class LivroService {
 
         try {
             LivroModel livro = montarLivro(new LivroModel(), dto, file);
-            livroRepository.save(livro);
-            return ResponseEntity.status(HttpStatus.CREATED).body(new ResponseModel("Livro cadastrado com sucesso."));
+            LivroModel salvo = livroRepository.save(livro);
+
+            // RETORNA O DTO COM OS DADOS DO LIVRO CRIADO
+            return ResponseEntity.status(HttpStatus.CREATED).body(new LivroResponseDTO(salvo));
+
         } catch (Exception e) {
             log.error("Erro ao montar ou salvar o livro: {}", e.getMessage(), e);
             return erro("Erro interno ao cadastrar o livro: " + e.getMessage());
@@ -179,7 +190,7 @@ public class LivroService {
             @CacheEvict(value = "livro-detalhe", key = "#id"),
             @CacheEvict(value = "catalogo-mobile", allEntries = true)
     })
-    public ResponseEntity<ResponseModel> atualizar(Long id, LivroDTO dto, MultipartFile file) {
+    public ResponseEntity<?> atualizar(Long id, LivroDTO dto, MultipartFile file) {
         Optional<LivroModel> livroExistenteOpt = livroRepository.findById(id);
         if (livroExistenteOpt.isEmpty()) {
             return erro("Livro não encontrado para o ID: " + id);
@@ -199,8 +210,10 @@ public class LivroService {
         try {
             LivroModel livroParaAtualizar = livroExistenteOpt.get();
             LivroModel livroAtualizado = montarLivro(livroParaAtualizar, dto, file);
-            livroRepository.save(livroAtualizado);
-            return ResponseEntity.ok(new ResponseModel("Livro atualizado com sucesso."));
+            LivroModel salvo = livroRepository.save(livroAtualizado);
+
+            return ResponseEntity.ok(new LivroResponseDTO(salvo));
+
         } catch (Exception e) {
             log.error("Erro ao montar ou atualizar o livro ID {}: {}", id, e.getMessage(), e);
             return erro("Erro interno ao atualizar o livro: " + e.getMessage());
@@ -225,7 +238,20 @@ public class LivroService {
 
     // ------------------------ MÉTODOS AUXILIARES ------------------------
 
-    // (O restante dos métodos auxiliares permanece o mesmo)
+    private ListaLivroDTO converterParaListaDTO(LivroModel l) {
+        String generos = l.getGeneros().stream().map(GeneroModel::getNome).collect(Collectors.joining(", "));
+        return new ListaLivroDTO(
+                StatusLivro.DISPONIVEL,
+                "N/A",
+                l.getIsbn(),
+                l.getCdd() != null ? l.getCdd().getCodigo() : "",
+                l.getNome(),
+                generos,
+                l.getAutor(),
+                l.getEditora(),
+                "Ver Exemplares");
+    }
+
     private void preencherComGoogleBooks(LivroDTO dto) {
         googleBooksService.buscarDadosPorIsbn(dto.getIsbn()).ifPresent(googleData -> {
             LivroModel livroGoogle = googleData.livro();
