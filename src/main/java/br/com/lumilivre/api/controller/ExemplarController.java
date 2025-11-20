@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.exemplar.ExemplarRequest;
+import br.com.lumilivre.api.dto.livro.ExemplarRequest;
 import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.ExemplarService;

@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.exemplar.ExemplarRequest;
+import br.com.lumilivre.api.dto.livro.ExemplarRequest;
 import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;

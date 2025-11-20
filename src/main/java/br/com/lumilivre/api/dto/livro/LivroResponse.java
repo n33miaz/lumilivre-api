@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
-public class LivroResponseDTO {
+public class LivroResponse {
 
     private Long id;
     private String isbn;
@@ -30,7 +30,7 @@ public class LivroResponseDTO {
     private Integer quantidade;
     private Set<String> generos;
 
-    public LivroResponseDTO(LivroModel livro) {
+    public LivroResponse(LivroModel livro) {
         this.id = livro.getId();
         this.isbn = livro.getIsbn();
         this.nome = livro.getNome();

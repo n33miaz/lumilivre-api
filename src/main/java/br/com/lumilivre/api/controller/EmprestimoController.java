@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
-import br.com.lumilivre.api.dto.emprestimo.ListaEmprestimoAtivoDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponseDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
-import br.com.lumilivre.api.dto.responses.EmprestimoResponseDTO;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.EmprestimoService;
@@ -50,15 +50,15 @@ public class EmprestimoController {
 
     @GetMapping("/buscar/ativos-e-atrasados")
     @Operation(summary = "Lista todos os empréstimos ativos e atrasados")
-    public ResponseEntity<List<ListaEmprestimoAtivoDTO>> buscarAtivosEAtrasados() {
-        List<ListaEmprestimoAtivoDTO> emprestimos = es.buscarAtivosEAtrasados();
+    public ResponseEntity<List<EmprestimoAtivoResponse>> buscarAtivosEAtrasados() {
+        List<EmprestimoAtivoResponse> emprestimos = es.buscarAtivosEAtrasados();
         return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
 
     @GetMapping("/buscar/apenas-atrasados")
     @Operation(summary = "Lista apenas os empréstimos com status ATRASADO")
-    public ResponseEntity<List<ListaEmprestimoAtivoDTO>> buscarApenasAtrasados() {
-        List<ListaEmprestimoAtivoDTO> emprestimos = es.buscarApenasAtrasados();
+    public ResponseEntity<List<EmprestimoAtivoResponse>> buscarApenasAtrasados() {
+        List<EmprestimoAtivoResponse> emprestimos = es.buscarApenasAtrasados();
         return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
 

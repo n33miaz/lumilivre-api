@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto.responses;
+package br.com.lumilivre.api.dto.emprestimo;
 
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;

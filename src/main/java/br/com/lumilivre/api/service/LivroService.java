@@ -7,7 +7,7 @@ import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
 import br.com.lumilivre.api.dto.livro.LivroListagemProjection;
 import br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse;
 import br.com.lumilivre.api.dto.livro.LivroDetalheResponse;
-import br.com.lumilivre.api.dto.livro.LivroResponseDTO;
+import br.com.lumilivre.api.dto.livro.LivroResponse;
 import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
@@ -160,7 +160,7 @@ public class LivroService {
 
     @Transactional
     @CacheEvict(value = "catalogo-mobile", allEntries = true)
-    public LivroResponseDTO cadastrar(LivroRequest dto, MultipartFile file) {
+    public LivroResponse cadastrar(LivroRequest dto, MultipartFile file) {
         if (isNaoVazio(dto.getIsbn()) && livroRepository.findByIsbn(dto.getIsbn()).isPresent()) {
             throw new RegraDeNegocioException("Esse ISBN já está cadastrado em outro livro.");
         }
@@ -174,7 +174,7 @@ public class LivroService {
         try {
             LivroModel livro = montarLivro(new LivroModel(), dto, file);
             LivroModel salvo = livroRepository.save(livro);
-            return new LivroResponseDTO(salvo);
+            return new LivroResponse(salvo);
 
         } catch (IllegalArgumentException e) {
             throw new RegraDeNegocioException(e.getMessage());
@@ -191,7 +191,7 @@ public class LivroService {
             @CacheEvict(value = "livro-detalhe", key = "#id"),
             @CacheEvict(value = "catalogo-mobile", allEntries = true)
     })
-    public LivroResponseDTO atualizar(Long id, LivroRequest dto, MultipartFile file) {
+    public LivroResponse atualizar(Long id, LivroRequest dto, MultipartFile file) {
         LivroModel livroParaAtualizar = livroRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Livro não encontrado para o ID: " + id));
 
@@ -207,7 +207,7 @@ public class LivroService {
         try {
             LivroModel livroAtualizado = montarLivro(livroParaAtualizar, dto, file);
             LivroModel salvo = livroRepository.save(livroAtualizado);
-            return new LivroResponseDTO(salvo);
+            return new LivroResponse(salvo);
 
         } catch (IllegalArgumentException e) {
             throw new RegraDeNegocioException(e.getMessage());

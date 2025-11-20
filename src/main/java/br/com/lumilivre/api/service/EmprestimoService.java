@@ -11,10 +11,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.responses.EmprestimoResponseDTO;
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
-import br.com.lumilivre.api.dto.emprestimo.ListaEmprestimoAtivoDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponseDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
 import br.com.lumilivre.api.enums.Penalidade;
@@ -206,7 +206,7 @@ public class EmprestimoService {
         return emprestimoRepository.findEmprestimosAtivosEAtrasados();
     }
 
-    public List<ListaEmprestimoAtivoDTO> buscarAtivosEAtrasados() {
+    public List<EmprestimoAtivoResponse> buscarAtivosEAtrasados() {
         return emprestimoRepository.findAtivosEAtrasadosDTO();
     }
 
@@ -215,7 +215,7 @@ public class EmprestimoService {
                 List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
     }
 
-    public List<ListaEmprestimoAtivoDTO> buscarApenasAtrasados() {
+    public List<EmprestimoAtivoResponse> buscarApenasAtrasados() {
         return emprestimoRepository.findApenasAtrasadosDTO();
     }
 

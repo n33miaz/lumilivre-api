@@ -1,12 +1,11 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.*;
 import br.com.lumilivre.api.dto.genero.GeneroCatalogoResponse;
 import br.com.lumilivre.api.dto.livro.LivroRequest;
 import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
 import br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse;
 import br.com.lumilivre.api.dto.livro.LivroDetalheResponse;
-import br.com.lumilivre.api.dto.livro.LivroResponseDTO;
+import br.com.lumilivre.api.dto.livro.LivroResponse;
 import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.LivroService;
@@ -93,14 +92,14 @@ public class LivroController {
     @PostMapping(value = "/cadastrar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Cadastra um novo livro, opcionalmente com a capa")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso", content = @Content(schema = @Schema(implementation = LivroResponseDTO.class))),
+            @ApiResponse(responseCode = "201", description = "Livro cadastrado com sucesso", content = @Content(schema = @Schema(implementation = LivroResponse.class))),
             @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")
     })
-    public ResponseEntity<LivroResponseDTO> cadastrarLivro(
+    public ResponseEntity<LivroResponse> cadastrarLivro(
             @Parameter(description = "Dados do livro em formato JSON") @RequestPart("livro") LivroRequest livroDTO,
             @Parameter(description = "Arquivo de imagem da capa (opcional)") @RequestPart(value = "file", required = false) MultipartFile file) {
 
-        LivroResponseDTO novoLivro = livroService.cadastrar(livroDTO, file);
+        LivroResponse novoLivro = livroService.cadastrar(livroDTO, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(novoLivro);
     }
 
@@ -123,15 +122,15 @@ public class LivroController {
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Atualiza um livro existente, opcionalmente com uma nova capa")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Livro atualizado com sucesso", content = @Content(schema = @Schema(implementation = LivroResponseDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Livro atualizado com sucesso", content = @Content(schema = @Schema(implementation = LivroResponse.class))),
             @ApiResponse(responseCode = "404", description = "Livro não encontrado")
     })
-    public ResponseEntity<LivroResponseDTO> atualizar(
+    public ResponseEntity<LivroResponse> atualizar(
             @Parameter(description = "ID do livro a ser atualizado") @PathVariable Long id,
             @Parameter(description = "Dados do livro em formato JSON") @RequestPart("livro") LivroRequest livroDTO,
             @Parameter(description = "Novo arquivo de imagem da capa (opcional)") @RequestPart(value = "file", required = false) MultipartFile file) {
 
-        LivroResponseDTO livroAtualizado = livroService.atualizar(id, livroDTO, file);
+        LivroResponse livroAtualizado = livroService.atualizar(id, livroDTO, file);
         return ResponseEntity.ok(livroAtualizado);
     }
 

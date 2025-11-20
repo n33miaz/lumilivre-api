@@ -12,7 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse;
-import br.com.lumilivre.api.dto.emprestimo.ListaEmprestimoAtivoDTO;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
@@ -203,7 +203,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             WHERE e.statusEmprestimo IN (br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO, br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO)
             ORDER BY e.dataDevolucao ASC
             """)
-    List<ListaEmprestimoAtivoDTO> findAtivosEAtrasadosDTO();
+    List<EmprestimoAtivoResponse> findAtivosEAtrasadosDTO();
 
     @Query("""
             SELECT new br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO(
@@ -222,5 +222,5 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             WHERE e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO
             ORDER BY e.dataDevolucao ASC
             """)
-    List<ListaEmprestimoAtivoDTO> findApenasAtrasadosDTO();
+    List<EmprestimoAtivoResponse> findApenasAtrasadosDTO();
 }

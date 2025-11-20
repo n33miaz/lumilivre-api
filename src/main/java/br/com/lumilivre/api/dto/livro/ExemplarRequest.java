@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto.exemplar;
+package br.com.lumilivre.api.dto.livro;
 
 public class ExemplarRequest {
 
