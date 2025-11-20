@@ -38,7 +38,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			Pageable pageable);
 
 	@Query("""
-			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(
+			SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(
 			    c.nome
 			)
 			FROM CursoModel c
@@ -47,7 +47,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 	Page<CursoResumoResponse> findCursoParaListaAdmin(Pageable pageable);
 
 	@Query("""
-			    SELECT new br.com.lumilivre.api.dto.CursoEstatisticasDTO(
+			    SELECT new br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse(
 			        c.nome,
 			        COUNT(a.id),
 			        SUM(a.emprestimosCount)
@@ -60,7 +60,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 	List<CursoEstatisticaResponse> findEstatisticasCursos();
 
 	@Query("""
-			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(c.id, c.nome, COUNT(a))
+			SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.nome, COUNT(a))
 			FROM CursoModel c
 			LEFT JOIN c.alunos a
 			WHERE (:texto IS NULL OR c.nome ILIKE CONCAT('%', :texto, '%'))
@@ -69,7 +69,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 	Page<CursoResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
 	@Query("""
-			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(c.id, c.nome, COUNT(a))
+			SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.nome, COUNT(a))
 			FROM CursoModel c
 			LEFT JOIN c.alunos a
 			WHERE (:nome IS NULL OR c.nome ILIKE :nome)
@@ -78,7 +78,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 	Page<CursoResumoResponse> buscarAvancadoComDTO(@Param("nome") String nome, Pageable pageable);
 
 	@Query("""
-			SELECT new br.com.lumilivre.api.dto.ListaCursoDTO(c.id, c.nome, COUNT(a))
+			SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.nome, COUNT(a))
 			FROM CursoModel c
 			LEFT JOIN c.alunos a
 			WHERE (:texto IS NULL OR c.nome ILIKE CONCAT('%', :texto, '%'))

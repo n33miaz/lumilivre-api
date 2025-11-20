@@ -1,6 +1,5 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.*;
 import br.com.lumilivre.api.dto.genero.GeneroCatalogoResponse;
 import br.com.lumilivre.api.dto.livro.LivroRequest;
 import br.com.lumilivre.api.dto.livro.LivroListagemResponse;

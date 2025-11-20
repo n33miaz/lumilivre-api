@@ -11,11 +11,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponseDTO;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.EmprestimoService;
@@ -97,7 +97,7 @@ public class EmprestimoController {
 
     @GetMapping("/aluno/{matricula}")
     @Operation(summary = "Lista os empréstimos ativos de um aluno")
-    public ResponseEntity<List<br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse>> listarEmprestimos(
+    public ResponseEntity<List<EmprestimoResponse>> listarEmprestimos(
             @PathVariable String matricula) {
         return ResponseEntity.ok(es.listarEmprestimosAluno(matricula));
     }
@@ -105,7 +105,7 @@ public class EmprestimoController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/aluno/{matricula}/historico")
     @Operation(summary = "Lista o histórico de empréstimos de um aluno")
-    public ResponseEntity<List<br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse>> historicoEmprestimos(
+    public ResponseEntity<List<EmprestimoResponse>> historicoEmprestimos(
             @PathVariable String matricula) {
         return ResponseEntity.ok(es.listarHistorico(matricula));
     }
@@ -129,12 +129,12 @@ public class EmprestimoController {
     @PostMapping("/cadastrar")
     @Operation(summary = "Registra um novo empréstimo")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Empréstimo cadastrado com sucesso", content = @Content(schema = @Schema(implementation = EmprestimoResponseDTO.class))),
+            @ApiResponse(responseCode = "201", description = "Empréstimo cadastrado com sucesso", content = @Content(schema = @Schema(implementation = EmprestimoResponse.class))),
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada"),
             @ApiResponse(responseCode = "404", description = "Aluno ou Exemplar não encontrado")
     })
-    public ResponseEntity<EmprestimoResponseDTO> cadastrar(@RequestBody EmprestimoRequest dto) {
-        EmprestimoResponseDTO novoEmprestimo = es.cadastrar(dto);
+    public ResponseEntity<EmprestimoResponse> cadastrar(@RequestBody EmprestimoRequest dto) {
+        EmprestimoResponse novoEmprestimo = es.cadastrar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(novoEmprestimo);
     }
 
@@ -142,15 +142,15 @@ public class EmprestimoController {
     @PutMapping("/atualizar/{id}")
     @Operation(summary = "Atualiza um empréstimo existente")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Empréstimo atualizado com sucesso", content = @Content(schema = @Schema(implementation = EmprestimoResponseDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Empréstimo atualizado com sucesso", content = @Content(schema = @Schema(implementation = EmprestimoResponse.class))),
             @ApiResponse(responseCode = "400", description = "Empréstimo já concluído ou inválido"),
             @ApiResponse(responseCode = "404", description = "Empréstimo não encontrado")
     })
-    public ResponseEntity<EmprestimoResponseDTO> atualizar(
+    public ResponseEntity<EmprestimoResponse> atualizar(
             @PathVariable Integer id,
             @RequestBody EmprestimoRequest dto) {
         dto.setId(id);
-        EmprestimoResponseDTO atualizado = es.atualizar(dto);
+        EmprestimoResponse atualizado = es.atualizar(dto);
         return ResponseEntity.ok(atualizado);
     }
 
@@ -158,11 +158,11 @@ public class EmprestimoController {
     @PutMapping("/concluir/{id}")
     @Operation(summary = "Conclui (devolve) um empréstimo")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Empréstimo concluído com sucesso", content = @Content(schema = @Schema(implementation = EmprestimoResponseDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Empréstimo concluído com sucesso", content = @Content(schema = @Schema(implementation = EmprestimoResponse.class))),
             @ApiResponse(responseCode = "400", description = "Empréstimo não encontrado ou já concluído")
     })
-    public ResponseEntity<EmprestimoResponseDTO> concluirEmprestimo(@PathVariable Integer id) {
-        EmprestimoResponseDTO concluido = es.concluirEmprestimo(id);
+    public ResponseEntity<EmprestimoResponse> concluirEmprestimo(@PathVariable Integer id) {
+        EmprestimoResponse concluido = es.concluirEmprestimo(id);
         return ResponseEntity.ok(concluido);
     }
 

@@ -71,7 +71,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     Page<EmprestimoListagemResponse> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.dto.ListaEmprestimoDTO(
+                SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse(
                     e.statusEmprestimo,
                     l.nome,
                     ex.tombo,
@@ -106,7 +106,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             Pageable pageable);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.dto.EmprestimoResponseDTO(
+                SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse(
                     e.id, e.dataEmprestimo, e.dataDevolucao, e.statusEmprestimo, e.penalidade, e.exemplar.livro.nome
                 )
                 FROM EmprestimoModel e
@@ -116,7 +116,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     List<EmprestimoResponse> findEmprestimosAtivos(@Param("matricula") String matricula);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.dto.EmprestimoResponseDTO(
+                SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse(
                     e.id, e.dataEmprestimo, e.dataDevolucao, e.statusEmprestimo, e.penalidade, e.exemplar.livro.nome
                 )
                 FROM EmprestimoModel e
@@ -126,7 +126,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     List<EmprestimoResponse> findHistoricoEmprestimos(@Param("matricula") String matricula);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.dto.ListaEmprestimoDTO(
+                SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse(
                     e.statusEmprestimo,
                     l.nome,
                     ex.tombo,
@@ -144,7 +144,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     Page<EmprestimoListagemResponse> findEmprestimoParaListaAdmin(Pageable pageable);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.dto.ListaEmprestimoDashboardDTO(
+                SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse(
                     livro.nome,
                     aluno.nomeCompleto,
                     emprestimo.dataDevolucao,
@@ -187,7 +187,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             @Param("idModulo") Integer idModulo);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO(
+            SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse(
                 e.id,
                 l.nome,
                 a.nomeCompleto,
@@ -206,7 +206,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     List<EmprestimoAtivoResponse> findAtivosEAtrasadosDTO();
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.ListaEmprestimoAtivoDTO(
+            SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse(
                 e.id,
                 l.nome,
                 a.nomeCompleto,

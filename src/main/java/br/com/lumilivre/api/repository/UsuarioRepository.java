@@ -47,7 +47,7 @@ public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer> 
             Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.ListaUsuarioDTO(
+            SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(
                 u.id,
                 u.email,
                 u.role
@@ -58,7 +58,7 @@ public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer> 
     Page<UsuarioResumoResponse> findUsuarioParaListaAdmin(Pageable pageable);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.dto.ListaUsuarioDTO(u.id, u.email, u.role)
+                SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(u.id, u.email, u.role)
                 FROM UsuarioModel u
                 WHERE (:texto IS NULL OR :texto = '' OR CAST(u.id AS string) LIKE CONCAT('%', :texto, '%')
                    OR LOWER(u.email) LIKE LOWER(CONCAT('%', :texto, '%'))
@@ -67,7 +67,7 @@ public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer> 
     Page<UsuarioResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.dto.ListaUsuarioDTO(u.id, u.email, u.role)
+                SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(u.id, u.email, u.role)
                 FROM UsuarioModel u
                 WHERE (:id IS NULL OR u.id = :id)
                   AND (:email IS NULL OR u.email ILIKE CONCAT('%', :email, '%'))

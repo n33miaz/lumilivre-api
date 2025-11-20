@@ -66,7 +66,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.ListaLivroDTO(
+            SELECT new br.com.lumilivre.api.dto.livro.LivroListagemResponse(
                 l.nome,
                 l.isbn,
                 l.nome,
@@ -98,7 +98,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     Page<LivroListagemProjection> findLivrosParaListaAdmin(Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.LivroAgrupadoDTO(
+            SELECT new br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse(
                 l.id,
                 l.isbn,
                 l.nome,
@@ -197,7 +197,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     long countExemplaresByStatus(@Param("livroId") Long livroId, @Param("status") StatusLivro status);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.LivroResponseMobileGeneroDTO(
+            SELECT new br.com.lumilivre.api.dto.livro.LivroMobileResponse(
                 l.id,
                 l.imagem,
                 l.nome,

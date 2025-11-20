@@ -21,7 +21,7 @@ public interface TurnoRepository extends JpaRepository<TurnoModel, Integer> {
     boolean existsByNomeIgnoreCase(String nome);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.ListaTurnoDTO(t.id, t.nome, COUNT(a))
+            SELECT new br.com.lumilivre.api.dto.turno.TurnoResumoResponse(t.id, t.nome, COUNT(a))
             FROM TurnoModel t
             LEFT JOIN t.alunos a
             WHERE (:texto IS NULL OR t.nome ILIKE CONCAT('%', :texto, '%'))

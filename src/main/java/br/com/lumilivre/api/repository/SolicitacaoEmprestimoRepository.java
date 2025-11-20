@@ -18,7 +18,7 @@ public interface SolicitacaoEmprestimoRepository extends JpaRepository<Solicitac
 	List<SolicitacaoEmprestimoModel> findAllByOrderByDataSolicitacaoDesc();
 
 	@Query("""
-			    SELECT new br.com.lumilivre.api.dto.ListaSolicitacaoDashboardDTO(
+			    SELECT new br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse(
 			        a.nomeCompleto,
 			        l.nome,
 			        ex.tombo,

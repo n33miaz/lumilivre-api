@@ -21,7 +21,7 @@ public interface ModuloRepository extends JpaRepository<ModuloModel, Integer> {
     boolean existsByNomeIgnoreCase(String nome);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.ListaModuloDTO(m.id, m.nome, COUNT(a))
+            SELECT new br.com.lumilivre.api.dto.modulo.ModuloResumoResponse(m.id, m.nome, COUNT(a))
             FROM ModuloModel m
             LEFT JOIN m.alunos a
             WHERE (:texto IS NULL OR m.nome ILIKE CONCAT('%', :texto, '%'))

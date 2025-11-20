@@ -12,11 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponseDTO;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
+import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
@@ -49,7 +49,7 @@ public class EmprestimoService {
     // ================ MÉTODOS DE ESCRITA ================
 
     @Transactional
-    public EmprestimoResponseDTO cadastrar(EmprestimoRequest dto) {
+    public EmprestimoResponse cadastrar(EmprestimoRequest dto) {
         if (dto.getData_emprestimo() == null || dto.getData_devolucao() == null) {
             throw new RegraDeNegocioException("Datas de empréstimo e devolução são obrigatórias.");
         }
@@ -61,11 +61,18 @@ public class EmprestimoService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));
 
         if (aluno.getPenalidade() != null) {
-            if (aluno.getPenalidadeExpiraEm() != null && aluno.getPenalidadeExpiraEm().isAfter(LocalDateTime.now())) {
+            LocalDateTime agora = LocalDateTime.now();
+
+            if (aluno.getPenalidadeExpiraEm() != null && aluno.getPenalidadeExpiraEm().isBefore(agora)) {
+                aluno.setPenalidade(null);
+                aluno.setPenalidadeExpiraEm(null);
+                alunoRepository.save(aluno);
+            } else {
                 throw new RegraDeNegocioException(
-                        "O aluno possui penalidade ativa até " + aluno.getPenalidadeExpiraEm());
+                        "O aluno possui penalidade ativa até " +
+                                (aluno.getPenalidadeExpiraEm() != null ? aluno.getPenalidadeExpiraEm()
+                                        : "indeterminado"));
             }
-            // TODO: Se já expirou, limpar a penalidade (Lazycleanup)
         }
 
         long emprestimosAtivosAluno = emprestimoRepository
@@ -100,11 +107,11 @@ public class EmprestimoService {
 
         enviarEmailEmprestimo(aluno, exemplar, dto);
 
-        return new EmprestimoResponseDTO(salvo);
+        return new EmprestimoResponse(salvo);
     }
 
     @Transactional
-    public EmprestimoResponseDTO atualizar(EmprestimoRequest dto) {
+    public EmprestimoResponse atualizar(EmprestimoRequest dto) {
         EmprestimoModel emprestimo = emprestimoRepository.findById(dto.getId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
 
@@ -116,11 +123,11 @@ public class EmprestimoService {
         emprestimo.setDataDevolucao(dto.getData_devolucao());
 
         EmprestimoModel salvo = emprestimoRepository.save(emprestimo);
-        return new EmprestimoResponseDTO(salvo);
+        return new EmprestimoResponse(salvo);
     }
 
     @Transactional
-    public EmprestimoResponseDTO concluirEmprestimo(Integer id) {
+    public EmprestimoResponse concluirEmprestimo(Integer id) {
         EmprestimoModel emprestimo = emprestimoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
 
@@ -131,7 +138,7 @@ public class EmprestimoService {
         LocalDateTime agora = LocalDateTime.now();
         AlunoModel aluno = emprestimo.getAluno();
 
-        // Cálculo de Penalidade
+        // calculo de penalidade
         if (emprestimo.getDataDevolucao().isBefore(agora)) {
             long diasDeAtraso = Duration.between(emprestimo.getDataDevolucao(), agora).toDays();
             Penalidade novaPenalidade = Penalidade.fromDiasDeAtraso(diasDeAtraso);
@@ -154,7 +161,7 @@ public class EmprestimoService {
 
         enviarEmailConclusao(aluno, exemplar, emprestimo);
 
-        return new EmprestimoResponseDTO(salvo);
+        return new EmprestimoResponse(salvo);
     }
 
     @Transactional
@@ -193,12 +200,13 @@ public class EmprestimoService {
         return emprestimoRepository.buscarPorTexto(texto, pageable);
     }
 
-    // Atenção: Aqui usamos o DTO antigo
-    public List<br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse> listarEmprestimosAluno(String matricula) {
+    // Refatorado para usar o import simples
+    public List<EmprestimoResponse> listarEmprestimosAluno(String matricula) {
         return emprestimoRepository.findEmprestimosAtivos(matricula);
     }
 
-    public List<br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse> listarHistorico(String matricula) {
+    // Refatorado para usar o import simples
+    public List<EmprestimoResponse> listarHistorico(String matricula) {
         return emprestimoRepository.findHistoricoEmprestimos(matricula);
     }
 

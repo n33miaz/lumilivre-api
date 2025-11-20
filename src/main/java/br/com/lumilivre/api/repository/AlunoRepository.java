@@ -76,7 +76,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
             Pageable pageable);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.dto.ListaAlunoDTO(
+                SELECT new br.com.lumilivre.api.dto.aluno.AlunoResumoResponse(
                     a.penalidade,
                     a.matricula,
                     c.nome,
@@ -92,7 +92,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
     Page<AlunoResumoResponse> findAlunosParaListaAdmin(Pageable pageable);
 
     @Query("""
-                SELECT new br.com.lumilivre.api.dto.ListaAlunoDTO(
+                SELECT new br.com.lumilivre.api.dto.aluno.AlunoResumoResponse(
                     a.penalidade, a.matricula, c.nome, a.nomeCompleto, a.dataNascimento, a.email, a.celular
                 )
                 FROM AlunoModel a
@@ -129,7 +129,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
             @Param("penalidade") Penalidade penalidade);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.ListaAlunoDTO(
+            SELECT new br.com.lumilivre.api.dto.aluno.AlunoResumoResponse(
                 a.penalidade,
                 a.matricula,
                 c.nome,
