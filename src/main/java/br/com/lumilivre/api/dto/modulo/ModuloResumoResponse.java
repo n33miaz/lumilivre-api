@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ModuloResumoResponse {
+    
     private Integer id;
     private String nome;
     private Long quantidadeAlunos;

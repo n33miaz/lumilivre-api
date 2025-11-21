@@ -7,6 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TccRequest {
+    
     private String titulo;
     private String alunos;
     private String orientadores;
@@ -18,5 +19,4 @@ public class TccRequest {
     private String semestreConclusao;
     private String linkExterno;
     private Boolean ativo = true;
-
 }

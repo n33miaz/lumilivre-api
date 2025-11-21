@@ -7,6 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ModuloRequest {
+    
     @NotBlank(message = "O nome do módulo é obrigatório")
     private String nome;
 }

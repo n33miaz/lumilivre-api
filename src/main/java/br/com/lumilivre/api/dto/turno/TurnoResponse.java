@@ -7,6 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TurnoResponse {
+    
     private Integer id;
     private String nome;
 

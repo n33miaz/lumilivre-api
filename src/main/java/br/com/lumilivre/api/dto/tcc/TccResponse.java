@@ -5,6 +5,7 @@ import lombok.Getter;
 
 @Getter
 public class TccResponse {
+    
     private Long id;
     private String titulo;
     private String alunos;
