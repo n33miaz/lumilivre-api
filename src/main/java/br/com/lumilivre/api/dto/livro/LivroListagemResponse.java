@@ -1,7 +1,13 @@
 package br.com.lumilivre.api.dto.livro;
 
 import br.com.lumilivre.api.enums.StatusLivro;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class LivroListagemResponse {
 
     private StatusLivro status;
@@ -13,89 +19,4 @@ public class LivroListagemResponse {
     private String autor;
     private String editora;
     private String localizacao_fisica;
-
-    public LivroListagemResponse(StatusLivro status, String tomboExemplar, String isbn, String cdd, String nome,
-            String genero, String autor, String editora, String localizacao_fisica) {
-        this.status = status;
-        this.tomboExemplar = tomboExemplar;
-        this.isbn = isbn;
-        this.cdd = cdd;
-        this.nome = nome;
-        this.genero = genero;
-        this.autor = autor;
-        this.editora = editora;
-        this.localizacao_fisica = localizacao_fisica;
-    }
-
-    public StatusLivro getStatus() {
-        return status;
-    }
-
-    public void setStatus(StatusLivro status) {
-        this.status = status;
-    }
-
-    public String getTomboExemplar() {
-        return tomboExemplar;
-    }
-
-    public void setTomboExemplar(String tomboExemplar) {
-        this.tomboExemplar = tomboExemplar;
-    }
-
-    public String getIsbn() {
-        return isbn;
-    }
-
-    public void setIsbn(String isbn) {
-        this.isbn = isbn;
-    }
-
-    public String getCdd() {
-        return cdd;
-    }
-
-    public void setCdd(String cdd) {
-        this.cdd = cdd;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getGenero() {
-        return genero;
-    }
-
-    public void setGenero(String genero) {
-        this.genero = genero;
-    }
-
-    public String getAutor() {
-        return autor;
-    }
-
-    public void setAutor(String autor) {
-        this.autor = autor;
-    }
-
-    public String getEditora() {
-        return editora;
-    }
-
-    public void setEditora(String editora) {
-        this.editora = editora;
-    }
-
-    public String getLocalizacao_fisica() {
-        return localizacao_fisica;
-    }
-
-    public void setLocalizacao_fisica(String localizacao_fisica) {
-        this.localizacao_fisica = localizacao_fisica;
-    }
 }

@@ -1,15 +1,20 @@
 package br.com.lumilivre.api.dto.livro;
 
+import br.com.lumilivre.api.model.GeneroModel;
 import br.com.lumilivre.api.model.LivroModel;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Getter
-@Setter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LivroDetalheResponse {
 
     private Long id;
@@ -36,10 +41,13 @@ public class LivroDetalheResponse {
         this.numeroPaginas = livro.getNumero_paginas();
         this.sinopse = livro.getSinopse();
         this.imagem = livro.getImagem();
+
         this.cdd = livro.getCdd() != null ? livro.getCdd().getDescricao() : null;
+
         this.generos = livro.getGeneros().stream()
-                .map(g -> g.getNome())
+                .map(GeneroModel::getNome)
                 .collect(Collectors.toSet());
+
         this.exemplaresDisponiveis = exemplaresDisponiveis;
         this.totalExemplares = totalExemplares;
     }
