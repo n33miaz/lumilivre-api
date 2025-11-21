@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.controller;
+package br.com.lumilivre.api.controller.system;
 
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

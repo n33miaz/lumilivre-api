@@ -8,6 +8,9 @@ import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.*;
 import br.com.lumilivre.api.repository.*;
+import br.com.lumilivre.api.service.infra.CepService;
+import br.com.lumilivre.api.service.infra.EmailService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;

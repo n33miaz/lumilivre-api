@@ -28,6 +28,7 @@ import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
+import br.com.lumilivre.api.service.infra.EmailService;
 
 @Service
 public class EmprestimoService {

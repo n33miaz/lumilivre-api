@@ -21,6 +21,7 @@ import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.TokenResetSenhaRepository;
 import br.com.lumilivre.api.repository.UsuarioRepository;
 import br.com.lumilivre.api.security.JwtUtil;
+import br.com.lumilivre.api.service.infra.EmailService;
 
 @Service
 public class AuthService {

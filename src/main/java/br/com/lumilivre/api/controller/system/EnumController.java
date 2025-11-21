@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.controller;
+package br.com.lumilivre.api.controller.system;
 
 import java.util.Arrays;
 import java.util.List;

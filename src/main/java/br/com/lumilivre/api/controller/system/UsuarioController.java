@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.controller;
+package br.com.lumilivre.api.controller.system;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;

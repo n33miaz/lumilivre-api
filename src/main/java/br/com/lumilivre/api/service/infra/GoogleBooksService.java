@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.service;
+package br.com.lumilivre.api.service.infra;
 
 import br.com.lumilivre.api.dto.integracao.google.GoogleBooksResponse;
 import br.com.lumilivre.api.dto.integracao.google.ImageLinks;

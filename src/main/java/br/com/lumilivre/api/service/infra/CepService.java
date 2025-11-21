@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.service;
+package br.com.lumilivre.api.service.infra;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;

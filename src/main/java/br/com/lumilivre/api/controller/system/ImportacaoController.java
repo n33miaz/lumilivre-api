@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.controller;
+package br.com.lumilivre.api.controller.system;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

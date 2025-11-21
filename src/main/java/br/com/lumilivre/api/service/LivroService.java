@@ -20,6 +20,8 @@ import br.com.lumilivre.api.repository.CddRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.GeneroRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
+import br.com.lumilivre.api.service.infra.GoogleBooksService;
+import br.com.lumilivre.api.service.infra.SupabaseStorageService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

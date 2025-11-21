@@ -19,6 +19,7 @@ import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.SolicitacaoEmprestimoRepository;
+import br.com.lumilivre.api.service.infra.EmailService;
 import jakarta.transaction.Transactional;
 
 @Service

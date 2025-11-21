@@ -19,6 +19,7 @@ import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.UsuarioRepository;
+import br.com.lumilivre.api.service.infra.EmailService;
 
 @Service
 public class UsuarioService {

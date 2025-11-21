@@ -7,6 +7,8 @@ import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.model.TccModel;
 import br.com.lumilivre.api.repository.CursoRepository;
 import br.com.lumilivre.api.repository.TccRepository;
+import br.com.lumilivre.api.service.infra.SupabaseStorageService;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
