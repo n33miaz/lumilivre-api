@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,85 +19,72 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 public class TratadorDeExcecoesGlobal {
 
-    // Retorna HTTP 400
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> tratarValidacao(MethodArgumentNotValidException ex) {
-        Map<String, String> erros = ex.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(
-                        fieldError -> fieldError.getField(),
-                        fieldError -> fieldError.getDefaultMessage()));
-        Map<String, Object> corpoResposta = Map.of("status", 400, "erro", "Erro de Validação", "mensagens", erros);
-        return new ResponseEntity<>(corpoResposta, HttpStatus.BAD_REQUEST);
-    }
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<Map<String, Object>> tratarValidacao(MethodArgumentNotValidException ex) {
+                Map<String, String> erros = ex.getBindingResult().getFieldErrors().stream()
+                                .collect(Collectors.toMap(
+                                                FieldError::getField,
+                                                FieldError::getDefaultMessage));
 
-    // Retorna HTTP 404
-    @ExceptionHandler(RecursoNaoEncontradoException.class)
-    public ResponseEntity<ErroResponse> tratarRecursoNaoEncontrado(RecursoNaoEncontradoException ex,
-            WebRequest request) {
-        ErroResponse resposta = new ErroResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "Recurso Não Encontrado",
-                ex.getMessage(),
-                request.getDescription(false).replace("uri=", ""));
-        return new ResponseEntity<>(resposta, HttpStatus.NOT_FOUND);
-    }
+                Map<String, Object> corpoResposta = Map.of(
+                                "status", HttpStatus.BAD_REQUEST.value(),
+                                "erro", "Erro de Validação",
+                                "mensagens", erros);
 
-    // Retorna HTTP 400
-    @ExceptionHandler(RegraDeNegocioException.class)
-    public ResponseEntity<ErroResponse> tratarRegraDeNegocio(RegraDeNegocioException ex, WebRequest request) {
-        ErroResponse resposta = new ErroResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Violação de Regra de Negócio",
-                ex.getMessage(),
-                request.getDescription(false).replace("uri=", ""));
-        return new ResponseEntity<>(resposta, HttpStatus.BAD_REQUEST);
-    }
+                return ResponseEntity.badRequest().body(corpoResposta);
+        }
 
-    // Retorna HTTP 400
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErroResponse> tratarIllegalArgumentException(IllegalArgumentException ex,
-            WebRequest request) {
-        ErroResponse resposta = new ErroResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Requisição Inválida",
-                ex.getMessage(),
-                request.getDescription(false).replace("uri=", ""));
-        return new ResponseEntity<>(resposta, HttpStatus.BAD_REQUEST);
-    }
+        @ExceptionHandler(RecursoNaoEncontradoException.class)
+        public ResponseEntity<ErroResponse> tratarRecursoNaoEncontrado(RecursoNaoEncontradoException ex,
+                        WebRequest request) {
+                return criarResposta(HttpStatus.NOT_FOUND, "Recurso Não Encontrado", ex.getMessage(), request);
+        }
 
-    // Retorna HTTP 401
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErroResponse> tratarAuthenticationException(AuthenticationException ex,
-            WebRequest request) {
-        ErroResponse resposta = new ErroResponse(
-                HttpStatus.UNAUTHORIZED.value(),
-                "Não Autenticado",
-                "Token de autenticação inválido, expirado ou ausente.",
-                request.getDescription(false).replace("uri=", ""));
-        return new ResponseEntity<>(resposta, HttpStatus.UNAUTHORIZED);
-    }
+        @ExceptionHandler(RegraDeNegocioException.class)
+        public ResponseEntity<ErroResponse> tratarRegraDeNegocio(RegraDeNegocioException ex, WebRequest request) {
+                return criarResposta(HttpStatus.BAD_REQUEST, "Violação de Regra de Negócio", ex.getMessage(), request);
+        }
 
-    // Retorna HTTP 403
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErroResponse> tratarAccessDeniedException(AccessDeniedException ex, WebRequest request) {
-        ErroResponse resposta = new ErroResponse(
-                HttpStatus.FORBIDDEN.value(),
-                "Acesso Negado",
-                "Você não tem permissão para acessar este recurso.",
-                request.getDescription(false).replace("uri=", ""));
-        return new ResponseEntity<>(resposta, HttpStatus.FORBIDDEN);
-    }
+        @ExceptionHandler(IllegalArgumentException.class)
+        public ResponseEntity<ErroResponse> tratarIllegalArgumentException(IllegalArgumentException ex,
+                        WebRequest request) {
+                return criarResposta(HttpStatus.BAD_REQUEST, "Requisição Inválida", ex.getMessage(), request);
+        }
 
-    // Retorna HTTP 500
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErroResponse> tratarExcecaoGlobal(Exception ex, WebRequest request) {
-        ex.printStackTrace();
+        @ExceptionHandler(AuthenticationException.class)
+        public ResponseEntity<ErroResponse> tratarAuthenticationException(AuthenticationException ex,
+                        WebRequest request) {
+                return criarResposta(HttpStatus.UNAUTHORIZED, "Não Autenticado",
+                                "Token de autenticação inválido, expirado ou ausente.", request);
+        }
 
-        ErroResponse resposta = new ErroResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Erro Interno do Servidor",
-                "Ocorreu um erro inesperado. Por favor, contate o suporte.",
-                request.getDescription(false).replace("uri=", ""));
-        return new ResponseEntity<>(resposta, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+        @ExceptionHandler(AccessDeniedException.class)
+        public ResponseEntity<ErroResponse> tratarAccessDeniedException(AccessDeniedException ex, WebRequest request) {
+                return criarResposta(HttpStatus.FORBIDDEN, "Acesso Negado",
+                                "Você não tem permissão para acessar este recurso.", request);
+        }
+
+        @ExceptionHandler(Exception.class)
+        public ResponseEntity<ErroResponse> tratarExcecaoGlobal(Exception ex, WebRequest request) {
+                ex.printStackTrace();
+
+                return criarResposta(HttpStatus.INTERNAL_SERVER_ERROR, "Erro Interno do Servidor",
+                                "Ocorreu um erro inesperado. Por favor, contate o suporte.", request);
+        }
+
+        private ResponseEntity<ErroResponse> criarResposta(HttpStatus status, String tituloErro,
+                        String mensagemDetalhada, WebRequest request) {
+                ErroResponse erro = ErroResponse.builder()
+                                .status(status.value())
+                                .erro(tituloErro)
+                                .mensagem(mensagemDetalhada)
+                                .caminho(extrairCaminho(request))
+                                .build();
+
+                return ResponseEntity.status(status).body(erro);
+        }
+
+        private String extrairCaminho(WebRequest request) {
+                return request.getDescription(false).replace("uri=", "");
+        }
 }
