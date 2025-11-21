@@ -5,26 +5,31 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import br.com.lumilivre.api.dto.auth.AlterarSenhaRequest;
-import br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse;
+import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.dto.usuario.UsuarioRequest;
 import br.com.lumilivre.api.dto.usuario.UsuarioResponse;
+import br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse;
 import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.model.ResponseModel;
 import br.com.lumilivre.api.service.UsuarioService;
-import jakarta.validation.Valid;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -38,7 +43,7 @@ public class UsuarioController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
     @Operation(summary = "Lista usuários para a tela principal do admin", description = "Retorna uma lista paginada de usuários com dados resumidos.")
-    @ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso")
     public ResponseEntity<Page<UsuarioResumoResponse>> buscarUsuariosAdmin(
             @Parameter(description = "Texto para busca genérica") @RequestParam(required = false) String texto,
             Pageable pageable) {
@@ -49,7 +54,7 @@ public class UsuarioController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar")
     @Operation(summary = "Busca usuários com paginação e filtro de texto")
-    @ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResumoResponse.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResumoResponse.class)))
     public ResponseEntity<Page<UsuarioResumoResponse>> buscarPorTexto(
             @Parameter(description = "Texto para busca genérica no e-mail ou matrícula") @RequestParam(required = false) String texto,
             Pageable pageable) {
@@ -60,7 +65,7 @@ public class UsuarioController {
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/buscar/avancado")
     @Operation(summary = "Busca avançada e paginada de usuários")
-    @ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResumoResponse.class)))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResumoResponse.class)))
     public ResponseEntity<Page<UsuarioResumoResponse>> buscarAvancado(
             @Parameter(description = "ID exato do usuário") @RequestParam(required = false) Integer id,
             @Parameter(description = "E-mail parcial do usuário") @RequestParam(required = false) String email,
@@ -74,9 +79,9 @@ public class UsuarioController {
     @PostMapping("/cadastrar")
     @Operation(summary = "Cadastra um novo usuário (Acesso: ADMIN)", description = "Cria um novo usuário com perfil de ADMIN ou BIBLIOTECARIO.")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Usuário cadastrado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada"),
-            @ApiResponse(responseCode = "409", description = "E-mail já está em uso")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Usuário cadastrado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "E-mail já está em uso")
     })
     public ResponseEntity<UsuarioResponse> cadastrar(@RequestBody @Valid UsuarioRequest dto) {
         UsuarioResponse novoUsuario = us.cadastrarAdmin(dto);
@@ -87,8 +92,8 @@ public class UsuarioController {
     @PutMapping("/atualizar/{id}")
     @Operation(summary = "Atualiza um usuário existente (Acesso: ADMIN)")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
     public ResponseEntity<UsuarioResponse> atualizar(
             @Parameter(description = "ID do usuário a ser atualizado") @PathVariable Integer id,
@@ -100,24 +105,24 @@ public class UsuarioController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/excluir/{id}")
     @Operation(summary = "Exclui um usuário (Acesso: ADMIN)")
-    @ApiResponse(responseCode = "200", description = "Usuário excluído com sucesso")
-    public ResponseEntity<ResponseModel> excluir(
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Usuário excluído com sucesso")
+    public ResponseEntity<ApiResponse<Void>> excluir(
             @Parameter(description = "ID do usuário a ser excluído") @PathVariable Integer id) {
         us.excluir(id);
-        return ResponseEntity.ok(new ResponseModel("Usuário removido com sucesso"));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Usuário removido com sucesso", null));
     }
 
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/alterar-senha")
     @Operation(summary = "Altera a própria senha")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Senha alterada com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Senha atual incorreta"),
-            @ApiResponse(responseCode = "403", description = "Não autorizado a alterar senha de outro usuário"),
-            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Senha alterada com sucesso"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Senha atual incorreta"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Não autorizado a alterar senha de outro usuário"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<ResponseModel> alterarSenha(@RequestBody AlterarSenhaRequest dto) {
+    public ResponseEntity<ApiResponse<Void>> alterarSenha(@RequestBody AlterarSenhaRequest dto) {
         us.alterarSenha(dto);
-        return ResponseEntity.ok(new ResponseModel("Senha alterada com sucesso"));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Senha alterada com sucesso", null));
     }
 }

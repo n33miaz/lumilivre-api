@@ -13,7 +13,7 @@ import br.com.lumilivre.api.dto.curso.CursoResponse;
 import br.com.lumilivre.api.dto.curso.CursoResumoResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.model.CursoModel;
-import br.com.lumilivre.api.model.ResponseModel;
+import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.repository.CursoRepository;
 
 @Service
@@ -58,15 +58,13 @@ public class CursoService {
     }
 
     @Transactional
-    public ResponseEntity<ResponseModel> excluir(Integer id) {
+    public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
         if (!cr.existsById(id)) {
             throw new RecursoNaoEncontradoException("Curso não encontrado com ID: " + id);
         }
 
         cr.deleteById(id);
 
-        ResponseModel rm = new ResponseModel();
-        rm.setMensagem("O Curso foi removido com sucesso");
-        return new ResponseEntity<>(rm, HttpStatus.OK);
+        return ResponseEntity.ok(new ApiResponse<>(true, "O Curso foi removido com sucesso", null));
     }
 }

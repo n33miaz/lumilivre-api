@@ -1,12 +1,10 @@
 package br.com.lumilivre.api.controller;
 
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import br.com.lumilivre.api.dto.solicitacao.SolicitacaoCompletaResponse;
 import br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse;
 import br.com.lumilivre.api.dto.solicitacao.SolicitacaoResponse;

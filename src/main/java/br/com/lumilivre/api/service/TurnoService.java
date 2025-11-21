@@ -6,7 +6,7 @@ import br.com.lumilivre.api.dto.turno.TurnoResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.TurnoModel;
-import br.com.lumilivre.api.model.ResponseModel;
+import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.repository.TurnoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -52,11 +52,12 @@ public class TurnoService {
 
     @Transactional
     @CacheEvict(value = "turnos", allEntries = true)
-    public ResponseEntity<ResponseModel> excluir(Integer id) {
+    public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
         if (!turnoRepository.existsById(id)) {
             throw new RecursoNaoEncontradoException("Turno não encontrado.");
         }
         turnoRepository.deleteById(id);
-        return ResponseEntity.ok(new ResponseModel("Turno removido com sucesso."));
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Turno removido com sucesso.", null));
     }
 }

@@ -6,7 +6,7 @@ import br.com.lumilivre.api.dto.modulo.ModuloResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.ModuloModel;
-import br.com.lumilivre.api.model.ResponseModel;
+import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.repository.ModuloRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -52,11 +52,12 @@ public class ModuloService {
 
     @Transactional
     @CacheEvict(value = "modulos", allEntries = true)
-    public ResponseEntity<ResponseModel> excluir(Integer id) {
+    public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
         if (!moduloRepository.existsById(id)) {
             throw new RecursoNaoEncontradoException("Módulo não encontrado.");
         }
         moduloRepository.deleteById(id);
-        return ResponseEntity.ok(new ResponseModel("Módulo removido com sucesso."));
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Módulo removido com sucesso.", null));
     }
 }

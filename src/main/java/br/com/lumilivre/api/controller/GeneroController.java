@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.controller;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
 import br.com.lumilivre.api.repository.GeneroRepository;
 import br.com.lumilivre.api.service.GeneroService;
@@ -13,9 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/generos")

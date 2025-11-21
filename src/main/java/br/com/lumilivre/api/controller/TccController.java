@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.controller;
 
+import java.util.List;
 import br.com.lumilivre.api.dto.tcc.TccResponse;
 import br.com.lumilivre.api.service.TccService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,8 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/tcc")

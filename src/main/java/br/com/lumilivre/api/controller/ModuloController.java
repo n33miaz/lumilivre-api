@@ -1,17 +1,17 @@
 package br.com.lumilivre.api.controller;
 
+import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
-import br.com.lumilivre.api.dto.modulo.ModuloResumoResponse;
 import br.com.lumilivre.api.dto.modulo.ModuloRequest;
 import br.com.lumilivre.api.dto.modulo.ModuloResponse;
-import br.com.lumilivre.api.model.ResponseModel;
+import br.com.lumilivre.api.dto.modulo.ModuloResumoResponse;
 import br.com.lumilivre.api.repository.ModuloRepository;
 import br.com.lumilivre.api.service.ModuloService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -25,13 +25,11 @@ import java.util.List;
 @Tag(name = "14. Módulos")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
+@RequiredArgsConstructor
 public class ModuloController {
 
-    @Autowired
-    private ModuloRepository moduloRepository;
-
-    @Autowired
-    private ModuloService moduloService;
+    private final ModuloRepository moduloRepository;
+    private final ModuloService moduloService;
 
     @GetMapping
     @Operation(summary = "Lista todos os módulos (Simples - para Combobox)")
@@ -66,7 +64,7 @@ public class ModuloController {
 
     @DeleteMapping("/excluir/{id}")
     @Operation(summary = "Exclui um módulo")
-    public ResponseEntity<ResponseModel> excluir(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Void>> excluir(@PathVariable Integer id) {
         return moduloService.excluir(id);
     }
 }

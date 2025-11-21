@@ -1,25 +1,23 @@
 package br.com.lumilivre.api.controller;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.dto.comum.EnumResponse;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
-
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "3. Enums")

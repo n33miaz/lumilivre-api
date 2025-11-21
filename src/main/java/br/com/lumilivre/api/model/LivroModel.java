@@ -5,11 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.hibernate.annotations.GenericGenerator;
-
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
-import br.com.lumilivre.api.utils.AssignedIdentityGenerator;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -25,8 +22,7 @@ import lombok.*;
 public class LivroModel {
 
     @Id
-    @GeneratedValue(generator = "custom-generator")
-    @GenericGenerator(name = "custom-generator", type = AssignedIdentityGenerator.class)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "isbn", length = 20, unique = true)

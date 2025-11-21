@@ -1,24 +1,22 @@
 package br.com.lumilivre.api.controller;
 
+import java.util.List;
+import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
-import br.com.lumilivre.api.dto.turno.TurnoResumoResponse;
 import br.com.lumilivre.api.dto.turno.TurnoRequest;
 import br.com.lumilivre.api.dto.turno.TurnoResponse;
-import br.com.lumilivre.api.model.ResponseModel;
+import br.com.lumilivre.api.dto.turno.TurnoResumoResponse;
 import br.com.lumilivre.api.repository.TurnoRepository;
 import br.com.lumilivre.api.service.TurnoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/turnos")
@@ -27,11 +25,13 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
 public class TurnoController {
 
-    @Autowired
-    private TurnoRepository turnoRepository;
+    private final TurnoRepository turnoRepository;
+    private final TurnoService turnoService;
 
-    @Autowired
-    private TurnoService turnoService;
+    public TurnoController(TurnoRepository turnoRepository, TurnoService turnoService) {
+        this.turnoRepository = turnoRepository;
+        this.turnoService = turnoService;
+    }
 
     @GetMapping
     @Operation(summary = "Lista todos os turnos (Simples - para Combobox)")
@@ -66,7 +66,7 @@ public class TurnoController {
 
     @DeleteMapping("/excluir/{id}")
     @Operation(summary = "Exclui um turno")
-    public ResponseEntity<ResponseModel> excluir(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Void>> excluir(@PathVariable Integer id) {
         return turnoService.excluir(id);
     }
 }

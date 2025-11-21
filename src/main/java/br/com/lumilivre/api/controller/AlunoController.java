@@ -1,27 +1,33 @@
 package br.com.lumilivre.api.controller;
 
-import br.com.lumilivre.api.dto.aluno.AlunoRequest;
-import br.com.lumilivre.api.dto.aluno.AlunoResponse;
-import br.com.lumilivre.api.dto.aluno.AlunoResumoResponse;
-import br.com.lumilivre.api.model.AlunoModel;
-import br.com.lumilivre.api.model.ResponseModel;
-import br.com.lumilivre.api.service.AlunoService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import java.time.LocalDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import br.com.lumilivre.api.dto.aluno.AlunoRequest;
+import br.com.lumilivre.api.dto.aluno.AlunoResponse;
+import br.com.lumilivre.api.dto.aluno.AlunoResumoResponse;
+import br.com.lumilivre.api.dto.comum.ApiResponse;
+import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.service.AlunoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/alunos")
@@ -78,42 +84,44 @@ public class AlunoController {
     @GetMapping("/{matricula}")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @Operation(summary = "Busca detalhes de um aluno específico")
-    public ResponseEntity<AlunoResponse> buscarPorMatricula(@PathVariable String matricula) {
+    public ResponseEntity<ApiResponse<AlunoResponse>> buscarPorMatricula(@PathVariable String matricula) {
         AlunoModel aluno = alunoService.buscarPorMatricula(matricula);
-        return ResponseEntity.ok(new AlunoResponse(aluno));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Aluno encontrado", new AlunoResponse(aluno)));
     }
 
     @PostMapping("/cadastrar")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @Operation(summary = "Cadastra um novo aluno")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Aluno cadastrado com sucesso", content = @Content(schema = @Schema(implementation = AlunoResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Aluno cadastrado com sucesso", content = @Content(schema = @Schema(implementation = AlunoResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Dados inválidos")
     })
-    public ResponseEntity<AlunoResponse> cadastrar(@RequestBody @Valid AlunoRequest alunoDTO) {
+    public ResponseEntity<ApiResponse<AlunoResponse>> cadastrar(@RequestBody @Valid AlunoRequest alunoDTO) {
         AlunoModel alunoSalvo = alunoService.cadastrar(alunoDTO);
-
         AlunoResponse response = new AlunoResponse(alunoSalvo);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, "Aluno cadastrado com sucesso", response));
     }
 
     @PutMapping("/atualizar/{matricula}")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @Operation(summary = "Atualiza um aluno existente")
-    public ResponseEntity<AlunoResponse> atualizar(
+    public ResponseEntity<ApiResponse<AlunoResponse>> atualizar(
             @PathVariable String matricula,
             @RequestBody @Valid AlunoRequest alunoDTO) {
 
         AlunoModel alunoAtualizado = alunoService.atualizar(matricula, alunoDTO);
-        return ResponseEntity.ok(new AlunoResponse(alunoAtualizado));
+
+        return ResponseEntity
+                .ok(new ApiResponse<>(true, "Aluno atualizado com sucesso", new AlunoResponse(alunoAtualizado)));
     }
 
     @DeleteMapping("/excluir/{matricula}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Exclui um aluno (Acesso: ADMIN)")
-    public ResponseEntity<ResponseModel> excluir(@PathVariable String matricula) {
+    public ResponseEntity<ApiResponse<Void>> excluir(@PathVariable String matricula) {
         alunoService.excluir(matricula);
-        return ResponseEntity.ok(new ResponseModel("Aluno excluído com sucesso."));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Aluno excluído com sucesso.", null));
     }
 }
