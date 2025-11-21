@@ -1,461 +1,401 @@
 package br.com.lumilivre.api.service;
 
+import java.io.InputStream;
+import java.util.*;
+import java.util.stream.Collectors;
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
+import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.model.*;
 import br.com.lumilivre.api.repository.*;
 import br.com.lumilivre.api.utils.ExcelUtils;
-
 import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.InputStream;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class ImportacaoService {
 
     private static final Logger log = LoggerFactory.getLogger(ImportacaoService.class);
+    private static final int BATCH_SIZE = 50;
 
     private final AlunoRepository alunoRepository;
+    private final UsuarioRepository usuarioRepository;
     private final CursoRepository cursoRepository;
+    private final TurnoRepository turnoRepository;
+    private final ModuloRepository moduloRepository;
     private final LivroRepository livroRepository;
     private final ExemplarRepository exemplarRepository;
     private final GeneroRepository generoRepository;
     private final CddRepository cddRepository;
-
-    private static final int BATCH_SIZE = 50;
+    private final PasswordEncoder passwordEncoder;
 
     public ImportacaoService(
             AlunoRepository alunoRepository,
+            UsuarioRepository usuarioRepository,
             CursoRepository cursoRepository,
+            TurnoRepository turnoRepository,
+            ModuloRepository moduloRepository,
             LivroRepository livroRepository,
             ExemplarRepository exemplarRepository,
             GeneroRepository generoRepository,
-            CddRepository cddRepository) {
+            CddRepository cddRepository,
+            PasswordEncoder passwordEncoder) {
         this.alunoRepository = alunoRepository;
+        this.usuarioRepository = usuarioRepository;
         this.cursoRepository = cursoRepository;
+        this.turnoRepository = turnoRepository;
+        this.moduloRepository = moduloRepository;
         this.livroRepository = livroRepository;
         this.exemplarRepository = exemplarRepository;
         this.generoRepository = generoRepository;
         this.cddRepository = cddRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public String importar(String tipo, MultipartFile file) throws Exception {
-        log.info("Iniciando importação do tipo: {}", tipo);
+        log.info("Iniciando importação unificada do tipo: {}", tipo);
+        validarArquivo(file);
+
         try {
-            validarArquivo(file);
-            switch (tipo.toLowerCase()) {
-                case "aluno":
-                    return importarAlunos(file);
-                case "livro":
-                    return importarLivros(file);
-                case "exemplar":
-                    return importarExemplares(file);
-                default:
-                    throw new IllegalArgumentException("Tipo de importação inválido: " + tipo);
-            }
+            return switch (tipo.toLowerCase()) {
+                case "aluno" -> importarAlunos(file);
+                case "livro" -> importarLivros(file);
+                case "exemplar" -> importarExemplares(file);
+                default -> throw new IllegalArgumentException("Tipo de importação inválido: " + tipo);
+            };
         } catch (Exception e) {
-            log.error("Erro durante importação do tipo {}: {}", tipo, e.getMessage(), e);
+            log.error("Erro crítico durante importação do tipo {}: {}", tipo, e.getMessage(), e);
             throw new Exception("Falha na importação: " + e.getMessage(), e);
         }
     }
 
-    // =============== IMPORTAÇÃO DE ALUNOS ===============
+    // ==================== IMPORTAÇÃO DE ALUNOS =====================
+
     @Transactional
-    private String importarAlunos(MultipartFile file) throws Exception {
+    protected String importarAlunos(MultipartFile file) throws Exception {
         List<AlunoModel> alunosParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> matriculasNoExcel = new HashSet<>();
 
         Set<String> matriculasExistentes = alunoRepository.findAllMatriculas();
-        Map<String, CursoModel> cursosMap = cursoRepository.findAll().stream()
-                .collect(Collectors.toMap(
-                        curso -> curso.getNome().toLowerCase().trim(),
-                        curso -> curso,
-                        (cursoExistente, novoCurso) -> cursoExistente));
+        Set<String> cpfsExistentes = alunoRepository.findAllCpfs();
 
-        try (InputStream is = file.getInputStream();
-                Workbook workbook = WorkbookFactory.create(is)) {
+        Map<Integer, CursoModel> cursosMap = cursoRepository.findAll().stream()
+                .collect(Collectors.toMap(CursoModel::getId, c -> c));
+        Map<Integer, TurnoModel> turnosMap = turnoRepository.findAll().stream()
+                .collect(Collectors.toMap(TurnoModel::getId, t -> t));
+        Map<Integer, ModuloModel> modulosMap = moduloRepository.findAll().stream()
+                .collect(Collectors.toMap(ModuloModel::getId, m -> m));
 
+        try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
+            Map<String, Integer> headerMap = mapearCabecalhos(sheet.getRow(0));
+
             for (Row row : sheet) {
                 if (row.getRowNum() == 0)
                     continue;
-
                 int linhaNum = row.getRowNum() + 1;
-                String matricula = getCellString(row, 0);
-                String nomeCompleto = getCellString(row, 1);
-                String cursoNome = getCellString(row, 6);
-
-                if (isBlank(matricula, nomeCompleto, cursoNome)) {
-                    logErros.add(
-                            new ErroImportacao(linhaNum, "Campos obrigatórios faltando (Matrícula, Nome ou Curso)"));
-                    continue;
-                }
-                if (!matriculasNoExcel.add(matricula)) {
-                    logErros.add(new ErroImportacao(linhaNum, "Matrícula duplicada no Excel: " + matricula));
-                    continue;
-                }
-                if (matriculasExistentes.contains(matricula)) {
-                    logErros.add(new ErroImportacao(linhaNum, "Aluno já existe no banco: " + matricula));
-                    continue;
-                }
-
-                String cursoNomeNormalizado = cursoNome.toLowerCase().trim();
-                CursoModel curso = cursosMap.get(cursoNomeNormalizado);
-                if (curso == null) {
-                    logErros.add(new ErroImportacao(linhaNum, "Curso não encontrado: " + cursoNome));
-                    continue;
-                }
 
                 try {
-                    AlunoModel aluno = criarAlunoFromRow(row, curso);
-                    if (aluno.getCpf() != null && aluno.getCpf().isBlank()) {
-                        aluno.setCpf(null);
+                    String matricula = ExcelUtils.getString(row.getCell(headerMap.get("matricula")));
+
+                    if (matricula.isBlank()) {
+                        logErros.add(new ErroImportacao(linhaNum, "Matrícula vazia."));
+                        continue;
                     }
-                    if (validarAluno(aluno, linhaNum, logErros)) {
-                        alunosParaSalvar.add(aluno);
+                    if (!matriculasNoExcel.add(matricula)) {
+                        logErros.add(new ErroImportacao(linhaNum, "Matrícula duplicada na planilha: " + matricula));
+                        continue;
                     }
+                    if (matriculasExistentes.contains(matricula)) {
+                        logErros.add(new ErroImportacao(linhaNum, "Aluno já cadastrado no sistema: " + matricula));
+                        continue;
+                    }
+
+                    AlunoModel aluno = criarAlunoFromRow(row, headerMap, cursosMap, turnosMap, modulosMap);
+
+                    if (aluno.getCpf() != null && cpfsExistentes.contains(aluno.getCpf())) {
+                        logErros.add(new ErroImportacao(linhaNum, "CPF já existe no sistema: " + aluno.getCpf()));
+                        continue;
+                    }
+                    if (usuarioRepository.existsByEmail(aluno.getEmail())) {
+                        logErros.add(
+                                new ErroImportacao(linhaNum, "Email já vinculado a um usuário: " + aluno.getEmail()));
+                        continue;
+                    }
+
+                    UsuarioModel usuario = new UsuarioModel();
+                    usuario.setEmail(aluno.getEmail());
+                    usuario.setSenha(passwordEncoder.encode(aluno.getMatricula())); // Senha padrão é a matrícula
+                    usuario.setRole(Role.ALUNO);
+                    usuario.setAluno(aluno);
+                    aluno.setUsuario(usuario);
+
+                    alunosParaSalvar.add(aluno);
+
                 } catch (Exception e) {
-                    logErros.add(new ErroImportacao(linhaNum, "Erro ao processar aluno: " + e.getMessage()));
-                    log.error("Erro detalhado na linha {}: ", linhaNum, e);
+                    logErros.add(new ErroImportacao(linhaNum, "Erro: " + e.getMessage()));
                 }
             }
         }
-        return salvarAlunosEmLotes(alunosParaSalvar, logErros);
+
+        return salvarEmLotes(alunosParaSalvar, alunoRepository, "alunos", logErros);
     }
 
-    private AlunoModel criarAlunoFromRow(Row row, CursoModel curso) {
+    private AlunoModel criarAlunoFromRow(Row row, Map<String, Integer> headerMap,
+            Map<Integer, CursoModel> cursos,
+            Map<Integer, TurnoModel> turnos,
+            Map<Integer, ModuloModel> modulos) {
         AlunoModel aluno = new AlunoModel();
-        aluno.setMatricula(getCellString(row, 0));
-        aluno.setNomeCompleto(getCellString(row, 1));
-        String cpfRaw = getCellString(row, 2);
-        aluno.setCpf(cpfRaw == null || cpfRaw.isBlank() ? null : normalizeNumber(cpfRaw));
-        aluno.setCelular(normalizeNumber(getCellString(row, 3)));
-        aluno.setEmail(getCellString(row, 4));
-        aluno.setDataNascimento(ExcelUtils.getLocalDate(row.getCell(5)));
-        aluno.setCurso(curso);
-        aluno.setCep(getCellString(row, 7));
-        aluno.setLogradouro(getCellString(row, 8));
-        aluno.setComplemento(getCellString(row, 9));
-        aluno.setBairro(getCellString(row, 10));
-        aluno.setLocalidade(getCellString(row, 11));
-        aluno.setUf(getCellString(row, 12));
-        aluno.setNumero_casa(getCellInteger(row, 13));
-        aluno.setEmprestimosCount(0);
+        aluno.setMatricula(ExcelUtils.getString(row.getCell(headerMap.get("matricula"))));
+        aluno.setNomeCompleto(ExcelUtils.getString(row.getCell(headerMap.get("nome_completo"))));
+        aluno.setCpf(normalizeNumber(ExcelUtils.getString(row.getCell(headerMap.get("cpf")))));
+        aluno.setCelular(normalizeNumber(ExcelUtils.getString(row.getCell(headerMap.get("celular")))));
+        aluno.setEmail(ExcelUtils.getString(row.getCell(headerMap.get("email"))));
+        aluno.setDataNascimento(ExcelUtils.getLocalDate(row.getCell(headerMap.get("data_nascimento"))));
+
+        aluno.setCep(normalizeNumber(ExcelUtils.getString(row.getCell(headerMap.get("cep")))));
+        aluno.setLogradouro(ExcelUtils.getString(row.getCell(headerMap.get("logradouro"))));
+        aluno.setBairro(ExcelUtils.getString(row.getCell(headerMap.get("bairro"))));
+        aluno.setLocalidade(ExcelUtils.getString(row.getCell(headerMap.get("localidade"))));
+        aluno.setUf(ExcelUtils.getString(row.getCell(headerMap.get("uf"))));
+        aluno.setNumero_casa(ExcelUtils.getInteger(row.getCell(headerMap.get("numero_casa"))));
+        aluno.setComplemento(ExcelUtils.getString(row.getCell(headerMap.get("complemento"))));
+
+        Integer cursoId = ExcelUtils.getInteger(row.getCell(headerMap.get("curso_id")));
+        Integer turnoId = ExcelUtils.getInteger(row.getCell(headerMap.get("turno_id")));
+        Integer moduloId = ExcelUtils.getInteger(row.getCell(headerMap.get("modulo_id")));
+
+        if (cursoId != null && cursos.containsKey(cursoId))
+            aluno.setCurso(cursos.get(cursoId));
+        else
+            throw new IllegalArgumentException("ID do Curso inválido ou não encontrado: " + cursoId);
+
+        if (turnoId != null && turnos.containsKey(turnoId))
+            aluno.setTurno(turnos.get(turnoId));
+        if (moduloId != null && modulos.containsKey(moduloId))
+            aluno.setModulo(modulos.get(moduloId));
+
         return aluno;
     }
 
-    private boolean validarAluno(AlunoModel aluno, int linhaNum, List<ErroImportacao> logErros) {
-        boolean valido = true;
-        if (aluno.getCpf() != null && !aluno.getCpf().isEmpty()) {
-            if (aluno.getCpf().length() != 11) {
-                logErros.add(new ErroImportacao(linhaNum, "CPF inválido: " + aluno.getCpf()));
-                valido = false;
-            } else {
-                try {
-                    if (alunoRepository.existsByCpf(aluno.getCpf())) {
-                        logErros.add(new ErroImportacao(linhaNum, "CPF já cadastrado: " + aluno.getCpf()));
-                        valido = false;
-                    }
-                } catch (Exception e) {
-                    log.warn("Erro ao verificar CPF existente: {}", e.getMessage());
-                }
-            }
-        }
-        if (aluno.getEmail() != null && !aluno.getEmail().isEmpty() && !isEmailValido(aluno.getEmail())) {
-            logErros.add(new ErroImportacao(linhaNum, "Email inválido: " + aluno.getEmail()));
-            valido = false;
-        }
-        return valido;
-    }
+    // ===================== IMPORTAÇÃO DE LIVROS =====================
 
-    private String salvarAlunosEmLotes(List<AlunoModel> alunos, List<ErroImportacao> logErros) {
-        int totalSalvos = 0;
-        for (int i = 0; i < alunos.size(); i += BATCH_SIZE) {
-            int end = Math.min(i + BATCH_SIZE, alunos.size());
-            List<AlunoModel> subLista = alunos.subList(i, end);
-            try {
-                alunoRepository.saveAll(subLista);
-                totalSalvos += subLista.size();
-                log.info("Lote de alunos {} a {} salvo com sucesso", i + 1, end);
-            } catch (DataIntegrityViolationException e) {
-                String rootCause = extrairRootCause(e);
-                logErros.add(new ErroImportacao(-1,
-                        "Erro de integridade no lote " + (i / BATCH_SIZE + 1) + ": " + rootCause));
-                log.error("Erro de integridade no lote {}: {}", (i / BATCH_SIZE + 1), rootCause);
-                break;
-            } catch (Exception e) {
-                String rootCause = extrairRootCause(e);
-                logErros.add(
-                        new ErroImportacao(-1, "Erro inesperado no lote " + (i / BATCH_SIZE + 1) + ": " + rootCause));
-                log.error("Erro inesperado no lote {}: {}", (i / BATCH_SIZE + 1), rootCause, e);
-            }
-        }
-        return gerarResumoImportacao("alunos", totalSalvos, logErros);
-    }
-
-    // ======== IMPORTAÇÃO DE LIVROS ========
     @Transactional
-    private String importarLivros(MultipartFile file) throws Exception {
+    protected String importarLivros(MultipartFile file) throws Exception {
         List<LivroModel> livrosParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> isbnsNoExcel = new HashSet<>();
 
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
+            Map<String, Integer> headerMap = mapearCabecalhos(sheet.getRow(0));
+
             for (Row row : sheet) {
                 if (row.getRowNum() == 0)
                     continue;
-
                 int linhaNum = row.getRowNum() + 1;
+
                 try {
-                    String isbn = getCellString(row, 1);
+                    String isbn = ExcelUtils.getString(row.getCell(headerMap.get("isbn")));
+
                     if (isbn != null && !isbn.isBlank()) {
                         if (!isbnsNoExcel.add(isbn)) {
-                            logErros.add(new ErroImportacao(linhaNum, "ISBN duplicado no Excel: " + isbn));
+                            logErros.add(new ErroImportacao(linhaNum, "ISBN duplicado na planilha: " + isbn));
                             continue;
                         }
-                        if (livroRepository.findByIsbn(isbn).isPresent()) {
-                            logErros.add(new ErroImportacao(linhaNum, "Livro com este ISBN já existe: " + isbn));
+                        if (livroRepository.existsByIsbn(isbn)) {
+                            logErros.add(new ErroImportacao(linhaNum, "ISBN já cadastrado no sistema: " + isbn));
                             continue;
                         }
                     }
 
-                    LivroModel livro = criarLivroFromRow(row);
+                    LivroModel livro = criarLivroFromRow(row, headerMap);
                     livrosParaSalvar.add(livro);
+
                 } catch (Exception e) {
-                    logErros.add(new ErroImportacao(linhaNum, "Erro ao processar livro: " + e.getMessage()));
+                    logErros.add(new ErroImportacao(linhaNum, "Erro: " + e.getMessage()));
                 }
             }
         }
-        return salvarLivrosEmLotes(livrosParaSalvar, logErros);
+        return salvarEmLotes(livrosParaSalvar, livroRepository, "livros", logErros);
     }
 
-    private LivroModel criarLivroFromRow(Row row) {
+    private LivroModel criarLivroFromRow(Row row, Map<String, Integer> headerMap) {
         LivroModel livro = new LivroModel();
-        livro.setIsbn(getCellString(row, 1));
+        livro.setIsbn(ExcelUtils.getString(row.getCell(headerMap.get("isbn"))));
+        livro.setNome(ExcelUtils.getString(row.getCell(headerMap.get("nome"))));
+        livro.setAutor(ExcelUtils.getString(row.getCell(headerMap.get("autor"))));
+        livro.setEditora(ExcelUtils.getString(row.getCell(headerMap.get("editora"))));
+        livro.setData_lancamento(ExcelUtils.getLocalDate(row.getCell(headerMap.get("data_lancamento"))));
+        livro.setNumero_paginas(ExcelUtils.getInteger(row.getCell(headerMap.get("numero_paginas"))));
+        livro.setEdicao(ExcelUtils.getString(row.getCell(headerMap.get("edicao"))));
+        livro.setVolume(ExcelUtils.getInteger(row.getCell(headerMap.get("volume"))));
+        livro.setSinopse(ExcelUtils.getString(row.getCell(headerMap.get("sinopse"))));
+        livro.setImagem(ExcelUtils.getString(row.getCell(headerMap.get("imagem"))));
 
-        String cddCodigo = getCellString(row, 2);
-        if (cddCodigo == null || cddCodigo.isBlank()) {
-            throw new IllegalArgumentException("cdd_codigo (coluna 3) é obrigatório.");
-        }
+        livro.setClassificacao_etaria(ExcelUtils.getEnum(row.getCell(headerMap.get("classificacao_etaria")),
+                ClassificacaoEtaria.class, ClassificacaoEtaria.LIVRE));
+        livro.setTipo_capa(
+                ExcelUtils.getEnum(row.getCell(headerMap.get("tipo_capa")), TipoCapa.class, TipoCapa.BROCHURA));
+
+        String cddCodigo = ExcelUtils.getString(row.getCell(headerMap.get("cdd_codigo")));
+        if (cddCodigo == null || cddCodigo.isBlank())
+            throw new IllegalArgumentException("CDD é obrigatório");
+
         CddModel cdd = cddRepository.findById(cddCodigo)
-                .orElseThrow(() -> new IllegalArgumentException("CDD '" + cddCodigo + "' não encontrado no banco."));
+                .orElseThrow(() -> new IllegalArgumentException("CDD não encontrado: " + cddCodigo));
         livro.setCdd(cdd);
-
-        livro.setNome(getCellString(row, 4));
-        livro.setAutor(getCellString(row, 5));
-        livro.setEditora(getCellString(row, 6));
-        livro.setData_lancamento(ExcelUtils.getLocalDate(row.getCell(7)));
-        livro.setEdicao(getCellString(row, 8));
-        livro.setNumero_paginas(getCellInteger(row, 10));
-        livro.setClassificacao_etaria(
-                ExcelUtils.getEnum(row.getCell(11), ClassificacaoEtaria.class, ClassificacaoEtaria.LIVRE));
-        livro.setVolume(getCellInteger(row, 12));
-        livro.setSinopse(getCellString(row, 13));
-        livro.setTipo_capa(ExcelUtils.getEnum(row.getCell(14), TipoCapa.class, TipoCapa.BROCHURA));
-        livro.setImagem(getCellString(row, 15));
-
-        Set<GeneroModel> generos = generoRepository.findAllByCddCodigo(cddCodigo);
-        livro.setGeneros(generos);
+        livro.setGeneros(generoRepository.findAllByCddCodigo(cddCodigo));
 
         return livro;
     }
 
-    private String salvarLivrosEmLotes(List<LivroModel> livros, List<ErroImportacao> logErros) {
-        int totalSalvos = 0;
-        for (int i = 0; i < livros.size(); i += BATCH_SIZE) {
-            int end = Math.min(i + BATCH_SIZE, livros.size());
-            List<LivroModel> subLista = livros.subList(i, end);
-            try {
-                livroRepository.saveAll(subLista);
-                totalSalvos += subLista.size();
-                log.info("Lote de livros {} a {} salvo com sucesso", i + 1, end);
-            } catch (Exception e) {
-                String rootCause = extrairRootCause(e);
-                logErros.add(new ErroImportacao(-1, "Erro no lote " + (i / BATCH_SIZE + 1) + ": " + rootCause));
-                log.error("Erro ao salvar lote de livros {}: {}", (i / BATCH_SIZE + 1), rootCause, e);
-            }
-        }
-        return gerarResumoImportacao("livros", totalSalvos, logErros);
-    }
+    // ===================== IMPORTAÇÃO DE EXEMPLARES =====================
 
-    // ======== IMPORTAÇÃO DE EXEMPLARES ========
     @Transactional
-    private String importarExemplares(MultipartFile file) throws Exception {
+    protected String importarExemplares(MultipartFile file) throws Exception {
         List<ExemplarModel> exemplaresParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> tombosNoExcel = new HashSet<>();
 
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
+            Map<String, Integer> headerMap = mapearCabecalhos(sheet.getRow(0));
+
             for (Row row : sheet) {
                 if (row.getRowNum() == 0)
                     continue;
-
                 int linhaNum = row.getRowNum() + 1;
+
                 try {
-                    String tombo = getCellString(row, 1);
-                    if (tombo == null || tombo.isBlank()) {
-                        logErros.add(new ErroImportacao(linhaNum, "Tombo (coluna 2) é obrigatório."));
+                    String tombo = ExcelUtils.getString(row.getCell(headerMap.get("tombo")));
+                    if (tombo.isBlank()) {
+                        logErros.add(new ErroImportacao(linhaNum, "Tombo obrigatório."));
                         continue;
                     }
                     if (!tombosNoExcel.add(tombo)) {
-                        logErros.add(new ErroImportacao(linhaNum, "Tombo duplicado no Excel: " + tombo));
+                        logErros.add(new ErroImportacao(linhaNum, "Tombo duplicado na planilha: " + tombo));
                         continue;
                     }
                     if (exemplarRepository.existsById(tombo)) {
-                        logErros.add(new ErroImportacao(linhaNum, "Exemplar com este tombo já existe: " + tombo));
+                        logErros.add(new ErroImportacao(linhaNum, "Tombo já existe no sistema: " + tombo));
                         continue;
                     }
 
-                    ExemplarModel exemplar = criarExemplarFromRow(row);
+                    ExemplarModel exemplar = criarExemplarFromRow(row, headerMap);
                     exemplaresParaSalvar.add(exemplar);
+
                 } catch (Exception e) {
-                    logErros.add(new ErroImportacao(linhaNum, "Erro ao processar exemplar: " + e.getMessage()));
+                    logErros.add(new ErroImportacao(linhaNum, "Erro: " + e.getMessage()));
                 }
             }
         }
-        return salvarExemplaresEmLotes(exemplaresParaSalvar, logErros);
+
+        String resultado = salvarEmLotes(exemplaresParaSalvar, exemplarRepository, "exemplares", logErros);
+
+        if (!exemplaresParaSalvar.isEmpty()) {
+            atualizarContagemLivros(exemplaresParaSalvar);
+        }
+
+        return resultado;
     }
 
-    private ExemplarModel criarExemplarFromRow(Row row) {
-        Long livroId = ExcelUtils.getLong(row.getCell(0));
-        if (livroId == null) {
-            throw new IllegalArgumentException("livro_id (coluna 1) é obrigatório.");
-        }
+    private ExemplarModel criarExemplarFromRow(Row row, Map<String, Integer> headerMap) {
+        Long livroId = ExcelUtils.getLong(row.getCell(headerMap.get("livro_id")));
+        if (livroId == null)
+            throw new IllegalArgumentException("ID do Livro é obrigatório");
+
         LivroModel livro = livroRepository.findById(livroId)
-                .orElseThrow(
-                        () -> new IllegalArgumentException("Livro com ID '" + livroId + "' não encontrado no banco."));
+                .orElseThrow(() -> new IllegalArgumentException("Livro não encontrado ID: " + livroId));
 
         ExemplarModel exemplar = new ExemplarModel();
+        exemplar.setTombo(ExcelUtils.getString(row.getCell(headerMap.get("tombo"))));
+        exemplar.setLocalizacao_fisica(ExcelUtils.getString(row.getCell(headerMap.get("localizacao_fisica"))));
+        exemplar.setStatus_livro(ExcelUtils.getEnum(row.getCell(headerMap.get("status_livro")), StatusLivro.class,
+                StatusLivro.DISPONIVEL));
         exemplar.setLivro(livro);
-        exemplar.setTombo(getCellString(row, 1));
-        exemplar.setStatus_livro(ExcelUtils.getEnum(row.getCell(2), StatusLivro.class, StatusLivro.DISPONIVEL));
-        exemplar.setLocalizacao_fisica(getCellString(row, 3));
 
         return exemplar;
     }
 
-    private String salvarExemplaresEmLotes(List<ExemplarModel> exemplares, List<ErroImportacao> logErros) {
-        int totalSalvos = 0;
-        for (int i = 0; i < exemplares.size(); i += BATCH_SIZE) {
-            int end = Math.min(i + BATCH_SIZE, exemplares.size());
-            List<ExemplarModel> subLista = exemplares.subList(i, end);
+    private void atualizarContagemLivros(List<ExemplarModel> exemplares) {
+        Set<Long> livrosIds = exemplares.stream().map(e -> e.getLivro().getId()).collect(Collectors.toSet());
+        for (Long id : livrosIds) {
+            long count = exemplarRepository.countByLivroId(id);
+            livroRepository.findById(id).ifPresent(l -> {
+                l.setQuantidade((int) count);
+                livroRepository.save(l);
+            });
+        }
+    }
+
+    // ===================== UTILITÁRIOS =====================
+
+    private <T> String salvarEmLotes(List<T> lista, JpaRepository<T, ?> repository, String nomeEntidade,
+            List<ErroImportacao> erros) {
+        int salvos = 0;
+        for (int i = 0; i < lista.size(); i += BATCH_SIZE) {
+            int fim = Math.min(i + BATCH_SIZE, lista.size());
+            List<T> lote = lista.subList(i, fim);
             try {
-                exemplarRepository.saveAll(subLista);
-                totalSalvos += subLista.size();
-                log.info("Lote de exemplares {} a {} salvo com sucesso", i + 1, end);
+                repository.saveAll(lote);
+                salvos += lote.size();
             } catch (Exception e) {
-                String rootCause = extrairRootCause(e);
-                logErros.add(new ErroImportacao(-1, "Erro no lote " + (i / BATCH_SIZE + 1) + ": " + rootCause));
-                log.error("Erro ao salvar lote de exemplares {}: {}", (i / BATCH_SIZE + 1), rootCause, e);
+                erros.add(
+                        new ErroImportacao(-1, "Erro ao salvar lote " + (i / BATCH_SIZE + 1) + ": " + e.getMessage()));
+                log.error("Erro ao salvar lote de {}", nomeEntidade, e);
             }
         }
-
-        if (totalSalvos > 0) {
-            log.info("Atualizando contagem de exemplares nos livros...");
-            Set<Long> livroIdsAfetados = exemplares.stream()
-                    .map(e -> e.getLivro().getId())
-                    .collect(Collectors.toSet());
-            for (Long livroId : livroIdsAfetados) {
-                Long contagem = exemplarRepository.countByLivroId(livroId);
-                livroRepository.findById(livroId).ifPresent(livro -> {
-                    livro.setQuantidade(contagem.intValue());
-                    livroRepository.save(livro);
-                });
-            }
-            log.info("Contagem de exemplares atualizada para {} livros.", livroIdsAfetados.size());
-        }
-        return gerarResumoImportacao("exemplares", totalSalvos, logErros);
+        return gerarResumo(nomeEntidade, salvos, erros);
     }
 
-    // ========= MÉTODOS AUXILIARES E CLASSE DE ERRO =========
+    private Map<String, Integer> mapearCabecalhos(Row headerRow) {
+        Map<String, Integer> map = new HashMap<>();
+        for (Cell cell : headerRow) {
+            if (cell.getCellType() == CellType.STRING) {
+                map.put(cell.getStringCellValue().trim().toLowerCase().replace(" ", "_"), cell.getColumnIndex());
+            }
+        }
+        return map;
+    }
+
     private void validarArquivo(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Arquivo vazio ou nulo");
-        }
-        String contentType = file.getContentType();
-        if (contentType == null
-                || !contentType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
-            throw new IllegalArgumentException("Tipo de arquivo inválido. Use .xlsx");
+        if (file == null || file.isEmpty())
+            throw new IllegalArgumentException("Arquivo vazio.");
+        if (!Objects.equals(file.getContentType(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+            throw new IllegalArgumentException("Formato inválido. Use .xlsx");
         }
     }
 
-    private String getCellString(Row row, int index) {
-        return ExcelUtils.getString(row.getCell(index)).trim();
+    private String normalizeNumber(String val) {
+        return val == null ? null : val.replaceAll("\\D", "");
     }
 
-    private Integer getCellInteger(Row row, int index) {
-        return ExcelUtils.getInteger(row.getCell(index));
-    }
-
-    private boolean isBlank(String... values) {
-        for (String v : values) {
-            if (v == null || v.isBlank())
-                return true;
+    private String gerarResumo(String tipo, int salvos, List<ErroImportacao> erros) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Importação de %s concluída. Salvos: %d. Erros: %d.", tipo, salvos, erros.size()));
+        if (!erros.isEmpty()) {
+            sb.append(" Detalhes: ")
+                    .append(erros.stream().limit(5).map(ErroImportacao::toString).collect(Collectors.joining("; ")));
+            if (erros.size() > 5)
+                sb.append("...");
         }
-        return false;
+        return sb.toString();
     }
 
-    private String normalizeNumber(String value) {
-        if (value == null)
-            return null;
-        return value.replaceAll("\\D", "");
-    }
-
-    private boolean isEmailValido(String email) {
-        if (email == null || email.isBlank())
-            return false;
-        return email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
-    }
-
-    private String extrairRootCause(Exception e) {
-        Throwable rootCause = e;
-        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
-            rootCause = rootCause.getCause();
-        }
-        return rootCause.getMessage();
-    }
-
-    private String gerarResumoImportacao(String tipo, int totalSalvos, List<ErroImportacao> logErros) {
-        String resumo = String.format("✅ Importação de %s concluída. Salvos: %d | Erros: %d", tipo, totalSalvos,
-                logErros.size());
-        if (!logErros.isEmpty()) {
-            String detalhes = logErros.stream()
-                    .map(ErroImportacao::toString)
-                    .limit(10)
-                    .collect(Collectors.joining("; "));
-            resumo += " | Primeiros erros: " + detalhes;
-            if (logErros.size() > 10) {
-                resumo += " ... (+" + (logErros.size() - 10) + " mais)";
-            }
-        }
-        log.info(resumo);
-        return resumo;
-    }
-
-    private static class ErroImportacao {
-        private final int linha;
-        private final String detalhe;
-
-        public ErroImportacao(int linha, String detalhe) {
-            this.linha = linha;
-            this.detalhe = detalhe;
-        }
-
+    private record ErroImportacao(int linha, String erro) {
         @Override
         public String toString() {
-            return (linha > 0 ? "Linha " + linha + ": " : "") + detalhe;
+            return (linha > 0 ? "Linha " + linha + ": " : "") + erro;
         }
     }
 }
