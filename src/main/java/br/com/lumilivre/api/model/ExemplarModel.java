@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.model;
 
+import java.time.LocalDateTime;
 import br.com.lumilivre.api.enums.StatusLivro;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,4 +28,14 @@ public class ExemplarModel {
 
 	@Column(name = "localizacao_fisica", nullable = false)
 	private String localizacao_fisica;
+
+	@Column(name = "data_inclusao", nullable = false)
+	private LocalDateTime dataInclusao;
+
+	@PrePersist
+	public void prePersist() {
+		if (this.dataInclusao == null) {
+			this.dataInclusao = LocalDateTime.now();
+		}
+	}
 }

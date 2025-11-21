@@ -2,10 +2,8 @@ package br.com.lumilivre.api.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-
 import br.com.lumilivre.api.enums.Penalidade;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -99,6 +97,9 @@ public class AlunoModel {
 	@Column(name = "emprestimos_count", nullable = false)
 	private Integer emprestimosCount = 0;
 
+	@Column(name = "data_inclusao", nullable = false)
+	private LocalDateTime dataInclusao;
+
 	public int getEmprestimosCount() {
 		return emprestimosCount != null ? emprestimosCount : 0;
 	}
@@ -110,6 +111,13 @@ public class AlunoModel {
 	public void decrementarEmprestimos() {
 		if (getEmprestimosCount() > 0) {
 			this.emprestimosCount--;
+		}
+	}
+
+	@PrePersist
+	public void prePersist() {
+		if (this.dataInclusao == null) {
+			this.dataInclusao = LocalDateTime.now();
 		}
 	}
 }

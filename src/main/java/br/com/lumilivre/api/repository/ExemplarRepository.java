@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,9 +43,13 @@ public interface ExemplarRepository extends JpaRepository<ExemplarModel, String>
             AND (:isbnOuTombo IS NULL
                  OR ex.tombo ILIKE %:isbnOuTombo%
                  OR l.isbn ILIKE %:isbnOuTombo%)
+            AND (cast(:inicio as date) IS NULL OR ex.dataInclusao >= :inicio)
+            AND (cast(:fim as date) IS NULL OR ex.dataInclusao <= :fim)
           ORDER BY l.nome, ex.tombo
       """)
   List<ExemplarModel> findForReport(
       @Param("status") StatusLivro status,
-      @Param("isbnOuTombo") String isbnOuTombo);
+      @Param("isbnOuTombo") String isbnOuTombo,
+      @Param("inicio") LocalDateTime inicio,
+      @Param("fim") LocalDateTime fim);
 }

@@ -1,13 +1,12 @@
 package br.com.lumilivre.api.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import br.com.lumilivre.api.enums.ClassificacaoEtaria;
 import br.com.lumilivre.api.enums.TipoCapa;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -77,6 +76,9 @@ public class LivroModel {
     @Column(name = "imagem", length = 5000)
     private String imagem;
 
+    @Column(name = "data_inclusao", nullable = false)
+    private LocalDateTime dataInclusao;
+
     @OneToMany(mappedBy = "livro", fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
@@ -89,4 +91,11 @@ public class LivroModel {
     @EqualsAndHashCode.Exclude
     @Builder.Default
     private Set<GeneroModel> generos = new HashSet<>();
+
+    @PrePersist
+    public void prePersist() {
+        if (this.dataInclusao == null) {
+            this.dataInclusao = LocalDateTime.now();
+        }
+    }
 }

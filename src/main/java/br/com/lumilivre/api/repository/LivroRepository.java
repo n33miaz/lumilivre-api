@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -147,6 +148,8 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                   AND (:cdd IS NULL OR c.codigo = :cdd)
                   AND (:classificacaoEtaria IS NULL OR CAST(l.classificacao_etaria AS text) ILIKE :classificacaoEtaria)
                   AND (:tipoCapa IS NULL OR CAST(l.tipo_capa AS text) ILIKE :tipoCapa)
+                  AND (cast(:inicio as date) IS NULL OR l.dataInclusao >= :inicio)
+                  AND (cast(:fim as date) IS NULL OR l.dataInclusao <= :fim)
                 GROUP BY l.id
                 ORDER BY l.nome
             """)
@@ -155,7 +158,9 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             @Param("autor") String autor,
             @Param("cdd") String cdd,
             @Param("classificacaoEtaria") String classificacaoEtaria,
-            @Param("tipoCapa") String tipoCapa);
+            @Param("tipoCapa") String tipoCapa,
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fim") LocalDateTime fim);
 
     @Query("""
                 SELECT l.autor as autor, COUNT(l.id) as total

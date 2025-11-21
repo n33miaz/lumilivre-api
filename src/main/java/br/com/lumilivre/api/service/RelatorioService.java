@@ -17,7 +17,6 @@ import com.lowagie.text.pdf.PdfWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
 import java.awt.Color;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -106,13 +105,17 @@ public class RelatorioService {
     // ================= RELATÓRIOS DE ALUNOS =================
 
     public void gerarRelatorioAlunosPorFiltros(OutputStream out, Integer idModulo, Integer idCurso,
-            Integer idTurno, Penalidade penalidade) throws IOException {
+            Integer idTurno, Penalidade penalidade, LocalDate dataInicio, LocalDate dataFim) throws IOException {
         try (Document document = new Document(PageSize.A4.rotate())) {
             PdfWriter.getInstance(document, out);
             document.open();
-            adicionarCabecalhoRelatorio(document, "Relatório de Alunos", null, null);
+            adicionarCabecalhoRelatorio(document, "Relatório de Alunos", dataInicio, dataFim);
 
-            List<AlunoModel> alunos = alunoRepository.findForReport(idModulo, idCurso, idTurno, penalidade);
+            LocalDateTime inicio = (dataInicio != null) ? dataInicio.atStartOfDay() : null;
+            LocalDateTime fim = (dataFim != null) ? dataFim.atTime(23, 59, 59) : null;
+
+            List<AlunoModel> alunos = alunoRepository.findForReport(idModulo, idCurso, idTurno, penalidade, inicio,
+                    fim);
 
             PdfPTable table = new PdfPTable(6);
             table.setWidthPercentage(100);
@@ -181,14 +184,18 @@ public class RelatorioService {
     // ================= RELATÓRIOS DE LIVROS E EXEMPLARES =================
 
     public void gerarRelatorioLivrosFiltrados(OutputStream out, String genero, String autor,
-            String cdd, String classificacaoEtaria, String tipoCapa) throws IOException {
+            String cdd, String classificacaoEtaria, String tipoCapa, LocalDate dataInicio, LocalDate dataFim)
+            throws IOException {
         try (Document document = new Document(PageSize.A4.rotate())) {
             PdfWriter.getInstance(document, out);
             document.open();
-            adicionarCabecalhoRelatorio(document, "Relatório de Livros", null, null);
+            adicionarCabecalhoRelatorio(document, "Relatório de Livros", dataInicio, dataFim);
+
+            LocalDateTime inicio = (dataInicio != null) ? dataInicio.atStartOfDay() : null;
+            LocalDateTime fim = (dataFim != null) ? dataFim.atTime(23, 59, 59) : null;
 
             List<LivroModel> livros = livroRepository.findForReport(
-                    genero, autor, cdd, classificacaoEtaria, tipoCapa);
+                    genero, autor, cdd, classificacaoEtaria, tipoCapa, inicio, fim);
 
             PdfPTable table = new PdfPTable(6);
             table.setWidthPercentage(100);
@@ -273,14 +280,18 @@ public class RelatorioService {
         }
     }
 
-    public void gerarRelatorioExemplaresFiltrados(OutputStream out, StatusLivro status, String isbnOuTombo)
+    public void gerarRelatorioExemplaresFiltrados(OutputStream out, StatusLivro status, String isbnOuTombo,
+            LocalDate dataInicio, LocalDate dataFim)
             throws IOException {
         try (Document document = new Document(PageSize.A4.rotate())) {
             PdfWriter.getInstance(document, out);
             document.open();
-            adicionarCabecalhoRelatorio(document, "Relatório de Exemplares", null, null);
+            adicionarCabecalhoRelatorio(document, "Relatório de Exemplares", dataInicio, dataFim);
 
-            List<ExemplarModel> exemplares = exemplarRepository.findForReport(status, isbnOuTombo);
+            LocalDateTime inicio = (dataInicio != null) ? dataInicio.atStartOfDay() : null;
+            LocalDateTime fim = (dataFim != null) ? dataFim.atTime(23, 59, 59) : null;
+
+            List<ExemplarModel> exemplares = exemplarRepository.findForReport(status, isbnOuTombo, inicio, fim);
 
             PdfPTable table = new PdfPTable(5);
             table.setWidthPercentage(100);

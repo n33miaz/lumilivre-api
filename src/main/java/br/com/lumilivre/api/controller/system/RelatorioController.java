@@ -56,11 +56,13 @@ public class RelatorioController {
             @Parameter(description = "Filtra por ID do módulo") @RequestParam(required = false) Integer idModulo,
             @Parameter(description = "Filtra por ID do curso") @RequestParam(required = false) Integer idCurso,
             @Parameter(description = "Filtra por ID do turno") @RequestParam(required = false) Integer idTurno,
-            @Parameter(description = "Filtra por uma penalidade específica") @RequestParam(required = false) Penalidade penalidade)
+            @Parameter(description = "Filtra por uma penalidade específica") @RequestParam(required = false) Penalidade penalidade,
+            @Parameter(description = "Data de início da inclusão (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @Parameter(description = "Data de fim da inclusão (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim)
             throws IOException {
         configurarRespostaPdf(response, "relatorio-alunos");
         relatorioService.gerarRelatorioAlunosPorFiltros(response.getOutputStream(), idModulo, idCurso, idTurno,
-                penalidade);
+                penalidade, dataInicio, dataFim);
     }
 
     @GetMapping("/livros")
@@ -71,11 +73,13 @@ public class RelatorioController {
             @Parameter(description = "Filtra por nome parcial do autor") @RequestParam(required = false) String autor,
             @Parameter(description = "Filtra por código CDD") @RequestParam(required = false) String cdd,
             @Parameter(description = "Filtra por classificação etária") @RequestParam(required = false) String classificacaoEtaria,
-            @Parameter(description = "Filtra por tipo de capa") @RequestParam(required = false) String tipoCapa)
+            @Parameter(description = "Filtra por tipo de capa") @RequestParam(required = false) String tipoCapa,
+            @Parameter(description = "Data de início da inclusão (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @Parameter(description = "Data de fim da inclusão (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim)
             throws IOException {
         configurarRespostaPdf(response, "relatorio-livros");
         relatorioService.gerarRelatorioLivrosFiltrados(response.getOutputStream(), genero, autor, cdd,
-                classificacaoEtaria, tipoCapa);
+                classificacaoEtaria, tipoCapa, dataInicio, dataFim);
     }
 
     @GetMapping("/livros/estatisticas")
@@ -90,10 +94,13 @@ public class RelatorioController {
     public void relatorioExemplares(
             HttpServletResponse response,
             @Parameter(description = "Filtra por um status de exemplar específico") @RequestParam(required = false) StatusLivro status,
-            @Parameter(description = "Filtra por parte do ISBN do livro ou do Tombo do exemplar") @RequestParam(required = false) String isbnOuTombo)
+            @Parameter(description = "Filtra por parte do ISBN do livro ou do Tombo do exemplar") @RequestParam(required = false) String isbnOuTombo,
+            @Parameter(description = "Data de início da inclusão (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @Parameter(description = "Data de fim da inclusão (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim)
             throws IOException {
         configurarRespostaPdf(response, "relatorio-exemplares");
-        relatorioService.gerarRelatorioExemplaresFiltrados(response.getOutputStream(), status, isbnOuTombo);
+        relatorioService.gerarRelatorioExemplaresFiltrados(response.getOutputStream(), status, isbnOuTombo, dataInicio,
+                dataFim);
     }
 
     @GetMapping("/cursos/geral")
