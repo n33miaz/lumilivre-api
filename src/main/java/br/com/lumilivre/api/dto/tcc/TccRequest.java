@@ -1,13 +1,17 @@
 package br.com.lumilivre.api.dto.tcc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TccRequest {
-    
+
     private String titulo;
     private String alunos;
     private String orientadores;
@@ -18,5 +22,7 @@ public class TccRequest {
     private String anoConclusao;
     private String semestreConclusao;
     private String linkExterno;
+
+    @Builder.Default
     private Boolean ativo = true;
 }

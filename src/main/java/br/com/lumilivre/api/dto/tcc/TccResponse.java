@@ -1,11 +1,17 @@
 package br.com.lumilivre.api.dto.tcc;
 
 import br.com.lumilivre.api.model.TccModel;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TccResponse {
-    
+
     private Long id;
     private String titulo;
     private String alunos;

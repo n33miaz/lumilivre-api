@@ -1,13 +1,17 @@
 package br.com.lumilivre.api.dto.turno;
 
 import br.com.lumilivre.api.model.TurnoModel;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TurnoResponse {
-    
+
     private Integer id;
     private String nome;
 
