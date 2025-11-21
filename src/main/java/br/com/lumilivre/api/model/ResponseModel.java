@@ -1,21 +1,12 @@
 package br.com.lumilivre.api.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ResponseModel {
-
 	private String mensagem;
-
-	public ResponseModel() {
-	}
-
-	public ResponseModel(String mensagem) {
-		this.mensagem = mensagem;
-	}
-
-	public String getMensagem() {
-		return mensagem;
-	}
-
-	public void setMensagem(String mensagem) {
-		this.mensagem = mensagem;
-	}
 }

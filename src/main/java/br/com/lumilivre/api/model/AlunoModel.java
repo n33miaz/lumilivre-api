@@ -10,21 +10,14 @@ import br.com.lumilivre.api.enums.Penalidade;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 @Entity
 @Table(name = "aluno")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = "matricula")
-@ToString(exclude = { "usuario", "curso", "turno", "modulo" })
+@Builder
 public class AlunoModel {
 
 	@Id
@@ -52,18 +45,26 @@ public class AlunoModel {
 
 	@ManyToOne
 	@JoinColumn(name = "curso_id", nullable = false)
+	@ToString.Exclude
+	@EqualsAndHashCode.Exclude
 	private CursoModel curso;
 
 	@ManyToOne
 	@JoinColumn(name = "turno_id")
+	@ToString.Exclude
+	@EqualsAndHashCode.Exclude
 	private TurnoModel turno;
 
 	@ManyToOne
 	@JoinColumn(name = "modulo_id")
+	@ToString.Exclude
+	@EqualsAndHashCode.Exclude
 	private ModuloModel modulo;
 
 	@JsonManagedReference
 	@OneToOne(mappedBy = "aluno", cascade = CascadeType.ALL, orphanRemoval = true)
+	@ToString.Exclude
+	@EqualsAndHashCode.Exclude
 	private UsuarioModel usuario;
 
 	@Size(min = 8, max = 8, message = "CEP deve ter exatamente 8 caracteres")
@@ -94,6 +95,7 @@ public class AlunoModel {
 
 	private LocalDateTime penalidadeExpiraEm;
 
+	@Builder.Default
 	@Column(name = "emprestimos_count", nullable = false)
 	private Integer emprestimosCount = 0;
 

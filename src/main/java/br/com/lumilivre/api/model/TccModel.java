@@ -1,13 +1,14 @@
 package br.com.lumilivre.api.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "tcc")
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TccModel {
 
     @Id
@@ -24,6 +25,7 @@ public class TccModel {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "curso_id", nullable = false)
+    @ToString.Exclude
     private CursoModel curso;
 
     @Column(name = "ano_conclusao")
@@ -38,6 +40,6 @@ public class TccModel {
     @Column(name = "link_externo")
     private String linkExterno;
 
+    @Builder.Default
     private Boolean ativo = true;
-
 }

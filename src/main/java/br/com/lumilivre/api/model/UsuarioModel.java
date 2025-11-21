@@ -1,22 +1,16 @@
 package br.com.lumilivre.api.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-
 import br.com.lumilivre.api.enums.Role;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
 @Entity
 @Table(name = "usuario")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class UsuarioModel {
 
 	@Id
@@ -37,46 +31,7 @@ public class UsuarioModel {
 	@OneToOne
 	@JsonBackReference
 	@JoinColumn(name = "aluno_matricula", referencedColumnName = "matricula")
+	@ToString.Exclude
+	@EqualsAndHashCode.Exclude
 	private AlunoModel aluno;
-
-	public Integer getId() {
-		return id;
-	}
-
-	public void setId(Integer id) {
-		this.id = id;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public String getSenha() {
-		return senha;
-	}
-
-	public void setSenha(String senha) {
-		this.senha = senha;
-	}
-
-	public Role getRole() {
-		return role;
-	}
-
-	public void setRole(Role role) {
-		this.role = role;
-	}
-
-	public AlunoModel getAluno() {
-		return aluno;
-	}
-
-	public void setAluno(AlunoModel aluno) {
-		this.aluno = aluno;
-	}
-
 }

@@ -1,18 +1,14 @@
 package br.com.lumilivre.api.model;
 
 import br.com.lumilivre.api.enums.StatusLivro;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Table(name = "exemplar")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ExemplarModel {
 
 	@Id
@@ -25,41 +21,10 @@ public class ExemplarModel {
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "livro_id", nullable = false)
+	@ToString.Exclude
+	@EqualsAndHashCode.Exclude
 	private LivroModel livro;
 
 	@Column(name = "localizacao_fisica", nullable = false)
 	private String localizacao_fisica;
-
-	public String getLocalizacao_fisica() {
-		return localizacao_fisica;
-	}
-
-	public void setLocalizacao_fisica(String localizacao_fisica) {
-		this.localizacao_fisica = localizacao_fisica;
-	}
-
-	public String getTombo() {
-		return tombo;
-	}
-
-	public void setTombo(String tombo) {
-		this.tombo = tombo;
-	}
-
-	public StatusLivro getStatus_livro() {
-		return status_livro;
-	}
-
-	public void setStatus_livro(StatusLivro status_livro) {
-		this.status_livro = status_livro;
-	}
-
-	public LivroModel getLivro() {
-		return livro;
-	}
-
-	public void setLivro(LivroModel livro) {
-		this.livro = livro;
-	}
-
 }

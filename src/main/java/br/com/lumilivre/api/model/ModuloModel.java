@@ -2,9 +2,7 @@ package br.com.lumilivre.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +22,7 @@ public class ModuloModel {
 
     @OneToMany(mappedBy = "modulo", fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<AlunoModel> alunos = new ArrayList<>();
-
 }

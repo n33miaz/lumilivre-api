@@ -2,15 +2,15 @@ package br.com.lumilivre.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "turno")
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class TurnoModel {
 
     @Id
@@ -22,5 +22,7 @@ public class TurnoModel {
 
     @OneToMany(mappedBy = "turno", fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<AlunoModel> alunos = new ArrayList<>();
 }

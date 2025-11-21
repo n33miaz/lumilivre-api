@@ -3,15 +3,15 @@ package br.com.lumilivre.api.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "curso")
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CursoModel {
 
     @Id
@@ -24,6 +24,7 @@ public class CursoModel {
 
     @OneToMany(mappedBy = "curso", fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<AlunoModel> alunos = new ArrayList<>();
-
 }
