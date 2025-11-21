@@ -1,41 +1,18 @@
 package br.com.lumilivre.api.dto.usuario;
 
 import br.com.lumilivre.api.enums.Role;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UsuarioResumoResponse {
 
 	private Integer id;
 	private String email;
 	private Role role;
-
-	public UsuarioResumoResponse(Integer id, String email, Role role) {
-		this.id = id;
-		this.email = email;
-		this.role = role;
-	}
-
-	public Integer getId() {
-		return id;
-	}
-
-	public void setId(Integer id) {
-		this.id = id;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public Role getRole() {
-		return role;
-	}
-
-	public void setRole(Role role) {
-		this.role = role;
-	}
-
 }
