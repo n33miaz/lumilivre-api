@@ -1,7 +1,15 @@
 package br.com.lumilivre.api.dto.auth;
 
 import br.com.lumilivre.api.model.UsuarioModel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoginResponse {
 
     private Integer id;
@@ -14,29 +22,10 @@ public class LoginResponse {
         this.id = usuario.getId();
         this.email = usuario.getEmail();
         this.role = usuario.getRole().name();
+        this.token = token;
+
         if (usuario.getAluno() != null) {
             this.matriculaAluno = usuario.getAluno().getMatricula();
         }
-        this.token = token;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public String getMatriculaAluno() {
-        return matriculaAluno;
-    }
-
-    public String getToken() {
-        return token;
     }
 }
