@@ -1,11 +1,13 @@
 package br.com.lumilivre.api.dto.curso;
 
 import br.com.lumilivre.api.model.CursoModel;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CursoResponse {
 
     private Integer id;

@@ -1,10 +1,12 @@
 package br.com.lumilivre.api.dto.curso;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CursoResumoResponse {
@@ -12,5 +14,4 @@ public class CursoResumoResponse {
     private Integer id;
     private String nome;
     private Long quantidadeAlunos;
-
 }

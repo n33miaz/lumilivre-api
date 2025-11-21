@@ -3,51 +3,17 @@ package br.com.lumilivre.api.dto.emprestimo;
 import java.time.LocalDateTime;
 
 import br.com.lumilivre.api.enums.StatusEmprestimo;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class EmprestimoDashboardResponse {
+
 	private String livroNome;
 	private String alunoNome;
 	private LocalDateTime dataDevolucao;
 	private StatusEmprestimo statusEmprestimo;
-
-	public EmprestimoDashboardResponse(String livroNome, String alunoNome, LocalDateTime dataDevolucao,
-			StatusEmprestimo statusEmprestimo) {
-		this.livroNome = livroNome;
-		this.alunoNome = alunoNome;
-		this.dataDevolucao = dataDevolucao;
-		this.statusEmprestimo = statusEmprestimo;
-	}
-
-	public String getLivroNome() {
-		return livroNome;
-	}
-
-	public void setLivroNome(String livroNome) {
-		this.livroNome = livroNome;
-	}
-
-	public String getAlunoNome() {
-		return alunoNome;
-	}
-
-	public void setAlunoNome(String alunoNome) {
-		this.alunoNome = alunoNome;
-	}
-
-	public LocalDateTime getDataDevolucao() {
-		return dataDevolucao;
-	}
-
-	public void setDataDevolucao(LocalDateTime dataDevolucao) {
-		this.dataDevolucao = dataDevolucao;
-	}
-
-	public StatusEmprestimo getStatusEmprestimo() {
-		return statusEmprestimo;
-	}
-
-	public void setStatusEmprestimo(StatusEmprestimo statusEmprestimo) {
-		this.statusEmprestimo = statusEmprestimo;
-	}
-
 }

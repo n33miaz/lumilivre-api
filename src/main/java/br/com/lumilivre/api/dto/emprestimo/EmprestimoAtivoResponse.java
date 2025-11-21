@@ -4,11 +4,12 @@ import br.com.lumilivre.api.enums.StatusEmprestimo;
 import java.time.LocalDate;
 
 public record EmprestimoAtivoResponse(
-        Integer id,
-        String livroNome,
-        String alunoNome,
-        String alunoMatricula,
-        String tombo,
-        LocalDate dataDevolucao,
-        StatusEmprestimo statusEmprestimo) {
+
+                Integer id,
+                String livroNome,
+                String alunoNome,
+                String alunoMatricula,
+                String tombo,
+                LocalDate dataDevolucao,
+                StatusEmprestimo statusEmprestimo) {
 }

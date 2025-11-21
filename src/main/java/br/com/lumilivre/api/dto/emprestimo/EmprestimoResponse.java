@@ -1,15 +1,19 @@
 package br.com.lumilivre.api.dto.emprestimo;
 
 import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
+
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class EmprestimoResponse {
 
 	private Integer id;
@@ -27,19 +31,6 @@ public class EmprestimoResponse {
 	private String alunoNome;
 	private String alunoMatricula;
 	private String exemplarTombo;
-
-	public EmprestimoResponse() {
-	}
-
-	public EmprestimoResponse(Integer id, LocalDateTime dataEmprestimo, LocalDateTime dataDevolucao,
-			StatusEmprestimo status, Penalidade penalidade, String livroTitulo) {
-		this.id = id;
-		this.dataEmprestimo = dataEmprestimo;
-		this.dataDevolucao = dataDevolucao;
-		this.status = status;
-		this.penalidade = penalidade;
-		this.livroTitulo = livroTitulo;
-	}
 
 	public EmprestimoResponse(EmprestimoModel model) {
 		this.id = model.getId();
