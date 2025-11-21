@@ -30,22 +30,12 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     void deleteByIsbn(String isbn);
 
     @Query(value = """
-                SELECT DISTINCT l FROM LivroModel l
-                LEFT JOIN l.generos g
-                WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(l.sinopse) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :texto, '%'))
+                SELECT * FROM livro l
+                WHERE l.texto_busca @@ plainto_tsquery('portuguese', :texto)
             """, countQuery = """
-                SELECT COUNT(DISTINCT l) FROM LivroModel l
-                LEFT JOIN l.generos g
-                WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(l.sinopse) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :texto, '%'))
-            """)
+                SELECT count(*) FROM livro l
+                WHERE l.texto_busca @@ plainto_tsquery('portuguese', :texto)
+            """, nativeQuery = true)
     Page<LivroModel> findIdsPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""

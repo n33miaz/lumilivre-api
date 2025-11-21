@@ -64,8 +64,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 JOIN curso c ON a.curso_id = c.id
                 WHERE e.texto_busca @@ plainto_tsquery('portuguese', :texto)
             """, countQuery = """
-                SELECT count(e.id)
-                FROM emprestimo e
+                SELECT count(*) FROM emprestimo e
                 WHERE e.texto_busca @@ plainto_tsquery('portuguese', :texto)
             """, nativeQuery = true)
     Page<EmprestimoListagemResponse> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
