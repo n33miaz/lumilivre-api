@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -265,12 +266,9 @@ public class EmprestimoService {
                 pageable);
     }
 
-    public List<AlunoRankingResponse> gerarRankingAlunos(int top) {
-        List<AlunoModel> alunos = alunoRepository.findAllByOrderByEmprestimosCountDesc();
-        return alunos.stream()
-                .limit(top)
-                .map(a -> new AlunoRankingResponse(a.getMatricula(), a.getNomeCompleto(), a.getEmprestimosCount()))
-                .toList();
+    public List<AlunoRankingResponse> gerarRankingAlunos(int top, Integer cursoId, Integer moduloId, Integer turnoId) {
+        return alunoRepository.findRankingComFiltros(cursoId, moduloId, turnoId, PageRequest.of(0, top))
+                .getContent(); // Adicione .getContent() aqui
     }
 
     public List<EmprestimoModel> buscarTodos() {

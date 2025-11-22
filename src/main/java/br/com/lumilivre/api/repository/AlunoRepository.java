@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.aluno.AlunoResumoResponse;
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.model.AlunoModel;
@@ -169,5 +170,26 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
             @Param("dataNascimento") LocalDate dataNascimento,
             @Param("email") String email,
             @Param("celular") String celular,
+            Pageable pageable);
+
+    @Query("""
+                SELECT new br.com.lumilivre.api.dto.aluno.AlunoRankingResponse(
+                    a.matricula,
+                    a.nomeCompleto,
+                    a.emprestimosCount
+                )
+                FROM AlunoModel a
+                LEFT JOIN a.curso c
+                LEFT JOIN a.turno t
+                LEFT JOIN a.modulo m
+                WHERE (:cursoId IS NULL OR c.id = :cursoId)
+                  AND (:moduloId IS NULL OR m.id = :moduloId)
+                  AND (:turnoId IS NULL OR t.id = :turnoId)
+                ORDER BY a.emprestimosCount DESC
+            """)
+    Page<AlunoRankingResponse> findRankingComFiltros(
+            @Param("cursoId") Integer cursoId,
+            @Param("moduloId") Integer moduloId,
+            @Param("turnoId") Integer turnoId,
             Pageable pageable);
 }

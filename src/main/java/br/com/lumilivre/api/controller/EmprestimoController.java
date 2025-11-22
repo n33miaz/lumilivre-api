@@ -115,9 +115,13 @@ public class EmprestimoController {
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/ranking")
-    @Operation(summary = "Ranking de alunos por quantidade de empréstimos")
-    public ResponseEntity<List<AlunoRankingResponse>> rankingAlunos(@RequestParam(defaultValue = "10") int top) {
-        List<AlunoRankingResponse> ranking = es.gerarRankingAlunos(top);
+    @Operation(summary = "Ranking de alunos por quantidade de empréstimos com filtros")
+    public ResponseEntity<List<AlunoRankingResponse>> rankingAlunos(
+            @RequestParam(defaultValue = "10") int top,
+            @RequestParam(required = false) Integer cursoId,
+            @RequestParam(required = false) Integer moduloId,
+            @RequestParam(required = false) Integer turnoId) {
+        List<AlunoRankingResponse> ranking = es.gerarRankingAlunos(top, cursoId, moduloId, turnoId);
         return ranking.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(ranking);
     }
 

@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse;
+import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
