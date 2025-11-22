@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -66,5 +68,9 @@ public class CursoService {
         cr.deleteById(id);
 
         return ResponseEntity.ok(new ApiResponse<>(true, "O Curso foi removido com sucesso", null));
+    }
+
+    public List<br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse> buscarEstatisticas() {
+        return cr.findEstatisticasCursos();
     }
 }

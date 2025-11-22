@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.controller;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -89,5 +91,12 @@ public class CursoController {
     @Operation(summary = "Exclui um curso")
     public ResponseEntity<ApiResponse<Void>> excluir(@PathVariable Integer id) {
         return cursoService.excluir(id);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/estatisticas")
+    @Operation(summary = "Retorna estatísticas gerais dos cursos (qtd alunos e total empréstimos)")
+    public ResponseEntity<List<br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse>> getEstatisticas() {
+        return ResponseEntity.ok(cursoService.buscarEstatisticas());
     }
 }
