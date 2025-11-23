@@ -81,9 +81,12 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.nome, COUNT(a))
 			FROM CursoModel c
 			LEFT JOIN c.alunos a
-			WHERE (:texto IS NULL OR c.nome ILIKE CONCAT('%', :texto, '%'))
+			WHERE (:texto IS NULL OR c.nome ILIKE %:texto%)
 			GROUP BY c.id, c.nome
 			ORDER BY c.nome
 			""")
 	Page<CursoResumoResponse> findCursoParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
+
+	@Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(c.nome, SUM(a.emprestimosCount)) FROM CursoModel c JOIN c.alunos a GROUP BY c.nome HAVING SUM(a.emprestimosCount) > 0")
+	List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorCurso();
 }

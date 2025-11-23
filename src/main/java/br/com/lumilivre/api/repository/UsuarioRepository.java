@@ -16,67 +16,68 @@ import br.com.lumilivre.api.model.UsuarioModel;
 
 public interface UsuarioRepository extends JpaRepository<UsuarioModel, Integer> {
 
-    boolean existsByEmail(String email);
+        boolean existsByEmail(String email);
 
-    boolean existsByAluno(AlunoModel aluno);
+        boolean existsByAluno(AlunoModel aluno);
 
-    Optional<UsuarioModel> findByEmail(String email);
+        Optional<UsuarioModel> findByEmail(String email);
 
-    List<UsuarioModel> findByRole(Role role);
+        List<UsuarioModel> findByRole(Role role);
 
-    Optional<UsuarioModel> findByEmailOrAluno_Matricula(String email, String matricula);
+        Optional<UsuarioModel> findByEmailOrAluno_Matricula(String email, String matricula);
 
-    @Query("""
-                SELECT u FROM UsuarioModel u
-                WHERE CAST(u.id AS string) LIKE CONCAT('%', :texto, '%')
-                   OR LOWER(u.email) LIKE LOWER(CONCAT('%', :texto, '%'))
-                   OR LOWER(u.role) LIKE LOWER(CONCAT('%', :texto, '%'))
-            """)
-    Page<UsuarioModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
+        @Query("""
+                            SELECT u FROM UsuarioModel u
+                            WHERE CAST(u.id AS string) LIKE CONCAT('%', :texto, '%')
+                               OR LOWER(u.email) LIKE LOWER(CONCAT('%', :texto, '%'))
+                               OR LOWER(u.role) LIKE LOWER(CONCAT('%', :texto, '%'))
+                        """)
+        Page<UsuarioModel> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
-    @Query("""
-                SELECT u FROM UsuarioModel u
-                WHERE (:id IS NULL OR CAST(u.id AS string) LIKE CONCAT('%', :id, '%'))
-                  AND (:email IS NULL OR u.email = :email)
-                  AND (:role IS NULL OR LOWER(u.role) LIKE LOWER(CONCAT('%', :role, '%')))
-            """)
-    Page<UsuarioModel> buscarAvancado(
-            @Param("id") Integer id,
-            @Param("email") String email,
-            @Param("role") Role role,
-            Pageable pageable);
+        @Query("""
+                            SELECT u FROM UsuarioModel u
+                            WHERE (:id IS NULL OR CAST(u.id AS string) LIKE CONCAT('%', :id, '%'))
+                              AND (:email IS NULL OR u.email = :email)
+                              AND (:role IS NULL OR LOWER(u.role) LIKE LOWER(CONCAT('%', :role, '%')))
+                        """)
+        Page<UsuarioModel> buscarAvancado(
+                        @Param("id") Integer id,
+                        @Param("email") String email,
+                        @Param("role") Role role,
+                        Pageable pageable);
 
-    @Query("""
-            SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(
-                u.id,
-                u.email,
-                u.role
-            )
-            FROM UsuarioModel u
-            ORDER BY u.id
-            """)
-    Page<UsuarioResumoResponse> findUsuarioParaListaAdmin(Pageable pageable);
+        @Query("""
+                        SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(
+                            u.id,
+                            u.email,
+                            u.role
+                        )
+                        FROM UsuarioModel u
+                        ORDER BY u.id
+                        """)
+        Page<UsuarioResumoResponse> findUsuarioParaListaAdmin(Pageable pageable);
 
-    @Query("""
-                SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(u.id, u.email, u.role)
-                FROM UsuarioModel u
-                WHERE (:texto IS NULL OR :texto = '' OR CAST(u.id AS string) LIKE CONCAT('%', :texto, '%')
-                   OR LOWER(u.email) LIKE LOWER(CONCAT('%', :texto, '%'))
-                   OR LOWER(CAST(u.role AS string)) LIKE LOWER(CONCAT('%', :texto, '%')))
-            """)
-    Page<UsuarioResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
+        @Query("""
+                            SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(u.id, u.email, u.role)
+                            FROM UsuarioModel u
+                            WHERE (:texto IS NULL OR :texto = ''
+                               OR CAST(u.id AS string) LIKE %:texto%
+                               OR LOWER(u.email) LIKE LOWER(CONCAT('%', :texto, '%'))
+                               OR LOWER(CAST(u.role AS string)) LIKE LOWER(CONCAT('%', :texto, '%')))
+                        """)
+        Page<UsuarioResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
-    @Query("""
-                SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(u.id, u.email, u.role)
-                FROM UsuarioModel u
-                WHERE (:id IS NULL OR u.id = :id)
-                  AND (:email IS NULL OR u.email ILIKE CONCAT('%', :email, '%'))
-                  AND (:role IS NULL OR u.role = :role)
-            """)
-    Page<UsuarioResumoResponse> buscarAvancadoComDTO(
-            @Param("id") Integer id,
-            @Param("email") String email,
-            @Param("role") Role role,
-            Pageable pageable);
+        @Query("""
+                            SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(u.id, u.email, u.role)
+                            FROM UsuarioModel u
+                            WHERE (:id IS NULL OR u.id = :id)
+                              AND (:email IS NULL OR u.email ILIKE CONCAT('%', :email, '%'))
+                              AND (:role IS NULL OR u.role = :role)
+                        """)
+        Page<UsuarioResumoResponse> buscarAvancadoComDTO(
+                        @Param("id") Integer id,
+                        @Param("email") String email,
+                        @Param("role") Role role,
+                        Pageable pageable);
 
 }

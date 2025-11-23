@@ -73,4 +73,8 @@ public class CursoService {
     public List<br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse> buscarEstatisticas() {
         return cr.findEstatisticasCursos();
     }
+
+    public List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorCurso() {
+        return cr.findTotalEmprestimosPorCurso();
+    }
 }

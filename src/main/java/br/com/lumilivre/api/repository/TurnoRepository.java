@@ -24,9 +24,12 @@ public interface TurnoRepository extends JpaRepository<TurnoModel, Integer> {
             SELECT new br.com.lumilivre.api.dto.turno.TurnoResumoResponse(t.id, t.nome, COUNT(a))
             FROM TurnoModel t
             LEFT JOIN t.alunos a
-            WHERE (:texto IS NULL OR t.nome ILIKE CONCAT('%', :texto, '%'))
+            WHERE (:texto IS NULL OR t.nome ILIKE %:texto%)
             GROUP BY t.id, t.nome
             ORDER BY t.nome
             """)
     Page<TurnoResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
+
+    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(t.nome, SUM(a.emprestimosCount)) FROM TurnoModel t JOIN t.alunos a GROUP BY t.nome HAVING SUM(a.emprestimosCount) > 0")
+    List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorTurno();
 }

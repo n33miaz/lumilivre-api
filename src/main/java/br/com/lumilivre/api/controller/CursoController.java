@@ -99,4 +99,9 @@ public class CursoController {
     public ResponseEntity<List<br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse>> getEstatisticas() {
         return ResponseEntity.ok(cursoService.buscarEstatisticas());
     }
+
+    @GetMapping("/estatisticas-grafico")
+    public ResponseEntity<List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse>> getEstatisticasGrafico() {
+        return ResponseEntity.ok(cursoService.buscarTotalEmprestimosPorCurso());
+    }
 }

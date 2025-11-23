@@ -24,9 +24,12 @@ public interface ModuloRepository extends JpaRepository<ModuloModel, Integer> {
             SELECT new br.com.lumilivre.api.dto.modulo.ModuloResumoResponse(m.id, m.nome, COUNT(a))
             FROM ModuloModel m
             LEFT JOIN m.alunos a
-            WHERE (:texto IS NULL OR m.nome ILIKE CONCAT('%', :texto, '%'))
+            WHERE (:texto IS NULL OR m.nome ILIKE %:texto%)
             GROUP BY m.id, m.nome
             ORDER BY m.nome
             """)
     Page<ModuloResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
+
+    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(m.nome, SUM(a.emprestimosCount)) FROM ModuloModel m JOIN m.alunos a GROUP BY m.nome HAVING SUM(a.emprestimosCount) > 0")
+    List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorModulo();
 }

@@ -67,4 +67,9 @@ public class ModuloController {
     public ResponseEntity<ApiResponse<Void>> excluir(@PathVariable Integer id) {
         return moduloService.excluir(id);
     }
+
+    @GetMapping("/estatisticas-grafico")
+    public ResponseEntity<List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse>> getEstatisticasGrafico() {
+        return ResponseEntity.ok(moduloService.buscarTotalEmprestimosPorModulo());
+    }
 }

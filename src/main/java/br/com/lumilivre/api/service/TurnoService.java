@@ -60,4 +60,8 @@ public class TurnoService {
 
         return ResponseEntity.ok(new ApiResponse<>(true, "Turno removido com sucesso.", null));
     }
+
+    public java.util.List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorTurno() {
+        return turnoRepository.findTotalEmprestimosPorTurno();
+    }
 }

@@ -60,4 +60,8 @@ public class ModuloService {
 
         return ResponseEntity.ok(new ApiResponse<>(true, "Módulo removido com sucesso.", null));
     }
+
+    public java.util.List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorModulo() {
+        return moduloRepository.findTotalEmprestimosPorModulo();
+    }
 }
