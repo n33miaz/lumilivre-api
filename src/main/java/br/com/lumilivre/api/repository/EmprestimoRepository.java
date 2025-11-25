@@ -174,11 +174,15 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                   AND (:matriculaAluno IS NULL OR a.matricula = :matriculaAluno)
                   AND (:idCurso IS NULL OR a.curso.id = :idCurso)
                   AND (:idModulo IS NULL OR a.modulo.id = :idModulo)
-                  AND (:isbnOuTombo IS NULL OR ex.tombo = :isbnOuTombo OR ex.livro.isbn = :isbnOuTombo)
+                  AND (
+                        :isbnOuTombo IS NULL
+                        OR ex.tombo = :isbnOuTombo
+                        OR ex.livro.isbn = :isbnOuTombo
+                  )
             """)
     List<EmprestimoModel> findForReport(
-            @Param("inicio") LocalDate inicio,
-            @Param("fim") LocalDate fim,
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fim") LocalDateTime fim,
             @Param("status") StatusEmprestimo status,
             @Param("matriculaAluno") String matriculaAluno,
             @Param("idCurso") Integer idCurso,

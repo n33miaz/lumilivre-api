@@ -63,8 +63,11 @@ public class RelatorioService {
             document.open();
             adicionarCabecalhoRelatorio(document, "Relatório de Empréstimos", inicio, fim);
 
+            LocalDateTime inicioDT = (inicio != null) ? inicio.atStartOfDay() : null;
+            LocalDateTime fimDT = (fim != null) ? fim.atTime(23, 59, 59) : null;
+
             List<EmprestimoModel> emprestimos = emprestimoRepository.findForReport(
-                    inicio, fim, status, matriculaAluno, idCurso, isbnOuTombo, idModulo);
+                    inicioDT, fimDT, status, matriculaAluno, idCurso, isbnOuTombo, idModulo);
 
             PdfPTable table = new PdfPTable(7);
             table.setWidthPercentage(100);

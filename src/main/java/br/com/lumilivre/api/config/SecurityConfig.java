@@ -17,6 +17,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import br.com.lumilivre.api.security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -28,45 +29,66 @@ public class SecurityConfig {
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        // Ativa o CORS do Spring Security (obrigatório!)
+        .cors(cors -> {})
+        .csrf(csrf -> csrf.disable())
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(cors -> cors.disable())
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        // rotas publicas
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+        .exceptionHandling(ex -> ex
+            .authenticationEntryPoint((req, res, e) -> {
+                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                res.setContentType("application/json");
+                res.getWriter().write("{\"error\":\"Unauthorized\"}");
+            })
+            .accessDeniedHandler((req, res, e) -> {
+                res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                res.setContentType("application/json");
+                res.getWriter().write("{\"error\":\"Access Denied\"}");
+            })
+        )
 
-                        // rotas GET especificas para o mobile
-                        .requestMatchers(HttpMethod.GET,
-                                "/livros/catalogo-mobile",
-                                "/livros/{id}", // detalhes do livro
-                                "/livros/genero/**" // tela de categoria
-                        ).permitAll()
+        .authorizeHttpRequests(auth -> auth
+            // libera /error para evitar loops
+            .requestMatchers("/error").permitAll()
 
-                        // rotas de ADMIN
-                        .requestMatchers("/usuarios/**").hasRole("ADMIN")
+            // rotas publicas
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .requestMatchers("/auth/**").permitAll()
+            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        // rotas de BIBLIOTECARIO/ADMIN
-                        .requestMatchers(
-                                "/livros/**",
-                                "/generos/**",
-                                "/autores/**",
-                                "/cursos/**",
-                                "/emprestimos/**",
-                                "/alunos/**")
-                        .hasAnyRole("ADMIN", "BIBLIOTECARIO")
+            // rotas mobile GET
+            .requestMatchers(HttpMethod.GET,
+                    "/livros/catalogo-mobile",
+                    "/livros/{id}",
+                    "/livros/genero/**"
+            ).permitAll()
 
-                        // qualquer outra rota
-                        .anyRequest().authenticated())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            // rotas de ADMIN
+            .requestMatchers("/usuarios/**").hasRole("ADMIN")
 
-        return http.build();
-    }
+            // ADMIN ou BIBLIOTECARIO
+            .requestMatchers(
+                    "/livros/**",
+                    "/tcc/**",
+                    "/generos/**",
+                    "/autores/**",
+                    "/cursos/**",
+                    "/emprestimos/**",
+                    "/alunos/**")
+            .hasAnyRole("ADMIN", "BIBLIOTECARIO")
+
+            .anyRequest().authenticated()
+        )
+
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+    return http.build();
+}
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
