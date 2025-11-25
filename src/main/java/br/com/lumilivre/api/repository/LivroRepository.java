@@ -40,20 +40,39 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     Page<LivroModel> findIdsPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-                SELECT DISTINCT l FROM LivroModel l
-                LEFT JOIN FETCH l.generos g
-                WHERE (:nome IS NULL OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
-                  AND (:isbn IS NULL OR l.isbn = :isbn)
-                  AND (:autor IS NULL OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :autor, '%')))
-                  AND (:genero IS NULL OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :genero, '%')))
-                  AND (:editora IS NULL OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :editora, '%')))
+            SELECT new br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse(
+                l.id,
+                l.isbn,
+                l.nome,
+                l.autor,
+                l.editora,
+                COUNT(e)
+            )
+            FROM LivroModel l
+            LEFT JOIN l.exemplares e
+            LEFT JOIN l.generos g
+            LEFT JOIN l.cdd c
+            WHERE (:nome IS NULL OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
+              AND (:isbn IS NULL OR l.isbn = :isbn)
+              AND (:autor IS NULL OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :autor, '%')))
+              AND (:genero IS NULL OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :genero, '%')))
+              AND (:editora IS NULL OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :editora, '%')))
+              AND (:cdd IS NULL OR c.codigo = :cdd)
+              AND (:classificacao IS NULL OR l.classificacao_etaria = :classificacao)
+              AND (:tipoCapa IS NULL OR l.tipo_capa = :tipoCapa)
+              AND (cast(:dataLancamento as date) IS NULL OR l.data_lancamento = :dataLancamento)
+            GROUP BY l.id, l.isbn, l.nome, l.autor, l.editora
             """)
-    Page<LivroModel> buscarAvancado(
+    Page<LivroAgrupadoResponse> buscarAvancado(
             @Param("nome") String nome,
             @Param("isbn") String isbn,
             @Param("autor") String autor,
             @Param("genero") String genero,
             @Param("editora") String editora,
+            @Param("cdd") String cdd,
+            @Param("classificacao") br.com.lumilivre.api.enums.ClassificacaoEtaria classificacao,
+            @Param("tipoCapa") br.com.lumilivre.api.enums.TipoCapa tipoCapa,
+            @Param("dataLancamento") LocalDateTime dataLancamento,
             Pageable pageable);
 
     @Query("""

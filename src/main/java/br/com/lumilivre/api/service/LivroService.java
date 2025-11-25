@@ -37,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -71,6 +72,35 @@ public class LivroService {
         return livroRepository.findAll().stream()
                 .map(this::converterParaListaDTO)
                 .collect(Collectors.toList());
+    }
+
+    public Page<LivroAgrupadoResponse> buscarAvancado(
+            String nome, String isbn, String autor, String genero, String editora,
+            String cdd, String classificacaoEtariaStr, String tipoCapaStr, LocalDate dataLancamento,
+            Pageable pageable) {
+
+        ClassificacaoEtaria classificacao = null;
+        if (classificacaoEtariaStr != null && !classificacaoEtariaStr.isBlank()) {
+            try {
+                classificacao = ClassificacaoEtaria.valueOf(classificacaoEtariaStr);
+            } catch (IllegalArgumentException e) {
+            }
+        }
+
+        TipoCapa tipoCapa = null;
+        if (tipoCapaStr != null && !tipoCapaStr.isBlank()) {
+            try {
+                tipoCapa = TipoCapa.valueOf(tipoCapaStr);
+            } catch (IllegalArgumentException e) {
+            }
+        }
+
+        LocalDateTime dataLancamentoTime = (dataLancamento != null) ? dataLancamento.atStartOfDay() : null;
+
+        return livroRepository.buscarAvancado(
+                nome, isbn, autor, genero, editora,
+                cdd, classificacao, tipoCapa, dataLancamentoTime,
+                pageable);
     }
 
     public Page<LivroListagemResponse> buscarParaListaAdmin(Pageable pageable) {

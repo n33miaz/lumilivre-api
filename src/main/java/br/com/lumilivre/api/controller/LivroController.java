@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.dto.genero.GeneroCatalogoResponse;
@@ -53,6 +54,29 @@ public class LivroController {
             @Parameter(description = "Texto para busca por nome ou ISBN") @RequestParam(required = false) String texto,
             Pageable pageable) {
         Page<LivroAgrupadoResponse> livros = livroService.buscarLivrosAgrupados(pageable, texto);
+        return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
+    }
+
+    @GetMapping("/buscar/avancado")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @Operation(summary = "Busca avançada e paginada de livros (Agrupado)")
+    public ResponseEntity<Page<LivroAgrupadoResponse>> buscarAvancado(
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) String isbn,
+            @RequestParam(required = false) String autor,
+            @RequestParam(required = false) String genero,
+            @RequestParam(required = false) String editora,
+            @RequestParam(required = false) String cdd,
+            @RequestParam(required = false) String classificacaoEtaria,
+            @RequestParam(required = false) String tipoCapa,
+            @RequestParam(required = false) LocalDate dataLancamento,
+            Pageable pageable) {
+
+        Page<LivroAgrupadoResponse> livros = livroService.buscarAvancado(
+                nome, isbn, autor, genero, editora,
+                cdd, classificacaoEtaria, tipoCapa, dataLancamento,
+                pageable);
+
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
