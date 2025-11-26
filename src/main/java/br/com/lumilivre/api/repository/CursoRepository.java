@@ -63,7 +63,7 @@ public interface CursoRepository extends JpaRepository<CursoModel, Integer> {
 			SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.nome, COUNT(a))
 			FROM CursoModel c
 			LEFT JOIN c.alunos a
-			WHERE (:texto IS NULL OR c.nome ILIKE CONCAT('%', :texto, '%'))
+			WHERE (:texto IS NULL OR c.nome ILIKE :texto)
 			GROUP BY c.id, c.nome
 			""")
 	Page<CursoResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);

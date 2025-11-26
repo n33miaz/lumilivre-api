@@ -29,7 +29,8 @@ public class CursoService {
     }
 
     public Page<CursoResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
-        return cr.buscarPorTextoComDTO(texto, pageable);
+        String textoFormatado = (texto != null && !texto.isBlank()) ? "%" + texto + "%" : null;
+        return cr.buscarPorTextoComDTO(textoFormatado, pageable);
     }
 
     public Page<CursoResumoResponse> buscarAvancado(String nome, Pageable pageable) {
