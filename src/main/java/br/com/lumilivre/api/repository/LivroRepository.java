@@ -46,7 +46,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                 l.nome,
                 l.autor,
                 l.editora,
-                COUNT(e)
+                CAST(l.quantidade AS long)
             )
             FROM LivroModel l
             LEFT JOIN l.exemplares e
@@ -61,7 +61,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
               AND (:classificacao IS NULL OR l.classificacao_etaria = :classificacao)
               AND (:tipoCapa IS NULL OR l.tipo_capa = :tipoCapa)
               AND (cast(:dataLancamento as date) IS NULL OR l.data_lancamento = :dataLancamento)
-            GROUP BY l.id, l.isbn, l.nome, l.autor, l.editora
+            GROUP BY l.id, l.isbn, l.nome, l.autor, l.editora, l.quantidade
             """)
     Page<LivroAgrupadoResponse> buscarAvancado(
             @Param("nome") String nome,
@@ -114,12 +114,10 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                 l.nome,
                 l.autor,
                 l.editora,
-                COUNT(e)
+                CAST(l.quantidade AS long)
             )
             FROM LivroModel l
-            LEFT JOIN l.exemplares e
             WHERE (:texto IS NULL OR l.nome ILIKE CONCAT('%', :texto, '%') OR l.isbn ILIKE CONCAT('%', :texto, '%'))
-            GROUP BY l.id, l.isbn, l.nome, l.autor, l.editora
             """)
     Page<LivroAgrupadoResponse> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
 
