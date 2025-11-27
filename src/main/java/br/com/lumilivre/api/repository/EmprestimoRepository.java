@@ -1,6 +1,5 @@
 package br.com.lumilivre.api.repository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -223,6 +222,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             JOIN e.exemplar ex
             JOIN ex.livro l
             WHERE e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO
+               OR (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO AND e.dataDevolucao < CURRENT_TIMESTAMP)
             ORDER BY e.dataDevolucao ASC
             """)
     List<EmprestimoAtivoResponse> findApenasAtrasadosDTO();
