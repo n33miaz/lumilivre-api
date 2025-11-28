@@ -10,6 +10,7 @@ public record EmprestimoAtivoResponse(
                 String alunoNome,
                 String alunoMatricula,
                 String tombo,
+                LocalDate dataEmprestimo,
                 LocalDate dataDevolucao,
                 StatusEmprestimo statusEmprestimo) {
 }

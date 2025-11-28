@@ -49,10 +49,12 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
 
     @Query(value = """
                 SELECT
+                    e.id as id,
                     e.status_emprestimo as statusEmprestimo,
                     l.nome as livroNome,
                     ex.tombo as livroTombo,
                     a.nome_completo as nomeAluno,
+                    a.matricula as matriculaAluno,
                     c.nome as curso,
                     e.data_emprestimo as dataEmprestimo,
                     e.data_devolucao as dataDevolucao
@@ -70,10 +72,12 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
 
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse(
+                    e.id,
                     e.statusEmprestimo,
                     l.nome,
                     ex.tombo,
                     a.nomeCompleto,
+                    a.matricula,
                     c.nome,
                     e.dataEmprestimo,
                     e.dataDevolucao
@@ -125,10 +129,12 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
 
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse(
+                    e.id,
                     e.statusEmprestimo,
                     l.nome,
                     ex.tombo,
                     a.nomeCompleto,
+                    a.matricula,
                     a.curso.nome,
                     e.dataEmprestimo,
                     e.dataDevolucao
@@ -166,17 +172,18 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 JOIN FETCH a.curso
                 LEFT JOIN FETCH a.modulo
                 JOIN FETCH e.exemplar ex
-                JOIN FETCH ex.livro
+                JOIN FETCH ex.livro l
                 WHERE (:inicio IS NULL OR e.dataEmprestimo >= :inicio)
                   AND (:fim IS NULL OR e.dataEmprestimo <= :fim)
                   AND (:status IS NULL OR e.statusEmprestimo = :status)
-                  AND (:matriculaAluno IS NULL OR a.matricula = :matriculaAluno)
+                  AND (:matriculaAluno IS NULL OR a.matricula ILIKE :matriculaAluno OR a.nomeCompleto ILIKE :matriculaAluno)
                   AND (:idCurso IS NULL OR a.curso.id = :idCurso)
                   AND (:idModulo IS NULL OR a.modulo.id = :idModulo)
                   AND (
                         :isbnOuTombo IS NULL
-                        OR ex.tombo = :isbnOuTombo
-                        OR ex.livro.isbn = :isbnOuTombo
+                        OR ex.tombo ILIKE :isbnOuTombo
+                        OR l.isbn ILIKE :isbnOuTombo
+                        OR l.nome ILIKE :isbnOuTombo
                   )
             """)
     List<EmprestimoModel> findForReport(
@@ -195,6 +202,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 a.nomeCompleto,
                 a.matricula,
                 ex.tombo,
+                CAST(e.dataEmprestimo AS LocalDate),
                 CAST(e.dataDevolucao AS LocalDate),
                 e.statusEmprestimo
             )
@@ -214,6 +222,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 a.nomeCompleto,
                 a.matricula,
                 ex.tombo,
+                CAST(e.dataEmprestimo AS LocalDate),
                 CAST(e.dataDevolucao AS LocalDate),
                 e.statusEmprestimo
             )
