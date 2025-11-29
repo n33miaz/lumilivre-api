@@ -69,7 +69,7 @@ public class LivroService {
     // ------------------------ BUSCAS ------------------------
 
     public List<LivroListagemResponse> buscarTodos() {
-        return livroRepository.findAll().stream()
+        return livroRepository.findAllCompleto().stream()
                 .map(this::converterParaListaDTO)
                 .collect(Collectors.toList());
     }
@@ -189,26 +189,31 @@ public class LivroService {
 
     // ------------------------ CADASTRO ------------------------
 
-    @Transactional
     @CacheEvict(value = "catalogo-mobile", allEntries = true)
     public LivroResponse cadastrar(LivroRequest dto, MultipartFile file) {
+        // Validações iniciais...
         if (isNaoVazio(dto.getIsbn()) && livroRepository.findByIsbn(dto.getIsbn()).isPresent()) {
             throw new RegraDeNegocioException("Esse ISBN já está cadastrado em outro livro.");
         }
 
+        // 2. Chamada externa acontece FORA da transação do banco
         if (isNaoVazio(dto.getIsbn())) {
             preencherComGoogleBooks(dto);
         }
 
         validarCampos(dto);
 
+        // 3. Chama o método que realmente salva (que abre a transação)
+        return salvarLivroNoBanco(dto, file);
+    }
+
+    // 4. Novo método protegido pela transação
+    @Transactional
+    protected LivroResponse salvarLivroNoBanco(LivroRequest dto, MultipartFile file) {
         try {
             LivroModel livro = montarLivro(new LivroModel(), dto, file);
             LivroModel salvo = livroRepository.save(livro);
             return new LivroResponse(salvo);
-
-        } catch (IllegalArgumentException e) {
-            throw new RegraDeNegocioException(e.getMessage());
         } catch (Exception e) {
             log.error("Erro ao montar ou salvar o livro: {}", e.getMessage(), e);
             throw new RuntimeException("Erro interno ao cadastrar o livro: " + e.getMessage());

@@ -30,6 +30,9 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
 
     void deleteByIsbn(String isbn);
 
+    @Query("SELECT DISTINCT l FROM LivroModel l LEFT JOIN FETCH l.generos LEFT JOIN FETCH l.cdd")
+    List<LivroModel> findAllCompleto();
+
     @Query(value = """
                 SELECT * FROM livro l
                 WHERE l.texto_busca @@ plainto_tsquery('portuguese', :texto)
@@ -117,7 +120,9 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                 CAST(l.quantidade AS long)
             )
             FROM LivroModel l
-            WHERE (:texto IS NULL OR l.nome ILIKE CONCAT('%', :texto, '%') OR l.isbn ILIKE CONCAT('%', :texto, '%'))
+            WHERE (:texto IS NULL OR :texto = ''
+               OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+               OR l.isbn LIKE CONCAT('%', :texto, '%'))
             """)
     Page<LivroAgrupadoResponse> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
 

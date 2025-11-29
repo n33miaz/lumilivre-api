@@ -1,7 +1,6 @@
 package br.com.lumilivre.api.repository;
 
 import br.com.lumilivre.api.model.GeneroModel;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +12,6 @@ import java.util.Set;
 
 public interface GeneroRepository extends JpaRepository<GeneroModel, Integer> {
 
-    @Cacheable("generos")
     @Override
     @NonNull
     List<GeneroModel> findAll();
