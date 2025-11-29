@@ -6,6 +6,7 @@ import br.com.lumilivre.api.enums.StatusEmprestimo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.Formula;
 
 @Entity
 @Table(name = "emprestimo")
@@ -43,4 +44,7 @@ public class EmprestimoModel {
 	@JoinColumn(name = "exemplar_tombo", nullable = false)
 	@ToString.Exclude
 	private ExemplarModel exemplar;
+
+	@Formula("(CASE WHEN status_emprestimo = 'CONCLUIDO' THEN 1 ELSE 0 END)")
+	private int ordemStatus;
 }

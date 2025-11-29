@@ -4,14 +4,13 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
@@ -192,14 +191,17 @@ public class EmprestimoService {
     // ================ MÉTODOS DE BUSCA ================
 
     public Page<EmprestimoListagemResponse> buscarEmprestimoParaListaAdmin(Pageable pageable) {
-        return emprestimoRepository.findEmprestimoParaListaAdmin(pageable);
+        Pageable pageableTratado = tratarOrdenacao(pageable);
+        return emprestimoRepository.findEmprestimoParaListaAdmin(pageableTratado);
     }
 
     public Page<EmprestimoListagemResponse> buscarPorTexto(String texto, Pageable pageable) {
+        Pageable pageableTratado = tratarOrdenacao(pageable);
+
         if (texto == null || texto.isBlank()) {
-            return buscarAvancado(null, null, null, null, null, null, pageable);
+            return buscarAvancado(null, null, null, null, null, null, pageableTratado);
         }
-        return emprestimoRepository.buscarPorTexto(texto, pageable);
+        return emprestimoRepository.buscarPorTexto(texto, pageableTratado);
     }
 
     // Refatorado para usar o import simples
@@ -254,6 +256,8 @@ public class EmprestimoService {
             dataDevolucaoFim = LocalDate.parse(dataDevolucao).atTime(23, 59, 59);
         }
 
+        Pageable pageableFinal = tratarOrdenacao(pageable);
+
         return emprestimoRepository.buscarAvancado(
                 statusEmprestimo,
                 tomboFiltro,
@@ -263,7 +267,7 @@ public class EmprestimoService {
                 null,
                 null,
                 dataDevolucaoFim,
-                pageable);
+                pageableFinal);
     }
 
     public List<AlunoRankingResponse> gerarRankingAlunos(int top, Integer cursoId, Integer moduloId, Integer turnoId) {
@@ -304,5 +308,27 @@ public class EmprestimoService {
         } catch (Exception e) {
             System.err.println("Erro ao enviar e-mail de conclusão: " + e.getMessage());
         }
+    }
+
+    private Pageable tratarOrdenacao(Pageable pageable) {
+        Sort.Order statusOrder = pageable.getSort().getOrderFor("status");
+
+        if (statusOrder != null) {
+            boolean isAsc = statusOrder.isAscending();
+
+            if (isAsc) {
+                return PageRequest.of(
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        Sort.by(Sort.Direction.ASC, "ordemStatus", "dataDevolucao"));
+            } else {
+                return PageRequest.of(
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        Sort.by(Sort.Order.asc("ordemStatus"), Sort.Order.desc("dataDevolucao")));
+            }
+        }
+
+        return pageable;
     }
 }

@@ -127,7 +127,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             """)
     List<EmprestimoResponse> findHistoricoEmprestimos(@Param("matricula") String matricula);
 
-    @Query("""
+@Query("""
                 SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse(
                     e.id,
                     e.statusEmprestimo,
@@ -143,7 +143,6 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 JOIN e.exemplar ex
                 JOIN ex.livro l
                 JOIN e.aluno a
-                ORDER BY e.statusEmprestimo
             """)
     Page<EmprestimoListagemResponse> findEmprestimoParaListaAdmin(Pageable pageable);
 
