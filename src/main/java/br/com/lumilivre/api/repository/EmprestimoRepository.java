@@ -87,17 +87,23 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 JOIN e.exemplar ex
                 JOIN ex.livro l
                 JOIN a.curso c
-                WHERE (:statusEmprestimo IS NULL OR e.statusEmprestimo = :statusEmprestimo)
+                WHERE
+                (
+                    (:statusEmprestimo IS NULL) OR
+                    (:statusEmprestimo = 'CONCLUIDO' AND e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.CONCLUIDO) OR
+                    (:statusEmprestimo = 'ATRASADO' AND (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO OR (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO AND e.dataDevolucao < :now))) OR
+                    (:statusEmprestimo = 'ATIVO' AND (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO AND e.dataDevolucao >= :now))
+                )
                 AND (:tombo IS NULL OR ex.tombo ILIKE :tombo)
                 AND (:livroNome IS NULL OR l.nome ILIKE :livroNome)
                 AND (:alunoNomeCompleto IS NULL OR a.nomeCompleto ILIKE :alunoNomeCompleto)
-                AND (:dataEmprestimoInicio IS NULL OR e.dataEmprestimo >= :dataEmprestimoInicio)
-                AND (:dataEmprestimoFim IS NULL OR e.dataEmprestimo <= :dataEmprestimoFim)
-                AND (:dataDevolucaoInicio IS NULL OR e.dataDevolucao >= :dataDevolucaoInicio)
-                AND (:dataDevolucaoFim IS NULL OR e.dataDevolucao <= :dataDevolucaoFim)
+                AND (cast(:dataEmprestimoInicio as timestamp) IS NULL OR e.dataEmprestimo >= :dataEmprestimoInicio)
+                AND (cast(:dataEmprestimoFim as timestamp) IS NULL OR e.dataEmprestimo <= :dataEmprestimoFim)
+                AND (cast(:dataDevolucaoInicio as timestamp) IS NULL OR e.dataDevolucao >= :dataDevolucaoInicio)
+                AND (cast(:dataDevolucaoFim as timestamp) IS NULL OR e.dataDevolucao <= :dataDevolucaoFim)
             """)
     Page<EmprestimoListagemResponse> buscarAvancado(
-            @Param("statusEmprestimo") StatusEmprestimo statusEmprestimo,
+            @Param("statusEmprestimo") String statusEmprestimo,
             @Param("tombo") String tombo,
             @Param("livroNome") String livroNome,
             @Param("alunoNomeCompleto") String alunoNomeCompleto,
@@ -105,6 +111,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             @Param("dataEmprestimoFim") LocalDateTime dataEmprestimoFim,
             @Param("dataDevolucaoInicio") LocalDateTime dataDevolucaoInicio,
             @Param("dataDevolucaoFim") LocalDateTime dataDevolucaoFim,
+            @Param("now") LocalDateTime now,
             Pageable pageable);
 
     @Query("""
@@ -127,7 +134,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             """)
     List<EmprestimoResponse> findHistoricoEmprestimos(@Param("matricula") String matricula);
 
-@Query("""
+    @Query("""
                 SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse(
                     e.id,
                     e.statusEmprestimo,

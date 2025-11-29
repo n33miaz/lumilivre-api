@@ -258,8 +258,10 @@ public class EmprestimoService {
 
         Pageable pageableFinal = tratarOrdenacao(pageable);
 
+        String statusString = (statusEmprestimo != null) ? statusEmprestimo.name() : null;
+
         return emprestimoRepository.buscarAvancado(
-                statusEmprestimo,
+                statusString,
                 tomboFiltro,
                 livroNomeFiltro,
                 alunoNomeFiltro,
@@ -267,12 +269,13 @@ public class EmprestimoService {
                 null,
                 null,
                 dataDevolucaoFim,
+                LocalDateTime.now(),
                 pageableFinal);
     }
 
     public List<AlunoRankingResponse> gerarRankingAlunos(int top, Integer cursoId, Integer moduloId, Integer turnoId) {
         return alunoRepository.findRankingComFiltros(cursoId, moduloId, turnoId, PageRequest.of(0, top))
-                .getContent(); // Adicione .getContent() aqui
+                .getContent();
     }
 
     public List<EmprestimoModel> buscarTodos() {
