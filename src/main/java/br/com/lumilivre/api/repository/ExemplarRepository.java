@@ -41,8 +41,9 @@ public interface ExemplarRepository extends JpaRepository<ExemplarModel, String>
           JOIN FETCH ex.livro l
           WHERE (:status IS NULL OR ex.status_livro = :status)
             AND (:isbnOuTombo IS NULL
-                 OR ex.tombo ILIKE %:isbnOuTombo%
-                 OR l.isbn ILIKE %:isbnOuTombo%)
+                 OR ex.tombo ILIKE :isbnOuTombo
+                 OR l.isbn ILIKE :isbnOuTombo
+                 OR l.nome ILIKE :isbnOuTombo)
             AND (cast(:inicio as date) IS NULL OR ex.dataInclusao >= :inicio)
             AND (cast(:fim as date) IS NULL OR ex.dataInclusao <= :fim)
           ORDER BY l.nome, ex.tombo

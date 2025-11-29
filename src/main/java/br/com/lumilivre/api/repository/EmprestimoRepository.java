@@ -167,24 +167,25 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     List<EmprestimoDashboardResponse> findEmprestimosAtivosEAtrasados();
 
     @Query("""
-                SELECT e FROM EmprestimoModel e
-                JOIN FETCH e.aluno a
-                JOIN FETCH a.curso
-                LEFT JOIN FETCH a.modulo
-                JOIN FETCH e.exemplar ex
-                JOIN FETCH ex.livro l
-                WHERE (:inicio IS NULL OR e.dataEmprestimo >= :inicio)
-                  AND (:fim IS NULL OR e.dataEmprestimo <= :fim)
-                  AND (:status IS NULL OR e.statusEmprestimo = :status)
-                  AND (:matriculaAluno IS NULL OR a.matricula ILIKE :matriculaAluno OR a.nomeCompleto ILIKE :matriculaAluno)
-                  AND (:idCurso IS NULL OR a.curso.id = :idCurso)
-                  AND (:idModulo IS NULL OR a.modulo.id = :idModulo)
-                  AND (
-                        :isbnOuTombo IS NULL
-                        OR ex.tombo ILIKE :isbnOuTombo
-                        OR l.isbn ILIKE :isbnOuTombo
-                        OR l.nome ILIKE :isbnOuTombo
-                  )
+            SELECT DISTINCT e FROM EmprestimoModel e
+            LEFT JOIN FETCH e.aluno a
+            LEFT JOIN FETCH a.curso
+            LEFT JOIN FETCH a.modulo
+            LEFT JOIN FETCH e.exemplar ex
+            LEFT JOIN FETCH ex.livro l
+            WHERE (cast(:inicio as timestamp) IS NULL OR e.dataEmprestimo >= :inicio)
+              AND (cast(:fim as timestamp) IS NULL OR e.dataEmprestimo <= :fim)
+              AND (:status IS NULL OR e.statusEmprestimo = :status)
+              AND (:matriculaAluno IS NULL OR a.matricula ILIKE :matriculaAluno OR a.nomeCompleto ILIKE :matriculaAluno)
+              AND (cast(:idCurso as integer) IS NULL OR a.curso.id = :idCurso)
+              AND (cast(:idModulo as integer) IS NULL OR a.modulo.id = :idModulo)
+              AND (
+                    :isbnOuTombo IS NULL
+                    OR ex.tombo ILIKE :isbnOuTombo
+                    OR l.isbn ILIKE :isbnOuTombo
+                    OR l.nome ILIKE :isbnOuTombo
+              )
+            ORDER BY e.dataEmprestimo DESC
             """)
     List<EmprestimoModel> findForReport(
             @Param("inicio") LocalDateTime inicio,

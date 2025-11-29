@@ -157,18 +157,17 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     List<Map<String, Object>> findCatalogoMobile();
 
     @Query("""
-                SELECT l FROM LivroModel l
-                LEFT JOIN l.generos g
-                LEFT JOIN l.cdd c
-                WHERE (:genero IS NULL OR g.nome ILIKE :genero)
-                  AND (:autor IS NULL OR l.autor ILIKE %:autor%)
-                  AND (:cdd IS NULL OR c.codigo = :cdd)
-                  AND (:classificacaoEtaria IS NULL OR CAST(l.classificacao_etaria AS text) ILIKE :classificacaoEtaria)
-                  AND (:tipoCapa IS NULL OR CAST(l.tipo_capa AS text) ILIKE :tipoCapa)
-                  AND (cast(:inicio as date) IS NULL OR l.dataInclusao >= :inicio)
-                  AND (cast(:fim as date) IS NULL OR l.dataInclusao <= :fim)
-                GROUP BY l.id
-                ORDER BY l.nome
+            SELECT DISTINCT l FROM LivroModel l
+            LEFT JOIN FETCH l.generos g
+            LEFT JOIN FETCH l.cdd c
+            WHERE (:genero IS NULL OR g.nome ILIKE :genero)
+              AND (:autor IS NULL OR l.autor ILIKE :autor)
+              AND (:cdd IS NULL OR c.codigo = :cdd)
+              AND (:classificacaoEtaria IS NULL OR CAST(l.classificacao_etaria AS text) = :classificacaoEtaria)
+              AND (:tipoCapa IS NULL OR CAST(l.tipo_capa AS text) = :tipoCapa)
+              AND (cast(:inicio as date) IS NULL OR l.dataInclusao >= :inicio)
+              AND (cast(:fim as date) IS NULL OR l.dataInclusao <= :fim)
+            ORDER BY l.nome
             """)
     List<LivroModel> findForReport(
             @Param("genero") String genero,

@@ -17,17 +17,20 @@ import com.lowagie.text.pdf.PdfWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.awt.Color;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class RelatorioService {
 
     private static final Logger log = LoggerFactory.getLogger(RelatorioService.class);
@@ -64,10 +67,16 @@ public class RelatorioService {
             adicionarCabecalhoRelatorio(document, "Relatório de Empréstimos", inicio, fim);
 
             LocalDateTime inicioDT = (inicio != null) ? inicio.atStartOfDay() : null;
-            LocalDateTime fimDT = (fim != null) ? fim.atTime(23, 59, 59) : null;
+            LocalDateTime fimDT = (fim != null) ? fim.atTime(LocalTime.MAX) : null;
 
             List<EmprestimoModel> emprestimos = emprestimoRepository.findForReport(
-                    inicioDT, fimDT, status, matriculaAluno, idCurso, isbnOuTombo, idModulo);
+                    inicioDT,
+                    fimDT,
+                    status,
+                    prepararFiltroLike(matriculaAluno),
+                    idCurso,
+                    prepararFiltroLike(isbnOuTombo),
+                    idModulo);
 
             PdfPTable table = new PdfPTable(7);
             table.setWidthPercentage(100);
@@ -82,26 +91,60 @@ public class RelatorioService {
             adicionarCelulaHeader(table, "Status");
 
             for (EmprestimoModel e : emprestimos) {
-                table.addCell(criarCelulaDados(String.valueOf(e.getId())));
-                table.addCell(criarCelulaDados(
-                        Optional.ofNullable(e.getAluno()).map(AlunoModel::getNomeCompleto).orElse("N/A")));
-                table.addCell(criarCelulaDados(Optional.ofNullable(e.getAluno()).map(AlunoModel::getCurso)
-                        .map(CursoModel::getNome).orElse("N/A")));
-                table.addCell(criarCelulaDados(Optional.ofNullable(e.getAluno()).map(AlunoModel::getModulo)
-                        .map(ModuloModel::getNome).orElse("-")));
-                String livroTombo = Optional.ofNullable(e.getExemplar())
-                        .map(ex -> ex.getLivro().getNome() + " (" + ex.getTombo() + ")").orElse("N/A");
-                table.addCell(criarCelulaDados(livroTombo));
-                table.addCell(criarCelulaDados(formatarData(e.getDataEmprestimo())));
-                table.addCell(
-                        criarCelulaDados(Optional.ofNullable(e.getStatusEmprestimo()).map(Enum::name).orElse("-")));
+                try {
+                    table.addCell(criarCelulaDados(String.valueOf(e.getId())));
+
+                    String nomeAluno = Optional.ofNullable(e.getAluno())
+                            .map(AlunoModel::getNomeCompleto)
+                            .orElse("Aluno Desconhecido");
+                    table.addCell(criarCelulaDados(nomeAluno));
+
+                    String nomeCurso = Optional.ofNullable(e.getAluno())
+                            .map(AlunoModel::getCurso)
+                            .map(CursoModel::getNome)
+                            .orElse("N/A");
+                    table.addCell(criarCelulaDados(nomeCurso));
+
+                    String nomeModulo = Optional.ofNullable(e.getAluno())
+                            .map(AlunoModel::getModulo)
+                            .map(ModuloModel::getNome)
+                            .orElse("-");
+                    table.addCell(criarCelulaDados(nomeModulo));
+
+                    String livroTombo = Optional.ofNullable(e.getExemplar())
+                            .map(ex -> {
+                                String nomeLivro = Optional.ofNullable(ex.getLivro())
+                                        .map(LivroModel::getNome)
+                                        .orElse("Livro N/A");
+                                return nomeLivro + " (" + ex.getTombo() + ")";
+                            })
+                            .orElse("Exemplar N/A");
+                    table.addCell(criarCelulaDados(livroTombo));
+
+                    table.addCell(criarCelulaDados(formatarData(e.getDataEmprestimo())));
+
+                    String statusStr = Optional.ofNullable(e.getStatusEmprestimo())
+                            .map(Enum::name)
+                            .orElse("-");
+                    table.addCell(criarCelulaDados(statusStr));
+
+                } catch (Exception ex) {
+                    log.error("Erro ao processar linha do empréstimo ID {}: {}", e.getId(), ex.getMessage());
+                    table.addCell(criarCelulaDados("ERRO"));
+                    table.addCell(criarCelulaDados("ERRO"));
+                    table.addCell(criarCelulaDados("-"));
+                    table.addCell(criarCelulaDados("-"));
+                    table.addCell(criarCelulaDados("-"));
+                    table.addCell(criarCelulaDados("-"));
+                    table.addCell(criarCelulaDados("-"));
+                }
             }
 
             document.add(table);
             adicionarRodapeRelatorio(document, "Total de empréstimos filtrados: " + emprestimos.size());
         } catch (Exception ex) {
-            log.error("Erro ao gerar relatório de empréstimos filtrados", ex);
-            throw new IOException("Erro ao gerar relatório de empréstimos filtrados", ex);
+            log.error("Erro fatal ao gerar relatório de empréstimos", ex);
+            throw new IOException("Erro ao gerar PDF", ex);
         }
     }
 
@@ -198,7 +241,13 @@ public class RelatorioService {
             LocalDateTime fim = (dataFim != null) ? dataFim.atTime(23, 59, 59) : null;
 
             List<LivroModel> livros = livroRepository.findForReport(
-                    genero, autor, cdd, classificacaoEtaria, tipoCapa, inicio, fim);
+                    prepararFiltroLike(genero),
+                    prepararFiltroLike(autor),
+                    cdd,
+                    classificacaoEtaria,
+                    tipoCapa,
+                    inicio,
+                    fim);
 
             PdfPTable table = new PdfPTable(6);
             table.setWidthPercentage(100);
@@ -294,7 +343,11 @@ public class RelatorioService {
             LocalDateTime inicio = (dataInicio != null) ? dataInicio.atStartOfDay() : null;
             LocalDateTime fim = (dataFim != null) ? dataFim.atTime(23, 59, 59) : null;
 
-            List<ExemplarModel> exemplares = exemplarRepository.findForReport(status, isbnOuTombo, inicio, fim);
+            List<ExemplarModel> exemplares = exemplarRepository.findForReport(
+                    status,
+                    prepararFiltroLike(isbnOuTombo),
+                    inicio,
+                    fim);
 
             PdfPTable table = new PdfPTable(5);
             table.setWidthPercentage(100);
@@ -370,5 +423,12 @@ public class RelatorioService {
 
     private String formatarData(LocalDateTime data) {
         return (data != null) ? data.format(DATE_FORMATTER) : "N/A";
+    }
+
+    private String prepararFiltroLike(String valor) {
+        if (valor == null || valor.trim().isEmpty()) {
+            return null;
+        }
+        return "%" + valor.trim() + "%";
     }
 }
