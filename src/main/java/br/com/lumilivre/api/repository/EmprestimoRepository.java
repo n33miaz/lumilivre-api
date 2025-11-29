@@ -47,27 +47,28 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
 
     List<EmprestimoModel> findByStatusEmprestimo(StatusEmprestimo atrasado);
 
-    @Query(value = """
-                SELECT
-                    e.id as id,
-                    e.status_emprestimo as statusEmprestimo,
-                    l.nome as livroNome,
-                    ex.tombo as livroTombo,
-                    a.nome_completo as nomeAluno,
-                    a.matricula as matriculaAluno,
-                    c.nome as curso,
-                    e.data_emprestimo as dataEmprestimo,
-                    e.data_devolucao as dataDevolucao
-                FROM emprestimo e
-                JOIN aluno a ON e.aluno_matricula = a.matricula
-                JOIN exemplar ex ON e.exemplar_tombo = ex.tombo
-                JOIN livro l ON ex.livro_id = l.id
-                JOIN curso c ON a.curso_id = c.id
-                WHERE e.texto_busca @@ plainto_tsquery('portuguese', :texto)
-            """, countQuery = """
-                SELECT count(*) FROM emprestimo e
-                WHERE e.texto_busca @@ plainto_tsquery('portuguese', :texto)
-            """, nativeQuery = true)
+    @Query("""
+                SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse(
+                    e.id,
+                    e.statusEmprestimo,
+                    l.nome,
+                    ex.tombo,
+                    a.nomeCompleto,
+                    a.matricula,
+                    c.nome,
+                    e.dataEmprestimo,
+                    e.dataDevolucao
+                )
+                FROM EmprestimoModel e
+                JOIN e.aluno a
+                JOIN e.exemplar ex
+                JOIN ex.livro l
+                JOIN a.curso c
+                WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+                   OR LOWER(a.nomeCompleto) LIKE LOWER(CONCAT('%', :texto, '%'))
+                   OR LOWER(a.matricula) LIKE LOWER(CONCAT('%', :texto, '%'))
+                   OR LOWER(ex.tombo) LIKE LOWER(CONCAT('%', :texto, '%'))
+            """)
     Page<EmprestimoListagemResponse> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""

@@ -201,15 +201,14 @@ public class EmprestimoService {
         if (texto == null || texto.isBlank()) {
             return buscarAvancado(null, null, null, null, null, null, pageableTratado);
         }
+
         return emprestimoRepository.buscarPorTexto(texto, pageableTratado);
     }
 
-    // Refatorado para usar o import simples
     public List<EmprestimoResponse> listarEmprestimosAluno(String matricula) {
         return emprestimoRepository.findEmprestimosAtivos(matricula);
     }
 
-    // Refatorado para usar o import simples
     public List<EmprestimoResponse> listarHistorico(String matricula) {
         return emprestimoRepository.findHistoricoEmprestimos(matricula);
     }
