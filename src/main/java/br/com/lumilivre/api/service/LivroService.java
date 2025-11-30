@@ -37,7 +37,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -95,11 +94,16 @@ public class LivroService {
             }
         }
 
-        LocalDateTime dataLancamentoTime = (dataLancamento != null) ? dataLancamento.atStartOfDay() : null;
+        String nomeFiltro = prepararFiltroLike(nome);
+        String autorFiltro = prepararFiltroLike(autor);
+        String generoFiltro = prepararFiltroLike(genero);
+        String editoraFiltro = prepararFiltroLike(editora);
+        String isbnFiltro = tratarString(isbn);
+        String cddFiltro = tratarString(cdd);
 
         return livroRepository.buscarAvancado(
-                nome, isbn, autor, genero, editora,
-                cdd, classificacao, tipoCapa, dataLancamentoTime,
+                nomeFiltro, isbnFiltro, autorFiltro, generoFiltro, editoraFiltro,
+                cddFiltro, classificacao, tipoCapa, dataLancamento,
                 pageable);
     }
 
@@ -389,5 +393,19 @@ public class LivroService {
 
     private boolean isNaoVazio(String valor) {
         return !isVazio(valor);
+    }
+
+    private String prepararFiltroLike(String valor) {
+        if (valor == null || valor.trim().isEmpty()) {
+            return null;
+        }
+        return "%" + valor.trim().toLowerCase() + "%";
+    }
+
+    private String tratarString(String valor) {
+        if (valor == null || valor.trim().isEmpty()) {
+            return null;
+        }
+        return valor.trim();
     }
 }

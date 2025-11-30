@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -55,15 +56,15 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             LEFT JOIN l.exemplares e
             LEFT JOIN l.generos g
             LEFT JOIN l.cdd c
-            WHERE (:nome IS NULL OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
+            WHERE (:nome IS NULL OR LOWER(l.nome) LIKE :nome)
               AND (:isbn IS NULL OR l.isbn = :isbn)
-              AND (:autor IS NULL OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :autor, '%')))
-              AND (:genero IS NULL OR LOWER(g.nome) LIKE LOWER(CONCAT('%', :genero, '%')))
-              AND (:editora IS NULL OR LOWER(l.editora) LIKE LOWER(CONCAT('%', :editora, '%')))
+              AND (:autor IS NULL OR LOWER(l.autor) LIKE :autor)
+              AND (:genero IS NULL OR LOWER(g.nome) LIKE :genero)
+              AND (:editora IS NULL OR LOWER(l.editora) LIKE :editora)
               AND (:cdd IS NULL OR c.codigo = :cdd)
               AND (:classificacao IS NULL OR l.classificacao_etaria = :classificacao)
               AND (:tipoCapa IS NULL OR l.tipo_capa = :tipoCapa)
-              AND (cast(:dataLancamento as date) IS NULL OR l.data_lancamento = :dataLancamento)
+              AND (:dataLancamento IS NULL OR l.data_lancamento = :dataLancamento)
             GROUP BY l.id, l.isbn, l.nome, l.autor, l.editora, l.quantidade
             """)
     Page<LivroAgrupadoResponse> buscarAvancado(
@@ -75,7 +76,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             @Param("cdd") String cdd,
             @Param("classificacao") br.com.lumilivre.api.enums.ClassificacaoEtaria classificacao,
             @Param("tipoCapa") br.com.lumilivre.api.enums.TipoCapa tipoCapa,
-            @Param("dataLancamento") LocalDateTime dataLancamento,
+            @Param("dataLancamento") LocalDate dataLancamento,
             Pageable pageable);
 
     @Query("""
