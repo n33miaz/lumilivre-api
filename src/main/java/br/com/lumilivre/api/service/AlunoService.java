@@ -206,6 +206,19 @@ public class AlunoService {
         aluno.setCurso(entidades.curso());
         aluno.setTurno(entidades.turno());
         aluno.setModulo(entidades.modulo());
+
+        if (dto.getPenalidade() != null) {
+            if (dto.getPenalidade().isBlank()) {
+                // Se vier vazio, remove a penalidade
+                aluno.setPenalidade(null);
+                aluno.setPenalidadeExpiraEm(null);
+            } else {
+                Penalidade penalidadeEnum = parseEnum(dto.getPenalidade(), Penalidade.class);
+                if (penalidadeEnum != null) {
+                    aluno.setPenalidade(penalidadeEnum);
+                }
+            }
+        }
     }
 
     private void preencherEnderecoPorCep(AlunoModel aluno, String cep) {
