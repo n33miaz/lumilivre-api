@@ -29,66 +29,65 @@ public class SecurityConfig {
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-@Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-        // Ativa o CORS do Spring Security (obrigatório!)
-        .cors(cors -> {})
-        .csrf(csrf -> csrf.disable())
 
-        .exceptionHandling(ex -> ex
-            .authenticationEntryPoint((req, res, e) -> {
-                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                res.setContentType("application/json");
-                res.getWriter().write("{\"error\":\"Unauthorized\"}");
-            })
-            .accessDeniedHandler((req, res, e) -> {
-                res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                res.setContentType("application/json");
-                res.getWriter().write("{\"error\":\"Access Denied\"}");
-            })
-        )
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                // Ativa o CORS do Spring Security (obrigatório!)
+                .cors(cors -> {
+                })
+                .csrf(csrf -> csrf.disable())
 
-        .authorizeHttpRequests(auth -> auth
-            // libera /error para evitar loops
-            .requestMatchers("/error").permitAll()
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) -> {
+                            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            res.setContentType("application/json");
+                            res.getWriter().write("{\"error\":\"Unauthorized\"}");
+                        })
+                        .accessDeniedHandler((req, res, e) -> {
+                            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            res.setContentType("application/json");
+                            res.getWriter().write("{\"error\":\"Access Denied\"}");
+                        }))
 
-            // rotas publicas
-            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-            .requestMatchers("/auth/**").permitAll()
-            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        // libera /error para evitar loops
+                        .requestMatchers("/error").permitAll()
 
-            // rotas mobile GET
-            .requestMatchers(HttpMethod.GET,
-                    "/livros/catalogo-mobile",
-                    "/livros/{id}",
-                    "/livros/genero/**"
-            ).permitAll()
+                        // rotas publicas
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-            // rotas de ADMIN
-            .requestMatchers("/usuarios/**").hasRole("ADMIN")
+                        // rotas mobile GET
+                        .requestMatchers(HttpMethod.GET,
+                                "/livros/catalogo-mobile",
+                                "/livros/{id}",
+                                "/livros/genero/**")
+                        .permitAll()
 
-            // ADMIN ou BIBLIOTECARIO
-            .requestMatchers(
-                    "/livros/**",
-                    "/tcc/**",
-                    "/generos/**",
-                    "/autores/**",
-                    "/cursos/**",
-                    "/emprestimos/**",
-                    "/alunos/**")
-            .hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        // rotas de ADMIN
+                        .requestMatchers("/usuarios/**").hasRole("ADMIN")
 
-            .anyRequest().authenticated()
-        )
+                        // ADMIN ou BIBLIOTECARIO
+                        .requestMatchers(
+                                "/livros/**",
+                                "/tcc/**",
+                                "/generos/**",
+                                "/autores/**",
+                                "/cursos/**",
+                                "/emprestimos/**",
+                                "/alunos/**")
+                        .hasAnyRole("ADMIN", "BIBLIOTECARIO")
 
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .anyRequest().authenticated())
 
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-    return http.build();
-}
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
+        return http.build();
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -109,8 +108,9 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                         .allowedOrigins(
                                 "https://www.lumilivre.com.br", // produção
                                 "http://localhost:5173", // desenv. web
-                                "http://localhost:58636", "http://192.168.56.1:8080" // desenv. mobile
+                                "http://localhost:59222", "http://192.168.56.1:8080", "http://127.0.0.1:8080", "http://localhost:8080" // desenv. mobile
                 )
+                        .allowedOriginPatterns("*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

@@ -148,7 +148,6 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                     FROM livro l
                     JOIN livro_genero lg ON l.id = lg.livro_id
                     JOIN genero g ON lg.genero_id = g.id
-                    WHERE EXISTS (SELECT 1 FROM exemplar e WHERE e.livro_id = l.id)
                 )
                 SELECT
                     id,
