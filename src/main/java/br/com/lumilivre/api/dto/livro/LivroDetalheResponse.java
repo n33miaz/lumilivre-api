@@ -27,6 +27,13 @@ public class LivroDetalheResponse {
     private String sinopse;
     private String imagem;
     private String cdd;
+    private String tipoCapa;
+    private String classificacaoEtaria;
+    private String cddCodigo;
+    private String tipoCapaRaw;
+    private String classificacaoEtariaRaw;
+    private String edicao;
+    private Integer volume;
     private Set<String> generos;
     private long exemplaresDisponiveis;
     private long totalExemplares;
@@ -41,8 +48,23 @@ public class LivroDetalheResponse {
         this.numeroPaginas = livro.getNumero_paginas();
         this.sinopse = livro.getSinopse();
         this.imagem = livro.getImagem();
+        this.edicao = livro.getEdicao();
+        this.volume = livro.getVolume();
 
-        this.cdd = livro.getCdd() != null ? livro.getCdd().getDescricao() : null;
+        if (livro.getCdd() != null) {
+            this.cdd = livro.getCdd().getDescricao();
+            this.cddCodigo = livro.getCdd().getCodigo();
+        }
+
+        if (livro.getTipo_capa() != null) {
+            this.tipoCapa = livro.getTipo_capa().getStatus();
+            this.tipoCapaRaw = livro.getTipo_capa().name();
+        }
+
+        if (livro.getClassificacao_etaria() != null) {
+            this.classificacaoEtaria = livro.getClassificacao_etaria().getStatus();
+            this.classificacaoEtariaRaw = livro.getClassificacao_etaria().name();
+        }
 
         this.generos = livro.getGeneros().stream()
                 .map(GeneroModel::getNome)

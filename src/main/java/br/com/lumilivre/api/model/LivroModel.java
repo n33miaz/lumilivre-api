@@ -31,15 +31,12 @@ public class LivroModel {
     @Column(name = "nome", length = 255, nullable = false)
     private String nome;
 
-    @NotNull
-    @Column(name = "data_lancamento", nullable = false)
+    @Column(name = "data_lancamento", nullable = true)
     private LocalDate data_lancamento;
 
-    @NotNull
-    @Column(name = "numero_paginas", nullable = false)
+    @Column(name = "numero_paginas", nullable = true)
     private Integer numero_paginas;
 
-    @NotNull
     @ManyToOne
     @JoinColumn(name = "cdd_codigo")
     @ToString.Exclude

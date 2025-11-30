@@ -315,16 +315,10 @@ public class LivroService {
     private void validarCampos(LivroRequest dto) {
         if (isVazio(dto.getNome()))
             throw new RegraDeNegocioException("O título é obrigatório.");
-        if (dto.getData_lancamento() == null)
-            throw new RegraDeNegocioException("A data de lançamento é obrigatória.");
-        if (dto.getData_lancamento().isAfter(LocalDate.now()))
+        if (dto.getData_lancamento() != null && dto.getData_lancamento().isAfter(LocalDate.now()))
             throw new RegraDeNegocioException("A data de lançamento não pode ser no futuro.");
-        if (dto.getNumero_paginas() == null || dto.getNumero_paginas() <= 0)
-            throw new RegraDeNegocioException("O número de páginas é obrigatório e deve ser maior que zero.");
         if (isVazio(dto.getEditora()))
             throw new RegraDeNegocioException("A editora é obrigatória.");
-        if (isVazio(dto.getCdd()))
-            throw new RegraDeNegocioException("O CDD é obrigatório.");
         if (isVazio(dto.getAutor()))
             throw new RegraDeNegocioException("O autor é obrigatório.");
     }
@@ -341,19 +335,44 @@ public class LivroService {
         livro.setSinopse(dto.getSinopse());
         livro.setAutor(dto.getAutor());
 
-        CddModel cdd = cddRepository.findById(dto.getCdd())
-                .orElseThrow(() -> new RegraDeNegocioException("Código CDD inválido: " + dto.getCdd()));
-        livro.setCdd(cdd);
-
-        try {
-            livro.setClassificacao_etaria(ClassificacaoEtaria.valueOf(dto.getClassificacao_etaria().toUpperCase()));
-            livro.setTipo_capa(TipoCapa.valueOf(dto.getTipo_capa().toUpperCase()));
-        } catch (Exception e) {
-            throw new RegraDeNegocioException("Classificação etária ou Tipo de capa inválido.");
+        if (isNaoVazio(dto.getCdd())) {
+            CddModel cdd = cddRepository.findById(dto.getCdd())
+                    .orElseThrow(() -> new RegraDeNegocioException("Código CDD inválido: " + dto.getCdd()));
+            livro.setCdd(cdd);
+        } else {
+            livro.setCdd(null);
         }
 
-        Set<GeneroModel> generos = processarGeneros(dto.getCdd());
+        Set<GeneroModel> generos = new HashSet<>();
+
+        if (dto.getGeneros() != null && !dto.getGeneros().isEmpty()) {
+            Set<GeneroModel> generosEncontrados = generoRepository.findByNomeIn(dto.getGeneros());
+            generos.addAll(generosEncontrados);
+
+            // criar gêneros que não existem, precisaria de lógica extra
+        }
+
+        if (generos.isEmpty() && isNaoVazio(dto.getCdd())) {
+            generos.addAll(processarGeneros(dto.getCdd()));
+        }
+
         livro.setGeneros(generos);
+
+        try {
+            if (isNaoVazio(dto.getClassificacao_etaria())) {
+                livro.setClassificacao_etaria(ClassificacaoEtaria.valueOf(dto.getClassificacao_etaria().toUpperCase()));
+            }
+
+            if (isNaoVazio(dto.getTipo_capa())) {
+                livro.setTipo_capa(TipoCapa.valueOf(dto.getTipo_capa().toUpperCase()));
+            } else {
+                livro.setTipo_capa(null); 
+            }
+
+        } catch (IllegalArgumentException e) {
+            throw new RegraDeNegocioException(
+                    "Classificação etária ou Tipo de capa inválido: Verifique os valores enviados.");
+        }
 
         if (file != null && !file.isEmpty()) {
             try {
