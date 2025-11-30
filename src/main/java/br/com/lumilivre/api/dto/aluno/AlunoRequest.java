@@ -2,7 +2,6 @@ package br.com.lumilivre.api.dto.aluno;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -11,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.br.CPF;
 
 import java.time.LocalDate;
 
@@ -28,20 +26,14 @@ public class AlunoRequest {
     @Size(min = 3, max = 110, message = "O nome deve ter entre 3 e 110 caracteres")
     private String nomeCompleto;
 
-    @NotBlank(message = "O CPF é obrigatório")
-    @CPF(message = "CPF inválido")
     private String cpf;
 
     @JsonProperty("data_nascimento")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
-    @NotNull(message = "A data de nascimento é obrigatória")
     private LocalDate dataNascimento;
 
-    @NotBlank(message = "O celular é obrigatório")
     private String celular;
 
-    @NotBlank(message = "O email é obrigatório")
-    @Email(message = "Formato de e-mail inválido")
     private String email;
 
     @NotNull(message = "O curso é obrigatório")

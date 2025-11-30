@@ -19,26 +19,24 @@ import lombok.*;
 public class AlunoModel {
 
 	@Id
-	@Column(name = "matricula", length = 5, unique = true)
+	@Column(name = "matricula", nullable = false, length = 5, unique = true)
 	private String matricula;
 
 	@NotNull
-	@Column(name = "nome_completo", nullable = false, length = 110)
+	@Column(name = "nome_completo", nullable = false, length = 255)
 	private String nomeCompleto;
 
-	@Column(name = "cpf", nullable = false, length = 11, unique = true)
+	@Column(name = "cpf", length = 11)
 	private String cpf;
 
 	@JsonFormat(pattern = "dd/MM/yyyy")
 	@Column(name = "data_nascimento")
 	private LocalDate dataNascimento;
 
-	@NotNull
-	@Column(name = "celular", nullable = false, length = 11)
+	@Column(name = "celular", length = 11, nullable = true)
 	private String celular;
 
-	@NotNull
-	@Column(name = "email", length = 255, unique = true)
+	@Column(name = "email", length = 100, nullable = true)
 	private String email;
 
 	@ManyToOne
@@ -48,13 +46,13 @@ public class AlunoModel {
 	private CursoModel curso;
 
 	@ManyToOne
-	@JoinColumn(name = "turno_id")
+	@JoinColumn(name = "turno_id", nullable = false)
 	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
 	private TurnoModel turno;
 
 	@ManyToOne
-	@JoinColumn(name = "modulo_id")
+	@JoinColumn(name = "modulo_id", nullable = false)
 	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
 	private ModuloModel modulo;
@@ -75,10 +73,10 @@ public class AlunoModel {
 	@Column(name = "complemento", length = 55)
 	private String complemento;
 
-	@Column(name = "bairro", length = 255)
+	@Column(name = "bairro", length = 55)
 	private String bairro;
 
-	@Column(name = "localidade", length = 255)
+	@Column(name = "localidade", length = 55)
 	private String localidade;
 
 	@Column(name = "uf", length = 2)
@@ -88,7 +86,7 @@ public class AlunoModel {
 	private Integer numero_casa;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "penalidade", length = 55)
+	@Column(name = "penalidade", length = 20)
 	private Penalidade penalidade;
 
 	private LocalDateTime penalidadeExpiraEm;

@@ -89,11 +89,17 @@ public class AlunoService {
         if (alunoRepository.existsByMatricula(dto.getMatricula())) {
             throw new RegraDeNegocioException("Matrícula já cadastrada.");
         }
-        if (alunoRepository.existsByCpf(dto.getCpf())) {
-            throw new RegraDeNegocioException("CPF já cadastrado.");
+
+        if (dto.getCpf() != null && !dto.getCpf().isBlank()) {
+            if (alunoRepository.existsByCpf(dto.getCpf())) {
+                throw new RegraDeNegocioException("CPF já cadastrado.");
+            }
         }
-        if (usuarioRepository.existsByEmail(dto.getEmail())) {
-            throw new RegraDeNegocioException("E-mail já está em uso.");
+
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+            if (usuarioRepository.existsByEmail(dto.getEmail())) {
+                throw new RegraDeNegocioException("E-mail já está em uso.");
+            }
         }
 
         EntidadesRelacionadas entidades = buscarEntidadesRelacionadas(dto);
@@ -103,16 +109,19 @@ public class AlunoService {
 
         preencherEnderecoPorCep(aluno, dto.getCep());
 
-        UsuarioModel usuario = criarUsuarioParaAluno(aluno);
-        aluno.setUsuario(usuario);
+        if (aluno.getEmail() != null && !aluno.getEmail().isBlank()) {
+            UsuarioModel usuario = criarUsuarioParaAluno(aluno);
+            aluno.setUsuario(usuario);
+        }
 
         AlunoModel alunoSalvo = alunoRepository.save(aluno);
 
-        // pode ser assíncrono no futuro
-        try {
-            emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNomeCompleto(), dto.getMatricula());
-        } catch (Exception e) {
-            System.err.println("Erro ao enviar email: " + e.getMessage());
+        if (aluno.getEmail() != null && !aluno.getEmail().isBlank()) {
+            try {
+                emailService.enviarSenhaInicial(aluno.getEmail(), aluno.getNomeCompleto(), dto.getMatricula());
+            } catch (Exception e) {
+                System.err.println("Erro ao enviar email: " + e.getMessage());
+            }
         }
 
         return alunoSalvo;
