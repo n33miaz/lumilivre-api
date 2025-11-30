@@ -91,7 +91,6 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
                 )
                 FROM AlunoModel a
                 JOIN a.curso c
-                ORDER BY a.nomeCompleto
             """)
     Page<AlunoResumoResponse> findAlunosParaListaAdmin(Pageable pageable);
 
@@ -106,7 +105,6 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
                    OR LOWER(c.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
                    OR a.celular LIKE CONCAT('%', :texto, '%')
                    OR LOWER(a.email) LIKE LOWER(CONCAT('%', :texto, '%'))
-                ORDER BY a.nomeCompleto
             """)
     Page<AlunoResumoResponse> findAlunosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 
