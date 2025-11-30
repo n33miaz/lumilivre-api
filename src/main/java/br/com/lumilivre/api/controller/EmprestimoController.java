@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.controller;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -78,10 +80,24 @@ public class EmprestimoController {
             @RequestParam(required = false) String alunoNome,
             @RequestParam(required = false) String dataEmprestimo,
             @RequestParam(required = false) String dataDevolucao,
+            @RequestParam(required = false) String dataDevolucaoInicio,
             Pageable pageable) {
 
+        LocalDateTime dataDevInicio = null;
+        if (dataDevolucaoInicio != null && !dataDevolucaoInicio.isBlank()) {
+            dataDevInicio = LocalDate.parse(dataDevolucaoInicio).atStartOfDay();
+        }
+
         Page<EmprestimoListagemResponse> emprestimos = es.buscarAvancado(
-                statusEmprestimo, tombo, livroNome, alunoNome, dataEmprestimo, dataDevolucao, pageable);
+                statusEmprestimo,
+                tombo,
+                livroNome,
+                alunoNome,
+                dataEmprestimo,
+                dataDevolucao,
+                dataDevInicio,
+                pageable);
+
         return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
 

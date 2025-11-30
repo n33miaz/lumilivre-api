@@ -199,7 +199,7 @@ public class EmprestimoService {
         Pageable pageableTratado = tratarOrdenacao(pageable);
 
         if (texto == null || texto.isBlank()) {
-            return buscarAvancado(null, null, null, null, null, null, pageableTratado);
+            return buscarAvancado(null, null, null, null, null, null, null, pageableTratado);
         }
 
         return emprestimoRepository.buscarPorTexto(texto, pageableTratado);
@@ -227,7 +227,7 @@ public class EmprestimoService {
     }
 
     public List<EmprestimoAtivoResponse> buscarApenasAtrasados() {
-        return emprestimoRepository.findApenasAtrasadosDTO();
+        return emprestimoRepository.findApenasAtrasadosDTO(LocalDate.now().atStartOfDay());
     }
 
     public Page<EmprestimoListagemResponse> buscarAvancado(
@@ -237,6 +237,7 @@ public class EmprestimoService {
             String alunoNomeCompleto,
             String dataEmprestimo,
             String dataDevolucao,
+            LocalDateTime dataDevolucaoInicio,
             Pageable pageable) {
 
         String tomboFiltro = (tombo != null && !tombo.isBlank()) ? "%" + tombo + "%" : null;
@@ -266,9 +267,9 @@ public class EmprestimoService {
                 alunoNomeFiltro,
                 dataEmprestimoInicio,
                 null,
-                null,
+                dataDevolucaoInicio,
                 dataDevolucaoFim,
-                LocalDateTime.now(),
+                LocalDate.now().atStartOfDay(),
                 pageableFinal);
     }
 

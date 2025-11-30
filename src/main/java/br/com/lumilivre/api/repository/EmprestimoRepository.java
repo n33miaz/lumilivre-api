@@ -239,8 +239,8 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             JOIN e.exemplar ex
             JOIN ex.livro l
             WHERE e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO
-               OR (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO AND e.dataDevolucao < CURRENT_TIMESTAMP)
+               OR (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO AND e.dataDevolucao < :dataRef)
             ORDER BY e.dataDevolucao ASC
             """)
-    List<EmprestimoAtivoResponse> findApenasAtrasadosDTO();
+    List<EmprestimoAtivoResponse> findApenasAtrasadosDTO(@Param("dataRef") LocalDateTime dataRef);
 }
