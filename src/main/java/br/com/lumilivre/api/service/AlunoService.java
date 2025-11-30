@@ -132,18 +132,25 @@ public class AlunoService {
         AlunoModel aluno = alunoRepository.findByMatricula(matricula)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));
 
-        if (!aluno.getCpf().equals(dto.getCpf()) && alunoRepository.existsByCpf(dto.getCpf())) {
-            throw new RegraDeNegocioException("Este CPF já está sendo usado por outro aluno.");
+        if (dto.getCpf() != null && !dto.getCpf().isBlank()) {
+            boolean cpfMudou = aluno.getCpf() == null || !aluno.getCpf().equals(dto.getCpf());
+
+            if (cpfMudou && alunoRepository.existsByCpf(dto.getCpf())) {
+                throw new RegraDeNegocioException("Este CPF já está sendo usado por outro aluno.");
+            }
         }
 
         EntidadesRelacionadas entidades = buscarEntidadesRelacionadas(dto);
 
-        boolean cpfAlterado = !aluno.getCpf().equals(dto.getCpf());
+        boolean cpfMudou = false;
+        if (dto.getCpf() != null && !dto.getCpf().isBlank()) {
+            cpfMudou = aluno.getCpf() == null || !aluno.getCpf().equals(dto.getCpf());
+        }
 
         mapearDtoParaEntidade(aluno, dto, entidades);
         preencherEnderecoPorCep(aluno, dto.getCep());
 
-        if (cpfAlterado && aluno.getUsuario() != null) {
+        if (cpfMudou && aluno.getUsuario() != null && dto.getCpf() != null) {
             aluno.getUsuario().setSenha(passwordEncoder.encode(dto.getCpf()));
         }
 
