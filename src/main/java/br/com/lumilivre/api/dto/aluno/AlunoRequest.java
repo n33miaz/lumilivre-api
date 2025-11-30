@@ -59,6 +59,4 @@ public class AlunoRequest {
 
     @JsonProperty("numero_casa")
     private Integer numeroCasa;
-
-    private String penalidade;
 }
