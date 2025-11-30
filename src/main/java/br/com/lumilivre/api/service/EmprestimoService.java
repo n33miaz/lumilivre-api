@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.JpaSort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
@@ -196,13 +197,34 @@ public class EmprestimoService {
     }
 
     public Page<EmprestimoListagemResponse> buscarPorTexto(String texto, Pageable pageable) {
-        Pageable pageableTratado = tratarOrdenacao(pageable);
+        Pageable pageableNativo = pageable;
 
-        if (texto == null || texto.isBlank()) {
-            return buscarAvancado(null, null, null, null, null, null, null, pageableTratado);
+        Sort.Order statusOrder = pageable.getSort().getOrderFor("status");
+
+        if (statusOrder != null) {
+            boolean isAsc = statusOrder.isAscending();
+            if (isAsc) {
+                pageableNativo = PageRequest.of(
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        JpaSort.unsafe(Sort.Direction.ASC,
+                                "(CASE WHEN e.statusEmprestimo = 'CONCLUIDO' THEN 1 ELSE 0 END)",
+                                "dataDevolucao"));
+            } else {
+                pageableNativo = PageRequest.of(
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        JpaSort.unsafe(Sort.Direction.ASC,
+                                "(CASE WHEN e.statusEmprestimo = 'CONCLUIDO' THEN 1 ELSE 0 END)")
+                                .and(JpaSort.unsafe(Sort.Direction.DESC, "dataDevolucao")));
+            }
         }
 
-        return emprestimoRepository.buscarPorTexto(texto, pageableTratado);
+        if (texto == null || texto.isBlank()) {
+            return buscarAvancado(null, null, null, null, null, null, null, tratarOrdenacao(pageable));
+        }
+
+        return emprestimoRepository.buscarPorTexto(texto, pageableNativo);
     }
 
     public List<EmprestimoResponse> listarEmprestimosAluno(String matricula) {

@@ -47,28 +47,28 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
 
     List<EmprestimoModel> findByStatusEmprestimo(StatusEmprestimo atrasado);
 
-    @Query(value = """
-                SELECT
-                    e.id,
-                    e.status_emprestimo,
-                    l.nome AS livro_nome,
-                    ex.tombo AS livro_tombo,
-                    a.nome_completo AS nome_aluno,
-                    a.matricula AS matricula_aluno,
-                    c.nome AS curso,
-                    e.data_emprestimo,
-                    e.data_devolucao
-                FROM emprestimo e
-                JOIN aluno a ON e.aluno_matricula = a.matricula
-                JOIN exemplar ex ON e.exemplar_tombo = ex.tombo
-                JOIN livro l ON ex.livro_id = l.id
-                JOIN curso c ON a.curso_id = c.id
-                WHERE e.texto_busca @@ plainto_tsquery('portuguese', :texto)
-            """, countQuery = """
-                SELECT count(*)
-                FROM emprestimo e
-                WHERE e.texto_busca @@ plainto_tsquery('portuguese', :texto)
-            """, nativeQuery = true)
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse(
+                e.id,
+                e.statusEmprestimo,
+                l.nome,
+                ex.tombo,
+                a.nomeCompleto,
+                a.matricula,
+                c.nome,
+                e.dataEmprestimo,
+                e.dataDevolucao
+            )
+            FROM EmprestimoModel e
+            JOIN e.aluno a
+            JOIN e.exemplar ex
+            JOIN ex.livro l
+            JOIN a.curso c
+            WHERE LOWER(a.nomeCompleto) LIKE LOWER(CONCAT('%', :texto, '%'))
+               OR a.matricula LIKE CONCAT('%', :texto, '%')
+               OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+               OR ex.tombo LIKE CONCAT('%', :texto, '%')
+            """)
     Page<EmprestimoListagemResponse> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
