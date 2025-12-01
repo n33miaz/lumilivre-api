@@ -1,7 +1,6 @@
 package br.com.lumilivre.api.dto.solicitacao;
 
 import java.time.LocalDateTime;
-
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +17,10 @@ public class SolicitacaoResponse {
     private String alunoNome;
     private String alunoMatricula;
     private String exemplarTombo;
+    
+    private Long livroId;
     private String livroNome;
+    
     private LocalDateTime dataSolicitacao;
     private StatusSolicitacao status;
     private String observacao;

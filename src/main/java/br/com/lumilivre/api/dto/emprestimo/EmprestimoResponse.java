@@ -1,9 +1,7 @@
 package br.com.lumilivre.api.dto.emprestimo;
 
 import java.time.LocalDateTime;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
-
 import br.com.lumilivre.api.enums.Penalidade;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
@@ -26,6 +24,8 @@ public class EmprestimoResponse {
 
 	private StatusEmprestimo status;
 	private Penalidade penalidade;
+
+	private Long livroId;
 	private String livroTitulo;
 
 	private String alunoNome;
@@ -41,8 +41,10 @@ public class EmprestimoResponse {
 
 		if (model.getExemplar() != null) {
 			this.exemplarTombo = model.getExemplar().getTombo();
+
 			if (model.getExemplar().getLivro() != null) {
 				this.livroTitulo = model.getExemplar().getLivro().getNome();
+				this.livroId = model.getExemplar().getLivro().getId();
 			}
 		}
 

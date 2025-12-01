@@ -36,6 +36,14 @@ public class SolicitacaoEmprestimoController {
         return solicitacaoService.solicitarEmprestimo(matriculaAluno, tomboExemplar);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @PostMapping("/solicitar-mobile")
+    public ResponseEntity<String> solicitarMobile(
+            @RequestParam String matriculaAluno,
+            @RequestParam Long livroId) {
+        return solicitacaoService.solicitarEmprestimoPorLivro(matriculaAluno, livroId);
+    }
+
     @PostMapping("/processar/{id}")
     public ResponseEntity<String> processar(@PathVariable Integer id,
             @RequestParam boolean aceitar) {

@@ -108,7 +108,7 @@ public class SecurityConfig {
                         .allowedOrigins(
                                 "https://www.lumilivre.com.br", // produção
                                 "http://localhost:5173", // desenv. web
-                                "http://localhost:59222", "http://192.168.56.1:8080", "http://127.0.0.1:8080", "http://localhost:8080" // desenv. mobile
+                                "http://localhost:64438", "http://192.168.56.1:8080", "http://127.0.0.1:8080", "http://localhost:8080" // desenv. mobile
                 )
                         .allowedOriginPatterns("*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")

@@ -136,6 +136,7 @@ public class SolicitacaoEmprestimoService {
                         s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
                         s.getExemplar().getTombo(),
+                        s.getExemplar().getLivro().getId(), 
                         s.getExemplar().getLivro().getNome(),
                         s.getDataSolicitacao(),
                         s.getStatus(),
@@ -151,6 +152,7 @@ public class SolicitacaoEmprestimoService {
                         s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
                         s.getExemplar().getTombo(),
+                        s.getExemplar().getLivro().getId(), 
                         s.getExemplar().getLivro().getNome(),
                         s.getDataSolicitacao(),
                         s.getStatus(),
@@ -158,4 +160,38 @@ public class SolicitacaoEmprestimoService {
                 .toList();
     }
 
+    @Transactional
+    public ResponseEntity<String> solicitarEmprestimoPorLivro(String matriculaAluno, Long livroId) {
+        AlunoModel aluno = alunoRepository.findByMatricula(matriculaAluno).orElse(null);
+        if (aluno == null)
+            return ResponseEntity.badRequest().body("Aluno não encontrado.");
+        if (aluno.getPenalidade() != null)
+            return ResponseEntity.badRequest().body("Aluno possui penalidade ativa.");
+
+        long emprestimosAtivos = emprestimoService.getContagemEmprestimosAtivosEAtrasados();
+        if (emprestimosAtivos >= 3)
+            return ResponseEntity.badRequest().body("Aluno atingiu limite de empréstimos ativos.");
+
+        ExemplarModel exemplar = exemplarRepository.findFirstDisponivelByLivroId(livroId)
+                .orElse(null);
+
+        if (exemplar == null) {
+            return ResponseEntity.badRequest().body("Não há exemplares disponíveis para este livro no momento.");
+        }
+
+        SolicitacaoEmprestimoModel solicitacao = new SolicitacaoEmprestimoModel();
+        solicitacao.setAluno(aluno);
+        solicitacao.setExemplar(exemplar);
+        solicitacao.setObservacao("Solicitado via Mobile"); 
+        solicitacaoRepository.save(solicitacao);
+
+        try {
+            emailService.enviarEmail(aluno.getEmail(), "Solicitação recebida",
+                    "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi registrada.");
+        } catch (Exception e) {
+            System.err.println("Erro ao enviar email: " + e.getMessage());
+        }
+
+        return ResponseEntity.ok("Solicitação registrada com sucesso.");
+    }
 }

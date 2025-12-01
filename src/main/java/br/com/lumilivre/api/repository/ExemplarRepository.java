@@ -53,4 +53,7 @@ public interface ExemplarRepository extends JpaRepository<ExemplarModel, String>
       @Param("isbnOuTombo") String isbnOuTombo,
       @Param("inicio") LocalDateTime inicio,
       @Param("fim") LocalDateTime fim);
+
+  @Query(value = "SELECT * FROM exemplar e WHERE e.livro_id = :livroId AND e.status_livro = 'DISPONIVEL' LIMIT 1", nativeQuery = true)
+  Optional<ExemplarModel> findFirstDisponivelByLivroId(@Param("livroId") Long livroId);
 }
