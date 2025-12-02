@@ -26,6 +26,9 @@ public class AlunoModel {
 	@Column(name = "nome_completo", nullable = false, length = 255)
 	private String nomeCompleto;
 
+	@Column(name = "foto", length = 500)
+	private String foto;
+
 	@Column(name = "cpf", length = 11)
 	private String cpf;
 

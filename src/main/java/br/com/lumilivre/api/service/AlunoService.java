@@ -10,12 +10,14 @@ import br.com.lumilivre.api.model.*;
 import br.com.lumilivre.api.repository.*;
 import br.com.lumilivre.api.service.infra.CepService;
 import br.com.lumilivre.api.service.infra.EmailService;
+import br.com.lumilivre.api.service.infra.SupabaseStorageService;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 
@@ -30,6 +32,7 @@ public class AlunoService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final CepService cepService;
+    private final SupabaseStorageService storageService;
 
     private record EntidadesRelacionadas(CursoModel curso, TurnoModel turno, ModuloModel modulo) {
     }
@@ -37,7 +40,7 @@ public class AlunoService {
     public AlunoService(AlunoRepository alunoRepository, CursoRepository cursoRepository,
             UsuarioRepository usuarioRepository, TurnoRepository turnoRepository,
             ModuloRepository moduloRepository, EmailService emailService,
-            PasswordEncoder passwordEncoder, CepService cepService) {
+            PasswordEncoder passwordEncoder, CepService cepService, SupabaseStorageService supabaseStorageService) {
         this.alunoRepository = alunoRepository;
         this.cursoRepository = cursoRepository;
         this.usuarioRepository = usuarioRepository;
@@ -46,6 +49,7 @@ public class AlunoService {
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
         this.cepService = cepService;
+        this.storageService = supabaseStorageService;
     }
 
     // --- MÉTODOS DE LEITURA ---
@@ -250,5 +254,19 @@ public class AlunoService {
 
     private String criarFiltroLike(String valor) {
         return (valor != null && !valor.isBlank()) ? "%" + valor + "%" : null;
+    }
+
+    @Transactional
+    public void uploadFoto(String matricula, MultipartFile file) {
+        AlunoModel aluno = alunoRepository.findByMatricula(matricula)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));
+
+        try {
+            String url = storageService.uploadFile(file, "alunos");
+            aluno.setFoto(url);
+            alunoRepository.save(aluno);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao enviar foto de perfil: " + e.getMessage());
+        }
     }
 }

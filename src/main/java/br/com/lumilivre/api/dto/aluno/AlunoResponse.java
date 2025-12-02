@@ -18,6 +18,7 @@ public class AlunoResponse {
 
     private String matricula;
     private String nomeCompleto;
+    private String foto;
     private String email;
     private String celular;
     private String cpf;
@@ -41,6 +42,7 @@ public class AlunoResponse {
     public AlunoResponse(AlunoModel aluno) {
         this.matricula = aluno.getMatricula();
         this.nomeCompleto = aluno.getNomeCompleto();
+        this.foto = aluno.getFoto();
         this.email = aluno.getEmail();
         this.celular = aluno.getCelular();
         this.cpf = aluno.getCpf();

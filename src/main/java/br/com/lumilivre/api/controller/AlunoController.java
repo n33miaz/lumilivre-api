@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import br.com.lumilivre.api.dto.aluno.AlunoRequest;
 import br.com.lumilivre.api.dto.aluno.AlunoResponse;
 import br.com.lumilivre.api.dto.aluno.AlunoResumoResponse;
@@ -87,6 +89,17 @@ public class AlunoController {
     public ResponseEntity<ApiResponse<AlunoResponse>> buscarPorMatricula(@PathVariable String matricula) {
         AlunoModel aluno = alunoService.buscarPorMatricula(matricula);
         return ResponseEntity.ok(new ApiResponse<>(true, "Aluno encontrado", new AlunoResponse(aluno)));
+    }
+
+    @PostMapping(value = "/{matricula}/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @Operation(summary = "Atualiza a foto de perfil do aluno")
+    public ResponseEntity<ApiResponse<Void>> uploadFoto(
+            @PathVariable String matricula,
+            @RequestParam("file") MultipartFile file) {
+
+        alunoService.uploadFoto(matricula, file);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Foto atualizada com sucesso.", null));
     }
 
     @PostMapping("/cadastrar")

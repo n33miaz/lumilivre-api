@@ -38,6 +38,8 @@ public class SupabaseStorageService {
         String bucketName;
         if ("capas".equalsIgnoreCase(tipo)) {
             bucketName = bucketCapas;
+        } else if ("alunos".equalsIgnoreCase(tipo)) {
+            bucketName = bucketCapas;
         } else if ("tccs".equalsIgnoreCase(tipo)) {
             bucketName = bucketTccs;
             if (!"application/pdf".equalsIgnoreCase(file.getContentType())) {
