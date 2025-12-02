@@ -37,6 +37,7 @@ public class LivroDetalheResponse {
     private Set<String> generos;
     private long exemplaresDisponiveis;
     private long totalExemplares;
+    private Double avaliacao;
 
     public LivroDetalheResponse(LivroModel livro, long exemplaresDisponiveis, long totalExemplares) {
         this.id = livro.getId();
@@ -72,5 +73,6 @@ public class LivroDetalheResponse {
 
         this.exemplaresDisponiveis = exemplaresDisponiveis;
         this.totalExemplares = totalExemplares;
+        this.avaliacao = livro.getAvaliacao();
     }
 }

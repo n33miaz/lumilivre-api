@@ -143,6 +143,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                         l.nome,
                         l.autor,
                         l.imagem,
+                        l.avaliacao,
                         g.nome AS genero_nome,
                         ROW_NUMBER() OVER(PARTITION BY g.nome ORDER BY l.data_lancamento DESC, l.id DESC) as rn
                     FROM livro l
@@ -154,6 +155,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                     nome,
                     autor,
                     imagem,
+                    avaliacao,
                     genero_nome
                 FROM RankedLivros
                 WHERE rn <= 10
@@ -217,7 +219,8 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                 l.id,
                 l.imagem,
                 l.nome,
-                l.autor
+                l.autor,
+                l.avaliacao
             )
             FROM LivroModel l
             JOIN l.generos g

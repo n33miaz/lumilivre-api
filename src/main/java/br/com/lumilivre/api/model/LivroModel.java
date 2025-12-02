@@ -73,6 +73,10 @@ public class LivroModel {
     @Column(name = "imagem", length = 5000)
     private String imagem;
 
+    @Column(name = "avaliacao")
+    @Builder.Default
+    private Double avaliacao = 4.6;
+
     @Column(name = "data_inclusao", nullable = false)
     private LocalDateTime dataInclusao;
 

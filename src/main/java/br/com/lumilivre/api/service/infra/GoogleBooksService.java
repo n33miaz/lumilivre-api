@@ -30,7 +30,7 @@ public class GoogleBooksService {
         this.restTemplate = restTemplate;
     }
 
-    public record GoogleBookData(LivroModel livro, List<String> categories) {
+    public record GoogleBookData(LivroModel livro, List<String> categories, Double averageRating) {
     }
 
     public Optional<GoogleBookData> buscarDadosPorIsbn(String isbn) {
@@ -71,13 +71,14 @@ public class GoogleBooksService {
             parsearDataPublicacao(volumeInfo.publishedDate()).ifPresent(livro::setData_lancamento);
 
             obterUrlImagem(volumeInfo.imageLinks()).ifPresent(livro::setImagem);
+            Double rating = volumeInfo.averageRating();
 
             List<String> categories = volumeInfo.categories() != null ? volumeInfo.categories()
                     : Collections.emptyList();
 
             log.info("Livro encontrado: {}", livro.getNome());
-            return Optional.of(new GoogleBookData(livro, categories));
 
+            return Optional.of(new GoogleBookData(livro, categories, rating));
         } catch (Exception e) {
             log.error("Erro ao buscar livro no Google Books para ISBN {}: {}", isbn, e.getMessage());
             return Optional.empty();

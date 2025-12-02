@@ -13,4 +13,5 @@ public class LivroMobileResponse {
     private String imagem;
     private String titulo;
     private String autor;
+    private Double avaliacao; 
 }

@@ -2,7 +2,6 @@ package br.com.lumilivre.api.dto.integracao.google;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
-
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -14,6 +13,8 @@ public record VolumeInfo(
         String publishedDate,
         String description,
         Integer pageCount,
+        Double averageRating,
+        Integer ratingsCount,
         List<String> categories,
         ImageLinks imageLinks) {
 }

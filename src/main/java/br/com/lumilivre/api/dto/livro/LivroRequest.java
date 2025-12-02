@@ -53,4 +53,5 @@ public class LivroRequest {
     private String autor;
 
     private Set<String> generos;
+    private Double avaliacao;
 }

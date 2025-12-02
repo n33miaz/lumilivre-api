@@ -147,7 +147,9 @@ public class LivroService {
                                 ((Number) row.get("id")).longValue(),
                                 (String) row.get("imagem"),
                                 (String) row.get("nome"),
-                                (String) row.get("autor")), Collectors.toList())));
+                                (String) row.get("autor"),
+                                row.get("avaliacao") != null ? ((Number) row.get("avaliacao")).doubleValue() : 4.6),
+                                Collectors.toList())));
 
         return livrosPorGenero.entrySet().stream()
                 .map(entry -> new GeneroCatalogoResponse(entry.getKey(), entry.getValue()))
@@ -195,23 +197,19 @@ public class LivroService {
 
     @CacheEvict(value = "catalogo-mobile", allEntries = true)
     public LivroResponse cadastrar(LivroRequest dto, MultipartFile file) {
-        // Validações iniciais...
         if (isNaoVazio(dto.getIsbn()) && livroRepository.findByIsbn(dto.getIsbn()).isPresent()) {
             throw new RegraDeNegocioException("Esse ISBN já está cadastrado em outro livro.");
         }
 
-        // 2. Chamada externa acontece FORA da transação do banco
         if (isNaoVazio(dto.getIsbn())) {
             preencherComGoogleBooks(dto);
         }
 
         validarCampos(dto);
 
-        // 3. Chama o método que realmente salva (que abre a transação)
         return salvarLivroNoBanco(dto, file);
     }
 
-    // 4. Novo método protegido pela transação
     @Transactional
     protected LivroResponse salvarLivroNoBanco(LivroRequest dto, MultipartFile file) {
         try {
@@ -292,6 +290,7 @@ public class LivroService {
         try {
             googleBooksService.buscarDadosPorIsbn(dto.getIsbn()).ifPresent(googleData -> {
                 LivroModel livroGoogle = googleData.livro();
+
                 if (isVazio(dto.getNome()))
                     dto.setNome(livroGoogle.getNome());
                 if (isVazio(dto.getEditora()))
@@ -300,15 +299,25 @@ public class LivroService {
                     dto.setNumero_paginas(livroGoogle.getNumero_paginas());
                 if (dto.getData_lancamento() == null)
                     dto.setData_lancamento(livroGoogle.getData_lancamento());
+
                 if (isVazio(dto.getSinopse()))
                     dto.setSinopse(livroGoogle.getSinopse());
                 if (isVazio(dto.getImagem()))
                     dto.setImagem(livroGoogle.getImagem());
+
                 if (isVazio(dto.getAutor()) && isNaoVazio(livroGoogle.getAutor()))
                     dto.setAutor(livroGoogle.getAutor());
+
+                if (googleData.averageRating() != null) {
+                    dto.setAvaliacao(googleData.averageRating());
+                } else {
+                    dto.setAvaliacao(4.6);
+                }
             });
         } catch (Exception e) {
-            log.warn("Falha ao buscar dados no Google Books, prosseguindo com cadastro manual: {}", e.getMessage());
+            log.warn("Falha ao buscar dados no Google Books: {}", e.getMessage());
+            if (dto.getAvaliacao() == null)
+                dto.setAvaliacao(4.6);
         }
     }
 
@@ -334,6 +343,7 @@ public class LivroService {
         livro.setQuantidade(dto.getQuantidade());
         livro.setSinopse(dto.getSinopse());
         livro.setAutor(dto.getAutor());
+        livro.setAvaliacao(dto.getAvaliacao() != null ? dto.getAvaliacao() : 4.6);
 
         if (isNaoVazio(dto.getCdd())) {
             CddModel cdd = cddRepository.findById(dto.getCdd())
@@ -366,7 +376,7 @@ public class LivroService {
             if (isNaoVazio(dto.getTipo_capa())) {
                 livro.setTipo_capa(TipoCapa.valueOf(dto.getTipo_capa().toUpperCase()));
             } else {
-                livro.setTipo_capa(null); 
+                livro.setTipo_capa(null);
             }
 
         } catch (IllegalArgumentException e) {
