@@ -238,6 +238,12 @@ public class LivroService {
             if (livroComMesmoIsbn.isPresent() && !livroComMesmoIsbn.get().getId().equals(id)) {
                 throw new RegraDeNegocioException("O ISBN informado já pertence a outro livro.");
             }
+        } else {
+            dto.setIsbn(livroParaAtualizar.getIsbn());
+        }
+
+        if (isNaoVazio(dto.getIsbn())) {
+            preencherComGoogleBooks(dto);
         }
 
         validarCampos(dto);
@@ -288,34 +294,37 @@ public class LivroService {
 
     private void preencherComGoogleBooks(LivroRequest dto) {
         try {
-            googleBooksService.buscarDadosPorIsbn(dto.getIsbn()).ifPresent(googleData -> {
-                LivroModel livroGoogle = googleData.livro();
+            googleBooksService.buscarLivroInteligente(dto.getIsbn(), dto.getNome(), dto.getAutor())
+                    .ifPresent(googleData -> {
+                        LivroModel livroGoogle = googleData.livro();
 
-                if (isVazio(dto.getNome()))
-                    dto.setNome(livroGoogle.getNome());
-                if (isVazio(dto.getEditora()))
-                    dto.setEditora(livroGoogle.getEditora());
-                if (dto.getNumero_paginas() == null || dto.getNumero_paginas() == 0)
-                    dto.setNumero_paginas(livroGoogle.getNumero_paginas());
-                if (dto.getData_lancamento() == null)
-                    dto.setData_lancamento(livroGoogle.getData_lancamento());
+                        if (isVazio(dto.getNome()))
+                            dto.setNome(livroGoogle.getNome());
+                        if (isVazio(dto.getEditora()))
+                            dto.setEditora(livroGoogle.getEditora());
+                        if (dto.getNumero_paginas() == null || dto.getNumero_paginas() == 0)
+                            dto.setNumero_paginas(livroGoogle.getNumero_paginas());
+                        if (dto.getData_lancamento() == null)
+                            dto.setData_lancamento(livroGoogle.getData_lancamento());
+                        if (isVazio(dto.getSinopse()))
+                            dto.setSinopse(livroGoogle.getSinopse());
 
-                if (isVazio(dto.getSinopse()))
-                    dto.setSinopse(livroGoogle.getSinopse());
-                if (isVazio(dto.getImagem()))
-                    dto.setImagem(livroGoogle.getImagem());
+                        if (isVazio(dto.getImagem()) && isNaoVazio(livroGoogle.getImagem())) {
+                            dto.setImagem(livroGoogle.getImagem());
+                        }
 
-                if (isVazio(dto.getAutor()) && isNaoVazio(livroGoogle.getAutor()))
-                    dto.setAutor(livroGoogle.getAutor());
+                        if (isVazio(dto.getAutor()) && isNaoVazio(livroGoogle.getAutor()))
+                            dto.setAutor(livroGoogle.getAutor());
 
-                if (googleData.averageRating() != null) {
-                    dto.setAvaliacao(googleData.averageRating());
-                } else {
-                    dto.setAvaliacao(4.6);
-                }
-            });
+                        if (googleData.averageRating() != null) {
+                            dto.setAvaliacao(googleData.averageRating());
+                        } else if (dto.getAvaliacao() == null) {
+                            dto.setAvaliacao(4.6);
+                        }
+                    });
+
         } catch (Exception e) {
-            log.warn("Falha ao buscar dados no Google Books: {}", e.getMessage());
+            log.warn("Falha na busca inteligente: {}", e.getMessage());
             if (dto.getAvaliacao() == null)
                 dto.setAvaliacao(4.6);
         }

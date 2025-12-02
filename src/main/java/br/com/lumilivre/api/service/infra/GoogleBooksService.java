@@ -33,62 +33,79 @@ public class GoogleBooksService {
     public record GoogleBookData(LivroModel livro, List<String> categories, Double averageRating) {
     }
 
-    public Optional<GoogleBookData> buscarDadosPorIsbn(String isbn) {
-        String url = UriComponentsBuilder.fromHttpUrl(GOOGLE_BOOKS_API)
-                .queryParam("q", "isbn:" + isbn)
-                .toUriString();
+    public Optional<GoogleBookData> buscarLivroInteligente(String isbn, String titulo, String autor) {
+        if (isbn != null && !isbn.isBlank()) {
+            Optional<GoogleBookData> porIsbn = buscarNaApi("isbn:" + isbn);
+            if (porIsbn.isPresent()) {
+                log.info("Livro encontrado via ISBN: {}", isbn);
+                return porIsbn;
+            }
+        }
 
-        log.info("Buscando ISBN no Google Books: {}", isbn);
+        if (titulo != null && !titulo.isBlank()) {
+            String query = "intitle:" + titulo;
+            if (autor != null && !autor.isBlank()) {
+                query += "+inauthor:" + autor;
+            }
+            log.info("Tentando fallback por Título/Autor: {}", query);
+            return buscarNaApi(query);
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<GoogleBookData> buscarNaApi(String query) {
+        String url = UriComponentsBuilder.fromHttpUrl(GOOGLE_BOOKS_API)
+                .queryParam("q", query)
+                .queryParam("maxResults", 1)
+                .queryParam("langRestrict", "pt")
+                .toUriString();
 
         try {
             GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
 
             if (response == null || response.items() == null || response.items().isEmpty()) {
-                log.warn("Nenhum livro encontrado para ISBN: {}", isbn);
                 return Optional.empty();
             }
 
             VolumeInfo volumeInfo = response.items().get(0).volumeInfo();
-            if (volumeInfo == null) {
-                log.warn("VolumeInfo não encontrado para ISBN: {}", isbn);
-                return Optional.empty();
-            }
+            return converterParaModel(volumeInfo);
 
-            LivroModel livro = new LivroModel();
-            livro.setIsbn(isbn);
-            livro.setNome(volumeInfo.title());
-            livro.setEditora(volumeInfo.publisher());
-            livro.setSinopse(volumeInfo.description());
-
-            if (volumeInfo.authors() != null && !volumeInfo.authors().isEmpty()) {
-                livro.setAutor(String.join(", ", volumeInfo.authors()));
-            }
-
-            if (volumeInfo.pageCount() != null) {
-                livro.setNumero_paginas(volumeInfo.pageCount());
-            }
-
-            parsearDataPublicacao(volumeInfo.publishedDate()).ifPresent(livro::setData_lancamento);
-
-            obterUrlImagem(volumeInfo.imageLinks()).ifPresent(livro::setImagem);
-            Double rating = volumeInfo.averageRating();
-
-            List<String> categories = volumeInfo.categories() != null ? volumeInfo.categories()
-                    : Collections.emptyList();
-
-            log.info("Livro encontrado: {}", livro.getNome());
-
-            return Optional.of(new GoogleBookData(livro, categories, rating));
         } catch (Exception e) {
-            log.error("Erro ao buscar livro no Google Books para ISBN {}: {}", isbn, e.getMessage());
+            log.error("Erro na requisição Google Books: {}", e.getMessage());
             return Optional.empty();
         }
     }
 
-    private Optional<LocalDate> parsearDataPublicacao(String publishedDate) {
-        if (publishedDate == null || publishedDate.isBlank()) {
+    private Optional<GoogleBookData> converterParaModel(VolumeInfo volumeInfo) {
+        if (volumeInfo == null)
             return Optional.empty();
+
+        LivroModel livro = new LivroModel();
+        livro.setNome(volumeInfo.title());
+        livro.setEditora(volumeInfo.publisher());
+        livro.setSinopse(volumeInfo.description());
+
+        if (volumeInfo.authors() != null && !volumeInfo.authors().isEmpty()) {
+            livro.setAutor(String.join(", ", volumeInfo.authors()));
         }
+
+        if (volumeInfo.pageCount() != null) {
+            livro.setNumero_paginas(volumeInfo.pageCount());
+        }
+
+        parsearDataPublicacao(volumeInfo.publishedDate()).ifPresent(livro::setData_lancamento);
+        obterUrlImagem(volumeInfo.imageLinks()).ifPresent(livro::setImagem);
+
+        Double rating = volumeInfo.averageRating();
+        List<String> categories = volumeInfo.categories() != null ? volumeInfo.categories() : Collections.emptyList();
+
+        return Optional.of(new GoogleBookData(livro, categories, rating));
+    }
+
+    private Optional<LocalDate> parsearDataPublicacao(String publishedDate) {
+        if (publishedDate == null || publishedDate.isBlank())
+            return Optional.empty();
         try {
             return Optional.of(LocalDate.parse(publishedDate));
         } catch (DateTimeParseException e1) {
@@ -98,7 +115,6 @@ public class GoogleBooksService {
                 try {
                     return Optional.of(Year.parse(publishedDate).atDay(1));
                 } catch (DateTimeParseException e3) {
-                    log.warn("Formato de data não suportado: {}", publishedDate);
                     return Optional.empty();
                 }
             }
@@ -108,10 +124,16 @@ public class GoogleBooksService {
     private Optional<String> obterUrlImagem(ImageLinks links) {
         if (links == null)
             return Optional.empty();
-        return Optional.ofNullable(links.extraLarge())
+        String url = Optional.ofNullable(links.extraLarge())
                 .or(() -> Optional.ofNullable(links.large()))
                 .or(() -> Optional.ofNullable(links.medium()))
                 .or(() -> Optional.ofNullable(links.thumbnail()))
-                .or(() -> Optional.ofNullable(links.smallThumbnail()));
+                .or(() -> Optional.ofNullable(links.smallThumbnail()))
+                .orElse(null);
+
+        if (url != null && url.startsWith("http://")) {
+            url = url.replaceFirst("http://", "https://");
+        }
+        return Optional.ofNullable(url);
     }
 }
