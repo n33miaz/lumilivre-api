@@ -183,13 +183,13 @@ public class LivroService {
         LivroModel livro = livroRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Livro não encontrado para o ID: " + id));
 
-        try {
-            String url = storageService.uploadFile(file, "livros");
-            livro.setImagem(url);
-            livroRepository.save(livro);
-        } catch (Exception e) {
-            log.error("Erro ao fazer upload da capa para o livro ID {}: {}", id, e.getMessage());
-            throw new RuntimeException("Erro ao fazer upload da capa: " + e.getMessage());
+        if (file != null && !file.isEmpty()) {
+            try {
+                String url = storageService.uploadFile(file, "capas");
+                livro.setImagem(url);
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao enviar a capa: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -395,7 +395,7 @@ public class LivroService {
 
         if (file != null && !file.isEmpty()) {
             try {
-                String url = storageService.uploadFile(file, "livros");
+                String url = storageService.uploadFile(file, "capas");
                 livro.setImagem(url);
             } catch (Exception e) {
                 throw new RuntimeException("Erro ao enviar a capa: " + e.getMessage(), e);
