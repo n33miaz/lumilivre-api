@@ -27,10 +27,31 @@ public class EmprestimoResponse {
 
 	private Long livroId;
 	private String livroTitulo;
+	private String imagemUrl;
 
 	private String alunoNome;
 	private String alunoMatricula;
 	private String exemplarTombo;
+
+	public EmprestimoResponse(
+			Integer id,
+			LocalDateTime dataEmprestimo,
+			LocalDateTime dataDevolucao,
+			StatusEmprestimo status,
+			Penalidade penalidade,
+			Long livroId,
+			String livroTitulo,
+			String imagemUrl
+	) {
+		this.id = id;
+		this.dataEmprestimo = dataEmprestimo;
+		this.dataDevolucao = dataDevolucao;
+		this.status = status;
+		this.penalidade = penalidade;
+		this.livroId = livroId;
+		this.livroTitulo = livroTitulo;
+		this.imagemUrl = imagemUrl;
+	}
 
 	public EmprestimoResponse(EmprestimoModel model) {
 		this.id = model.getId();
@@ -45,6 +66,7 @@ public class EmprestimoResponse {
 			if (model.getExemplar().getLivro() != null) {
 				this.livroTitulo = model.getExemplar().getLivro().getNome();
 				this.livroId = model.getExemplar().getLivro().getId();
+				this.imagemUrl = model.getExemplar().getLivro().getImagem();
 			}
 		}
 

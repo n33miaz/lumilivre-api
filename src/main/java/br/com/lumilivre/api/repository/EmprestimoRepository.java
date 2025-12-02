@@ -123,7 +123,8 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                     e.statusEmprestimo,
                     e.penalidade,
                     e.exemplar.livro.id,
-                    e.exemplar.livro.nome
+                    e.exemplar.livro.nome,
+                    e.exemplar.livro.imagem
                 )
                 FROM EmprestimoModel e
                 WHERE e.aluno.matricula = :matricula
@@ -133,7 +134,14 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
 
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse(
-                    e.id, e.dataEmprestimo, e.dataDevolucao, e.statusEmprestimo, e.penalidade, e.exemplar.livro.nome
+                    e.id,
+                    e.dataEmprestimo,
+                    e.dataDevolucao,
+                    e.statusEmprestimo,
+                    e.penalidade,
+                    e.exemplar.livro.id,
+                    e.exemplar.livro.nome,
+                    e.exemplar.livro.imagem
                 )
                 FROM EmprestimoModel e
                 WHERE e.aluno.matricula = :matricula

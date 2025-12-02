@@ -108,14 +108,15 @@ public class EmprestimoController {
     }
 
     @GetMapping("/aluno/{matricula}")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @Operation(summary = "Lista os empréstimos ativos de um aluno")
     public ResponseEntity<List<EmprestimoResponse>> listarEmprestimos(
             @PathVariable String matricula) {
         return ResponseEntity.ok(es.listarEmprestimosAluno(matricula));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/aluno/{matricula}/historico")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @Operation(summary = "Lista o histórico de empréstimos de um aluno")
     public ResponseEntity<List<EmprestimoResponse>> historicoEmprestimos(
             @PathVariable String matricula) {
