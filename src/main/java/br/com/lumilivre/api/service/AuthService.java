@@ -49,6 +49,14 @@ public class AuthService {
             throw new BadCredentialsException("Senha incorreta");
         }
 
+        boolean isInitialPassword = false;
+        if (usuario.getAluno() != null) {
+            String matricula = usuario.getAluno().getMatricula();
+            if (dto.getSenha().equals(matricula)) {
+                isInitialPassword = true;
+            }
+        }
+
         List<SimpleGrantedAuthority> authorities = List.of(
                 new SimpleGrantedAuthority("ROLE_" + usuario.getRole().name()));
 
@@ -59,7 +67,7 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(userDetails);
 
-        return new LoginResponse(usuario, token);
+        return new LoginResponse(usuario, token, isInitialPassword);
     }
 
     @Transactional
