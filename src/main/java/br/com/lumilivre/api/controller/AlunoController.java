@@ -82,7 +82,7 @@ public class AlunoController {
     }
 
     @GetMapping("/{matricula}")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @Operation(summary = "Busca detalhes de um aluno específico")
     public ResponseEntity<ApiResponse<AlunoResponse>> buscarPorMatricula(@PathVariable String matricula) {
         AlunoModel aluno = alunoService.buscarPorMatricula(matricula);

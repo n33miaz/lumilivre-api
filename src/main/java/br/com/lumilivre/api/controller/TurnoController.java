@@ -35,6 +35,7 @@ public class TurnoController {
 
     @GetMapping
     @Operation(summary = "Lista todos os turnos (Simples - para Combobox)")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     public ResponseEntity<List<ItemSimplesResponse>> listarTodos() {
         var lista = turnoRepository.findAll().stream()
                 .map(t -> new ItemSimplesResponse(t.getId(), t.getNome()))
@@ -43,6 +44,7 @@ public class TurnoController {
     }
 
     @GetMapping("/home")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @Operation(summary = "Lista turnos para a tela principal do admin (com paginação)")
     public ResponseEntity<Page<TurnoResumoResponse>> buscarTurnosAdmin(
             @RequestParam(required = false) String texto,

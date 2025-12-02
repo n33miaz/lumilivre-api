@@ -130,8 +130,8 @@ public class EmprestimoController {
         return es.listarEmprestimosAtivosEAtrasados();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/ranking")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @Operation(summary = "Ranking de alunos por quantidade de empréstimos com filtros")
     public ResponseEntity<List<AlunoRankingResponse>> rankingAlunos(
             @RequestParam(defaultValue = "10") int top,

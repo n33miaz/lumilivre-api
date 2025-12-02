@@ -33,6 +33,7 @@ public class ModuloController {
 
     @GetMapping
     @Operation(summary = "Lista todos os módulos (Simples - para Combobox)")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     public ResponseEntity<List<ItemSimplesResponse>> listarTodos() {
         var lista = moduloRepository.findAll().stream()
                 .map(m -> new ItemSimplesResponse(m.getId(), m.getNome()))
@@ -41,6 +42,7 @@ public class ModuloController {
     }
 
     @GetMapping("/home")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @Operation(summary = "Lista módulos para a tela principal do admin (com paginação)")
     public ResponseEntity<Page<ModuloResumoResponse>> buscarModulosAdmin(
             @RequestParam(required = false) String texto,

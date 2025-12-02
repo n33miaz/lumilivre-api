@@ -32,8 +32,8 @@ public class CursoController {
         this.cursoService = cursoService;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
     @Operation(summary = "Lista cursos para a tela principal do admin")
     public ResponseEntity<Page<CursoResumoResponse>> buscarCursosAdmin(
             @RequestParam(required = false) String texto,
