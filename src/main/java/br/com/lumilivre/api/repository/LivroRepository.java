@@ -205,8 +205,8 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
 
     @Query("""
             SELECT l FROM LivroModel l
-            JOIN FETCH l.generos
-            JOIN FETCH l.cdd
+            LEFT JOIN FETCH l.generos
+            LEFT JOIN FETCH l.cdd
             WHERE l.id = :id
             """)
     Optional<LivroModel> findByIdWithDetails(@Param("id") Long id);
