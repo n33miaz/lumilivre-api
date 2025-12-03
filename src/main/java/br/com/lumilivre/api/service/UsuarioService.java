@@ -53,11 +53,9 @@ public class UsuarioService {
         if (dto.getEmail() == null || dto.getEmail().isBlank()) {
             throw new RegraDeNegocioException("O e-mail é obrigatório");
         }
-
         if (ur.existsByEmail(dto.getEmail())) {
             throw new RegraDeNegocioException("E-mail já está em uso");
         }
-
         if (dto.getSenha() == null || dto.getSenha().isBlank()) {
             throw new RegraDeNegocioException("A senha é obrigatória");
         }
@@ -65,12 +63,26 @@ public class UsuarioService {
         UsuarioModel usuarioModel = new UsuarioModel();
         usuarioModel.setEmail(dto.getEmail());
         usuarioModel.setSenha(passwordEncoder.encode(dto.getSenha()));
-        usuarioModel.setRole(Role.ADMIN);
+        usuarioModel.setRole(dto.getRole() != null ? dto.getRole() : Role.BIBLIOTECARIO);
+
+        if (dto.getRole() == null) {
+            usuarioModel.setRole(Role.BIBLIOTECARIO);
+        } else {
+            if (dto.getRole() == Role.ALUNO) {
+                throw new RegraDeNegocioException("Para cadastrar alunos, use a rota de Alunos.");
+            }
+            usuarioModel.setRole(dto.getRole());
+        }
 
         UsuarioModel salvo = ur.save(usuarioModel);
 
         try {
-            emailService.enviarSenhaInicial(dto.getEmail(), "Admin", dto.getSenha());
+            String nomeRole = (salvo.getRole() == Role.ADMIN) ? "Administrador" : "Bibliotecário";
+
+            emailService.enviarSenhaInicialAdmin(
+                    dto.getEmail(),
+                    nomeRole,
+                    dto.getSenha());
         } catch (Exception e) {
             System.err.println("Erro ao enviar email: " + e.getMessage());
         }

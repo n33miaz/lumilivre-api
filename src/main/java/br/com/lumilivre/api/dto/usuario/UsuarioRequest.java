@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.dto.usuario;
 
+import br.com.lumilivre.api.enums.Role;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,4 +20,5 @@ public class UsuarioRequest {
 	private String senha;
 
 	private String matriculaAluno;
+	private Role role;
 }

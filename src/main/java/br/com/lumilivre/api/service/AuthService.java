@@ -55,6 +55,10 @@ public class AuthService {
             if (dto.getSenha().equals(matricula)) {
                 isInitialPassword = true;
             }
+        } else {
+            if (dto.getSenha().equals(usuario.getEmail())) {
+                isInitialPassword = true;
+            }
         }
 
         List<SimpleGrantedAuthority> authorities = List.of(
