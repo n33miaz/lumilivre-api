@@ -118,12 +118,14 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                 l.nome,
                 l.autor,
                 l.editora,
-                CAST(l.quantidade AS long)
+                COUNT(e)
             )
             FROM LivroModel l
+            LEFT JOIN l.exemplares e
             WHERE (:texto IS NULL OR :texto = ''
                OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
                OR l.isbn LIKE CONCAT('%', :texto, '%'))
+            GROUP BY l.id, l.isbn, l.nome, l.autor, l.editora
             """)
     Page<LivroAgrupadoResponse> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
 

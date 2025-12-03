@@ -219,6 +219,14 @@ public class AlunoService {
         aluno.setCurso(entidades.curso());
         aluno.setTurno(entidades.turno());
         aluno.setModulo(entidades.modulo());
+
+        if (dto.getPenalidade() != null) {
+            if (dto.getPenalidade().isBlank()) {
+                aluno.setPenalidade(null);
+            } else {
+                aluno.setPenalidade(parseEnum(dto.getPenalidade(), Penalidade.class));
+            }
+        }
     }
 
     private void preencherEnderecoPorCep(AlunoModel aluno, String cep) {
