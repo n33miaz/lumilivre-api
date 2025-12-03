@@ -414,15 +414,12 @@ public class LivroService {
 
         if (dto.getGeneros() != null && !dto.getGeneros().isEmpty()) {
             Set<GeneroModel> generosEncontrados = generoRepository.findByNomeIn(dto.getGeneros());
-            generos.addAll(generosEncontrados);
-
-            // criar gêneros que não existem, precisaria de lógica extra
+            
+            generos = generosEncontrados.stream()
+                .limit(3)
+                .collect(Collectors.toSet());
         }
-
-        if (generos.isEmpty() && isNaoVazio(dto.getCdd())) {
-            generos.addAll(processarGeneros(dto.getCdd()));
-        }
-
+        
         livro.setGeneros(generos);
 
         try {
@@ -453,13 +450,6 @@ public class LivroService {
         }
 
         return livro;
-    }
-
-    private Set<GeneroModel> processarGeneros(String cddCodigo) {
-        if (cddCodigo == null || cddCodigo.isBlank()) {
-            return Collections.emptySet();
-        }
-        return generoRepository.findAllByCddCodigo(cddCodigo);
     }
 
     @Transactional

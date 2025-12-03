@@ -32,7 +32,6 @@ public class ImportacaoService {
     private final ModuloRepository moduloRepository;
     private final LivroRepository livroRepository;
     private final ExemplarRepository exemplarRepository;
-    private final GeneroRepository generoRepository;
     private final CddRepository cddRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -44,7 +43,6 @@ public class ImportacaoService {
             ModuloRepository moduloRepository,
             LivroRepository livroRepository,
             ExemplarRepository exemplarRepository,
-            GeneroRepository generoRepository,
             CddRepository cddRepository,
             PasswordEncoder passwordEncoder) {
         this.alunoRepository = alunoRepository;
@@ -54,7 +52,6 @@ public class ImportacaoService {
         this.moduloRepository = moduloRepository;
         this.livroRepository = livroRepository;
         this.exemplarRepository = exemplarRepository;
-        this.generoRepository = generoRepository;
         this.cddRepository = cddRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -253,7 +250,8 @@ public class ImportacaoService {
         CddModel cdd = cddRepository.findById(cddCodigo)
                 .orElseThrow(() -> new IllegalArgumentException("CDD não encontrado: " + cddCodigo));
         livro.setCdd(cdd);
-        livro.setGeneros(generoRepository.findAllByCddCodigo(cddCodigo));
+
+        livro.setGeneros(new HashSet<>());
 
         return livro;
     }
