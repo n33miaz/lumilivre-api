@@ -259,6 +259,21 @@ public class AlunoService {
         return usuario;
     }
 
+    @Transactional
+    public void resetarSenha(String matricula) {
+        AlunoModel aluno = alunoRepository.findByMatricula(matricula)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));
+
+        if (aluno.getUsuario() == null) {
+            throw new RegraDeNegocioException("Este aluno não possui um usuário vinculado para resetar a senha.");
+        }
+
+        aluno.getUsuario().setSenha(passwordEncoder.encode(aluno.getMatricula()));
+        
+        usuarioRepository.save(aluno.getUsuario());
+    }
+
+
     private <T extends Enum<T>> T parseEnum(String value, Class<T> enumClass) {
         if (value == null || value.isBlank())
             return null;

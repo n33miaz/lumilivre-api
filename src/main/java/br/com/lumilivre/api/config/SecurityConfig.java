@@ -71,8 +71,8 @@ public class SecurityConfig {
                                 "/cursos/home",
                                 "/modulos/home",
                                 "/turnos/home",
-                                "/alunos/{matricula}"
-                        ).hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                "/alunos/{matricula}")
+                        .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
                         .requestMatchers(HttpMethod.GET, "/emprestimos/aluno/**")
                         .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
                         .requestMatchers(HttpMethod.GET, "/solicitacoes/aluno/**")
@@ -123,7 +123,7 @@ public class SecurityConfig {
                                 "http://localhost:52583", "http://192.168.56.1:8080", "http://127.0.0.1:8080", "http://localhost:8080" // desenv. mobile
                 )
                         .allowedOriginPatterns("*")
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
             }

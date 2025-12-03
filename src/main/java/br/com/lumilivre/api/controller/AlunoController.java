@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -128,6 +129,14 @@ public class AlunoController {
 
         return ResponseEntity
                 .ok(new ApiResponse<>(true, "Aluno atualizado com sucesso", new AlunoResponse(alunoAtualizado)));
+    }
+
+    @PatchMapping("/{matricula}/reset-senha")
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @Operation(summary = "Reseta a senha do aluno para a matrícula")
+    public ResponseEntity<ApiResponse<Void>> resetarSenha(@PathVariable String matricula) {
+        alunoService.resetarSenha(matricula);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Senha resetada para a matrícula com sucesso.", null));
     }
 
     @DeleteMapping("/excluir/{matricula}")
