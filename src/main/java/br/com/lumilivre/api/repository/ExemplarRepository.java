@@ -36,6 +36,10 @@ public interface ExemplarRepository extends JpaRepository<ExemplarModel, String>
   @Query("SELECT COUNT(e) FROM ExemplarModel e WHERE e.livro.id = :livroId AND e.status_livro = :status")
   long countExemplaresByStatus(@Param("livroId") Long livroId, @Param("status") StatusLivro status);
 
+  @Query("SELECT e FROM ExemplarModel e WHERE e.livro.id = :livroId AND e.status_livro = :status")
+  List<ExemplarModel> findExemplaresPorLivroEStatus(@Param("livroId") Long livroId,
+      @Param("status") StatusLivro status);
+
   @Query("""
           SELECT ex FROM ExemplarModel ex
           JOIN FETCH ex.livro l
@@ -54,6 +58,8 @@ public interface ExemplarRepository extends JpaRepository<ExemplarModel, String>
       @Param("inicio") LocalDateTime inicio,
       @Param("fim") LocalDateTime fim);
 
-  @Query(value = "SELECT * FROM exemplar e WHERE e.livro_id = :livroId AND e.status_livro = 'DISPONIVEL' LIMIT 1", nativeQuery = true)
-  Optional<ExemplarModel> findFirstDisponivelByLivroId(@Param("livroId") Long livroId);
+  default Optional<ExemplarModel> findFirstDisponivel(Long livroId, StatusLivro status) {
+    List<ExemplarModel> lista = findExemplaresPorLivroEStatus(livroId, status);
+    return lista.isEmpty() ? Optional.empty() : Optional.of(lista.get(0));
+  }
 }

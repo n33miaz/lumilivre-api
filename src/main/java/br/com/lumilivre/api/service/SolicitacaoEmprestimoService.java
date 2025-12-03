@@ -178,10 +178,10 @@ public class SolicitacaoEmprestimoService {
             return ResponseEntity.badRequest().body("Aluno possui penalidade ativa.");
 
         long emprestimosAtivos = emprestimoService.getContagemEmprestimosAtivosEAtrasados();
-        if (emprestimosAtivos >= 3)
+        if (emprestimosAtivos >= 3) // ou use a constante LIMITE_EMPRESTIMOS_ATIVOS se estiver acessível
             return ResponseEntity.badRequest().body("Aluno atingiu limite de empréstimos ativos.");
 
-        ExemplarModel exemplar = exemplarRepository.findFirstDisponivelByLivroId(livroId)
+        ExemplarModel exemplar = exemplarRepository.findFirstDisponivel(livroId, StatusLivro.DISPONIVEL)
                 .orElse(null);
 
         if (exemplar == null) {
