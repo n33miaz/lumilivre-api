@@ -12,6 +12,8 @@ import br.com.lumilivre.api.service.infra.CepService;
 import br.com.lumilivre.api.service.infra.EmailService;
 import br.com.lumilivre.api.service.infra.SupabaseStorageService;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -86,9 +88,15 @@ public class AlunoService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));
     }
 
+    @Cacheable(value = "contagem_alunos")
+    public long getContagemTotal() {
+        return alunoRepository.count();
+    }
+
     // --- MÉTODOS DE ESCRITA ---
 
     @Transactional
+    @CacheEvict(value = "contagem_alunos", allEntries = true)
     public AlunoModel cadastrar(AlunoRequest dto) {
         if (alunoRepository.existsByMatricula(dto.getMatricula())) {
             throw new RegraDeNegocioException("Matrícula já cadastrada.");
@@ -166,6 +174,7 @@ public class AlunoService {
     }
 
     @Transactional
+    @CacheEvict(value = "contagem_alunos", allEntries = true)
     public void excluir(String matricula) {
         AlunoModel aluno = alunoRepository.findByMatricula(matricula)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));

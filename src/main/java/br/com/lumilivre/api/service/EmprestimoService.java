@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -51,6 +53,11 @@ public class EmprestimoService {
     // ================ MÉTODOS DE ESCRITA ================
 
     @Transactional
+    @CacheEvict(value = {
+            "dashboard_stats_emprestimos",
+            "dashboard_atrasados_count",
+            "dashboard_atrasados_list"
+    }, allEntries = true)
     public EmprestimoResponse cadastrar(EmprestimoRequest dto) {
         if (dto.getData_emprestimo() == null || dto.getData_devolucao() == null) {
             throw new RegraDeNegocioException("Datas de empréstimo e devolução são obrigatórias.");
@@ -113,6 +120,11 @@ public class EmprestimoService {
     }
 
     @Transactional
+    @CacheEvict(value = {
+            "dashboard_stats_emprestimos",
+            "dashboard_atrasados_count",
+            "dashboard_atrasados_list"
+    }, allEntries = true)
     public EmprestimoResponse atualizar(EmprestimoRequest dto) {
         EmprestimoModel emprestimo = emprestimoRepository.findById(dto.getId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
@@ -129,6 +141,11 @@ public class EmprestimoService {
     }
 
     @Transactional
+    @CacheEvict(value = {
+            "dashboard_stats_emprestimos",
+            "dashboard_atrasados_count",
+            "dashboard_atrasados_list"
+    }, allEntries = true)
     public EmprestimoResponse concluirEmprestimo(Integer id) {
         EmprestimoModel emprestimo = emprestimoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
@@ -235,6 +252,7 @@ public class EmprestimoService {
         return emprestimoRepository.findHistoricoEmprestimos(matricula);
     }
 
+    @Cacheable(value = "dashboard_atrasados_list")
     public List<EmprestimoDashboardResponse> listarEmprestimosAtivosEAtrasados() {
         return emprestimoRepository.findEmprestimosAtivosEAtrasados();
     }
@@ -243,6 +261,15 @@ public class EmprestimoService {
         return emprestimoRepository.findAtivosEAtrasadosDTO();
     }
 
+    @Cacheable(value = "dashboard_atrasados_count")
+    public long getContagemAtrasadosReal() {
+        LocalDateTime agora = LocalDateTime.now();
+        return emprestimoRepository.countByStatusEmprestimoIn(List.of(StatusEmprestimo.ATRASADO))
+                + emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoBefore(StatusEmprestimo.ATIVO, agora)
+                        .size();
+    }
+
+    @Cacheable(value = "dashboard_stats_emprestimos")
     public long getContagemEmprestimosAtivosEAtrasados() {
         return emprestimoRepository.countByStatusEmprestimoIn(
                 List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));

@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -57,12 +60,13 @@ public class SolicitacaoEmprestimoService {
                 .toList();
     }
 
+    @Cacheable(value = "dashboard_solicitacoes")
     public List<SolicitacaoDashboardResponse> listarSolicitacoesPendentes() {
         return solicitacaoRepository.findSolicitacoesPendentes();
     }
 
-    // Aluno solicita empréstimo
     @Transactional
+    @CacheEvict(value = "dashboard_solicitacoes", allEntries = true)
     public ResponseEntity<String> solicitarEmprestimo(String matriculaAluno, String tomboExemplar) {
         AlunoModel aluno = alunoRepository.findByMatricula(matriculaAluno).orElse(null);
         if (aluno == null)
@@ -91,8 +95,12 @@ public class SolicitacaoEmprestimoService {
         return ResponseEntity.ok("Solicitação registrada com sucesso.");
     }
 
-    // Biblioteca processa a solicitação
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "dashboard_solicitacoes", allEntries = true),
+            @CacheEvict(value = "dashboard_stats_emprestimos", allEntries = true),
+            @CacheEvict(value = "dashboard_atrasados_list", allEntries = true)
+    })
     public ResponseEntity<String> processarSolicitacao(Integer id, boolean aceitar) {
         SolicitacaoEmprestimoModel solicitacao = solicitacaoRepository.findById(id).orElse(null);
         if (solicitacao == null)
@@ -136,7 +144,7 @@ public class SolicitacaoEmprestimoService {
                         s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
                         s.getExemplar().getTombo(),
-                        s.getExemplar().getLivro().getId(), 
+                        s.getExemplar().getLivro().getId(),
                         s.getExemplar().getLivro().getNome(),
                         s.getDataSolicitacao(),
                         s.getStatus(),
@@ -152,7 +160,7 @@ public class SolicitacaoEmprestimoService {
                         s.getAluno().getNomeCompleto(),
                         s.getAluno().getMatricula(),
                         s.getExemplar().getTombo(),
-                        s.getExemplar().getLivro().getId(), 
+                        s.getExemplar().getLivro().getId(),
                         s.getExemplar().getLivro().getNome(),
                         s.getDataSolicitacao(),
                         s.getStatus(),
@@ -161,6 +169,7 @@ public class SolicitacaoEmprestimoService {
     }
 
     @Transactional
+    @CacheEvict(value = "dashboard_solicitacoes", allEntries = true)
     public ResponseEntity<String> solicitarEmprestimoPorLivro(String matriculaAluno, Long livroId) {
         AlunoModel aluno = alunoRepository.findByMatricula(matriculaAluno).orElse(null);
         if (aluno == null)
@@ -182,7 +191,7 @@ public class SolicitacaoEmprestimoService {
         SolicitacaoEmprestimoModel solicitacao = new SolicitacaoEmprestimoModel();
         solicitacao.setAluno(aluno);
         solicitacao.setExemplar(exemplar);
-        solicitacao.setObservacao("Solicitado via Mobile"); 
+        solicitacao.setObservacao("Solicitado via Mobile");
         solicitacaoRepository.save(solicitacao);
 
         try {

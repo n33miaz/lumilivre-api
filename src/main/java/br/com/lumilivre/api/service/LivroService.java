@@ -176,6 +176,11 @@ public class LivroService {
         return new PageImpl<>(dtos, pageable, paginaDeLivros.getTotalElements());
     }
 
+    @Cacheable(value = "contagem_livros")
+    public long getContagemLivros() {
+        return livroRepository.count();
+    }
+
     // ------------------------ UPLOAD DE CAPA ------------------------
 
     @Transactional
@@ -199,7 +204,12 @@ public class LivroService {
 
     // ------------------------ CADASTRO ------------------------
 
-    @CacheEvict(value = "catalogo-mobile", allEntries = true)
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "livro-detalhe", key = "#id"),
+            @CacheEvict(value = "catalogo-mobile", allEntries = true),
+            @CacheEvict(value = "contagem_livros", allEntries = true)
+    })
     public LivroResponse cadastrar(LivroRequest dto, MultipartFile file) {
         if (isNaoVazio(dto.getIsbn()) && livroRepository.findByIsbn(dto.getIsbn()).isPresent()) {
             throw new RegraDeNegocioException("Esse ISBN já está cadastrado em outro livro.");
@@ -414,12 +424,12 @@ public class LivroService {
 
         if (dto.getGeneros() != null && !dto.getGeneros().isEmpty()) {
             Set<GeneroModel> generosEncontrados = generoRepository.findByNomeIn(dto.getGeneros());
-            
+
             generos = generosEncontrados.stream()
-                .limit(3)
-                .collect(Collectors.toSet());
+                    .limit(3)
+                    .collect(Collectors.toSet());
         }
-        
+
         livro.setGeneros(generos);
 
         try {
