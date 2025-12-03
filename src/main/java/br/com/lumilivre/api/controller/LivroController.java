@@ -10,6 +10,7 @@ import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
 import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
 import br.com.lumilivre.api.dto.livro.LivroRequest;
 import br.com.lumilivre.api.dto.livro.LivroResponse;
+import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.service.LivroService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -78,6 +79,23 @@ public class LivroController {
                 pageable);
 
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @GetMapping("/consulta-isbn/{isbn}")
+    @Operation(summary = "Consulta dados de um livro em APIs externas (Google/BrasilAPI) para preenchimento automático")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Dados encontrados", content = @Content(schema = @Schema(implementation = LivroRequest.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Livro não encontrado nas bases externas")
+    })
+    public ResponseEntity<ApiResponse<LivroRequest>> consultarPorIsbn(@PathVariable String isbn) {
+        try {
+            LivroRequest dados = livroService.pesquisarDadosPorIsbn(isbn);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Dados encontrados", dados));
+        } catch (RecursoNaoEncontradoException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
