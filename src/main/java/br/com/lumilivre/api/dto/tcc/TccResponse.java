@@ -20,6 +20,7 @@ public class TccResponse {
     private String anoConclusao;
     private String semestreConclusao;
     private String arquivoPdf;
+    private String foto;
     private String linkExterno;
     private Boolean ativo;
 
@@ -32,6 +33,7 @@ public class TccResponse {
         this.anoConclusao = tcc.getAnoConclusao();
         this.semestreConclusao = tcc.getSemestreConclusao();
         this.arquivoPdf = tcc.getArquivoPdf();
+        this.foto = tcc.getFoto();
         this.linkExterno = tcc.getLinkExterno();
         this.ativo = tcc.getAtivo();
     }

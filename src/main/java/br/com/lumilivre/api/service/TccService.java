@@ -8,14 +8,14 @@ import br.com.lumilivre.api.model.TccModel;
 import br.com.lumilivre.api.repository.CursoRepository;
 import br.com.lumilivre.api.repository.TccRepository;
 import br.com.lumilivre.api.service.infra.SupabaseStorageService;
-
+import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,7 +33,9 @@ public class TccService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ResponseEntity<ApiResponse<TccResponse>> cadastrarTcc(String dadosJson, MultipartFile arquivoPdf) {
+    @Transactional
+    public ResponseEntity<ApiResponse<TccResponse>> cadastrarTcc(String dadosJson, MultipartFile arquivoPdf,
+            MultipartFile arquivoFoto) {
         try {
             TccRequest dto = mapper.readValue(dadosJson, TccRequest.class);
 
@@ -69,6 +71,11 @@ public class TccService {
                 tcc.setArquivoPdf(urlPdf);
             }
 
+            if (arquivoFoto != null && !arquivoFoto.isEmpty()) {
+                String urlFoto = supabaseStorageService.uploadFile(arquivoFoto, "capas");
+                tcc.setFoto(urlFoto);
+            }
+
             TccModel novoTcc = tccRepository.save(tcc);
             TccResponse response = new TccResponse(novoTcc);
 
@@ -85,12 +92,78 @@ public class TccService {
         }
     }
 
-    public ResponseEntity<ApiResponse<List<TccResponse>>> listarTccs() {
-        List<TccResponse> tccs = tccRepository.findAll().stream()
+    public ResponseEntity<ApiResponse<List<TccResponse>>> listarTccs(String texto) {
+        List<TccModel> lista;
+
+        if (texto != null && !texto.isBlank()) {
+            lista = tccRepository.buscarPorTexto(texto);
+        } else {
+            lista = tccRepository.findAllCompleto();
+        }
+
+        List<TccResponse> tccs = lista.stream()
                 .map(TccResponse::new)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(new ApiResponse<>(true, "Lista de TCCs obtida com sucesso.", tccs));
+    }
+
+    public ResponseEntity<ApiResponse<List<TccResponse>>> listarTccsAvancado(
+            Integer cursoId, String semestre, String ano) {
+
+        List<TccModel> lista = tccRepository.buscarAvancado(cursoId, semestre, ano);
+
+        List<TccResponse> tccs = lista.stream()
+                .map(TccResponse::new)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Lista filtrada com sucesso.", tccs));
+    }
+
+    @Transactional
+    public ResponseEntity<ApiResponse<TccResponse>> atualizarTcc(Long id, String dadosJson, MultipartFile arquivoPdf,
+            MultipartFile arquivoFoto) {
+        try {
+            TccModel tcc = tccRepository.findById(id)
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("TCC não encontrado."));
+
+            TccRequest dto = mapper.readValue(dadosJson, TccRequest.class);
+
+            tcc.setTitulo(dto.getTitulo());
+            tcc.setAlunos(dto.getAlunos());
+            tcc.setOrientadores(dto.getOrientadores());
+            tcc.setAnoConclusao(dto.getAnoConclusao());
+            tcc.setSemestreConclusao(dto.getSemestreConclusao());
+            tcc.setLinkExterno(dto.getLinkExterno());
+            tcc.setAtivo(dto.getAtivo());
+
+            Integer novoCursoId = dto.getCursoId();
+            Integer cursoAtualId = (tcc.getCurso() != null) ? tcc.getCurso().getId() : null;
+
+            if (novoCursoId != null && !novoCursoId.equals(cursoAtualId)) {
+                CursoModel curso = cursoRepository.findById(novoCursoId)
+                        .orElseThrow(() -> new IllegalArgumentException("Curso não encontrado."));
+                tcc.setCurso(curso);
+            }
+
+            if (arquivoPdf != null && !arquivoPdf.isEmpty()) {
+                String urlPdf = supabaseStorageService.uploadFile(arquivoPdf, "tccs");
+                tcc.setArquivoPdf(urlPdf);
+            }
+
+            if (arquivoFoto != null && !arquivoFoto.isEmpty()) {
+                String urlFoto = supabaseStorageService.uploadFile(arquivoFoto, "capas");
+                tcc.setFoto(urlFoto);
+            }
+
+            TccModel tccSalvo = tccRepository.save(tcc);
+            return ResponseEntity.ok(new ApiResponse<>(true, "TCC atualizado com sucesso.", new TccResponse(tccSalvo)));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "Erro ao atualizar TCC: " + e.getMessage(), null));
+        }
     }
 
     public ResponseEntity<ApiResponse<TccResponse>> buscarPorId(Long id) {
@@ -100,6 +173,7 @@ public class TccService {
                         .body(new ApiResponse<>(false, "TCC não encontrado.", null)));
     }
 
+    @Transactional
     public ResponseEntity<ApiResponse<Void>> excluirTcc(Long id) {
         if (!tccRepository.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

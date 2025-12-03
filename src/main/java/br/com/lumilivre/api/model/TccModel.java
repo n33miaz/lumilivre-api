@@ -37,6 +37,9 @@ public class TccModel {
     @Column(name = "arquivo_pdf")
     private String arquivoPdf;
 
+    @Column(name = "foto")
+    private String foto;
+
     @Column(name = "link_externo")
     private String linkExterno;
 
