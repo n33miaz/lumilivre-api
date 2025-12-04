@@ -59,38 +59,40 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        .requestMatchers(HttpMethod.PUT, "/usuarios/alterar-senha").authenticated()
-                        // rotas mobile GET
-                        .requestMatchers(HttpMethod.GET,
-                                "/livros/catalogo-mobile",
-                                "/livros/{id}",
-                                "/livros/genero/**")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.GET,
-                                "/emprestimos/ranking",
-                                "/cursos/home",
-                                "/modulos/home",
-                                "/turnos/home",
-                                "/alunos/{matricula}")
-                        .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
-                        .requestMatchers(HttpMethod.GET, "/emprestimos/aluno/**")
-                        .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
-                        .requestMatchers(HttpMethod.GET, "/solicitacoes/aluno/**")
-                        .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                        .requestMatchers("/**").permitAll() // APRESENTAÇÃO
 
-                        // rotas de ADMIN
-                        .requestMatchers("/usuarios/**").hasRole("ADMIN")
+                        // .requestMatchers(HttpMethod.PUT, "/usuarios/alterar-senha").authenticated()
+                        // // rotas mobile GET
+                        // .requestMatchers(HttpMethod.GET,
+                        //         "/livros/catalogo-mobile",
+                        //         "/livros/{id}",
+                        //         "/livros/genero/**")
+                        // .permitAll()
+                        // .requestMatchers(HttpMethod.GET,
+                        //         "/emprestimos/ranking",
+                        //         "/cursos/home",
+                        //         "/modulos/home",
+                        //         "/turnos/home",
+                        //         "/alunos/{matricula}")
+                        // .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                        // .requestMatchers(HttpMethod.GET, "/emprestimos/aluno/**")
+                        // .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                        // .requestMatchers(HttpMethod.GET, "/solicitacoes/aluno/**")
+                        // .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
 
-                        // ADMIN ou BIBLIOTECARIO
-                        .requestMatchers(
-                                "/livros/**",
-                                "/tcc/**",
-                                "/generos/**",
-                                "/autores/**",
-                                "/cursos/**",
-                                "/emprestimos/**",
-                                "/alunos/**")
-                        .hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        // // rotas de ADMIN
+                        // .requestMatchers("/usuarios/**").hasRole("ADMIN")
+
+                        // // ADMIN ou BIBLIOTECARIO
+                        // .requestMatchers(
+                        //         "/livros/**",
+                        //         "/tcc/**",
+                        //         "/generos/**",
+                        //         "/autores/**",
+                        //         "/cursos/**",
+                        //         "/emprestimos/**",
+                        //         "/alunos/**")
+                        // .hasAnyRole("ADMIN", "BIBLIOTECARIO")
 
                         .anyRequest().authenticated())
 
@@ -120,7 +122,8 @@ public class SecurityConfig {
                         .allowedOrigins(
                                 "https://www.lumilivre.com.br", // produção
                                 "http://localhost:5173", // desenv. web
-                                "http://localhost:53475", "http://192.168.56.1:8080", "http://127.0.0.1:8080", "http://localhost:8080" // desenv. mobile
+                                "http://localhost:53475", "http://192.168.56.1:8080", "http://127.0.0.1:8080",
+                                "http://localhost:8080" // desenv. mobile
                 )
                         .allowedOriginPatterns("*")
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
