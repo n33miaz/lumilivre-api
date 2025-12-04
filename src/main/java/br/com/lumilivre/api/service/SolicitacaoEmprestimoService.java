@@ -14,12 +14,14 @@ import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
 import br.com.lumilivre.api.dto.solicitacao.SolicitacaoCompletaResponse;
 import br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse;
 import br.com.lumilivre.api.dto.solicitacao.SolicitacaoResponse;
+import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
+import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.SolicitacaoEmprestimoRepository;
 import br.com.lumilivre.api.service.infra.EmailService;
@@ -39,6 +41,9 @@ public class SolicitacaoEmprestimoService {
 
     @Autowired
     private EmprestimoService emprestimoService;
+
+    @Autowired
+    private EmprestimoRepository emprestimoRepository;
 
     @Autowired
     private EmailService emailService;
@@ -71,12 +76,16 @@ public class SolicitacaoEmprestimoService {
         AlunoModel aluno = alunoRepository.findByMatricula(matriculaAluno).orElse(null);
         if (aluno == null)
             return ResponseEntity.badRequest().body("Aluno não encontrado.");
-        if (aluno.getPenalidade() != null)
-            return ResponseEntity.badRequest().body("Aluno possui penalidade ativa.");
 
-        long emprestimosAtivos = emprestimoService.getContagemEmprestimosAtivosEAtrasados();
-        if (emprestimosAtivos >= LIMITE_EMPRESTIMOS_ATIVOS)
+        if (aluno.getPenalidade() != null) {
+            if (aluno.getPenalidadeExpiraEm() == null || aluno.getPenalidadeExpiraEm().isAfter(LocalDateTime.now())) {
+                return ResponseEntity.badRequest().body("Aluno possui penalidade ativa.");
+            }
+        }
+
+        if (isLimiteEmprestimosExcedido(matriculaAluno)) {
             return ResponseEntity.badRequest().body("Aluno atingiu limite de empréstimos ativos.");
+        }
 
         ExemplarModel exemplar = exemplarRepository.findByTombo(tomboExemplar).orElse(null);
         if (exemplar == null)
@@ -89,83 +98,14 @@ public class SolicitacaoEmprestimoService {
         solicitacao.setExemplar(exemplar);
         solicitacaoRepository.save(solicitacao);
 
-        emailService.enviarEmail(aluno.getEmail(), "Solicitação recebida",
-                "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi registrada.");
-
-        return ResponseEntity.ok("Solicitação registrada com sucesso.");
-    }
-
-    @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = "dashboard_solicitacoes", allEntries = true),
-            @CacheEvict(value = "dashboard_stats_emprestimos", allEntries = true),
-            @CacheEvict(value = "dashboard_atrasados_list", allEntries = true)
-    })
-    public ResponseEntity<String> processarSolicitacao(Integer id, boolean aceitar) {
-        SolicitacaoEmprestimoModel solicitacao = solicitacaoRepository.findById(id).orElse(null);
-        if (solicitacao == null)
-            return ResponseEntity.badRequest().body("Solicitação não encontrada.");
-
-        AlunoModel aluno = solicitacao.getAluno();
-        ExemplarModel exemplar = solicitacao.getExemplar();
-
-        if (aceitar) {
-            // Cria empréstimo automaticamente
-            EmprestimoRequest dto = new EmprestimoRequest();
-            dto.setAluno_matricula(aluno.getMatricula());
-            dto.setExemplar_tombo(exemplar.getTombo());
-            dto.setData_emprestimo(LocalDateTime.now());
-            dto.setData_devolucao(LocalDateTime.now().plusDays(14)); // padrão 7 dias
-
-            emprestimoService.cadastrar(dto);
-
-            solicitacao.setStatus(StatusSolicitacao.ACEITA);
-            solicitacaoRepository.save(solicitacao);
-
-            emailService.enviarEmail(aluno.getEmail(), "Solicitação aceita",
-                    "Sua solicitação do livro '" + exemplar.getLivro().getNome()
-                            + "' foi aceita e o empréstimo registrado.");
-        } else {
-            solicitacao.setStatus(StatusSolicitacao.REJEITADA);
-            solicitacaoRepository.save(solicitacao);
-
-            emailService.enviarEmail(aluno.getEmail(), "Solicitação rejeitada",
-                    "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi rejeitada.");
+        try {
+            emailService.enviarEmail(aluno.getEmail(), "Solicitação recebida",
+                    "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi registrada.");
+        } catch (Exception e) {
+            System.err.println("Erro ao enviar email: " + e.getMessage());
         }
 
-        return ResponseEntity.ok("Solicitação processada com sucesso.");
-    }
-
-    public List<SolicitacaoResponse> listarPendentesDTO() {
-        return solicitacaoRepository.findByStatus(StatusSolicitacao.PENDENTE)
-                .stream()
-                .map(s -> new SolicitacaoResponse(
-                        s.getId(),
-                        s.getAluno().getNomeCompleto(),
-                        s.getAluno().getMatricula(),
-                        s.getExemplar().getTombo(),
-                        s.getExemplar().getLivro().getId(),
-                        s.getExemplar().getLivro().getNome(),
-                        s.getDataSolicitacao(),
-                        s.getStatus(),
-                        s.getObservacao()))
-                .toList();
-    }
-
-    public List<SolicitacaoResponse> listarSolicitacoesDoAlunoDTO(String matricula) {
-        return solicitacaoRepository.findByAlunoMatriculaAndStatus(matricula, StatusSolicitacao.PENDENTE)
-                .stream()
-                .map(s -> new SolicitacaoResponse(
-                        s.getId(),
-                        s.getAluno().getNomeCompleto(),
-                        s.getAluno().getMatricula(),
-                        s.getExemplar().getTombo(),
-                        s.getExemplar().getLivro().getId(),
-                        s.getExemplar().getLivro().getNome(),
-                        s.getDataSolicitacao(),
-                        s.getStatus(),
-                        s.getObservacao()))
-                .toList();
+        return ResponseEntity.ok("Solicitação registrada com sucesso.");
     }
 
     @Transactional
@@ -174,12 +114,16 @@ public class SolicitacaoEmprestimoService {
         AlunoModel aluno = alunoRepository.findByMatricula(matriculaAluno).orElse(null);
         if (aluno == null)
             return ResponseEntity.badRequest().body("Aluno não encontrado.");
-        if (aluno.getPenalidade() != null)
-            return ResponseEntity.badRequest().body("Aluno possui penalidade ativa.");
 
-        long emprestimosAtivos = emprestimoService.getContagemEmprestimosAtivosEAtrasados();
-        if (emprestimosAtivos >= 3) // ou use a constante LIMITE_EMPRESTIMOS_ATIVOS se estiver acessível
+        if (aluno.getPenalidade() != null) {
+            if (aluno.getPenalidadeExpiraEm() == null || aluno.getPenalidadeExpiraEm().isAfter(LocalDateTime.now())) {
+                return ResponseEntity.badRequest().body("Aluno possui penalidade ativa.");
+            }
+        }
+
+        if (isLimiteEmprestimosExcedido(matriculaAluno)) {
             return ResponseEntity.badRequest().body("Aluno atingiu limite de empréstimos ativos.");
+        }
 
         ExemplarModel exemplar = exemplarRepository.findFirstDisponivel(livroId, StatusLivro.DISPONIVEL)
                 .orElse(null);
@@ -202,5 +146,92 @@ public class SolicitacaoEmprestimoService {
         }
 
         return ResponseEntity.ok("Solicitação registrada com sucesso.");
+    }
+
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "dashboard_solicitacoes", allEntries = true),
+            @CacheEvict(value = "dashboard_stats_emprestimos", allEntries = true),
+            @CacheEvict(value = "dashboard_atrasados_list", allEntries = true)
+    })
+    public ResponseEntity<String> processarSolicitacao(Integer id, boolean aceitar) {
+        SolicitacaoEmprestimoModel solicitacao = solicitacaoRepository.findById(id).orElse(null);
+        if (solicitacao == null)
+            return ResponseEntity.badRequest().body("Solicitação não encontrada.");
+
+        AlunoModel aluno = solicitacao.getAluno();
+        ExemplarModel exemplar = solicitacao.getExemplar();
+
+        if (aceitar) {
+            EmprestimoRequest dto = new EmprestimoRequest();
+            dto.setAluno_matricula(aluno.getMatricula());
+            dto.setExemplar_tombo(exemplar.getTombo());
+            dto.setData_emprestimo(LocalDateTime.now());
+            dto.setData_devolucao(LocalDateTime.now().plusDays(14));
+
+            emprestimoService.cadastrar(dto);
+
+            solicitacao.setStatus(StatusSolicitacao.ACEITA);
+            solicitacaoRepository.save(solicitacao);
+
+            try {
+                emailService.enviarEmail(aluno.getEmail(), "Solicitação aceita",
+                        "Sua solicitação do livro '" + exemplar.getLivro().getNome()
+                                + "' foi aceita e o empréstimo registrado.");
+            } catch (Exception e) {
+                System.err.println("Erro ao enviar email: " + e.getMessage());
+            }
+        } else {
+            solicitacao.setStatus(StatusSolicitacao.REJEITADA);
+            solicitacaoRepository.save(solicitacao);
+
+            try {
+                emailService.enviarEmail(aluno.getEmail(), "Solicitação rejeitada",
+                        "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi rejeitada.");
+            } catch (Exception e) {
+                System.err.println("Erro ao enviar email: " + e.getMessage());
+            }
+        }
+
+        return ResponseEntity.ok("Solicitação processada com sucesso.");
+    }
+
+    public List<SolicitacaoResponse> listarPendentesDTO() {
+        return solicitacaoRepository.findByStatus(StatusSolicitacao.PENDENTE)
+                .stream()
+                .map(s -> new SolicitacaoResponse(
+                        s.getId(),
+                        s.getAluno().getNomeCompleto(),
+                        s.getAluno().getMatricula(),
+                        s.getExemplar().getTombo(),
+                        s.getExemplar().getLivro().getId(),
+                        s.getExemplar().getLivro().getNome(),
+                        s.getDataSolicitacao(),
+                        s.getStatus(),
+                        s.getObservacao()))
+                .toList();
+    }
+
+    public List<SolicitacaoResponse> listarSolicitacoesDoAlunoDTO(String matricula) {
+        return solicitacaoRepository.findByAlunoMatriculaOrderByDataSolicitacaoDesc(matricula)
+                .stream()
+                .map(s -> new SolicitacaoResponse(
+                        s.getId(),
+                        s.getAluno().getNomeCompleto(),
+                        s.getAluno().getMatricula(),
+                        s.getExemplar().getTombo(),
+                        s.getExemplar().getLivro().getId(),
+                        s.getExemplar().getLivro().getNome(),
+                        s.getDataSolicitacao(),
+                        s.getStatus(),
+                        s.getObservacao()))
+                .toList();
+    }
+
+    private boolean isLimiteEmprestimosExcedido(String matricula) {
+        long ativos = emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(matricula, StatusEmprestimo.ATIVO);
+        long atrasados = emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(matricula,
+                StatusEmprestimo.ATRASADO);
+        return (ativos + atrasados) >= LIMITE_EMPRESTIMOS_ATIVOS;
     }
 }

@@ -32,4 +32,6 @@ public interface SolicitacaoEmprestimoRepository extends JpaRepository<Solicitac
 			    ORDER BY s.dataSolicitacao ASC
 			""")
 	List<SolicitacaoDashboardResponse> findSolicitacoesPendentes();
+
+	List<SolicitacaoEmprestimoModel> findByAlunoMatriculaOrderByDataSolicitacaoDesc(String matricula);
 }

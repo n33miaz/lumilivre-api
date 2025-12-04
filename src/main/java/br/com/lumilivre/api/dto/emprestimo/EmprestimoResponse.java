@@ -16,10 +16,10 @@ public class EmprestimoResponse {
 
 	private Integer id;
 
-	@JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime dataEmprestimo;
 
-	@JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime dataDevolucao;
 
 	private StatusEmprestimo status;
@@ -41,8 +41,7 @@ public class EmprestimoResponse {
 			Penalidade penalidade,
 			Long livroId,
 			String livroTitulo,
-			String imagemUrl
-	) {
+			String imagemUrl) {
 		this.id = id;
 		this.dataEmprestimo = dataEmprestimo;
 		this.dataDevolucao = dataDevolucao;
