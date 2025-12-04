@@ -189,8 +189,7 @@ public class LivroService {
 
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "livro-detalhe", key = "#id"),
-            @CacheEvict(value = "catalogo-mobile", allEntries = true)
+            @CacheEvict(value = "catalogo-mobile", allEntries = true),
     })
     public void uploadCapa(Long id, MultipartFile file) {
         LivroModel livro = livroRepository.findById(id)
@@ -210,7 +209,6 @@ public class LivroService {
 
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "livro-detalhe", key = "#id"),
             @CacheEvict(value = "catalogo-mobile", allEntries = true),
             @CacheEvict(value = "contagem_livros", allEntries = true)
     })
@@ -244,8 +242,7 @@ public class LivroService {
 
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "livro-detalhe", key = "#id"),
-            @CacheEvict(value = "catalogo-mobile", allEntries = true)
+            @CacheEvict(value = "catalogo-mobile", allEntries = true),
     })
     public LivroResponse atualizar(Long id, LivroRequest dto, MultipartFile file) {
         LivroModel livroParaAtualizar = livroRepository.findById(id)
@@ -283,8 +280,7 @@ public class LivroService {
 
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "livro-detalhe", key = "#id"),
-            @CacheEvict(value = "catalogo-mobile", allEntries = true)
+            @CacheEvict(value = "catalogo-mobile", allEntries = true),
     })
     public void excluirLivroComExemplares(Long id) {
         if (!livroRepository.existsById(id)) {
