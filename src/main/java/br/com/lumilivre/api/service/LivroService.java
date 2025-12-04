@@ -77,6 +77,10 @@ public class LivroService {
                 .collect(Collectors.toList());
     }
 
+    public Page<LivroMobileResponse> buscarMobilePorTexto(String texto, Pageable pageable) {
+        return livroRepository.buscarMobilePorTexto(texto, pageable);
+    }
+
     public Page<LivroAgrupadoResponse> buscarAvancado(
             String nome, String isbn, String autor, String genero, String editora,
             String cdd, String classificacaoEtariaStr, String tipoCapaStr, LocalDate dataLancamento,

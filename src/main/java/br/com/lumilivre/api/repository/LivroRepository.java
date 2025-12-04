@@ -230,4 +230,18 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             """)
     Page<LivroMobileResponse> findByGeneroAsCatalogoDTO(@Param("nomeGenero") String nomeGenero,
             Pageable pageable);
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.livro.LivroMobileResponse(
+                l.id,
+                COALESCE(l.imagem, ''),
+                l.nome,
+                COALESCE(l.autor, 'Autor Desconhecido'),
+                COALESCE(l.avaliacao, 0.0)
+            )
+            FROM LivroModel l
+            WHERE LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+               OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :texto, '%'))
+            """)
+    Page<LivroMobileResponse> buscarMobilePorTexto(@Param("texto") String texto, Pageable pageable);
 }

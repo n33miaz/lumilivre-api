@@ -58,6 +58,15 @@ public class LivroController {
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
+    @GetMapping("/mobile/buscar")
+    @Operation(summary = "Busca livros por título ou autor para o mobile")
+    public ResponseEntity<Page<LivroMobileResponse>> buscarMobile(
+            @RequestParam String texto,
+            Pageable pageable) {
+        Page<LivroMobileResponse> livros = livroService.buscarMobilePorTexto(texto, pageable);
+        return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
+    }
+
     @GetMapping("/buscar/avancado")
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @Operation(summary = "Busca avançada e paginada de livros (Agrupado)")

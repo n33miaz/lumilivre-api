@@ -73,6 +73,7 @@ public class SecurityConfig {
                         //         "/cursos/home",
                         //         "/modulos/home",
                         //         "/turnos/home",
+                        //  "/livros/mobile/buscar")
                         //         "/alunos/{matricula}")
                         // .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
                         // .requestMatchers(HttpMethod.GET, "/emprestimos/aluno/**")
