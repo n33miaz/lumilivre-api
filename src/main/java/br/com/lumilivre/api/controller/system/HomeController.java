@@ -3,9 +3,10 @@ package br.com.lumilivre.api.controller.system;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-// @Tag(name = "0. Home")
+@Tag(name = "0. Home")
 @SecurityRequirement(name = "bearerAuth")
 public class HomeController {
 

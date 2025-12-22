@@ -9,6 +9,7 @@ import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.service.RelatorioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/relatorios")
-// @Tag(name = "14. Relatórios")
+@Tag(name = "14. Relatórios")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
 public class RelatorioController {

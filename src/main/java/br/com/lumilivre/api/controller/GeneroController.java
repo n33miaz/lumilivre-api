@@ -10,10 +10,11 @@ import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
 import br.com.lumilivre.api.repository.GeneroRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/generos")
-// @Tag(name = "12. Gêneros")
+@Tag(name = "12. Gêneros")
 @SecurityRequirement(name = "bearerAuth")
 public class GeneroController {
 
