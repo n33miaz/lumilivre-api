@@ -18,9 +18,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-
 @RestController
-@Tag(name = "3. Enums")
+@Tag(name = "16. Enums")
 @SecurityRequirement(name = "bearerAuth")
 public class EnumController {
 

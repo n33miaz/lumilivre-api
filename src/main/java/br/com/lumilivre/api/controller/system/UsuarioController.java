@@ -33,7 +33,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/usuarios")
-@Tag(name = "4. Usuários")
+@Tag(name = "2. Usuários")
 @SecurityRequirement(name = "bearerAuth")
 public class UsuarioController {
 

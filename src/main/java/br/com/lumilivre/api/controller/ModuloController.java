@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.controller;
 
+import java.util.List;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
 import br.com.lumilivre.api.dto.modulo.ModuloRequest;
@@ -18,11 +19,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/modulos")
-@Tag(name = "14. Módulos")
+@Tag(name = "11. Módulos")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
 @RequiredArgsConstructor
@@ -71,6 +70,7 @@ public class ModuloController {
     }
 
     @GetMapping("/estatisticas-grafico")
+    @Operation(summary = "Retorna estatísticas para gráficos")
     public ResponseEntity<List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse>> getEstatisticasGrafico() {
         return ResponseEntity.ok(moduloService.buscarTotalEmprestimosPorModulo());
     }

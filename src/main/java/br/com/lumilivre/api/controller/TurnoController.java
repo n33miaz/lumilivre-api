@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/turnos")
-@Tag(name = "15. Turnos")
+@Tag(name = "10. Turnos")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
 public class TurnoController {
@@ -73,6 +73,7 @@ public class TurnoController {
     }
 
     @GetMapping("/estatisticas-grafico")
+    @Operation(summary = "Retorna estatísticas de empréstimos por turno para gráficos")
     public ResponseEntity<List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse>> getEstatisticasGrafico() {
         return ResponseEntity.ok(turnoService.buscarTotalEmprestimosPorTurno());
     }

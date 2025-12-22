@@ -29,7 +29,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/emprestimos")
-@Tag(name = "5. Empréstimos")
+@Tag(name = "8. Empréstimos")
 @SecurityRequirement(name = "bearerAuth")
 public class EmprestimoController {
 

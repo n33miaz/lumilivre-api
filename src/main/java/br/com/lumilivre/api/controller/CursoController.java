@@ -1,7 +1,6 @@
 package br.com.lumilivre.api.controller;
 
 import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +21,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/cursos")
-@Tag(name = "11. Cursos")
+@Tag(name = "9. Cursos")
 @SecurityRequirement(name = "bearerAuth")
 public class CursoController {
 
