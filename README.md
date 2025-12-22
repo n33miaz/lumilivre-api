@@ -20,7 +20,7 @@ A **LumiLivre API** é o núcleo de processamento e inteligência de todo o ecos
 
 Atualmente hospedada no **Render** via Docker, a API utiliza **PostgreSQL** (hospedado no Supabase) como banco de dados relacional, garantindo robustez e integridade para as operações da biblioteca.
 
-A documentação interativa (Swagger) está disponível em: https://github-stats-api-fmwm.onrender.com/swagger-ui/index.html#/.
+A documentação interativa está disponível em: [api-lumilivre.com.br/swagger-ui](https://lumilivre-api.onrender.com/swagger-ui/index.html#/).
 
 <br/>
 
