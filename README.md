@@ -1,107 +1,96 @@
-# Lumi Livre - API Backend
+<div align="center">
+  <!-- Banner -->
+  <a href="https://n33miaz.github.io/n33miaz-links/#lumitcc">
+    <img width="100%" src="https://github-stats-api-fmwm.onrender.com/api/banner?title=LumiLivre&subtitle=Library%20Management%20System&tag=(TCC)%20Bachelor%27s%20Thesis&title_color=762075&text_color=c9d1d9&v=1" alt="LumiLivre Banner" />
+  </a>
 
-API RESTful desenvolvida em Java com Spring Boot para o sistema de gerenciamento bibliotecário Lumi Livre. Este backend é responsável por toda a lógica de negócio, gerenciamento de dados e segurança da aplicação.
+  <!-- Pins dos Repositórios -->
+  <a href="https://n33miaz.github.io/n33miaz-links/#lumiweb"><img src="https://github-stats-api-fmwm.onrender.com/api/pin?username=n33miaz&repo=lumilivre-web&custom_title=WebSite&bg_color=0d1117&title_color=762075&text_color=c9d1d9&icon_color=762075&hide_border=true&min_width=270" height="140" /></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://n33miaz.github.io/n33miaz-links/#lumiapp"><img src="https://github-stats-api-fmwm.onrender.com/api/pin?username=n33miaz&repo=lumilivre-app&custom_title=Application&bg_color=0d1117&title_color=762075&text_color=c9d1d9&icon_color=762075&hide_border=true&min_width=270" height="140" /></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://n33miaz.github.io/n33miaz-links/#lumiapi"><img src="https://github-stats-api-fmwm.onrender.com/api/pin?username=n33miaz&repo=lumilivre-api&custom_title=API%20Restfull&bg_color=0d1117&title_color=762075&text_color=c9d1d9&icon_color=762075&hide_border=true&min_width=270" height="140" /></a>
+</div>
 
-## Visão Geral da Tecnologia
+<br/>
 
-- **Linguagem**: Java 17
-- **Framework**: Spring Boot 3.2.5
-- **Banco de Dados**: PostgreSQL (com Spring Data JPA & Hibernate)
-- **Segurança**: Spring Security com autenticação via JWT (JSON Web Tokens)
-- **Build Tool**: Apache Maven
-- **Documentação**: Swagger / OpenAPI 3 (integrado com Springdoc)
+<div align="center">
+  <h1>Sobre o Projeto</h1>
+</div>
 
----
+A **LumiLivre API** é o núcleo de processamento e inteligência de todo o ecossistema. Desenvolvida em **Java 17** com **Spring Boot 3**, ela centraliza a lógica de negócios, a persistência de dados e a segurança, servindo tanto o painel administrativo (Web) quanto o aplicativo dos alunos (Mobile).
 
-## 🚀 Como Rodar o Projeto Localmente
+Atualmente hospedada no **Render** via Docker, a API utiliza **PostgreSQL** (hospedado no Supabase) como banco de dados relacional, garantindo robustez e integridade para as operações da biblioteca.
 
-Siga estes passos para configurar e executar o backend na sua máquina.
+<br/>
 
-### 1. Pré-requisitos
+<div align="center">
+  <h1>Funcionalidades Principais</h1>
+</div>
 
-Garanta que você tenha as seguintes ferramentas instaladas:
+### 🧠 Regras de Negócio
+- **Gestão de Empréstimos:** Controle rigoroso de prazos, renovações e cálculo automático de multas/penalidades baseadas em dias de atraso.
+- **Controle de Estoque:** Gerenciamento de exemplares físicos, status de disponibilidade e baixa automática.
+- **Validação de Usuários:** Lógica diferenciada para Administradores, Bibliotecários e Alunos.
 
-| Ferramenta      | Versão Mínima | Instalação (Windows - via [Chocolatey](https://chocolatey.org/))                               | Instalação (Linux - via apt/dnf)                                          |
-| --------------- | ------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| **JDK (Java)**  | `17`          | `choco install openjdk --version=17`                                                            | `sudo apt-get install openjdk-17-jdk` ou `sudo dnf install java-17-openjdk` |
-| **Git**         | `2.x`         | `choco install git`                                                                             | `sudo apt-get install git` ou `sudo dnf install git`                        |
-| **Maven**       | `3.8+`        | `choco install maven` (Opcional, pois o projeto usa o Maven Wrapper)                              | `sudo apt-get install maven` ou `sudo dnf install maven`                    |
+### 🔌 Integrações Externas
+- **Google Books & BrasilAPI:** Preenchimento automático de metadados de livros (sinopse, autor, capa) apenas informando o ISBN.
+- **Supabase Storage:** Armazenamento em nuvem para capas de livros e arquivos PDF de TCCs.
+- **Serviço de E-mail:** Notificações automáticas para empréstimos realizados, devoluções e redefinição de senha.
 
-**Verificação:**
-Após a instalação, abra um novo terminal e verifique as versões com:
-```bash
-java -version
-git --version
+### 📊 Relatórios & Dados
+- **Geração de PDF:** Engine interna (OpenPDF) para gerar relatórios detalhados de acervo e movimentações.
+- **Dashboards:** Endpoints otimizados para fornecer estatísticas em tempo real para os clientes frontend.
+- **Importação em Massa:** Processamento de arquivos Excel (.xlsx) para carga inicial de dados.
+
+<br/>
+
+<div align="center">
+  <h1>Arquitetura do Sistema</h1>
+</div>
+
+Utilizamos uma arquitetura cliente-servidor moderna baseada em microsserviços e nuvem para garantir escalabilidade.
+
+```mermaid
+flowchart TD
+    classDef mobile fill:#02569B,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef web fill:#61DAFB,stroke:#fff,stroke-width:2px,color:#000;
+    classDef api fill:#762075,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef db fill:#336791,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef storage fill:#3ECF8E,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef external fill:#ddd,stroke:#333,stroke-width:1px,color:#000,stroke-dasharray: 5 5;
+
+    UserMobile["Application (Aluno)"]:::mobile
+    UserWeb["WebSite (Bibliotecário)"]:::web
+    
+    subgraph Cloud["-"]
+        direction TB
+        API["API RestFull"]:::api
+        DB[("PostgreSQL")]:::db
+        Storage["Supabase Storage"]:::storage
+    end
+    
+    External["Google Books / BrasilAPI"]:::external
+
+    UserMobile -->|REST API / JSON| API
+    UserWeb -->|REST API / JSON| API
+    
+    API -->|JPA / Hibernate| DB
+    API -->|Upload Capas e PDF's| Storage
+    API -.->|Consulta Metadados| External
 ```
 
-### 2. Configuração do Banco de Dados
+<br/>
 
-Esta API se conecta a um banco de dados PostgreSQL. As credenciais de acesso **não estão** no repositório por segurança.
+<div align="center">
+  <h1>Segurança & Documentação</h1>
+</div>
 
-1.  Na pasta `src/main/resources/`, encontre o arquivo `application.properties.example`.
-2.  Crie uma cópia deste arquivo no mesmo diretório e renomeie-a para `application.properties`.
-3.  Abra o `application.properties` e preencha as seguintes propriedades com as credenciais corretas do banco de dados (fornecidas pela equipe):
-    ```properties
-    spring.datasource.url=jdbc:postgresql://<host>:<port>/<database>
-    spring.datasource.username=<seu_usuario>
-    spring.datasource.password=<sua_senha>
-    ```
+- **Spring Security & JWT:** Implementação robusta de autenticação e autorização `Stateless`.
+- **Criptografia:** Senhas armazenadas com hash BCrypt.
+- **Swagger UI:** Documentação interativa disponível em `/swagger-ui.html` para facilitar o consumo pelos frontends.
+- **CORS Config:** Política de acesso restrita aos domínios da aplicação Web e Mobile.
 
-### 3. Clonando e Construindo o Projeto
+<br/>
 
-1.  **Clone o repositório:**
-    ```bash
-    git clone git@github.com:TCC-DS-2025/lumilivre.git
-    cd lumilivre
-    ```
-
-2.  **Resolva a permissão do Git (Apenas para Windows, se necessário):**
-    Se o Git reclamar de "dubious ownership", execute o comando sugerido por ele, colocando o caminho entre aspas:
-    ```bash
-    git config --global --add safe.directory "<caminho_completo_para_a_pasta_lumilivre>"
-    ```
-
-3.  **Construa o projeto com o Maven Wrapper:**
-    O wrapper (`mvnw`) irá baixar a versão correta do Maven automaticamente.
-    
-    *   **Para Linux/macOS:**
-        ```bash
-        ./mvnw clean install
-        ```
-    *   **Para Windows (CMD/PowerShell):**
-        ```bash
-        .\mvnw.cmd clean install
-        ```
-        *(No Git Bash para Windows, use `./mvnw clean install`)*
-
-    Este comando irá baixar todas as dependências e compilar o projeto. A primeira execução pode demorar alguns minutos.
-
-### 4. Executando a Aplicação
-
-Com o projeto construído, inicie o servidor Spring Boot:
-
-*   **Para Linux/macOS:**
-    ```bash
-    ./mvnw spring-boot:run
-    ```
-*   **Para Windows:**
-    ```bash
-    .\mvnw.cmd spring-boot:run
-    ```
-
-O servidor iniciará e estará disponível na porta **8080**. Você verá a mensagem `Tomcat started on port(s): 8080 (http)` no seu console.
-
----
-
-## 📚 Acessando a Documentação da API (Swagger)
-
-Com a aplicação rodando, a documentação interativa da API está disponível. Ela é a melhor ferramenta para entender e testar todos os endpoints.
-
-1.  Abra seu navegador.
-2.  Acesse a URL: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
-
-### Testando Endpoints Protegidos:
-1.  Use o endpoint `POST /auth/login` para obter um token JWT.
-2.  Clique no botão **"Authorize"** no canto superior direito da página do Swagger.
-3.  Na janela que abrir, cole o token JWT que você recebeu (sem o "Bearer ").
-4.  Agora você pode executar qualquer endpoint protegido que exija autenticação.
+<div align="center">
+  <sub>LumiLivre © 2025 - Todos os direitos reservados.</sub>
+</div>
