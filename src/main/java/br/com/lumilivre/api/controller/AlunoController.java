@@ -29,12 +29,11 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/alunos")
-@Tag(name = "3. Alunos")
+// @Tag(name = "3. Alunos")
 @SecurityRequirement(name = "bearerAuth")
 public class AlunoController {
 
