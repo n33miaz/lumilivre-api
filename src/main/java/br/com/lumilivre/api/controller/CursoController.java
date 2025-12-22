@@ -14,13 +14,14 @@ import br.com.lumilivre.api.service.CursoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/cursos")
-// @Tag(name = "9. Cursos")
+@Tag(name = "9. Cursos")
 @SecurityRequirement(name = "bearerAuth")
 public class CursoController {
 
