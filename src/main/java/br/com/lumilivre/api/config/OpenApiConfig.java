@@ -20,11 +20,9 @@ public class OpenApiConfig {
         @Bean
         public OpenAPI customOpenAPI() {
                 Server localServer = new Server().url("http://localhost:8080")
-                                .description("Ambiente de Desenvolvimento Local");
-                Server prodServerAws = new Server().url("http://18.229.126.245:8080")
-                                .description("Ambiente de Produção (AWS)");
-                Server prodServerCustom = new Server().url("http://api.lumilivre.com.br:8080")
-                                .description("Ambiente de Produção (Domínio)");
+                                .description("Ambiente de Desenvolvimento");
+                Server prodServerCustom = new Server().url("https://lumilivre-api.onrender.com")
+                                .description("Ambiente de Produção");
 
                 return new OpenAPI()
                                 .info(new Info()
@@ -60,7 +58,7 @@ public class OpenApiConfig {
                                                                 .description("Operações para gerenciamento de cursos")))
 
                                 // lista de servidores
-                                .servers(List.of(localServer, prodServerAws, prodServerCustom))
+                                .servers(List.of(localServer, prodServerCustom))
 
                                 // configura a segurança JWT para o swagger
                                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
