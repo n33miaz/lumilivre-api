@@ -20,6 +20,8 @@ A **LumiLivre API** é o núcleo de processamento e inteligência de todo o ecos
 
 Atualmente hospedada no **Render** via Docker, a API utiliza **PostgreSQL** (hospedado no Supabase) como banco de dados relacional, garantindo robustez e integridade para as operações da biblioteca.
 
+A documentação interativa (Swagger) está disponível em: https://github-stats-api-fmwm.onrender.com/swagger-ui/index.html#/.
+
 <br/>
 
 <div align="center">
@@ -81,12 +83,11 @@ flowchart TD
 <br/>
 
 <div align="center">
-  <h1>Segurança & Documentação</h1>
+  <h1>Segurança</h1>
 </div>
 
 - **Spring Security & JWT:** Implementação robusta de autenticação e autorização `Stateless`.
 - **Criptografia:** Senhas armazenadas com hash BCrypt.
-- **Swagger UI:** Documentação interativa disponível em `/swagger-ui.html` para facilitar o consumo pelos frontends.
 - **CORS Config:** Política de acesso restrita aos domínios da aplicação Web e Mobile.
 
 <br/>
