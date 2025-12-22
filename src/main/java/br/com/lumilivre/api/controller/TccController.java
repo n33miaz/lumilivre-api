@@ -19,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/tcc")
-@Tag(name = "16. TCC", description = "Gerenciamento de Trabalhos de Conclusão de Curso")
+@Tag(name = "6. TCC", description = "Gerenciamento de Trabalhos de Conclusão de Curso")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
 public class TccController {
@@ -74,7 +74,7 @@ public class TccController {
             @PathVariable Long id,
             @RequestParam("dadosJson") String dadosJson,
             @RequestParam(value = "arquivoPdf", required = false) MultipartFile arquivoPdf,
-            @RequestParam(value = "arquivoFoto", required = false) MultipartFile arquivoFoto) { // Novo param
+            @RequestParam(value = "arquivoFoto", required = false) MultipartFile arquivoFoto) {
         return tccService.atualizarTcc(id, dadosJson, arquivoPdf, arquivoFoto);
     }
 

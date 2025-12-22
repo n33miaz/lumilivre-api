@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/livros/exemplares")
-@Tag(name = "8. Exemplares")
+@Tag(name = "5. Exemplares")
 @SecurityRequirement(name = "bearerAuth")
 public class ExemplarController {
 

@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/relatorios")
-@Tag(name = "13. Relatórios")
+@Tag(name = "14. Relatórios")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
 public class RelatorioController {
@@ -112,6 +112,7 @@ public class RelatorioController {
     }
 
     @GetMapping("/exemplares")
+    @Operation(summary = "Gera um relatório de exemplares em PDF com filtros")
     public void relatorioExemplares(
             HttpServletResponse response,
             @RequestParam(required = false) StatusLivro status,

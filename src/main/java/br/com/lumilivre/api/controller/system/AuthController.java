@@ -32,7 +32,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Realiza o login do usuário", description = "Autentica via matrícula ou email.")
+    @Operation(summary = "Realiza o login do usuário", description = "Autentica o usuário via matrícula (Aluno) ou email (Admin/Bibliotecário) e retorna o token JWT.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Login bem-sucedido", content = @Content(schema = @Schema(implementation = LoginResponse.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Credenciais inválidas"),
@@ -44,8 +44,8 @@ public class AuthController {
     }
 
     @PostMapping("/esqueci-senha")
-    @Operation(summary = "Solicita a redefinição de senha")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Solicitação processada")
+    @Operation(summary = "Solicita a redefinição de senha", description = "Envia um e-mail com link de recuperação caso o e-mail informado exista na base de dados. O payload deve conter a chave 'email'.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Solicitação processada (independente se o e-mail existe ou não, por segurança)")
     public ResponseEntity<ApiResponse<Void>> esqueciSenha(@RequestBody Map<String, String> payload) {
         authService.solicitarResetSenha(payload.get("email"));
 
@@ -56,7 +56,7 @@ public class AuthController {
     }
 
     @GetMapping("/validar-token/{token}")
-    @Operation(summary = "Valida um token de redefinição de senha")
+    @Operation(summary = "Valida um token de redefinição de senha", description = "Verifica se o token de recuperação existe e se ainda não expirou.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Token é válido"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Token inválido ou expirado")
@@ -70,10 +70,10 @@ public class AuthController {
     }
 
     @PostMapping("/mudar-senha")
-    @Operation(summary = "Muda a senha usando um token")
+    @Operation(summary = "Muda a senha usando um token", description = "Atualiza a senha do usuário vinculado ao token de recuperação validado.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Senha alterada com sucesso"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Token inválido ou expirado")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Token inválido, expirado ou dados incorretos")
     })
     public ResponseEntity<ApiResponse<Void>> mudarSenha(@RequestBody @Valid MudarSenhaTokenRequest dto) {
         authService.mudarSenhaComToken(dto);

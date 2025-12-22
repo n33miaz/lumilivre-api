@@ -30,7 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/livros")
-@Tag(name = "7. Livros")
+@Tag(name = "4. Livros")
 @SecurityRequirement(name = "bearerAuth")
 public class LivroController {
 

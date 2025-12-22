@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/cdd")
-@Tag(name = "12. CDD")
+@Tag(name = "13. CDD")
 public class CddController {
 
     @Autowired
