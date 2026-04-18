@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -22,24 +21,17 @@ import br.com.lumilivre.api.repository.TokenResetSenhaRepository;
 import br.com.lumilivre.api.repository.UsuarioRepository;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.service.infra.EmailService;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
-    @Autowired
-    private UsuarioRepository ur;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private TokenResetSenhaRepository tokenRepository;
-
-    @Autowired
-    private EmailService emailService;
+    private final UsuarioRepository ur;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    private final TokenResetSenhaRepository tokenRepository;
+    private final EmailService emailService;
 
     public LoginResponse login(LoginRequest dto) {
         UsuarioModel usuario = ur.findByEmailOrAluno_Matricula(dto.getUser(), dto.getUser())
