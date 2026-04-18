@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import br.com.lumilivre.api.security.CanAccessLoan;
 import br.com.lumilivre.api.security.CanAccessStudent;
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
@@ -184,9 +185,9 @@ public class EmprestimoController {
         return ResponseEntity.ok(concluido);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @CanAccessLoan
     @PutMapping("/renovar/{id}")
-    @Operation(summary = "Renova um empréstimo ativo por mais 7 dias")
+    @Operation(summary = "Renova um empréstimo ativo por mais 14 dias")
     @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Empréstimo renovado"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "422", description = "Renovação bloqueada por política de negócio")

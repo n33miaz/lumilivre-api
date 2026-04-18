@@ -44,22 +44,22 @@ public class SolicitacaoEmprestimoController {
         return ResponseEntity.ok(solicitacaoService.listarTodasSolicitacoes());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @CanAccessStudent
     @PostMapping("/solicitar")
     @Operation(summary = "Solicita empréstimo de um exemplar específico (Tombo)", description = "Usado quando o usuário sabe exatamente qual exemplar físico deseja.")
     public ResponseEntity<String> solicitar(
-            @Parameter(description = "Matrícula do aluno solicitante") @RequestParam String matriculaAluno,
+            @Parameter(description = "Matrícula do aluno solicitante") @RequestParam("matriculaAluno") String matricula,
             @Parameter(description = "Código do tombo do exemplar") @RequestParam String tomboExemplar) {
-        return solicitacaoService.solicitarEmprestimo(matriculaAluno, tomboExemplar);
+        return solicitacaoService.solicitarEmprestimo(matricula, tomboExemplar);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @CanAccessStudent
     @PostMapping("/solicitar-mobile")
     @Operation(summary = "Solicita empréstimo via App Mobile (por ID do Livro)", description = "O sistema busca automaticamente o primeiro exemplar disponível deste livro.")
     public ResponseEntity<String> solicitarMobile(
-            @Parameter(description = "Matrícula do aluno solicitante") @RequestParam String matriculaAluno,
+            @Parameter(description = "Matrícula do aluno solicitante") @RequestParam("matriculaAluno") String matricula,
             @Parameter(description = "ID do livro desejado") @RequestParam Long livroId) {
-        return solicitacaoService.solicitarEmprestimoPorLivro(matriculaAluno, livroId);
+        return solicitacaoService.solicitarEmprestimoPorLivro(matricula, livroId);
     }
 
     @PostMapping("/processar/{id}")

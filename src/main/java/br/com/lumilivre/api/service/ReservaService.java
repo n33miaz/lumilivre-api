@@ -124,10 +124,4 @@ public class ReservaService {
         log.info("ReservaService: {} reserva(s) expirada(s).", vencidas.size());
     }
 
-    private void reordenarFila(Long livroId) {
-        List<ReservaModel> fila = reservaRepository
-                .findByAlunoMatriculaOrderByCriadaEmDesc(null);
-        // Re-sequence is done via DB natural order on posicaoFila — no in-memory reorder needed
-        // when a slot opens, findFirstByLivroIdAndStatus picks the lowest posicaoFila automatically
-    }
 }
