@@ -61,7 +61,9 @@ Nao ha Clean Architecture ou Hexagonal Architecture completa, porque controllers
 - `JwtAuthenticationFilter` ignora `/auth/**`, extrai o token, valida expiracao e popula o `SecurityContext`.
 - `@EnableMethodSecurity` habilita `@PreAuthorize` nas controllers.
 - Perfis observados: `ADMIN`, `BIBLIOTECARIO`, `ALUNO`.
-- A configuracao HTTP atual libera `/**` no filtro web e deixa a autorizacao fina para `@PreAuthorize` nos metodos. Endpoints sem anotacao ficam publicos.
+- `SecurityConfig` aplica allowlist explicita (`/auth/**`, `/v3/api-docs/**`, `/swagger-ui/**`, `/actuator/health`, `/apresentacao/**`) e exige autenticacao em todos os demais endpoints (`anyRequest().authenticated()`).
+- `@CanAccessStudent` + `StudentAuthorizationService` bloqueiam acesso cruzado entre alunos; admin/bibliotecario nao sao impactados.
+- `AuthRateLimitFilter` (Bucket4j) aplica quota em `/auth/login` e `/auth/esqueci-senha` (HTTP 429 apos N falhas).
 - Senha inicial: o login retorna `isInitialPassword=true` quando a senha do aluno e igual a matricula ou a senha administrativa e igual ao email.
 - Recuperacao de senha: token UUID com validade de 30 minutos, email com link para `https://www.lumilivre.com.br/mudar-senha?token=...`, troca de senha e remocao do token apos uso.
 
@@ -198,8 +200,19 @@ docker run -p 8080:8080 lumilivre-api
 - O uso de DTOs evita expor diretamente entidades em muitos fluxos, embora ainda existam retornos de entidades em algumas rotas.
 - Repositories encapsulam queries especificas e evitam logica SQL nas controllers.
 - A camada de service concentra regras de negocio, o que facilita testes unitarios futuros.
-- O cache em memoria melhora leituras de dashboard e catalogo, mas nao e distribuido. Em ambiente horizontal, considerar Redis ou outro cache compartilhado.
-- `application.properties` deve ser saneado para nao versionar segredos.
-- Alguns services usam `@Autowired` em campo e outros injecao por construtor. Padronizar construtor melhora testabilidade.
-- Falhas de email sao tratadas como nao bloqueantes em varios fluxos. Isso e pragmatico, mas uma fila/event bus melhoraria resiliencia.
-- A regra de atraso e parcialmente calculada dinamicamente nas consultas. Um job agendado poderia sincronizar status `ATRASADO` para evitar diferencas entre status persistido e status derivado.
+- `application.properties` agora consome variaveis `${ENV}` e `application-example.properties` serve como template.
+- Injecao por construtor padronizada via `@RequiredArgsConstructor` em services, controllers e filtros.
+- Cache distribuido via Redis (`CacheConfig`) com fallback `ConcurrentMap` para perfil dev.
+- Resilience4j aplicado em integracoes externas (Google Books, BrasilAPI, Supabase Storage) com retry/circuit-breaker/timeout/fallback.
+- Outbox Pattern desacopla envio de email da transacao principal e cobre retry at-least-once.
+- Job `@Scheduled` diario sincroniza `ATIVO -> ATRASADO` e alimenta notificacoes D-3/D-1/D0/atraso.
+
+## Evolucao Arquitetural Recente
+
+- **Seguranca**: `SecurityConfig` com allowlist explicita + `anyRequest().authenticated()`. Ownership por matricula via `@CanAccessStudent` e `StudentAuthorizationService`. Rate-limit em `/auth/**` com Bucket4j. CORS por perfil via env.
+- **Migrations**: Flyway habilitado (`V1__baseline.sql`, `V2__outbox_event.sql`, `V3__audit_log_and_reserva.sql`, `V4__materialized_views.sql`). `DATABASE.md` descreve convencoes.
+- **Dominio puro**: pacote `api/domain/policy/` concentra `LoanPolicy`, `PenaltyPolicy`, `BookAvailabilityPolicy`, `RequestApprovalPolicy`, `ReservationPolicy` — classes sem dependencia Spring.
+- **Observabilidade**: `logback-spring.xml` com JSON encoder prod; `CorrelationIdFilter` popula MDC `X-Correlation-ID`. Actuator expoe health/info/metrics; `BusinessMetricsService` publica metricas de dominio via Micrometer/Prometheus.
+- **Novos modulos**: `ReservaService` (fila FIFO com estados), `DashboardService` (metricas agregadas com views materializadas), `RecomendacaoService` (top livros por genero/aluno), `AuditAspect` + `@Auditable` para trilha de auditoria admin.
+- **OpenAPI**: `OpenApiConfig` aprimorado com tags, servers, security schemes e examples — pronto para codegen (`orval` no web, `openapi-generator-cli` no app).
+- **CI**: `.github/workflows/api.yml` executa build+test em pipeline dedicado.
