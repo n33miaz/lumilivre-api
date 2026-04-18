@@ -12,6 +12,7 @@ import br.com.lumilivre.api.dto.livro.LivroRequest;
 import br.com.lumilivre.api.dto.livro.LivroResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.service.LivroService;
+import br.com.lumilivre.api.service.RecomendacaoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,9 +36,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class LivroController {
 
     private final LivroService livroService;
+    private final RecomendacaoService recomendacaoService;
 
-    public LivroController(LivroService ls) {
+    public LivroController(LivroService ls, RecomendacaoService rs) {
         this.livroService = ls;
+        this.recomendacaoService = rs;
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
@@ -120,7 +123,6 @@ public class LivroController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO', 'ALUNO')")
     @GetMapping("/catalogo-mobile")
     @Operation(summary = "Busca o catálogo de livros agrupados por gênero para o app mobile")
     public ResponseEntity<List<GeneroCatalogoResponse>> buscarCatalogoMobile() {
@@ -181,6 +183,13 @@ public class LivroController {
 
         LivroResponse livroAtualizado = livroService.atualizar(id, livroDTO, file);
         return ResponseEntity.ok(livroAtualizado);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @GetMapping("/mobile/recomendacoes/{matricula}")
+    @Operation(summary = "Retorna até 10 livros recomendados com base no histórico do aluno")
+    public ResponseEntity<List<LivroMobileResponse>> recomendacoes(@PathVariable String matricula) {
+        return ResponseEntity.ok(recomendacaoService.recomendarParaAluno(matricula));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
