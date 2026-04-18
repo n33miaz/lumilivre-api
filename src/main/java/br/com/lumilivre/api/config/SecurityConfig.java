@@ -1,6 +1,11 @@
 package br.com.lumilivre.api.config;
 
+import jakarta.annotation.PostConstruct;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContextException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -40,6 +45,57 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.authRateLimitFilter = authRateLimitFilter;
         this.correlationIdFilter = correlationIdFilter;
+    }
+
+    @PostConstruct
+    void validateCorsOrigins() {
+        if (allowedOrigins == null || allowedOrigins.length == 0) {
+            throw new ApplicationContextException(
+                    "app.cors.allowed-origins is required and must declare at least one origin");
+        }
+        List<String> normalizedOrigins = new ArrayList<>();
+        for (String origin : allowedOrigins) {
+            if (origin == null || origin.isBlank()) {
+                throw new ApplicationContextException(
+                        "app.cors.allowed-origins contains a blank entry");
+            }
+            String trimmed = origin.trim();
+            if (!origin.equals(trimmed) || trimmed.chars().anyMatch(Character::isWhitespace)) {
+                throw new ApplicationContextException(
+                        "app.cors.allowed-origins must not contain whitespace: " + trimmed);
+            }
+            if ("*".equals(trimmed)) {
+                throw new ApplicationContextException(
+                        "app.cors.allowed-origins cannot be '*' - credentials=true requires explicit origins");
+            }
+            URI uri;
+            try {
+                uri = URI.create(trimmed);
+            } catch (IllegalArgumentException ex) {
+                throw new ApplicationContextException(
+                        "app.cors.allowed-origins must be absolute http(s) URLs: " + trimmed, ex);
+            }
+            String scheme = uri.getScheme();
+            if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                throw new ApplicationContextException(
+                        "app.cors.allowed-origins must be absolute http(s) URLs: " + trimmed);
+            }
+            if (uri.getHost() == null || uri.getUserInfo() != null) {
+                throw new ApplicationContextException(
+                        "app.cors.allowed-origins must declare only scheme, host and optional port: " + trimmed);
+            }
+            if (trimmed.endsWith("/")) {
+                throw new ApplicationContextException(
+                        "app.cors.allowed-origins must not end with '/': " + trimmed);
+            }
+            String path = uri.getRawPath();
+            if ((path != null && !path.isEmpty()) || uri.getRawQuery() != null || uri.getRawFragment() != null) {
+                throw new ApplicationContextException(
+                        "app.cors.allowed-origins must not include path, query or fragment: " + trimmed);
+            }
+            normalizedOrigins.add(trimmed);
+        }
+        allowedOrigins = normalizedOrigins.toArray(String[]::new);
     }
 
     @Bean
