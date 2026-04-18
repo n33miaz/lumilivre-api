@@ -7,7 +7,22 @@ on:
     branches: ["main", "master"]
 
 jobs:
+  secrets-scan:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   test-and-package:
+    needs: secrets-scan
     runs-on: ubuntu-latest
 
     steps:
@@ -21,11 +36,20 @@ jobs:
           java-version: "17"
           cache: maven
 
-      - name: Test
-        run: ./mvnw test
+      - name: Verify (test + coverage gate)
+        # Flip to -Djacoco.enforce=true once phase-2 integration tests land.
+        run: ./mvnw verify -Djacoco.enforce=false --no-transfer-progress
 
       - name: Package
-        run: ./mvnw package -DskipTests
+        run: ./mvnw package -DskipTests --no-transfer-progress
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lumilivre-api-coverage
+          path: target/site/jacoco/
+          if-no-files-found: warn
 
       - name: Upload jar
         uses: actions/upload-artifact@v4
