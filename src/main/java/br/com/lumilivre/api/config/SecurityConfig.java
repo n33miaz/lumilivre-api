@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +17,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import br.com.lumilivre.api.security.AuthRateLimitFilter;
+import br.com.lumilivre.api.security.CorrelationIdFilter;
 import br.com.lumilivre.api.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -25,17 +28,24 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final AuthRateLimitFilter authRateLimitFilter;
+    private final CorrelationIdFilter correlationIdFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:8080}")
+    private String[] allowedOrigins;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          AuthRateLimitFilter authRateLimitFilter,
+                          CorrelationIdFilter correlationIdFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.authRateLimitFilter = authRateLimitFilter;
+        this.correlationIdFilter = correlationIdFilter;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Ativa o CORS do Spring Security (obrigatório!)
-                .cors(cors -> {
-                })
+                .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
 
                 .exceptionHandling(ex -> ex
@@ -51,54 +61,75 @@ public class SecurityConfig {
                         }))
 
                 .authorizeHttpRequests(auth -> auth
-                        // libera
                         .requestMatchers("/error").permitAll()
-
-                        // rotas publicas
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Endpoints públicos
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
 
-                        .requestMatchers("/**").permitAll() // APRESENTAÇÃO
+                        // Endpoints mobile de catálogo (GET público para leitura)
+                        .requestMatchers(HttpMethod.GET,
+                                "/livros/catalogo-mobile",
+                                "/livros/mobile/buscar",
+                                "/livros/genero/**").permitAll()
 
-                        // .requestMatchers(HttpMethod.PUT, "/usuarios/alterar-senha").authenticated()
-                        // // rotas mobile GET
-                        // .requestMatchers(HttpMethod.GET,
-                        //         "/livros/catalogo-mobile",
-                        //         "/livros/{id}",
-                        //         "/livros/genero/**")
-                        // .permitAll()
-                        // .requestMatchers(HttpMethod.GET,
-                        //         "/emprestimos/ranking",
-                        //         "/cursos/home",
-                        //         "/modulos/home",
-                        //         "/turnos/home",
-                        //  "/livros/mobile/buscar")
-                        //         "/alunos/{matricula}")
-                        // .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
-                        // .requestMatchers(HttpMethod.GET, "/emprestimos/aluno/**")
-                        // .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
-                        // .requestMatchers(HttpMethod.GET, "/solicitacoes/aluno/**")
-                        // .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                        // Recursos autenticados com acesso a alunos/empréstimos/solicitações por role
+                        .requestMatchers(HttpMethod.GET,
+                                "/emprestimos/ranking",
+                                "/cursos/home",
+                                "/modulos/home",
+                                "/turnos/home")
+                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
 
-                        // // rotas de ADMIN
-                        // .requestMatchers("/usuarios/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/livros/{id}")
+                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
 
-                        // // ADMIN ou BIBLIOTECARIO
-                        // .requestMatchers(
-                        //         "/livros/**",
-                        //         "/tcc/**",
-                        //         "/generos/**",
-                        //         "/autores/**",
-                        //         "/cursos/**",
-                        //         "/emprestimos/**",
-                        //         "/alunos/**")
-                        // .hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                        .requestMatchers(HttpMethod.GET, "/emprestimos/aluno/**")
+                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+
+                        .requestMatchers(HttpMethod.GET, "/solicitacoes/aluno/**")
+                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+
+                        .requestMatchers(HttpMethod.GET, "/alunos/{matricula}")
+                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+
+                        .requestMatchers(HttpMethod.POST,
+                                "/solicitacoes/solicitar",
+                                "/solicitacoes/solicitar-mobile")
+                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+
+                        .requestMatchers(HttpMethod.PUT, "/usuarios/alterar-senha")
+                                .authenticated()
+
+                        // Admin exclusivo
+                        .requestMatchers("/usuarios/**").hasRole("ADMIN")
+
+                        // Admin ou Bibliotecário
+                        .requestMatchers(
+                                "/livros/**",
+                                "/tcc/**",
+                                "/generos/**",
+                                "/cdds/**",
+                                "/cursos/**",
+                                "/modulos/**",
+                                "/turnos/**",
+                                "/exemplares/**",
+                                "/emprestimos/**",
+                                "/solicitacoes/**",
+                                "/alunos/**",
+                                "/relatorios/**",
+                                "/importacao/**")
+                                .hasAnyRole("ADMIN", "BIBLIOTECARIO")
 
                         .anyRequest().authenticated())
 
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -120,13 +151,7 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins(
-                                "https://www.lumilivre.com.br", // produção
-                                "http://localhost:5173", // desenv. web
-                                "http://localhost:53475", "http://192.168.56.1:8080", "http://127.0.0.1:8080",
-                                "http://localhost:8080" // desenv. mobile
-                )
-                        .allowedOriginPatterns("*")
+                        .allowedOrigins(allowedOrigins)
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

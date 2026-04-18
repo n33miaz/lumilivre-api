@@ -1,5 +1,8 @@
 package br.com.lumilivre.api.exception;
 
+import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilityViolationException;
+import br.com.lumilivre.api.domain.policy.LoanPolicy.LoanPolicyViolationException;
+import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy.RequestApprovalViolationException;
 import br.com.lumilivre.api.dto.comum.ErroResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
@@ -49,6 +52,16 @@ public class TratadorDeExcecoesGlobal {
         public ResponseEntity<ErroResponse> tratarIllegalArgumentException(IllegalArgumentException ex,
                         WebRequest request) {
                 return criarResposta(HttpStatus.BAD_REQUEST, "Requisição Inválida", ex.getMessage(), request);
+        }
+
+        @ExceptionHandler({
+                LoanPolicyViolationException.class,
+                BookAvailabilityViolationException.class,
+                RequestApprovalViolationException.class
+        })
+        public ResponseEntity<ErroResponse> tratarViolacaoDePolicy(RuntimeException ex, WebRequest request) {
+                return criarResposta(HttpStatus.UNPROCESSABLE_ENTITY, "Violação de Política de Negócio",
+                                ex.getMessage(), request);
         }
 
         @ExceptionHandler(AuthenticationException.class)
