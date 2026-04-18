@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import br.com.lumilivre.api.security.CanAccessStudent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -85,7 +86,7 @@ public class AlunoController {
     }
 
     @GetMapping("/{matricula}")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @CanAccessStudent
     @Operation(summary = "Busca detalhes de um aluno específico")
     public ResponseEntity<ApiResponse<AlunoResponse>> buscarPorMatricula(@PathVariable String matricula) {
         AlunoModel aluno = alunoService.buscarPorMatricula(matricula);
@@ -93,7 +94,7 @@ public class AlunoController {
     }
 
     @PostMapping(value = "/{matricula}/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @CanAccessStudent
     @Operation(summary = "Atualiza a foto de perfil do aluno")
     public ResponseEntity<ApiResponse<Void>> uploadFoto(
             @PathVariable String matricula,
