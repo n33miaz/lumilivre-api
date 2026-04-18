@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -14,6 +13,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.JpaSort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy;
+import br.com.lumilivre.api.domain.policy.LoanPolicy;
+import br.com.lumilivre.api.domain.policy.PenaltyPolicy;
+import br.com.lumilivre.api.enums.StatusReserva;
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
@@ -28,30 +31,27 @@ import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
+import br.com.lumilivre.api.model.OutboxEventModel.EventType;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
-import br.com.lumilivre.api.service.infra.EmailService;
+import br.com.lumilivre.api.repository.ReservaRepository;
+import br.com.lumilivre.api.security.Auditable;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class EmprestimoService {
 
-    private static final int LIMITE_EMPRESTIMOS_ATIVOS = 3;
-
-    @Autowired
-    private AlunoRepository alunoRepository;
-
-    @Autowired
-    private ExemplarRepository exemplarRepository;
-
-    @Autowired
-    private EmprestimoRepository emprestimoRepository;
-
-    @Autowired
-    private EmailService emailService;
+    private final AlunoRepository alunoRepository;
+    private final ExemplarRepository exemplarRepository;
+    private final EmprestimoRepository emprestimoRepository;
+    private final ReservaRepository reservaRepository;
+    private final OutboxPublisherService outboxPublisher;
 
     // ================ MÉTODOS DE ESCRITA ================
 
+    @Auditable(action = "LOAN_CREATED", targetParam = "#dto.aluno_matricula")
     @Transactional
     @CacheEvict(value = {
             "dashboard_stats_emprestimos",
@@ -69,35 +69,22 @@ public class EmprestimoService {
         AlunoModel aluno = alunoRepository.findByMatricula(dto.getAluno_matricula())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));
 
-        if (aluno.getPenalidade() != null) {
-            LocalDateTime agora = LocalDateTime.now();
-
-            if (aluno.getPenalidadeExpiraEm() != null && aluno.getPenalidadeExpiraEm().isBefore(agora)) {
-                aluno.setPenalidade(null);
-                aluno.setPenalidadeExpiraEm(null);
-                alunoRepository.save(aluno);
-            } else {
-                throw new RegraDeNegocioException(
-                        "O aluno possui penalidade ativa até " +
-                                (aluno.getPenalidadeExpiraEm() != null ? aluno.getPenalidadeExpiraEm()
-                                        : "indeterminado"));
-            }
+        // Limpa penalidade expirada antes de validar
+        LocalDateTime agora = LocalDateTime.now();
+        if (aluno.getPenalidadeExpiraEm() != null && aluno.getPenalidadeExpiraEm().isBefore(agora)) {
+            aluno.setPenalidade(null);
+            aluno.setPenalidadeExpiraEm(null);
+            alunoRepository.save(aluno);
         }
 
-        long emprestimosAtivosAluno = emprestimoRepository
+        long emprestimosAtivos = emprestimoRepository
                 .countByAlunoMatriculaAndStatusEmprestimo(aluno.getMatricula(), StatusEmprestimo.ATIVO);
-
-        if (emprestimosAtivosAluno >= LIMITE_EMPRESTIMOS_ATIVOS) {
-            throw new RegraDeNegocioException(
-                    "O aluno já possui o limite de " + LIMITE_EMPRESTIMOS_ATIVOS + " empréstimos ativos.");
-        }
+        LoanPolicy.validateNewLoan(emprestimosAtivos, aluno.getPenalidadeExpiraEm());
 
         ExemplarModel exemplar = exemplarRepository.findByTombo(dto.getExemplar_tombo())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Exemplar não encontrado."));
 
-        if (exemplar.getStatus_livro() != StatusLivro.DISPONIVEL) {
-            throw new RegraDeNegocioException("O exemplar não está disponível para empréstimo.");
-        }
+        BookAvailabilityPolicy.validateAvailable(exemplar.getStatus_livro());
 
         EmprestimoModel emprestimo = new EmprestimoModel();
         emprestimo.setAluno(aluno);
@@ -140,6 +127,7 @@ public class EmprestimoService {
         return new EmprestimoResponse(salvo);
     }
 
+    @Auditable(action = "LOAN_RETURNED", targetParam = "#id")
     @Transactional
     @CacheEvict(value = {
             "dashboard_stats_emprestimos",
@@ -157,13 +145,13 @@ public class EmprestimoService {
         LocalDateTime agora = LocalDateTime.now();
         AlunoModel aluno = emprestimo.getAluno();
 
-        // calculo de penalidade
+        // cálculo de penalidade via PenaltyPolicy
         if (emprestimo.getDataDevolucao().isBefore(agora)) {
             long diasDeAtraso = Duration.between(emprestimo.getDataDevolucao(), agora).toDays();
-            Penalidade novaPenalidade = Penalidade.fromDiasDeAtraso(diasDeAtraso);
+            Penalidade novaPenalidade = PenaltyPolicy.calculate(diasDeAtraso);
             emprestimo.setPenalidade(novaPenalidade);
 
-            if (novaPenalidade.isMaisGraveQue(aluno.getPenalidade())) {
+            if (PenaltyPolicy.isMoreSevere(novaPenalidade, aluno.getPenalidade())) {
                 aluno.setPenalidade(novaPenalidade);
                 aluno.setPenalidadeExpiraEm(agora.plusDays(7));
                 alunoRepository.save(aluno);
@@ -179,6 +167,22 @@ public class EmprestimoService {
         EmprestimoModel salvo = emprestimoRepository.save(emprestimo);
 
         enviarEmailConclusao(aluno, exemplar, emprestimo);
+
+        // Notifica o próximo da fila de reservas para este livro
+        reservaRepository.findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(
+                exemplar.getLivro().getId(), StatusReserva.AGUARDANDO)
+                .ifPresent(proxima -> {
+                    proxima.setStatus(StatusReserva.DISPONIVEL_PARA_RETIRADA);
+                    LocalDateTime agora2 = LocalDateTime.now();
+                    proxima.setNotificadoEm(agora2);
+                    proxima.setExpiraEm(agora2.plusDays(2));
+                    reservaRepository.save(proxima);
+                    outboxPublisher.publish(EventType.REQUEST_ACCEPTED,
+                            proxima.getAluno().getEmail(),
+                            "Livro disponível para retirada",
+                            "O livro '" + exemplar.getLivro().getNome() +
+                            "' está disponível. Retire até " + proxima.getExpiraEm().toLocalDate() + ".");
+                });
 
         return new EmprestimoResponse(salvo);
     }
@@ -204,6 +208,48 @@ public class EmprestimoService {
         }
 
         emprestimoRepository.deleteById(id);
+    }
+
+    @Auditable(action = "LOAN_RENEWED", targetParam = "#id")
+    @Transactional
+    @CacheEvict(value = {
+            "dashboard_stats_emprestimos",
+            "dashboard_atrasados_count",
+            "dashboard_atrasados_list"
+    }, allEntries = true)
+    public EmprestimoResponse renovar(Integer id) {
+        EmprestimoModel emprestimo = emprestimoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
+
+        if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.CONCLUIDO) {
+            throw new RegraDeNegocioException("Empréstimo já concluído não pode ser renovado.");
+        }
+
+        AlunoModel aluno = emprestimo.getAluno();
+        Long livroId = emprestimo.getExemplar().getLivro().getId();
+
+        boolean hasReservation = reservaRepository
+                .findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(livroId, StatusReserva.AGUARDANDO)
+                .map(r -> !r.getAluno().getMatricula().equals(aluno.getMatricula()))
+                .orElse(false);
+
+        LoanPolicy.validateRenewal(
+                emprestimo.getRenovacoes(),
+                hasReservation,
+                aluno.getPenalidadeExpiraEm());
+
+        emprestimo.setDataDevolucao(emprestimo.getDataDevolucao().plusDays(LoanPolicy.RENEWAL_DAYS));
+        emprestimo.setRenovacoes(emprestimo.getRenovacoes() + 1);
+        emprestimo.setStatusEmprestimo(StatusEmprestimo.ATIVO);
+
+        EmprestimoModel salvo = emprestimoRepository.save(emprestimo);
+
+        outboxPublisher.publish(EventType.REQUEST_ACCEPTED, aluno.getEmail(),
+                "Empréstimo renovado",
+                "Seu empréstimo do livro '" + emprestimo.getExemplar().getLivro().getNome() +
+                "' foi renovado. Nova data de devolução: " + salvo.getDataDevolucao().toLocalDate() + ".");
+
+        return new EmprestimoResponse(salvo);
     }
 
     // ================ MÉTODOS DE BUSCA ================
@@ -334,32 +380,24 @@ public class EmprestimoService {
     // ================ MÉTODOS AUXILIARES ================
 
     private void enviarEmailEmprestimo(AlunoModel aluno, ExemplarModel exemplar, EmprestimoRequest dto) {
-        try {
-            String mensagemEmail = String.format(
-                    "Olá %s,\n\nSeu empréstimo do livro '%s' foi registrado com sucesso.\n" +
-                            "Data de empréstimo: %s\nData de devolução: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
-                    aluno.getNomeCompleto(),
-                    exemplar.getLivro().getNome(),
-                    dto.getData_emprestimo(),
-                    dto.getData_devolucao());
-            emailService.enviarEmail(aluno.getEmail(), "Empréstimo registrado", mensagemEmail);
-        } catch (Exception e) {
-            System.err.println("Erro ao enviar e-mail de empréstimo: " + e.getMessage());
-        }
+        String body = String.format(
+                "Olá %s,\n\nSeu empréstimo do livro '%s' foi registrado com sucesso.\n" +
+                        "Data de empréstimo: %s\nData de devolução: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
+                aluno.getNomeCompleto(),
+                exemplar.getLivro().getNome(),
+                dto.getData_emprestimo(),
+                dto.getData_devolucao());
+        outboxPublisher.publish(EventType.LOAN_CREATED, aluno.getEmail(), "Empréstimo registrado", body);
     }
 
     private void enviarEmailConclusao(AlunoModel aluno, ExemplarModel exemplar, EmprestimoModel emprestimo) {
-        try {
-            String mensagemEmail = String.format(
-                    "Olá %s,\n\nSeu empréstimo do livro '%s' foi concluído.\n" +
-                            "Status da penalidade: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
-                    aluno.getNomeCompleto(),
-                    exemplar.getLivro().getNome(),
-                    emprestimo.getPenalidade() != null ? emprestimo.getPenalidade().getStatus() : "Nenhuma");
-            emailService.enviarEmail(aluno.getEmail(), "Empréstimo concluído", mensagemEmail);
-        } catch (Exception e) {
-            System.err.println("Erro ao enviar e-mail de conclusão: " + e.getMessage());
-        }
+        String body = String.format(
+                "Olá %s,\n\nSeu empréstimo do livro '%s' foi concluído.\n" +
+                        "Status da penalidade: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
+                aluno.getNomeCompleto(),
+                exemplar.getLivro().getNome(),
+                emprestimo.getPenalidade() != null ? emprestimo.getPenalidade().getStatus() : "Nenhuma");
+        outboxPublisher.publish(EventType.LOAN_RETURNED, aluno.getEmail(), "Empréstimo concluído", body);
     }
 
     private Pageable tratarOrdenacao(Pageable pageable) {

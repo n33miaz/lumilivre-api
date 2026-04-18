@@ -3,13 +3,13 @@ package br.com.lumilivre.api.controller;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import br.com.lumilivre.api.security.CanAccessStudent;
 import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse;
@@ -26,15 +26,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/emprestimos")
 @Tag(name = "8. Empréstimos")
 @SecurityRequirement(name = "bearerAuth")
+@RequiredArgsConstructor
 public class EmprestimoController {
 
-    @Autowired
-    private EmprestimoService es;
+    private final EmprestimoService es;
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
     @GetMapping("/home")
@@ -108,7 +109,7 @@ public class EmprestimoController {
     }
 
     @GetMapping("/aluno/{matricula}")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @CanAccessStudent
     @Operation(summary = "Lista os empréstimos ativos de um aluno")
     public ResponseEntity<List<EmprestimoResponse>> listarEmprestimos(
             @PathVariable String matricula) {
@@ -116,7 +117,7 @@ public class EmprestimoController {
     }
 
     @GetMapping("/aluno/{matricula}/historico")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @CanAccessStudent
     @Operation(summary = "Lista o histórico de empréstimos de um aluno")
     public ResponseEntity<List<EmprestimoResponse>> historicoEmprestimos(
             @PathVariable String matricula) {
@@ -181,6 +182,17 @@ public class EmprestimoController {
     public ResponseEntity<EmprestimoResponse> concluirEmprestimo(@PathVariable Integer id) {
         EmprestimoResponse concluido = es.concluirEmprestimo(id);
         return ResponseEntity.ok(concluido);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @PutMapping("/renovar/{id}")
+    @Operation(summary = "Renova um empréstimo ativo por mais 7 dias")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Empréstimo renovado"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "422", description = "Renovação bloqueada por política de negócio")
+    })
+    public ResponseEntity<EmprestimoResponse> renovar(@PathVariable Integer id) {
+        return ResponseEntity.ok(es.renovar(id));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")

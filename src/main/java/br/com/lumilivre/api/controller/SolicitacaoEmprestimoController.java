@@ -1,10 +1,10 @@
 package br.com.lumilivre.api.controller;
 
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import br.com.lumilivre.api.security.CanAccessStudent;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 
 
 @RestController
@@ -25,10 +26,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "7. Solicitações")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+@RequiredArgsConstructor
 public class SolicitacaoEmprestimoController {
 
-    @Autowired
-    private SolicitacaoEmprestimoService solicitacaoService;
+    private final SolicitacaoEmprestimoService solicitacaoService;
 
     @GetMapping("/dashboard")
     @Operation(summary = "Lista solicitações pendentes para o dashboard", description = "Retorna uma visão resumida das solicitações aguardando aprovação.")
@@ -75,7 +76,7 @@ public class SolicitacaoEmprestimoController {
         return solicitacaoService.listarPendentesDTO();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @CanAccessStudent
     @GetMapping("/aluno/{matricula}")
     @Operation(summary = "Lista solicitações de um aluno específico")
     public List<SolicitacaoResponse> listarDoAluno(

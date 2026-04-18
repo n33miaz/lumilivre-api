@@ -34,4 +34,6 @@ public interface SolicitacaoEmprestimoRepository extends JpaRepository<Solicitac
 	List<SolicitacaoDashboardResponse> findSolicitacoesPendentes();
 
 	List<SolicitacaoEmprestimoModel> findByAlunoMatriculaOrderByDataSolicitacaoDesc(String matricula);
+
+	long countByStatus(StatusSolicitacao status);
 }

@@ -3,13 +3,13 @@ package br.com.lumilivre.api.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy;
 import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
 import br.com.lumilivre.api.dto.solicitacao.SolicitacaoCompletaResponse;
 import br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse;
@@ -19,36 +19,26 @@ import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
+import br.com.lumilivre.api.model.OutboxEventModel.EventType;
 import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.SolicitacaoEmprestimoRepository;
-import br.com.lumilivre.api.service.infra.EmailService;
+import br.com.lumilivre.api.security.Auditable;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class SolicitacaoEmprestimoService {
 
-    @Autowired
-    private AlunoRepository alunoRepository;
-
-    @Autowired
-    private ExemplarRepository exemplarRepository;
-
-    @Autowired
-    private SolicitacaoEmprestimoRepository solicitacaoRepository;
-
-    @Autowired
-    private EmprestimoService emprestimoService;
-
-    @Autowired
-    private EmprestimoRepository emprestimoRepository;
-
-    @Autowired
-    private EmailService emailService;
-
-    private static final int LIMITE_EMPRESTIMOS_ATIVOS = 3;
+    private final AlunoRepository alunoRepository;
+    private final ExemplarRepository exemplarRepository;
+    private final SolicitacaoEmprestimoRepository solicitacaoRepository;
+    private final EmprestimoService emprestimoService;
+    private final EmprestimoRepository emprestimoRepository;
+    private final OutboxPublisherService outboxPublisher;
 
     public List<SolicitacaoCompletaResponse> listarTodasSolicitacoes() {
         return solicitacaoRepository.findAllByOrderByDataSolicitacaoDesc()
@@ -77,33 +67,20 @@ public class SolicitacaoEmprestimoService {
         if (aluno == null)
             return ResponseEntity.badRequest().body("Aluno não encontrado.");
 
-        if (aluno.getPenalidade() != null) {
-            if (aluno.getPenalidadeExpiraEm() == null || aluno.getPenalidadeExpiraEm().isAfter(LocalDateTime.now())) {
-                return ResponseEntity.badRequest().body("Aluno possui penalidade ativa.");
-            }
-        }
-
-        if (isLimiteEmprestimosExcedido(matriculaAluno)) {
-            return ResponseEntity.badRequest().body("Aluno atingiu limite de empréstimos ativos.");
-        }
-
         ExemplarModel exemplar = exemplarRepository.findByTombo(tomboExemplar).orElse(null);
         if (exemplar == null)
             return ResponseEntity.badRequest().body("Exemplar não encontrado.");
-        if (exemplar.getStatus_livro() != StatusLivro.DISPONIVEL)
-            return ResponseEntity.badRequest().body("Exemplar indisponível.");
+
+        long ativos = contarEmprestimosAtivos(matriculaAluno);
+        RequestApprovalPolicy.validateRequest(aluno.getPenalidadeExpiraEm(), ativos, exemplar.getStatus_livro());
 
         SolicitacaoEmprestimoModel solicitacao = new SolicitacaoEmprestimoModel();
         solicitacao.setAluno(aluno);
         solicitacao.setExemplar(exemplar);
         solicitacaoRepository.save(solicitacao);
 
-        try {
-            emailService.enviarEmail(aluno.getEmail(), "Solicitação recebida",
-                    "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi registrada.");
-        } catch (Exception e) {
-            System.err.println("Erro ao enviar email: " + e.getMessage());
-        }
+        outboxPublisher.publish(EventType.REQUEST_ACCEPTED, aluno.getEmail(), "Solicitação recebida",
+                "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi registrada.");
 
         return ResponseEntity.ok("Solicitação registrada com sucesso.");
     }
@@ -115,22 +92,12 @@ public class SolicitacaoEmprestimoService {
         if (aluno == null)
             return ResponseEntity.badRequest().body("Aluno não encontrado.");
 
-        if (aluno.getPenalidade() != null) {
-            if (aluno.getPenalidadeExpiraEm() == null || aluno.getPenalidadeExpiraEm().isAfter(LocalDateTime.now())) {
-                return ResponseEntity.badRequest().body("Aluno possui penalidade ativa.");
-            }
-        }
-
-        if (isLimiteEmprestimosExcedido(matriculaAluno)) {
-            return ResponseEntity.badRequest().body("Aluno atingiu limite de empréstimos ativos.");
-        }
-
-        ExemplarModel exemplar = exemplarRepository.findFirstDisponivel(livroId, StatusLivro.DISPONIVEL)
-                .orElse(null);
-
-        if (exemplar == null) {
+        ExemplarModel exemplar = exemplarRepository.findFirstDisponivel(livroId, StatusLivro.DISPONIVEL).orElse(null);
+        if (exemplar == null)
             return ResponseEntity.badRequest().body("Não há exemplares disponíveis para este livro no momento.");
-        }
+
+        long ativos = contarEmprestimosAtivos(matriculaAluno);
+        RequestApprovalPolicy.validateRequest(aluno.getPenalidadeExpiraEm(), ativos, exemplar.getStatus_livro());
 
         SolicitacaoEmprestimoModel solicitacao = new SolicitacaoEmprestimoModel();
         solicitacao.setAluno(aluno);
@@ -138,16 +105,13 @@ public class SolicitacaoEmprestimoService {
         solicitacao.setObservacao("Solicitado via Mobile");
         solicitacaoRepository.save(solicitacao);
 
-        try {
-            emailService.enviarEmail(aluno.getEmail(), "Solicitação recebida",
-                    "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi registrada.");
-        } catch (Exception e) {
-            System.err.println("Erro ao enviar email: " + e.getMessage());
-        }
+        outboxPublisher.publish(EventType.REQUEST_ACCEPTED, aluno.getEmail(), "Solicitação recebida",
+                "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi registrada.");
 
         return ResponseEntity.ok("Solicitação registrada com sucesso.");
     }
 
+    @Auditable(action = "REQUEST_PROCESSED", targetParam = "#id")
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "dashboard_solicitacoes", allEntries = true),
@@ -161,6 +125,7 @@ public class SolicitacaoEmprestimoService {
 
         AlunoModel aluno = solicitacao.getAluno();
         ExemplarModel exemplar = solicitacao.getExemplar();
+        RequestApprovalPolicy.validateProcessable(solicitacao.getStatus());
 
         if (aceitar) {
             EmprestimoRequest dto = new EmprestimoRequest();
@@ -168,29 +133,20 @@ public class SolicitacaoEmprestimoService {
             dto.setExemplar_tombo(exemplar.getTombo());
             dto.setData_emprestimo(LocalDateTime.now());
             dto.setData_devolucao(LocalDateTime.now().plusDays(14));
-
             emprestimoService.cadastrar(dto);
 
             solicitacao.setStatus(StatusSolicitacao.ACEITA);
             solicitacaoRepository.save(solicitacao);
 
-            try {
-                emailService.enviarEmail(aluno.getEmail(), "Solicitação aceita",
-                        "Sua solicitação do livro '" + exemplar.getLivro().getNome()
-                                + "' foi aceita e o empréstimo registrado.");
-            } catch (Exception e) {
-                System.err.println("Erro ao enviar email: " + e.getMessage());
-            }
+            outboxPublisher.publish(EventType.REQUEST_ACCEPTED, aluno.getEmail(), "Solicitação aceita",
+                    "Sua solicitação do livro '" + exemplar.getLivro().getNome()
+                            + "' foi aceita e o empréstimo registrado.");
         } else {
             solicitacao.setStatus(StatusSolicitacao.REJEITADA);
             solicitacaoRepository.save(solicitacao);
 
-            try {
-                emailService.enviarEmail(aluno.getEmail(), "Solicitação rejeitada",
-                        "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi rejeitada.");
-            } catch (Exception e) {
-                System.err.println("Erro ao enviar email: " + e.getMessage());
-            }
+            outboxPublisher.publish(EventType.REQUEST_REJECTED, aluno.getEmail(), "Solicitação rejeitada",
+                    "Sua solicitação do livro '" + exemplar.getLivro().getNome() + "' foi rejeitada.");
         }
 
         return ResponseEntity.ok("Solicitação processada com sucesso.");
@@ -228,10 +184,8 @@ public class SolicitacaoEmprestimoService {
                 .toList();
     }
 
-    private boolean isLimiteEmprestimosExcedido(String matricula) {
-        long ativos = emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(matricula, StatusEmprestimo.ATIVO);
-        long atrasados = emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(matricula,
-                StatusEmprestimo.ATRASADO);
-        return (ativos + atrasados) >= LIMITE_EMPRESTIMOS_ATIVOS;
+    private long contarEmprestimosAtivos(String matricula) {
+        return emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(matricula, StatusEmprestimo.ATIVO)
+                + emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(matricula, StatusEmprestimo.ATRASADO);
     }
 }
