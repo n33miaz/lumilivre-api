@@ -10,7 +10,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
-import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.LivroRepository;

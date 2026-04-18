@@ -11,6 +11,19 @@
 <br/>
 
 <div align="center">
+
+![License](https://img.shields.io/badge/license-MIT-purple?style=flat-square)
+![Java](https://img.shields.io/badge/Java-17-red?style=flat-square&logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.5-6DB33F?style=flat-square&logo=springboot)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-42.7-336791?style=flat-square&logo=postgresql)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker)
+![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue?style=flat-square&logo=githubactions)
+
+</div>
+
+<br/>
+
+<div align="center">
   <h1>Sobre o Projeto</h1>
 </div>
 
@@ -23,23 +36,55 @@ A documentação interativa está disponível em: [api-lumilivre.com.br/swagger-
 <br/>
 
 <div align="center">
+  <h1>Stack Técnica</h1>
+</div>
+
+| Camada | Tecnologia |
+|--------|------------|
+| Linguagem / Runtime | Java 17 (Eclipse Temurin) |
+| Framework | Spring Boot 3.2.5 (Web MVC, Data JPA, Security, Cache, Mail, Actuator) |
+| Persistência | PostgreSQL 16 (Supabase) + Hibernate + **Flyway** |
+| Cache | **Redis** (Spring Data Redis) com fallback `ConcurrentMap` |
+| Observabilidade | Logback JSON + Logstash encoder, **Micrometer + Prometheus**, correlationId via MDC |
+| Resiliência | **Resilience4j** (retry + circuit-breaker + timeout + fallback) |
+| Segurança | Spring Security, JWT (`jjwt`), BCrypt, **Bucket4j** (rate-limit) |
+| Mensageria leve | **Outbox Pattern** com `@Scheduled` publisher |
+| Docs | Springdoc OpenAPI 3 |
+| Relatórios | OpenPDF |
+| Importação | Apache POI 5.3 (XLSX) |
+| Build | Maven Wrapper |
+| Deploy | Dockerfile multi-stage + Render |
+
+<br/>
+
+<div align="center">
   <h1>Funcionalidades Principais</h1>
 </div>
 
 ### 🧠 Regras de Negócio
-- **Gestão de Empréstimos:** Controle rigoroso de prazos, renovações e cálculo automático de multas/penalidades baseadas em dias de atraso.
-- **Controle de Estoque:** Gerenciamento de exemplares físicos, status de disponibilidade e baixa automática.
-- **Validação de Usuários:** Lógica diferenciada para Administradores, Bibliotecários e Alunos.
+- **Gestão de Empréstimos:** controle rigoroso de prazos, penalidades por faixa (0-1, 2-5, 6-7, 8-90, >90 dias) e **job noturno** que sincroniza `ATIVO → ATRASADO`.
+- **Controle de Estoque:** exemplares físicos por tombo com status `DISPONIVEL/EMPRESTADO/INDISPONIVEL/EM_MANUTENCAO`.
+- **Solicitações e Reservas FIFO:** aluno solicita pelo app, bibliotecário aprova no web; livros sem exemplar entram em fila de reserva.
+- **Recomendações:** top livros por gênero favorito + fallback por avaliação, com cache por matrícula.
+- **Trilha de auditoria admin:** todas as ações sobre alunos, livros, usuários e TCCs gravam `before/after` via aspect `@Auditable`.
 
-### 🔌 Integrações Externas
-- **Google Books & BrasilAPI:** Preenchimento automático de metadados de livros (sinopse, autor, capa) apenas informando o ISBN.
-- **Supabase Storage:** Armazenamento em nuvem para capas de livros e arquivos PDF de TCCs.
-- **Serviço de E-mail:** Notificações automáticas para empréstimos realizados, devoluções e redefinição de senha.
+### 🔌 Integrações Externas (resilientes)
+- **Google Books & BrasilAPI** para metadados por ISBN.
+- **Supabase Storage** para capas e PDFs.
+- **SMTP Gmail** com publicação via **Outbox** — falha de email não reverte a transação de empréstimo.
+- **ViaCEP** para preenchimento automático de endereço.
 
-### 📊 Relatórios & Dados
-- **Geração de PDF:** Engine interna (OpenPDF) para gerar relatórios detalhados de acervo e movimentações.
-- **Dashboards:** Endpoints otimizados para fornecer estatísticas em tempo real para os clientes frontend.
-- **Importação em Massa:** Processamento de arquivos Excel (.xlsx) para carga inicial de dados.
+### 📊 Dashboards e Relatórios
+- Views materializadas `mv_dashboard_stats`, `mv_top_livros`, `mv_emprestimos_por_mes` alimentando dashboard em <500ms.
+- Geração de PDF (OpenPDF) para acervo, alunos, exemplares e empréstimos.
+- Endpoints `/actuator/prometheus` com métricas de domínio (`loans.active`, `loans.overdue`, `requests.pending`, `returns.avg_days`).
+
+### 🔐 Segurança (reforçada)
+- **Allowlist explícita** no Spring Security — todo endpoint fora da lista é autenticado por padrão.
+- **Ownership por aluno** via `@CanAccessStudent` + `StudentAuthorizationService` (mitiga IDOR).
+- **Rate-limit** em `/auth/login` e `/auth/esqueci-senha` com Bucket4j.
+- **CORS por ambiente** via `${LUMILIVRE_CORS_ORIGINS}`.
+- **Segredos fora do repositório**: `application.properties` consome `${ENV}`; `application-example.properties` serve como template.
 
 <br/>
 
@@ -60,33 +105,108 @@ flowchart TD
 
     UserMobile["Application (Aluno)"]:::mobile
     UserWeb["WebSite (Bibliotecário)"]:::web
-    
+
     subgraph Cloud["-"]
         direction TB
         API["API RestFull"]:::api
         DB[("PostgreSQL")]:::db
         Storage["Supabase Storage"]:::storage
     end
-    
+
     External["Google Books / BrasilAPI"]:::external
 
     UserMobile -->|REST API / JSON| API
     UserWeb -->|REST API / JSON| API
-    
+
     API -->|JPA / Hibernate| DB
     API -->|Upload Capas e PDF's| Storage
     API -.->|Consulta Metadados| External
 ```
 
+### Camadas internas
+
+```
+controller  →  service  →  domain/policy  →  repository  →  PostgreSQL
+                                           ↘ infra (Google Books, BrasilAPI, ViaCEP, Supabase, SMTP)
+                                           ↘ outbox (eventos assíncronos)
+config · security (JWT, ownership, rate-limit, audit) · cache (Redis) · exception · dto
+```
+
+As **policies puras** em `api/domain/policy/` (LoanPolicy, PenaltyPolicy, BookAvailabilityPolicy, RequestApprovalPolicy, ReservationPolicy) não dependem de Spring e por isso são diretamente testáveis.
+
 <br/>
 
 <div align="center">
-  <h1>Segurança</h1>
+  <h1>Observabilidade</h1>
 </div>
 
-- **Spring Security & JWT:** Implementação robusta de autenticação e autorização `Stateless`.
-- **Criptografia:** Senhas armazenadas com hash BCrypt.
-- **CORS Config:** Política de acesso restrita aos domínios da aplicação Web e Mobile.
+- **Logs JSON** em produção (`logback-spring.xml`) com `correlationId` propagado via filtro `CorrelationIdFilter`.
+- **Actuator** expõe `/actuator/health`, `/actuator/info`, `/actuator/metrics`, `/actuator/prometheus`.
+- **Métricas de negócio** via `BusinessMetricsService` (empréstimos ativos/atrasados, solicitações pendentes, tempo médio de devolução).
+- **Trilha de auditoria** em `audit_log` para cada ação admin.
+
+<br/>
+
+<div align="center">
+  <h1>Resiliência</h1>
+</div>
+
+- **Resilience4j** envolve Google Books, BrasilAPI e Supabase Storage com retry + circuit-breaker + timeout + fallback — uma instabilidade externa não derruba o cadastro.
+- **Outbox Pattern** desacopla SMTP da transação principal: eventos `LoanCreated/Returned/RequestAccepted/Rejected` são persistidos e republicados pelo scheduler, com retry ≤ 3.
+- **Job de atraso** e **job de notificação** (D-3, D-1, D0, atraso) rodam diariamente sem afetar o caminho síncrono do usuário.
+
+<br/>
+
+<div align="center">
+  <h1>Como rodar localmente</h1>
+</div>
+
+```powershell
+# 1. Variáveis de ambiente
+copy src\main\resources\application-example.properties src\main\resources\application.properties
+
+# Preencha no arquivo copiado:
+#   spring.datasource.url       (PostgreSQL)
+#   spring.datasource.username  /  .password
+#   jwt.secret                  (>=256 bits)
+#   spring.mail.*
+#   supabase.url / supabase.key
+#   LUMILIVRE_CORS_ORIGINS=http://localhost:5173
+
+# 2. Compilar e executar
+.\mvnw.cmd clean install
+.\mvnw.cmd spring-boot:run
+
+# 3. Testes
+.\mvnw.cmd test
+
+# 4. Container
+docker build -t lumilivre-api .
+docker run -p 8080:8080 --env-file .env lumilivre-api
+```
+
+### Banco de dados e migrations
+
+Toda alteração de schema passa por **Flyway** em `src/main/resources/db/migration/V<seq>__<desc>.sql`.
+Veja `DATABASE.md` para convenção e ordem de aplicação (V1 baseline, V2 outbox, V3 audit+reserva, V4 views materializadas).
+
+<br/>
+
+<div align="center">
+  <h1>Testes</h1>
+</div>
+
+- Unitários: JUnit 5 + AssertJ para policies puras.
+- Integração: Spring Boot Test + Testcontainers PostgreSQL (roadmap em `execution_plan_v2.md`).
+- Workflow CI em `.github/workflows/api.yml` executa `mvn test` + `mvn package`.
+
+<br/>
+
+<div align="center">
+  <h1>Licença</h1>
+</div>
+
+Distribuído sob a licença **MIT**. Veja `LICENSE` para mais detalhes.
 
 <br/>
 
