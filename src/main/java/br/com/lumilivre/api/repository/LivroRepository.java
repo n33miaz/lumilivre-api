@@ -244,4 +244,35 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :texto, '%'))
             """)
     Page<LivroMobileResponse> buscarMobilePorTexto(@Param("texto") String texto, Pageable pageable);
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.livro.LivroMobileResponse(
+                l.id,
+                COALESCE(l.imagem, ''),
+                l.nome,
+                COALESCE(l.autor, 'Autor Desconhecido'),
+                COALESCE(l.avaliacao, 0.0)
+            )
+            FROM LivroModel l JOIN l.generos g
+            WHERE LOWER(g.nome) IN :generos
+              AND l.id NOT IN :jaLidos
+            ORDER BY l.avaliacao DESC NULLS LAST
+            """)
+    List<LivroMobileResponse> findRecomendacoesPorGenero(
+            @Param("generos") List<String> generos,
+            @Param("jaLidos") List<Long> jaLidos,
+            Pageable pageable);
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.livro.LivroMobileResponse(
+                l.id,
+                COALESCE(l.imagem, ''),
+                l.nome,
+                COALESCE(l.autor, 'Autor Desconhecido'),
+                COALESCE(l.avaliacao, 0.0)
+            )
+            FROM LivroModel l
+            ORDER BY l.avaliacao DESC NULLS LAST
+            """)
+    List<LivroMobileResponse> findTopRated(Pageable pageable);
 }
