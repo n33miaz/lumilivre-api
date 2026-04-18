@@ -161,29 +161,66 @@ As **policies puras** em `api/domain/policy/` (LoanPolicy, PenaltyPolicy, BookAv
   <h1>Como rodar localmente</h1>
 </div>
 
+O `application.properties` usa variáveis de ambiente (`${LUMILIVRE_*}`) para manter segredos fora do repositório. Se alguma variável obrigatória faltar, o Spring falha na inicialização antes de subir a API.
+
+Variáveis obrigatórias:
+
+- `LUMILIVRE_DB_URL`
+- `LUMILIVRE_DB_USER`
+- `LUMILIVRE_DB_PASSWORD`
+- `LUMILIVRE_JWT_SECRET`
+- `LUMILIVRE_MAIL_USERNAME`
+- `LUMILIVRE_MAIL_PASSWORD`
+- `LUMILIVRE_SUPABASE_URL`
+- `LUMILIVRE_SUPABASE_KEY`
+
+### Git Bash
+
+```bash
+# 1. Configure as variáveis locais
+cp .env.example .env
+
+# Edite o .env e substitua todos os placeholders.
+# Depois carregue as variáveis na sessão atual:
+set -a
+source .env
+set +a
+
+# 2. Execute
+./mvnw clean install
+./mvnw spring-boot:run
+
+# 3. Testes
+./mvnw test
+```
+
+### PowerShell
+
 ```powershell
-# 1. Variáveis de ambiente
-copy src\main\resources\application-example.properties src\main\resources\application.properties
+# 1. Configure as variáveis locais na sessão atual
+$env:LUMILIVRE_DB_URL = "jdbc:postgresql://<host>:5432/postgres"
+$env:LUMILIVRE_DB_USER = "<postgres-user>"
+$env:LUMILIVRE_DB_PASSWORD = "<postgres-password>"
+$env:LUMILIVRE_JWT_SECRET = "<random-64-plus-character-jwt-secret>"
+$env:LUMILIVRE_MAIL_USERNAME = "<smtp-user>"
+$env:LUMILIVRE_MAIL_PASSWORD = "<smtp-password>"
+$env:LUMILIVRE_SUPABASE_URL = "https://<project-ref>.supabase.co"
+$env:LUMILIVRE_SUPABASE_KEY = "<supabase-key>"
+$env:LUMILIVRE_CORS_ORIGINS = "http://localhost:5173,http://localhost:8080"
 
-# Preencha no arquivo copiado:
-#   spring.datasource.url       (PostgreSQL)
-#   spring.datasource.username  /  .password
-#   jwt.secret                  (>=256 bits)
-#   spring.mail.*
-#   supabase.url / supabase.key
-#   LUMILIVRE_CORS_ORIGINS=http://localhost:5173
-
-# 2. Compilar e executar
+# 2. Execute
 .\mvnw.cmd clean install
 .\mvnw.cmd spring-boot:run
 
 # 3. Testes
 .\mvnw.cmd test
 
-# 4. Container
+# 4. Container, usando um .env real
 docker build -t lumilivre-api .
 docker run -p 8080:8080 --env-file .env lumilivre-api
 ```
+
+As mensagens `Spring Data Redis - Could not safely identify store assignment` podem aparecer quando JPA e Redis estão no classpath. Elas são informativas; o erro fatal é o primeiro `Caused by` apontando uma variável obrigatória ausente.
 
 ### Banco de dados e migrations
 

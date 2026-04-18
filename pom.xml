@@ -21,6 +21,10 @@
     <properties>
         <java.version>17</java.version>
         <lombok.version>1.18.32</lombok.version>
+        <!-- Flip via -Djacoco.enforce=true in CI once Phase 2 integration tests land -->
+        <jacoco.enforce>false</jacoco.enforce>
+        <jacoco.line.minimum>0.70</jacoco.line.minimum>
+        <jacoco.policy.branch.minimum>0.95</jacoco.policy.branch.minimum>
     </properties>
 
     <dependencies>
@@ -239,6 +243,70 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+
+            <!-- Jacoco — coverage report aggregated across modules -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <haltOnFailure>${jacoco.enforce}</haltOnFailure>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.line.minimum}</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                                <rule>
+                                    <element>CLASS</element>
+                                    <includes>
+                                        <include>br.com.lumilivre.api.domain.policy.*</include>
+                                    </includes>
+                                    <limits>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.policy.branch.minimum}</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                            <excludes>
+                                <exclude>br/com/lumilivre/api/dto/**</exclude>
+                                <exclude>br/com/lumilivre/api/model/**</exclude>
+                                <exclude>br/com/lumilivre/api/enums/**</exclude>
+                                <exclude>br/com/lumilivre/api/exception/**</exclude>
+                                <exclude>br/com/lumilivre/LumilivreApplication.class</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
