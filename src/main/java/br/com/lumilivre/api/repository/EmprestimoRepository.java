@@ -257,4 +257,14 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             ORDER BY e.dataDevolucao ASC
             """)
     List<EmprestimoAtivoResponse> findApenasAtrasadosDTO(@Param("dataRef") LocalDateTime dataRef);
+
+    default Double avgReturnDays() {
+        return findByStatusEmprestimo(StatusEmprestimo.CONCLUIDO).stream()
+                .filter(emprestimo -> emprestimo.getDataEmprestimo() != null && emprestimo.getDataDevolucao() != null)
+                .mapToDouble(emprestimo -> java.time.Duration
+                        .between(emprestimo.getDataEmprestimo(), emprestimo.getDataDevolucao())
+                        .toHours() / 24.0)
+                .average()
+                .orElse(0.0);
+    }
 }
