@@ -1,13 +1,16 @@
 package br.com.lumilivre.api.service.infra;
 
-import br.com.lumilivre.api.dto.integracao.brasilapi.BrasilApiResponse;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Optional;
+import br.com.lumilivre.api.dto.integracao.brasilapi.BrasilApiResponse;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 
 @Service
 public class BrasilApiService {
@@ -21,6 +24,8 @@ public class BrasilApiService {
         this.restTemplate = restTemplate;
     }
 
+    @CircuitBreaker(name = "brasilApi", fallbackMethod = "buscarPorIsbnFallback")
+    @Retry(name = "brasilApi")
     public Optional<BrasilApiResponse> buscarPorIsbn(String isbn) {
         if (isbn == null || isbn.isBlank()) {
             return Optional.empty();
@@ -35,9 +40,12 @@ public class BrasilApiService {
         } catch (HttpClientErrorException.NotFound e) {
             log.info("Livro não encontrado na BrasilAPI para o ISBN: {}", isbn);
             return Optional.empty();
-        } catch (Exception e) {
-            log.error("Erro ao consultar BrasilAPI: {}", e.getMessage());
-            return Optional.empty();
         }
+    }
+
+    @SuppressWarnings("unused")
+    private Optional<BrasilApiResponse> buscarPorIsbnFallback(String isbn, Exception e) {
+        log.warn("BrasilAPI indisponível para ISBN '{}': {}", isbn, e.getMessage());
+        return Optional.empty();
     }
 }

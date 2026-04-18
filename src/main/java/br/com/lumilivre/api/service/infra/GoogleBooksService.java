@@ -1,15 +1,5 @@
 package br.com.lumilivre.api.service.infra;
 
-import br.com.lumilivre.api.dto.integracao.google.GoogleBooksResponse;
-import br.com.lumilivre.api.dto.integracao.google.ImageLinks;
-import br.com.lumilivre.api.dto.integracao.google.VolumeInfo;
-import br.com.lumilivre.api.model.LivroModel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
-
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
@@ -17,6 +7,19 @@ import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import br.com.lumilivre.api.dto.integracao.google.GoogleBooksResponse;
+import br.com.lumilivre.api.dto.integracao.google.ImageLinks;
+import br.com.lumilivre.api.dto.integracao.google.VolumeInfo;
+import br.com.lumilivre.api.model.LivroModel;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 
 @Service
 public class GoogleBooksService {
@@ -30,8 +33,7 @@ public class GoogleBooksService {
         this.restTemplate = restTemplate;
     }
 
-    public record GoogleBookData(LivroModel livro, List<String> categories, Double averageRating) {
-    }
+    public record GoogleBookData(LivroModel livro, List<String> categories, Double averageRating) {}
 
     public Optional<GoogleBookData> buscarLivroInteligente(String isbn, String titulo, String autor) {
         if (isbn != null && !isbn.isBlank()) {
@@ -54,6 +56,8 @@ public class GoogleBooksService {
         return Optional.empty();
     }
 
+    @CircuitBreaker(name = "googleBooks", fallbackMethod = "buscarNaApiFallback")
+    @Retry(name = "googleBooks")
     private Optional<GoogleBookData> buscarNaApi(String query) {
         String url = UriComponentsBuilder.fromHttpUrl(GOOGLE_BOOKS_API)
                 .queryParam("q", query)
@@ -61,25 +65,24 @@ public class GoogleBooksService {
                 .queryParam("langRestrict", "pt")
                 .toUriString();
 
-        try {
-            GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
+        GoogleBooksResponse response = restTemplate.getForObject(url, GoogleBooksResponse.class);
 
-            if (response == null || response.items() == null || response.items().isEmpty()) {
-                return Optional.empty();
-            }
-
-            VolumeInfo volumeInfo = response.items().get(0).volumeInfo();
-            return converterParaModel(volumeInfo);
-
-        } catch (Exception e) {
-            log.error("Erro na requisição Google Books: {}", e.getMessage());
+        if (response == null || response.items() == null || response.items().isEmpty()) {
             return Optional.empty();
         }
+
+        VolumeInfo volumeInfo = response.items().get(0).volumeInfo();
+        return converterParaModel(volumeInfo);
+    }
+
+    @SuppressWarnings("unused")
+    private Optional<GoogleBookData> buscarNaApiFallback(String query, Exception e) {
+        log.warn("Google Books indisponível (circuit open ou retry esgotado) para query '{}': {}", query, e.getMessage());
+        return Optional.empty();
     }
 
     private Optional<GoogleBookData> converterParaModel(VolumeInfo volumeInfo) {
-        if (volumeInfo == null)
-            return Optional.empty();
+        if (volumeInfo == null) return Optional.empty();
 
         LivroModel livro = new LivroModel();
         livro.setNome(volumeInfo.title());
@@ -104,8 +107,7 @@ public class GoogleBooksService {
     }
 
     private Optional<LocalDate> parsearDataPublicacao(String publishedDate) {
-        if (publishedDate == null || publishedDate.isBlank())
-            return Optional.empty();
+        if (publishedDate == null || publishedDate.isBlank()) return Optional.empty();
         try {
             return Optional.of(LocalDate.parse(publishedDate));
         } catch (DateTimeParseException e1) {
@@ -122,8 +124,7 @@ public class GoogleBooksService {
     }
 
     private Optional<String> obterUrlImagem(ImageLinks links) {
-        if (links == null)
-            return Optional.empty();
+        if (links == null) return Optional.empty();
         String url = Optional.ofNullable(links.extraLarge())
                 .or(() -> Optional.ofNullable(links.large()))
                 .or(() -> Optional.ofNullable(links.medium()))

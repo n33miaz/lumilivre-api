@@ -1,8 +1,12 @@
 package br.com.lumilivre.api.service.infra;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import java.io.IOException;
 import java.net.URI;
@@ -15,6 +19,8 @@ import java.util.UUID;
 
 @Service
 public class SupabaseStorageService {
+
+    private static final Logger log = LoggerFactory.getLogger(SupabaseStorageService.class);
 
     @Value("${supabase.url}")
     private String supabaseUrl;
@@ -30,6 +36,7 @@ public class SupabaseStorageService {
 
     private final HttpClient client = HttpClient.newHttpClient();
 
+    @CircuitBreaker(name = "supabaseStorage", fallbackMethod = "uploadFileFallback")
     public String uploadFile(MultipartFile file, String tipo) throws IOException, InterruptedException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("O arquivo está vazio.");
@@ -68,5 +75,11 @@ public class SupabaseStorageService {
         } else {
             throw new RuntimeException("Erro ao enviar arquivo: " + response.statusCode() + " - " + response.body());
         }
+    }
+
+    @SuppressWarnings("unused")
+    private String uploadFileFallback(MultipartFile file, String tipo, Exception e) {
+        log.error("Supabase Storage indisponível (circuit open): {}", e.getMessage());
+        throw new RuntimeException("Serviço de armazenamento temporariamente indisponível. Tente novamente.");
     }
 }
