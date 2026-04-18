@@ -10,22 +10,22 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/tcc")
 @Tag(name = "6. TCC")
 @SecurityRequirement(name = "bearerAuth")
 @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
+@RequiredArgsConstructor
 public class TccController {
 
-    @Autowired
-    private TccService tccService;
+    private final TccService tccService;
 
     @PostMapping(value = "/cadastrar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Cadastra um novo TCC", description = "Recebe os dados do TCC em formato JSON (string) e um arquivo PDF opcional.")

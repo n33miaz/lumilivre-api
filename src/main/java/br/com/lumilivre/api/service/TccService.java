@@ -10,7 +10,6 @@ import br.com.lumilivre.api.repository.TccRepository;
 import br.com.lumilivre.api.service.infra.SupabaseStorageService;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -19,17 +18,15 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class TccService {
 
-    @Autowired
-    private TccRepository tccRepository;
-
-    @Autowired
-    private SupabaseStorageService supabaseStorageService;
-
-    @Autowired
-    private CursoRepository cursoRepository;
+    private final TccRepository tccRepository;
+    private final SupabaseStorageService supabaseStorageService;
+    private final CursoRepository cursoRepository;
 
     private final ObjectMapper mapper = new ObjectMapper();
 

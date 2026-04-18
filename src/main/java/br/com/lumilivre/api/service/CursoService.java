@@ -2,7 +2,6 @@ package br.com.lumilivre.api.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -17,12 +16,13 @@ import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.model.CursoModel;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.repository.CursoRepository;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class CursoService {
 
-    @Autowired
-    private CursoRepository cr;
+    private final CursoRepository cr;
 
     public Page<CursoResumoResponse> buscarCursoParaListaAdmin(String texto, Pageable pageable) {
         return cr.findCursoParaListaAdminComFiltro(texto, pageable);

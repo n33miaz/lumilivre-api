@@ -8,7 +8,6 @@ import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.TurnoModel;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.repository.TurnoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,11 +16,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class TurnoService {
 
-    @Autowired
-    private TurnoRepository turnoRepository;
+    private final TurnoRepository turnoRepository;
 
     public Page<TurnoResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
         return turnoRepository.buscarPorTextoComDTO(texto, pageable);

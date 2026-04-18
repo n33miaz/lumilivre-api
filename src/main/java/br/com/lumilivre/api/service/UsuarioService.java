@@ -1,6 +1,5 @@
 package br.com.lumilivre.api.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,21 +19,15 @@ import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.UsuarioModel;
 import br.com.lumilivre.api.repository.UsuarioRepository;
 import br.com.lumilivre.api.service.infra.EmailService;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class UsuarioService {
 
     private final EmailService emailService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private UsuarioRepository ur;
-
-    UsuarioService(EmailService emailService) {
-        this.emailService = emailService;
-    }
+    private final PasswordEncoder passwordEncoder;
+    private final UsuarioRepository ur;
 
     public Page<UsuarioResumoResponse> buscarUsuarioParaListaAdmin(Pageable pageable) {
         return ur.findUsuarioParaListaAdmin(pageable);

@@ -5,19 +5,19 @@ import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
 import br.com.lumilivre.api.repository.CddRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/cdd")
 @Tag(name = "13. CDD")
+@RequiredArgsConstructor
 public class CddController {
 
-    @Autowired
-    private CddRepository cddRepository;
+    private final CddRepository cddRepository;
 
     @GetMapping
     @Operation(summary = "Lista todas as classificações CDD disponíveis")
