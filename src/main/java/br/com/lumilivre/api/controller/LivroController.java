@@ -11,6 +11,7 @@ import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
 import br.com.lumilivre.api.dto.livro.LivroRequest;
 import br.com.lumilivre.api.dto.livro.LivroResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
+import br.com.lumilivre.api.security.CanAccessStudent;
 import br.com.lumilivre.api.service.LivroService;
 import br.com.lumilivre.api.service.RecomendacaoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -185,7 +186,7 @@ public class LivroController {
         return ResponseEntity.ok(livroAtualizado);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @CanAccessStudent
     @GetMapping("/mobile/recomendacoes/{matricula}")
     @Operation(summary = "Retorna até 10 livros recomendados com base no histórico do aluno")
     public ResponseEntity<List<LivroMobileResponse>> recomendacoes(@PathVariable String matricula) {

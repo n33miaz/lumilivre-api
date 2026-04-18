@@ -50,7 +50,9 @@ application-*.properties
 !application-example.properties
 lumilivre-key.pem
 *.pem
+*.p12
+src/main/resources/certificates/
 coverage/
 /coverage/
-# Arquivos de teste
-test/
+# Arquivos de teste temporarios na raiz
+/test/

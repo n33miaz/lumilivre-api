@@ -31,10 +31,10 @@ public final class LoanPolicy {
     }
 
     /** Maximum number of renewals allowed per loan. */
-    public static final int MAX_RENEWALS = 1;
+    public static final int MAX_RENEWALS = 2;
 
     /** Extension in days granted per renewal. */
-    public static final int RENEWAL_DAYS = 7;
+    public static final int RENEWAL_DAYS = 14;
 
     /**
      * Validates whether a loan can be renewed.
