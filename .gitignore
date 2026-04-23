@@ -10,7 +10,7 @@ lerna-debug.log*
 # Arquivos de Build
 /bin/
 /target/
-.mvn/
+.mvn/wrapper/maven-wrapper.jar
 
 # Arquivos de IDE
 .idea/
