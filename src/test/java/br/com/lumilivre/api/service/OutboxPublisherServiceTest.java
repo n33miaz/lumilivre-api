@@ -15,9 +15,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import br.com.lumilivre.api.model.OutboxEventModel;
-import br.com.lumilivre.api.model.OutboxEventModel.EventStatus;
-import br.com.lumilivre.api.model.OutboxEventModel.EventType;
+import br.com.lumilivre.api.model.OutboxEvent;
+import br.com.lumilivre.api.model.OutboxEvent.EventStatus;
+import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.repository.OutboxEventRepository;
 import br.com.lumilivre.api.service.infra.EmailService;
 
@@ -37,10 +37,10 @@ class OutboxPublisherServiceTest {
     void publishDevePersistirEventoPendente() {
         service.publish(EventType.LOAN_CREATED, "aluno@lumilivre.test", "Emprestimo criado", "Corpo");
 
-        ArgumentCaptor<OutboxEventModel> captor = ArgumentCaptor.forClass(OutboxEventModel.class);
+        ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepository).save(captor.capture());
 
-        OutboxEventModel event = captor.getValue();
+        OutboxEvent event = captor.getValue();
         assertThat(event.getEventType()).isEqualTo(EventType.LOAN_CREATED);
         assertThat(event.getRecipientEmail()).isEqualTo("aluno@lumilivre.test");
         assertThat(event.getSubject()).isEqualTo("Emprestimo criado");
@@ -52,7 +52,7 @@ class OutboxPublisherServiceTest {
 
     @Test
     void processPendingEventsDeveEnviarEmailEMarcarComoEnviado() {
-        OutboxEventModel event = event(0);
+        OutboxEvent event = event(0);
         when(outboxRepository.findByStatusAndRetryCountLessThan(EventStatus.PENDING, 3))
                 .thenReturn(List.of(event));
 
@@ -67,7 +67,7 @@ class OutboxPublisherServiceTest {
 
     @Test
     void processPendingEventsDeveAgendarRetryQuandoEnvioFalhaAntesDoLimite() {
-        OutboxEventModel event = event(1);
+        OutboxEvent event = event(1);
         when(outboxRepository.findByStatusAndRetryCountLessThan(EventStatus.PENDING, 3))
                 .thenReturn(List.of(event));
         doThrow(new RuntimeException("smtp indisponivel"))
@@ -84,7 +84,7 @@ class OutboxPublisherServiceTest {
 
     @Test
     void processPendingEventsDeveMarcarComoFalhaAoAtingirLimiteDeRetries() {
-        OutboxEventModel event = event(2);
+        OutboxEvent event = event(2);
         when(outboxRepository.findByStatusAndRetryCountLessThan(EventStatus.PENDING, 3))
                 .thenReturn(List.of(event));
         doThrow(new RuntimeException("smtp indisponivel"))
@@ -98,8 +98,8 @@ class OutboxPublisherServiceTest {
         verify(outboxRepository).save(event);
     }
 
-    private static OutboxEventModel event(int retryCount) {
-        return OutboxEventModel.builder()
+    private static OutboxEvent event(int retryCount) {
+        return OutboxEvent.builder()
                 .id(10L)
                 .eventType(EventType.LOAN_CREATED)
                 .recipientEmail("aluno@lumilivre.test")

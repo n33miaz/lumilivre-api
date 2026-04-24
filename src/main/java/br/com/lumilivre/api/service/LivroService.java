@@ -13,12 +13,12 @@ import br.com.lumilivre.api.enums.TipoCapa;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
-import br.com.lumilivre.api.model.CddModel;
-import br.com.lumilivre.api.model.GeneroModel;
+import br.com.lumilivre.api.model.DeweyClassification;
+import br.com.lumilivre.api.model.Genre;
 import br.com.lumilivre.api.model.LivroModel;
-import br.com.lumilivre.api.repository.CddRepository;
+import br.com.lumilivre.api.repository.DeweyClassificationRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
-import br.com.lumilivre.api.repository.GeneroRepository;
+import br.com.lumilivre.api.repository.GenreRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
 import br.com.lumilivre.api.service.infra.GoogleBooksService;
 import br.com.lumilivre.api.service.infra.BrasilApiService;
@@ -51,21 +51,21 @@ public class LivroService {
     private final SupabaseStorageService storageService;
     private final GoogleBooksService googleBooksService;
     private final BrasilApiService brasilApiService;
-    private final GeneroRepository generoRepository;
-    private final CddRepository cddRepository;
+    private final GenreRepository genreRepository;
+    private final DeweyClassificationRepository deweyClassificationRepository;
 
     @Value("${supabase.storage.base-url-capas}")
     private String BASE_URL_CAPAS;
 
     public LivroService(ExemplarRepository er, LivroRepository lr, SupabaseStorageService storageService,
-            GoogleBooksService googleBooksService, GeneroRepository gr, CddRepository cddRepository,
-            BrasilApiService brasilApiService) {
+            GoogleBooksService googleBooksService, GenreRepository genreRepository,
+            DeweyClassificationRepository deweyClassificationRepository, BrasilApiService brasilApiService) {
         this.exemplarRepository = er;
         this.livroRepository = lr;
         this.storageService = storageService;
         this.googleBooksService = googleBooksService;
-        this.generoRepository = gr;
-        this.cddRepository = cddRepository;
+        this.genreRepository = genreRepository;
+        this.deweyClassificationRepository = deweyClassificationRepository;
         this.brasilApiService = brasilApiService;
     }
 
@@ -137,7 +137,7 @@ public class LivroService {
     public Optional<LivroDetalheResponse> findById(Long id) {
         log.info("Buscando livro ID {} no banco de dados (sem cache)...", id);
         return livroRepository.findByIdWithDetails(id).map(livro -> {
-            long disponiveis = exemplarRepository.countExemplaresByStatus(id, StatusLivro.DISPONIVEL);
+            long disponiveis = exemplarRepository.countExemplaresByStatus(id, StatusLivro.AVAILABLE);
             long total = exemplarRepository.countByLivroId(id);
             return new LivroDetalheResponse(livro, disponiveis, total);
         });
@@ -293,12 +293,12 @@ public class LivroService {
     // ------------------------ MÉTODOS AUXILIARES ------------------------
 
     private LivroListagemResponse converterParaListaDTO(LivroModel l) {
-        String generos = l.getGeneros().stream().map(GeneroModel::getNome).collect(Collectors.joining(", "));
+        String generos = l.getGeneros().stream().map(Genre::getName).collect(Collectors.joining(", "));
         return new LivroListagemResponse(
-                StatusLivro.DISPONIVEL,
+                StatusLivro.AVAILABLE,
                 "N/A",
                 l.getIsbn(),
-                l.getCdd() != null ? l.getCdd().getCodigo() : "",
+                l.getCdd() != null ? l.getCdd().getCode() : "",
                 l.getNome(),
                 generos,
                 l.getAutor(),
@@ -413,17 +413,17 @@ public class LivroService {
         livro.setAvaliacao(dto.getAvaliacao() != null ? dto.getAvaliacao() : 4.6);
 
         if (isNaoVazio(dto.getCdd())) {
-            CddModel cdd = cddRepository.findById(dto.getCdd())
+            DeweyClassification cdd = deweyClassificationRepository.findById(dto.getCdd())
                     .orElseThrow(() -> new RegraDeNegocioException("Código CDD inválido: " + dto.getCdd()));
             livro.setCdd(cdd);
         } else {
             livro.setCdd(null);
         }
 
-        Set<GeneroModel> generos = new HashSet<>();
+        Set<Genre> generos = new HashSet<>();
 
         if (dto.getGeneros() != null && !dto.getGeneros().isEmpty()) {
-            Set<GeneroModel> generosEncontrados = generoRepository.findByNomeIn(dto.getGeneros());
+            Set<Genre> generosEncontrados = genreRepository.findByNameIn(dto.getGeneros());
 
             generos = generosEncontrados.stream()
                     .limit(3)

@@ -59,9 +59,9 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             WHERE (:nome IS NULL OR LOWER(l.nome) LIKE :nome)
               AND (:isbn IS NULL OR l.isbn = :isbn)
               AND (:autor IS NULL OR LOWER(l.autor) LIKE :autor)
-              AND (:genero IS NULL OR LOWER(g.nome) LIKE :genero)
+              AND (:genero IS NULL OR LOWER(g.name) LIKE :genero)
               AND (:editora IS NULL OR LOWER(l.editora) LIKE :editora)
-              AND (:cdd IS NULL OR c.codigo = :cdd)
+              AND (:cdd IS NULL OR c.code = :cdd)
               AND (:classificacao IS NULL OR l.classificacao_etaria = :classificacao)
               AND (:tipoCapa IS NULL OR l.tipo_capa = :tipoCapa)
               AND (:dataLancamento IS NULL OR l.data_lancamento = :dataLancamento)
@@ -129,7 +129,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             """)
     Page<LivroAgrupadoResponse> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
 
-    @Query(value = "SELECT l FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)", countQuery = "SELECT count(l) FROM LivroModel l JOIN l.generos g WHERE LOWER(g.nome) = LOWER(:nomeGenero)")
+    @Query(value = "SELECT l FROM LivroModel l JOIN l.generos g WHERE LOWER(g.name) = LOWER(:nomeGenero)", countQuery = "SELECT count(l) FROM LivroModel l JOIN l.generos g WHERE LOWER(g.name) = LOWER(:nomeGenero)")
     Page<LivroModel> findIdsByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero, Pageable pageable);
 
     @Query("SELECT DISTINCT l FROM LivroModel l JOIN FETCH l.generos WHERE l IN :livros")
@@ -169,9 +169,9 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             SELECT DISTINCT l FROM LivroModel l
             LEFT JOIN FETCH l.generos g
             LEFT JOIN FETCH l.cdd c
-            WHERE (:genero IS NULL OR g.nome ILIKE :genero)
+            WHERE (:genero IS NULL OR g.name ILIKE :genero)
               AND (:autor IS NULL OR l.autor ILIKE :autor)
-              AND (:cdd IS NULL OR c.codigo = :cdd)
+              AND (:cdd IS NULL OR c.code = :cdd)
               AND (:classificacaoEtaria IS NULL OR CAST(l.classificacao_etaria AS text) = :classificacaoEtaria)
               AND (:tipoCapa IS NULL OR CAST(l.tipo_capa AS text) = :tipoCapa)
               AND (cast(:inicio as date) IS NULL OR l.dataInclusao >= :inicio)
@@ -197,10 +197,10 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
     List<Map<String, Object>> countByAutor();
 
     @Query("""
-                SELECT g.nome as genero, COUNT(l.id) as total
+                SELECT g.name as genero, COUNT(l.id) as total
                 FROM LivroModel l
                 JOIN l.generos g
-                GROUP BY g.nome
+                GROUP BY g.name
                 ORDER BY total DESC
             """)
     List<Map<String, Object>> countByGenero();
@@ -226,7 +226,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
             )
             FROM LivroModel l
             JOIN l.generos g
-            WHERE LOWER(g.nome) = LOWER(:nomeGenero)
+            WHERE LOWER(g.name) = LOWER(:nomeGenero)
             """)
     Page<LivroMobileResponse> findByGeneroAsCatalogoDTO(@Param("nomeGenero") String nomeGenero,
             Pageable pageable);
@@ -254,7 +254,7 @@ public interface LivroRepository extends JpaRepository<LivroModel, Long> {
                 COALESCE(l.avaliacao, 0.0)
             )
             FROM LivroModel l JOIN l.generos g
-            WHERE LOWER(g.nome) IN :generos
+            WHERE LOWER(g.name) IN :generos
               AND l.id NOT IN :jaLidos
             ORDER BY l.avaliacao DESC NULLS LAST
             """)

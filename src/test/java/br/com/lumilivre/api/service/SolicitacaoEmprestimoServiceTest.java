@@ -27,7 +27,7 @@ import br.com.lumilivre.api.enums.StatusSolicitacao;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.LivroModel;
-import br.com.lumilivre.api.model.OutboxEventModel.EventType;
+import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
@@ -86,10 +86,10 @@ class SolicitacaoEmprestimoServiceTest {
     @Test
     void solicitarEmprestimoDeveRegistrarSolicitacaoPendenteEPublicarOutbox() {
         when(alunoRepository.findByMatricula("12345")).thenReturn(Optional.of(aluno()));
-        when(exemplarRepository.findByTombo("T001")).thenReturn(Optional.of(exemplar(StatusLivro.DISPONIVEL)));
-        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.ATIVO))
+        when(exemplarRepository.findByTombo("T001")).thenReturn(Optional.of(exemplar(StatusLivro.AVAILABLE)));
+        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.ACTIVE))
                 .thenReturn(1L);
-        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.ATRASADO))
+        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.OVERDUE))
                 .thenReturn(0L);
 
         var response = service.solicitarEmprestimo("12345", "T001");
@@ -101,7 +101,7 @@ class SolicitacaoEmprestimoServiceTest {
         verify(solicitacaoRepository).save(captor.capture());
         assertThat(captor.getValue().getAluno().getMatricula()).isEqualTo("12345");
         assertThat(captor.getValue().getExemplar().getTombo()).isEqualTo("T001");
-        assertThat(captor.getValue().getStatus()).isEqualTo(StatusSolicitacao.PENDENTE);
+        assertThat(captor.getValue().getStatus()).isEqualTo(StatusSolicitacao.PENDING);
 
         verify(outboxPublisher).publish(
                 eq(EventType.REQUEST_ACCEPTED),
@@ -113,11 +113,11 @@ class SolicitacaoEmprestimoServiceTest {
     @Test
     void solicitarEmprestimoPorLivroDeveUsarPrimeiroExemplarDisponivelERegistrarOrigemMobile() {
         when(alunoRepository.findByMatricula("12345")).thenReturn(Optional.of(aluno()));
-        when(exemplarRepository.findFirstDisponivel(10L, StatusLivro.DISPONIVEL))
-                .thenReturn(Optional.of(exemplar(StatusLivro.DISPONIVEL)));
-        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.ATIVO))
+        when(exemplarRepository.findFirstDisponivel(10L, StatusLivro.AVAILABLE))
+                .thenReturn(Optional.of(exemplar(StatusLivro.AVAILABLE)));
+        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.ACTIVE))
                 .thenReturn(0L);
-        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.ATRASADO))
+        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.OVERDUE))
                 .thenReturn(0L);
 
         var response = service.solicitarEmprestimoPorLivro("12345", 10L);
@@ -134,10 +134,10 @@ class SolicitacaoEmprestimoServiceTest {
     @Test
     void solicitarEmprestimoDeveBloquearExemplarIndisponivel() {
         when(alunoRepository.findByMatricula("12345")).thenReturn(Optional.of(aluno()));
-        when(exemplarRepository.findByTombo("T001")).thenReturn(Optional.of(exemplar(StatusLivro.EMPRESTADO)));
-        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.ATIVO))
+        when(exemplarRepository.findByTombo("T001")).thenReturn(Optional.of(exemplar(StatusLivro.BORROWED)));
+        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.ACTIVE))
                 .thenReturn(0L);
-        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.ATRASADO))
+        when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo("12345", StatusEmprestimo.OVERDUE))
                 .thenReturn(0L);
 
         assertThatThrownBy(() -> service.solicitarEmprestimo("12345", "T001"))
@@ -149,13 +149,13 @@ class SolicitacaoEmprestimoServiceTest {
 
     @Test
     void processarSolicitacaoAceitaDeveCadastrarEmprestimoAtualizarStatusEPublicarOutbox() {
-        SolicitacaoEmprestimoModel solicitacao = solicitacao(StatusSolicitacao.PENDENTE);
+        SolicitacaoEmprestimoModel solicitacao = solicitacao(StatusSolicitacao.PENDING);
         when(solicitacaoRepository.findById(7)).thenReturn(Optional.of(solicitacao));
 
         var response = service.processarSolicitacao(7, true);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(solicitacao.getStatus()).isEqualTo(StatusSolicitacao.ACEITA);
+        assertThat(solicitacao.getStatus()).isEqualTo(StatusSolicitacao.ACCEPTED);
 
         ArgumentCaptor<EmprestimoRequest> requestCaptor = ArgumentCaptor.forClass(EmprestimoRequest.class);
         verify(emprestimoService).cadastrar(requestCaptor.capture());
@@ -174,13 +174,13 @@ class SolicitacaoEmprestimoServiceTest {
 
     @Test
     void processarSolicitacaoRejeitadaDeveAtualizarStatusSemCadastrarEmprestimo() {
-        SolicitacaoEmprestimoModel solicitacao = solicitacao(StatusSolicitacao.PENDENTE);
+        SolicitacaoEmprestimoModel solicitacao = solicitacao(StatusSolicitacao.PENDING);
         when(solicitacaoRepository.findById(7)).thenReturn(Optional.of(solicitacao));
 
         var response = service.processarSolicitacao(7, false);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(solicitacao.getStatus()).isEqualTo(StatusSolicitacao.REJEITADA);
+        assertThat(solicitacao.getStatus()).isEqualTo(StatusSolicitacao.REJECTED);
         verify(emprestimoService, never()).cadastrar(any());
         verify(solicitacaoRepository).save(solicitacao);
         verify(outboxPublisher).publish(
@@ -204,7 +204,7 @@ class SolicitacaoEmprestimoServiceTest {
 
     @Test
     void processarSolicitacaoDeveBloquearSolicitacaoJaProcessada() {
-        SolicitacaoEmprestimoModel solicitacao = solicitacao(StatusSolicitacao.ACEITA);
+        SolicitacaoEmprestimoModel solicitacao = solicitacao(StatusSolicitacao.ACCEPTED);
         when(solicitacaoRepository.findById(7)).thenReturn(Optional.of(solicitacao));
 
         assertThatThrownBy(() -> service.processarSolicitacao(7, false))
@@ -220,7 +220,7 @@ class SolicitacaoEmprestimoServiceTest {
         SolicitacaoEmprestimoModel solicitacao = new SolicitacaoEmprestimoModel();
         solicitacao.setId(7);
         solicitacao.setAluno(aluno());
-        solicitacao.setExemplar(exemplar(StatusLivro.DISPONIVEL));
+        solicitacao.setExemplar(exemplar(StatusLivro.AVAILABLE));
         solicitacao.setStatus(status);
         return solicitacao;
     }

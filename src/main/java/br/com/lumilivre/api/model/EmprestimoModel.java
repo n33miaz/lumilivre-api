@@ -48,6 +48,6 @@ public class EmprestimoModel {
 	@Column(name = "renovacoes", nullable = false)
 	private int renovacoes = 0;
 
-	@Formula("(CASE WHEN status_emprestimo = 'CONCLUIDO' THEN 1 ELSE 0 END)")
+	@Formula("(CASE WHEN status_emprestimo = 'COMPLETED' THEN 1 ELSE 0 END)")
 	private int ordemStatus;
 }

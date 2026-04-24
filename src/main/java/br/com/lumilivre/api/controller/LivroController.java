@@ -44,7 +44,7 @@ public class LivroController {
         this.recomendacaoService = rs;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/home")
     @Operation(summary = "Lista livros para a tela principal do admin (visão de exemplares)")
     public ResponseEntity<Page<LivroListagemResponse>> listarParaAdmin(Pageable pageable) {
@@ -52,7 +52,7 @@ public class LivroController {
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/home/agrupado")
     @Operation(summary = "Lista livros agrupados por título com contagem de exemplares e busca")
     public ResponseEntity<Page<LivroAgrupadoResponse>> listarAgrupadoParaAdmin(
@@ -72,7 +72,7 @@ public class LivroController {
     }
 
     @GetMapping("/buscar/avancado")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @Operation(summary = "Busca avançada e paginada de livros (Agrupado)")
     public ResponseEntity<Page<LivroAgrupadoResponse>> buscarAvancado(
             @RequestParam(required = false) String nome,
@@ -94,7 +94,7 @@ public class LivroController {
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/consulta-isbn/{isbn}")
     @Operation(summary = "Consulta dados de um livro em APIs externas (Google/BrasilAPI) para preenchimento automático")
     @ApiResponses({
@@ -111,7 +111,7 @@ public class LivroController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     @GetMapping("/{id}")
     @Operation(summary = "Busca os detalhes de um livro específico pelo seu ID")
     @ApiResponses({
@@ -140,7 +140,7 @@ public class LivroController {
         return livros.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(livros);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping(value = "/cadastrar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Cadastra um novo livro, opcionalmente com a capa")
     @ApiResponses({
@@ -155,7 +155,7 @@ public class LivroController {
         return ResponseEntity.status(HttpStatus.CREATED).body(novoLivro);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping(value = "/{id}/capa", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Faz upload ou atualiza a capa para um livro existente")
     @ApiResponses({
@@ -170,7 +170,7 @@ public class LivroController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Capa atualizada com sucesso.", null));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Atualiza um livro existente, opcionalmente com uma nova capa")
     @ApiResponses({
@@ -193,7 +193,7 @@ public class LivroController {
         return ResponseEntity.ok(recomendacaoService.recomendarParaAluno(matricula));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @DeleteMapping("/{id}/com-exemplares")
     @Operation(summary = "Exclui um livro e todos os seus exemplares associados")
     public ResponseEntity<ApiResponse<Void>> excluirComExemplares(

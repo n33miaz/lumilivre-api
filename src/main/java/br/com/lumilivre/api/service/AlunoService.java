@@ -27,27 +27,27 @@ import java.time.LocalDate;
 public class AlunoService {
 
     private final AlunoRepository alunoRepository;
-    private final CursoRepository cursoRepository;
+    private final CourseRepository courseRepository;
     private final UsuarioRepository usuarioRepository;
-    private final TurnoRepository turnoRepository;
-    private final ModuloRepository moduloRepository;
+    private final StudyShiftRepository studyShiftRepository;
+    private final AcademicModuleRepository academicModuleRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final CepService cepService;
     private final SupabaseStorageService storageService;
 
-    private record EntidadesRelacionadas(CursoModel curso, TurnoModel turno, ModuloModel modulo) {
+    private record EntidadesRelacionadas(Course curso, StudyShift turno, AcademicModule modulo) {
     }
 
-    public AlunoService(AlunoRepository alunoRepository, CursoRepository cursoRepository,
-            UsuarioRepository usuarioRepository, TurnoRepository turnoRepository,
-            ModuloRepository moduloRepository, EmailService emailService,
+    public AlunoService(AlunoRepository alunoRepository, CourseRepository courseRepository,
+            UsuarioRepository usuarioRepository, StudyShiftRepository studyShiftRepository,
+            AcademicModuleRepository academicModuleRepository, EmailService emailService,
             PasswordEncoder passwordEncoder, CepService cepService, SupabaseStorageService supabaseStorageService) {
         this.alunoRepository = alunoRepository;
-        this.cursoRepository = cursoRepository;
+        this.courseRepository = courseRepository;
         this.usuarioRepository = usuarioRepository;
-        this.turnoRepository = turnoRepository;
-        this.moduloRepository = moduloRepository;
+        this.studyShiftRepository = studyShiftRepository;
+        this.academicModuleRepository = academicModuleRepository;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
         this.cepService = cepService;
@@ -188,15 +188,15 @@ public class AlunoService {
     // --- MÉTODOS PRIVADOS ---
 
     private EntidadesRelacionadas buscarEntidadesRelacionadas(AlunoRequest dto) {
-        CursoModel curso = cursoRepository.findById(dto.getCursoId())
+        Course curso = courseRepository.findById(dto.getCursoId())
                 .orElseThrow(
                         () -> new RecursoNaoEncontradoException("Curso não encontrado (ID: " + dto.getCursoId() + ")"));
 
-        TurnoModel turno = turnoRepository.findById(dto.getTurnoId())
+        StudyShift turno = studyShiftRepository.findById(dto.getTurnoId())
                 .orElseThrow(
                         () -> new RecursoNaoEncontradoException("Turno não encontrado (ID: " + dto.getTurnoId() + ")"));
 
-        ModuloModel modulo = moduloRepository.findById(dto.getModuloId())
+        AcademicModule modulo = academicModuleRepository.findById(dto.getModuloId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
                         "Módulo não encontrado (ID: " + dto.getModuloId() + ")"));
 
@@ -254,7 +254,7 @@ public class AlunoService {
         UsuarioModel usuario = new UsuarioModel();
         usuario.setEmail(aluno.getEmail());
         usuario.setSenha(passwordEncoder.encode(aluno.getMatricula())); // Senha inicial é a matrícula
-        usuario.setRole(Role.ALUNO);
+        usuario.setRole(Role.STUDENT);
         usuario.setAluno(aluno);
         return usuario;
     }

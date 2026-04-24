@@ -55,7 +55,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 ex.tombo,
                 a.nomeCompleto,
                 a.matricula,
-                c.nome,
+                c.name,
                 e.dataEmprestimo,
                 e.dataDevolucao
             )
@@ -79,7 +79,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                     ex.tombo,
                     a.nomeCompleto,
                     a.matricula,
-                    c.nome,
+                    c.name,
                     e.dataEmprestimo,
                     e.dataDevolucao
                 )
@@ -91,9 +91,9 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 WHERE
                 (
                     (:statusEmprestimo IS NULL) OR
-                    (:statusEmprestimo = 'CONCLUIDO' AND e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.CONCLUIDO) OR
-                    (:statusEmprestimo = 'ATRASADO' AND (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO OR (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO AND e.dataDevolucao < :now))) OR
-                    (:statusEmprestimo = 'ATIVO' AND (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO AND e.dataDevolucao >= :now))
+                    (:statusEmprestimo = 'COMPLETED' AND e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.COMPLETED) OR
+                    (:statusEmprestimo = 'OVERDUE' AND (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.OVERDUE OR (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ACTIVE AND e.dataDevolucao < :now))) OR
+                    (:statusEmprestimo = 'ACTIVE' AND (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ACTIVE AND e.dataDevolucao >= :now))
                 )
                 AND (:tombo IS NULL OR ex.tombo ILIKE :tombo)
                 AND (:livroNome IS NULL OR l.nome ILIKE :livroNome)
@@ -128,7 +128,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 )
                 FROM EmprestimoModel e
                 WHERE e.aluno.matricula = :matricula
-                  AND e.statusEmprestimo = 'ATIVO'
+                  AND e.statusEmprestimo = 'ACTIVE'
             """)
     List<EmprestimoResponse> findEmprestimosAtivos(@Param("matricula") String matricula);
 
@@ -145,7 +145,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 )
                 FROM EmprestimoModel e
                 WHERE e.aluno.matricula = :matricula
-                  AND e.statusEmprestimo = 'CONCLUIDO'
+                  AND e.statusEmprestimo = 'COMPLETED'
             """)
     List<EmprestimoResponse> findHistoricoEmprestimos(@Param("matricula") String matricula);
 
@@ -157,7 +157,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                     ex.tombo,
                     a.nomeCompleto,
                     a.matricula,
-                    a.curso.nome,
+                    a.curso.name,
                     e.dataEmprestimo,
                     e.dataDevolucao
                 )
@@ -180,8 +180,8 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 JOIN exemplar.livro livro
                 JOIN emprestimo.aluno aluno
                 WHERE emprestimo.statusEmprestimo IN (
-                    br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO,
-                    br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO
+                    br.com.lumilivre.api.enums.StatusEmprestimo.ACTIVE,
+                    br.com.lumilivre.api.enums.StatusEmprestimo.OVERDUE
                 )
                 ORDER BY emprestimo.dataDevolucao ASC
             """)
@@ -232,7 +232,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             JOIN e.aluno a
             JOIN e.exemplar ex
             JOIN ex.livro l
-            WHERE e.statusEmprestimo IN (br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO, br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO)
+            WHERE e.statusEmprestimo IN (br.com.lumilivre.api.enums.StatusEmprestimo.ACTIVE, br.com.lumilivre.api.enums.StatusEmprestimo.OVERDUE)
             ORDER BY e.dataDevolucao ASC
             """)
     List<EmprestimoAtivoResponse> findAtivosEAtrasadosDTO();
@@ -252,14 +252,14 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             JOIN e.aluno a
             JOIN e.exemplar ex
             JOIN ex.livro l
-            WHERE e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATRASADO
-               OR (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ATIVO AND e.dataDevolucao < :dataRef)
+            WHERE e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.OVERDUE
+               OR (e.statusEmprestimo = br.com.lumilivre.api.enums.StatusEmprestimo.ACTIVE AND e.dataDevolucao < :dataRef)
             ORDER BY e.dataDevolucao ASC
             """)
     List<EmprestimoAtivoResponse> findApenasAtrasadosDTO(@Param("dataRef") LocalDateTime dataRef);
 
     default Double avgReturnDays() {
-        return findByStatusEmprestimo(StatusEmprestimo.CONCLUIDO).stream()
+        return findByStatusEmprestimo(StatusEmprestimo.COMPLETED).stream()
                 .filter(emprestimo -> emprestimo.getDataEmprestimo() != null && emprestimo.getDataDevolucao() != null)
                 .mapToDouble(emprestimo -> java.time.Duration
                         .between(emprestimo.getDataEmprestimo(), emprestimo.getDataDevolucao())

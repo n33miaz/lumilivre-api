@@ -32,7 +32,7 @@ public class OverdueMarkerJob {
         LocalDateTime agora = LocalDateTime.now();
 
         List<EmprestimoModel> vencidos = emprestimoRepository
-                .findByStatusEmprestimoAndDataDevolucaoBefore(StatusEmprestimo.ATIVO, agora);
+                .findByStatusEmprestimoAndDataDevolucaoBefore(StatusEmprestimo.ACTIVE, agora);
 
         if (vencidos.isEmpty()) {
             log.info("OverdueMarkerJob: nenhum empréstimo para marcar como atrasado.");
@@ -40,7 +40,7 @@ public class OverdueMarkerJob {
         }
 
         for (EmprestimoModel e : vencidos) {
-            e.setStatusEmprestimo(StatusEmprestimo.ATRASADO);
+            e.setStatusEmprestimo(StatusEmprestimo.OVERDUE);
         }
 
         emprestimoRepository.saveAll(vencidos);

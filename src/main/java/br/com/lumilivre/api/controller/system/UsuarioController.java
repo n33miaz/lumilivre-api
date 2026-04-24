@@ -40,7 +40,7 @@ public class UsuarioController {
 
     private final UsuarioService us;
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/home")
     @Operation(summary = "Lista usuários para a tela principal do admin", description = "Retorna uma lista paginada de usuários com dados resumidos.")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso")
@@ -51,7 +51,7 @@ public class UsuarioController {
         return usuarios.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(usuarios);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/buscar")
     @Operation(summary = "Busca usuários com paginação e filtro de texto")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResumoResponse.class)))
@@ -62,7 +62,7 @@ public class UsuarioController {
         return usuarios.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(usuarios);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/buscar/avancado")
     @Operation(summary = "Busca avançada e paginada de usuários")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Página de usuários retornada com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResumoResponse.class)))

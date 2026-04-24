@@ -21,7 +21,7 @@ class RequestApprovalPolicyTest {
         assertThatCode(() -> RequestApprovalPolicy.validateRequest(
                 null,
                 LoanPolicy.MAX_ACTIVE_LOANS - 1,
-                StatusLivro.DISPONIVEL))
+                StatusLivro.AVAILABLE))
                 .doesNotThrowAnyException();
     }
 
@@ -30,7 +30,7 @@ class RequestApprovalPolicyTest {
         assertThatCode(() -> RequestApprovalPolicy.validateRequest(
                 LocalDateTime.now().minusMinutes(1),
                 0,
-                StatusLivro.DISPONIVEL))
+                StatusLivro.AVAILABLE))
                 .doesNotThrowAnyException();
     }
 
@@ -39,7 +39,7 @@ class RequestApprovalPolicyTest {
         assertThatThrownBy(() -> RequestApprovalPolicy.validateRequest(
                 LocalDateTime.now().plusMinutes(1),
                 0,
-                StatusLivro.DISPONIVEL))
+                StatusLivro.AVAILABLE))
                 .isInstanceOf(RequestApprovalViolationException.class)
                 .hasMessageContaining("penalidade");
     }
@@ -49,7 +49,7 @@ class RequestApprovalPolicyTest {
         assertThatThrownBy(() -> RequestApprovalPolicy.validateRequest(
                 null,
                 LoanPolicy.MAX_ACTIVE_LOANS,
-                StatusLivro.DISPONIVEL))
+                StatusLivro.AVAILABLE))
                 .isInstanceOf(RequestApprovalViolationException.class)
                 .hasMessageContaining("limite");
     }
@@ -59,18 +59,18 @@ class RequestApprovalPolicyTest {
         assertThatThrownBy(() -> RequestApprovalPolicy.validateRequest(
                 null,
                 0,
-                StatusLivro.EMPRESTADO))
+                StatusLivro.BORROWED))
                 .isInstanceOf(BookAvailabilityViolationException.class);
     }
 
     @Test
     void validateProcessableAllowsPendingRequest() {
-        assertThatCode(() -> RequestApprovalPolicy.validateProcessable(StatusSolicitacao.PENDENTE))
+        assertThatCode(() -> RequestApprovalPolicy.validateProcessable(StatusSolicitacao.PENDING))
                 .doesNotThrowAnyException();
     }
 
     @ParameterizedTest
-    @EnumSource(value = StatusSolicitacao.class, names = "PENDENTE", mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = StatusSolicitacao.class, names = "PENDING", mode = EnumSource.Mode.EXCLUDE)
     void validateProcessableRejectsAlreadyProcessedRequests(StatusSolicitacao status) {
         assertThatThrownBy(() -> RequestApprovalPolicy.validateProcessable(status))
                 .isInstanceOf(RequestApprovalViolationException.class)

@@ -1,18 +1,36 @@
 package br.com.lumilivre.api.enums;
 
 public enum StatusLivro implements EnumStatus {
-    DISPONIVEL("Disponível"),
-    INDISPONIVEL("Indisponível"),
-    EM_MANUTENCAO("Em manutenção"),
-    EMPRESTADO("Emprestado");
 
-    private final String status;
+    AVAILABLE("DISPONIVEL", "Disponível"),
+    UNAVAILABLE("INDISPONIVEL", "Indisponível"),
+    MAINTENANCE("EM_MANUTENCAO", "Em manutenção"),
+    BORROWED("EMPRESTADO", "Emprestado");
 
-    StatusLivro(String status) {
-        this.status = status;
+    private final String ptBrCode;
+    private final String label;
+
+    StatusLivro(String ptBrCode, String label) {
+        this.ptBrCode = ptBrCode;
+        this.label = label;
     }
 
+    @Override
     public String getStatus() {
-        return status;
+        return label;
+    }
+
+    @Override
+    public String getPtBrCode() {
+        return ptBrCode;
+    }
+
+    public static StatusLivro fromPtBrCode(String code) {
+        for (StatusLivro s : values()) {
+            if (s.ptBrCode.equalsIgnoreCase(code) || s.name().equalsIgnoreCase(code)) {
+                return s;
+            }
+        }
+        throw new IllegalArgumentException("Unknown StatusLivro: " + code);
     }
 }

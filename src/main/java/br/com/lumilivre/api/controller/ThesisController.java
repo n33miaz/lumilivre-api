@@ -1,8 +1,9 @@
 package br.com.lumilivre.api.controller;
 
 import java.util.List;
-import br.com.lumilivre.api.dto.tcc.TccResponse;
-import br.com.lumilivre.api.service.TccService;
+import java.util.UUID;
+import br.com.lumilivre.api.dto.tcc.ThesisResponse;
+import br.com.lumilivre.api.service.ThesisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,11 +22,11 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/tcc")
 @Tag(name = "6. TCC")
 @SecurityRequirement(name = "bearerAuth")
-@PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
+@PreAuthorize("hasAnyRole('ADMIN', 'LIBRARIAN')")
 @RequiredArgsConstructor
-public class TccController {
+public class ThesisController {
 
-    private final TccService tccService;
+    private final ThesisService thesisService;
 
     @PostMapping(value = "/cadastrar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Cadastra um novo TCC", description = "Recebe os dados do TCC em formato JSON (string) e um arquivo PDF opcional.")
@@ -34,19 +35,19 @@ public class TccController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou arquivo incorreto", content = @Content(schema = @Schema(implementation = br.com.lumilivre.api.dto.comum.ApiResponse.class))),
             @ApiResponse(responseCode = "500", description = "Erro interno no servidor")
     })
-    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<TccResponse>> cadastrarTcc(
+    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<ThesisResponse>> cadastrarTcc(
             @RequestParam("dadosJson") String dadosJson,
             @RequestParam(value = "arquivoPdf", required = false) MultipartFile arquivoPdf,
             @RequestParam(value = "arquivoFoto", required = false) MultipartFile arquivoFoto) {
 
-        return tccService.cadastrarTcc(dadosJson, arquivoPdf, arquivoFoto);
+        return thesisService.createThesis(dadosJson, arquivoPdf, arquivoFoto);
     }
 
     @GetMapping("/buscar")
     @Operation(summary = "Lista TCCs (com filtro opcional)")
-    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<List<TccResponse>>> listarTccs(
+    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<List<ThesisResponse>>> listarTccs(
             @RequestParam(required = false) String texto) {
-        return tccService.listarTccs(texto);
+        return thesisService.listTheses(texto);
     }
 
     @GetMapping("/buscar/{id}")
@@ -55,27 +56,27 @@ public class TccController {
             @ApiResponse(responseCode = "200", description = "TCC encontrado"),
             @ApiResponse(responseCode = "404", description = "TCC não encontrado")
     })
-    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<TccResponse>> buscarPorId(@PathVariable Long id) {
-        return tccService.buscarPorId(id);
+    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<ThesisResponse>> buscarPorId(@PathVariable UUID id) {
+        return thesisService.getThesisById(id);
     }
 
     @GetMapping("/buscar/avancado")
     @Operation(summary = "Busca avançada de TCCs")
-    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<List<TccResponse>>> buscarAvancado(
+    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<List<ThesisResponse>>> buscarAvancado(
             @RequestParam(required = false) Integer cursoId,
             @RequestParam(required = false) String semestre,
             @RequestParam(required = false) String ano) {
-        return tccService.listarTccsAvancado(cursoId, semestre, ano);
+        return thesisService.searchTheses(cursoId, semestre, ano);
     }
 
     @PutMapping(value = "/atualizar/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Atualiza um TCC existente")
-    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<TccResponse>> atualizarTcc(
-            @PathVariable Long id,
+    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<ThesisResponse>> atualizarTcc(
+            @PathVariable UUID id,
             @RequestParam("dadosJson") String dadosJson,
             @RequestParam(value = "arquivoPdf", required = false) MultipartFile arquivoPdf,
             @RequestParam(value = "arquivoFoto", required = false) MultipartFile arquivoFoto) {
-        return tccService.atualizarTcc(id, dadosJson, arquivoPdf, arquivoFoto);
+        return thesisService.updateThesis(id, dadosJson, arquivoPdf, arquivoFoto);
     }
 
     @DeleteMapping("/excluir/{id}")
@@ -84,7 +85,7 @@ public class TccController {
             @ApiResponse(responseCode = "200", description = "TCC excluído com sucesso"),
             @ApiResponse(responseCode = "404", description = "TCC não encontrado")
     })
-    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<Void>> excluirTcc(@PathVariable Long id) {
-        return tccService.excluirTcc(id);
+    public ResponseEntity<br.com.lumilivre.api.dto.comum.ApiResponse<Void>> excluirTcc(@PathVariable UUID id) {
+        return thesisService.deleteThesis(id);
     }
 }

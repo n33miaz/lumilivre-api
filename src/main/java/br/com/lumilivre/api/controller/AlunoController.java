@@ -46,7 +46,7 @@ public class AlunoController {
     }
 
     @GetMapping("/home")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @Operation(summary = "Lista alunos para a tela principal do admin")
     public ResponseEntity<Page<AlunoResumoResponse>> listarParaAdmin(
             @RequestParam(required = false) String texto,
@@ -56,7 +56,7 @@ public class AlunoController {
     }
 
     @GetMapping("/buscar")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @Operation(summary = "Busca alunos com paginação e filtro de texto")
     public ResponseEntity<Page<AlunoResumoResponse>> buscarPorTexto(
             @RequestParam(required = false) String texto,
@@ -66,7 +66,7 @@ public class AlunoController {
     }
 
     @GetMapping("/buscar/avancado")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @Operation(summary = "Busca avançada e paginada de alunos")
     public ResponseEntity<Page<AlunoResumoResponse>> buscarAvancado(
             @RequestParam(required = false) String penalidade,
@@ -105,7 +105,7 @@ public class AlunoController {
     }
 
     @PostMapping("/cadastrar")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @Operation(summary = "Cadastra um novo aluno")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Aluno cadastrado com sucesso", content = @Content(schema = @Schema(implementation = AlunoResponse.class))),
@@ -120,7 +120,7 @@ public class AlunoController {
     }
 
     @PutMapping("/atualizar/{matricula}")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @Operation(summary = "Atualiza um aluno existente")
     public ResponseEntity<ApiResponse<AlunoResponse>> atualizar(
             @PathVariable String matricula,
@@ -133,7 +133,7 @@ public class AlunoController {
     }
 
     @PatchMapping("/{matricula}/reset-senha")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @Operation(summary = "Reseta a senha do aluno para a matrícula")
     public ResponseEntity<ApiResponse<Void>> resetarSenha(@PathVariable String matricula) {
         alunoService.resetarSenha(matricula);

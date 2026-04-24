@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.repository;
 
 import br.com.lumilivre.api.dto.turno.TurnoResumoResponse;
-import br.com.lumilivre.api.model.TurnoModel;
+import br.com.lumilivre.api.model.StudyShift;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,25 +11,25 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 import java.util.List;
 
-public interface TurnoRepository extends JpaRepository<TurnoModel, Integer> {
+public interface StudyShiftRepository extends JpaRepository<StudyShift, Integer> {
 
     @Cacheable("turnos")
     @Override
     @NonNull
-    List<TurnoModel> findAll();
+    List<StudyShift> findAll();
 
-    boolean existsByNomeIgnoreCase(String nome);
+    boolean existsByNameIgnoreCase(String name);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.turno.TurnoResumoResponse(t.id, t.nome, COUNT(a))
-            FROM TurnoModel t
+            SELECT new br.com.lumilivre.api.dto.turno.TurnoResumoResponse(t.id, t.name, COUNT(a))
+            FROM StudyShift t
             LEFT JOIN t.alunos a
-            WHERE (:texto IS NULL OR t.nome ILIKE %:texto%)
-            GROUP BY t.id, t.nome
-            ORDER BY t.nome
+            WHERE (:texto IS NULL OR t.name ILIKE %:texto%)
+            GROUP BY t.id, t.name
+            ORDER BY t.name
             """)
     Page<TurnoResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
-    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(t.nome, SUM(a.emprestimosCount)) FROM TurnoModel t JOIN t.alunos a GROUP BY t.nome HAVING SUM(a.emprestimosCount) > 0")
+    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(t.name, SUM(a.emprestimosCount)) FROM StudyShift t JOIN t.alunos a GROUP BY t.name HAVING SUM(a.emprestimosCount) > 0")
     List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorTurno();
 }

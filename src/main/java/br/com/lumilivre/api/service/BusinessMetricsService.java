@@ -24,17 +24,17 @@ public class BusinessMetricsService {
     @PostConstruct
     void registerGauges() {
         Gauge.builder("loans.active", emprestimoRepository,
-                        r -> r.countByStatusEmprestimoIn(List.of(StatusEmprestimo.ATIVO)))
+                        r -> r.countByStatusEmprestimoIn(List.of(StatusEmprestimo.ACTIVE)))
                 .description("Número de empréstimos ativos")
                 .register(registry);
 
         Gauge.builder("loans.overdue", emprestimoRepository,
-                        r -> r.countByStatusEmprestimoIn(List.of(StatusEmprestimo.ATRASADO)))
+                        r -> r.countByStatusEmprestimoIn(List.of(StatusEmprestimo.OVERDUE)))
                 .description("Número de empréstimos atrasados")
                 .register(registry);
 
         Gauge.builder("requests.pending", solicitacaoRepository,
-                        r -> r.countByStatus(StatusSolicitacao.PENDENTE))
+                        r -> r.countByStatus(StatusSolicitacao.PENDING))
                 .description("Número de solicitações pendentes")
                 .register(registry);
 

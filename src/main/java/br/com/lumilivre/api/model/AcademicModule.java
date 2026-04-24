@@ -7,20 +7,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "turno")
+@Table(name = "academic_module")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TurnoModel {
+public class AcademicModule {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(nullable = false, unique = true, length = 50)
-    private String nome;
+    private String name;
 
-    @OneToMany(mappedBy = "turno", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "modulo", fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

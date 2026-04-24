@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TccRequest {
+public class ThesisRequest {
 
     private String titulo;
     private String alunos;

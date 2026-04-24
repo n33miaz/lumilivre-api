@@ -14,12 +14,12 @@ class BookAvailabilityPolicyTest {
 
     @Test
     void validateAvailableAllowsAvailableStatus() {
-        assertThatCode(() -> BookAvailabilityPolicy.validateAvailable(StatusLivro.DISPONIVEL))
+        assertThatCode(() -> BookAvailabilityPolicy.validateAvailable(StatusLivro.AVAILABLE))
                 .doesNotThrowAnyException();
     }
 
     @ParameterizedTest
-    @EnumSource(value = StatusLivro.class, names = "DISPONIVEL", mode = EnumSource.Mode.EXCLUDE)
+    @EnumSource(value = StatusLivro.class, names = "AVAILABLE", mode = EnumSource.Mode.EXCLUDE)
     void validateAvailableRejectsUnavailableStatuses(StatusLivro status) {
         assertThatThrownBy(() -> BookAvailabilityPolicy.validateAvailable(status))
                 .isInstanceOf(BookAvailabilityViolationException.class)

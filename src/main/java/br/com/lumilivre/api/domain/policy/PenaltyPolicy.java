@@ -19,11 +19,11 @@ public final class PenaltyPolicy {
         if (daysLate < 0) {
             throw new IllegalArgumentException("Dias de atraso não pode ser negativo: " + daysLate);
         }
-        if (daysLate <= 1)  return Penalidade.REGISTRO;
-        if (daysLate <= 5)  return Penalidade.ADVERTENCIA;
-        if (daysLate <= 7)  return Penalidade.SUSPENSAO;
-        if (daysLate <= 90) return Penalidade.BLOQUEIO;
-        return Penalidade.BANIMENTO;
+        if (daysLate <= 1)  return Penalidade.RECORD;
+        if (daysLate <= 5)  return Penalidade.WARNING;
+        if (daysLate <= 7)  return Penalidade.SUSPENSION;
+        if (daysLate <= 90) return Penalidade.BLOCK;
+        return Penalidade.BAN;
     }
 
     /** Retorna true se {@code candidate} é mais grave que {@code current} (ou current é null). */

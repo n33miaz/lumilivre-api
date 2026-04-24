@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.repository;
 
 import br.com.lumilivre.api.dto.modulo.ModuloResumoResponse;
-import br.com.lumilivre.api.model.ModuloModel;
+import br.com.lumilivre.api.model.AcademicModule;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,25 +11,25 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 import java.util.List;
 
-public interface ModuloRepository extends JpaRepository<ModuloModel, Integer> {
+public interface AcademicModuleRepository extends JpaRepository<AcademicModule, Integer> {
 
     @Cacheable("modulos")
     @Override
     @NonNull
-    List<ModuloModel> findAll();
+    List<AcademicModule> findAll();
 
-    boolean existsByNomeIgnoreCase(String nome);
+    boolean existsByNameIgnoreCase(String name);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.modulo.ModuloResumoResponse(m.id, m.nome, COUNT(a))
-            FROM ModuloModel m
+            SELECT new br.com.lumilivre.api.dto.modulo.ModuloResumoResponse(m.id, m.name, COUNT(a))
+            FROM AcademicModule m
             LEFT JOIN m.alunos a
-            WHERE (:texto IS NULL OR m.nome ILIKE %:texto%)
-            GROUP BY m.id, m.nome
-            ORDER BY m.nome
+            WHERE (:texto IS NULL OR m.name ILIKE %:texto%)
+            GROUP BY m.id, m.name
+            ORDER BY m.name
             """)
     Page<ModuloResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
-    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(m.nome, SUM(a.emprestimosCount)) FROM ModuloModel m JOIN m.alunos a GROUP BY m.nome HAVING SUM(a.emprestimosCount) > 0")
+    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(m.name, SUM(a.emprestimosCount)) FROM AcademicModule m JOIN m.alunos a GROUP BY m.name HAVING SUM(a.emprestimosCount) > 0")
     List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorModulo();
 }

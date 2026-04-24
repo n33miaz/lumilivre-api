@@ -12,7 +12,7 @@ import br.com.lumilivre.api.enums.StatusReserva;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.LivroModel;
-import br.com.lumilivre.api.model.OutboxEventModel.EventType;
+import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.ReservaModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
@@ -78,7 +78,7 @@ public class ReservaService {
             throw new RecursoNaoEncontradoException("Reserva não encontrada.");
         }
 
-        reserva.setStatus(StatusReserva.CANCELADA);
+        reserva.setStatus(StatusReserva.CANCELLED);
         reservaRepository.save(reserva);
     }
 
@@ -89,10 +89,10 @@ public class ReservaService {
     @Transactional
     public void notificarProximoDaFila(Long livroId) {
         reservaRepository.findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(
-                livroId, StatusReserva.AGUARDANDO)
+                livroId, StatusReserva.WAITING)
                 .ifPresent(proxima -> {
                     LocalDateTime agora = LocalDateTime.now();
-                    proxima.setStatus(StatusReserva.DISPONIVEL_PARA_RETIRADA);
+                    proxima.setStatus(StatusReserva.READY);
                     proxima.setNotificadoEm(agora);
                     proxima.setExpiraEm(ReservationPolicy.calculatePickupDeadline(agora));
                     reservaRepository.save(proxima);
@@ -111,12 +111,12 @@ public class ReservaService {
     @Transactional
     public void expirarReservasVencidas() {
         List<ReservaModel> vencidas = reservaRepository
-                .findByStatusAndExpiraEmBefore(StatusReserva.DISPONIVEL_PARA_RETIRADA, LocalDateTime.now());
+                .findByStatusAndExpiraEmBefore(StatusReserva.READY, LocalDateTime.now());
 
         if (vencidas.isEmpty()) return;
 
         for (ReservaModel r : vencidas) {
-            r.setStatus(StatusReserva.EXPIRADA);
+            r.setStatus(StatusReserva.EXPIRED);
             reservaRepository.save(r);
             notificarProximoDaFila(r.getLivro().getId());
         }

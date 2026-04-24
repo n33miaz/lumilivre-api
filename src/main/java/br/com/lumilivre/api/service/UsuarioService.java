@@ -56,12 +56,12 @@ public class UsuarioService {
         UsuarioModel usuarioModel = new UsuarioModel();
         usuarioModel.setEmail(dto.getEmail());
         usuarioModel.setSenha(passwordEncoder.encode(dto.getSenha()));
-        usuarioModel.setRole(dto.getRole() != null ? dto.getRole() : Role.BIBLIOTECARIO);
+        usuarioModel.setRole(dto.getRole() != null ? dto.getRole() : Role.LIBRARIAN);
 
         if (dto.getRole() == null) {
-            usuarioModel.setRole(Role.BIBLIOTECARIO);
+            usuarioModel.setRole(Role.LIBRARIAN);
         } else {
-            if (dto.getRole() == Role.ALUNO) {
+            if (dto.getRole() == Role.STUDENT) {
                 throw new RegraDeNegocioException("Para cadastrar alunos, use a rota de Alunos.");
             }
             usuarioModel.setRole(dto.getRole());
@@ -112,7 +112,7 @@ public class UsuarioService {
         UsuarioModel usuario = ur.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado."));
 
-        if (usuario.getRole() == Role.ALUNO && usuario.getAluno() != null) {
+        if (usuario.getRole() == Role.STUDENT && usuario.getAluno() != null) {
             usuario.getAluno().setUsuario(null);
         }
 
@@ -127,7 +127,7 @@ public class UsuarioService {
         UsuarioModel usuario = ur.findByEmailOrAluno_Matricula(usernameLogado, usernameLogado)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário logado não encontrado no sistema."));
 
-        if (usuario.getRole() == Role.ALUNO) {
+        if (usuario.getRole() == Role.STUDENT) {
             if (usuario.getAluno() == null || !usuario.getAluno().getMatricula().equals(dto.getMatricula())) {
                 throw new AccessDeniedException("Você não tem permissão para alterar a senha de outro usuário.");
             }

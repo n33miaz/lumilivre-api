@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.dto.turno;
 
-import br.com.lumilivre.api.model.TurnoModel;
+import br.com.lumilivre.api.model.StudyShift;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,8 +15,8 @@ public class TurnoResponse {
     private Integer id;
     private String nome;
 
-    public TurnoResponse(TurnoModel model) {
+    public TurnoResponse(StudyShift model) {
         this.id = model.getId();
-        this.nome = model.getNome();
+        this.nome = model.getName();
     }
 }

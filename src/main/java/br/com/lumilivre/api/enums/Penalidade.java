@@ -1,50 +1,56 @@
 package br.com.lumilivre.api.enums;
 
-public enum Penalidade {
+public enum Penalidade implements EnumStatus {
 
-    REGISTRO("Registro", 1),
-    ADVERTENCIA("Advertência", 2),
-    SUSPENSAO("Suspensão", 3),
-    BLOQUEIO("Bloqueio", 4),
-    BANIMENTO("Banimento", 5);
+    RECORD("REGISTRO", "Registro", 1),
+    WARNING("ADVERTENCIA", "Advertência", 2),
+    SUSPENSION("SUSPENSAO", "Suspensão", 3),
+    BLOCK("BLOQUEIO", "Bloqueio", 4),
+    BAN("BANIMENTO", "Banimento", 5);
 
-    private final String status;
-    private final int gravidade;
+    private final String ptBrCode;
+    private final String label;
+    private final int severity;
 
-    Penalidade(String status, int gravidade) {
-        this.status = status;
-        this.gravidade = gravidade;
+    Penalidade(String ptBrCode, String label, int severity) {
+        this.ptBrCode = ptBrCode;
+        this.label = label;
+        this.severity = severity;
     }
 
+    @Override
     public String getStatus() {
-        return status;
+        return label;
+    }
+
+    @Override
+    public String getPtBrCode() {
+        return ptBrCode;
     }
 
     public int getGravidade() {
-        return gravidade;
+        return severity;
+    }
+
+    public static Penalidade fromPtBrCode(String code) {
+        for (Penalidade p : values()) {
+            if (p.ptBrCode.equalsIgnoreCase(code) || p.name().equalsIgnoreCase(code)) {
+                return p;
+            }
+        }
+        throw new IllegalArgumentException("Unknown Penalidade: " + code);
     }
 
     public static Penalidade fromDiasDeAtraso(long diasDeAtraso) {
-        if (diasDeAtraso <= 1) {
-            return REGISTRO;
-        }
-        if (diasDeAtraso <= 5) {
-            return ADVERTENCIA;
-        }
-        if (diasDeAtraso <= 7) {
-            return SUSPENSAO;
-        }
-        if (diasDeAtraso <= 90) {
-            return BLOQUEIO;
-        }
-        return BANIMENTO;
+        if (diasDeAtraso <= 1) return RECORD;
+        if (diasDeAtraso <= 5) return WARNING;
+        if (diasDeAtraso <= 7) return SUSPENSION;
+        if (diasDeAtraso <= 90) return BLOCK;
+        return BAN;
     }
 
     public boolean isMaisGraveQue(Penalidade outra) {
-
-        if (outra == null) {
-            return true;
-        }
-        return this.gravidade > outra.getGravidade();
+        if (outra == null) return true;
+        return this.severity > outra.severity;
     }
 }

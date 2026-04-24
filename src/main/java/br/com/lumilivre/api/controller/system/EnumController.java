@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "bearerAuth")
 public class EnumController {
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/enums/{tipo}")
     @Operation(summary = "Lista os valores de um Enum", description = "Endpoint para obter listas de valores de Enums estáticos.")
     @ApiResponse(responseCode = "200", description = "Lista de valores retornada com sucesso")
@@ -49,31 +49,31 @@ public class EnumController {
 
     private List<EnumResponse> listarStatusLivros() {
         return Arrays.stream(StatusLivro.values())
-                .map(s -> new EnumResponse(s.name(), s.getStatus()))
+                .map(s -> new EnumResponse(s.getPtBrCode(), s.getStatus()))
                 .collect(Collectors.toList());
     }
 
     private List<EnumResponse> listarStatusEmprestimos() {
         return Arrays.stream(StatusEmprestimo.values())
-                .map(s -> new EnumResponse(s.name(), s.getStatus()))
+                .map(s -> new EnumResponse(s.getPtBrCode(), s.getStatus()))
                 .collect(Collectors.toList());
     }
 
     private List<EnumResponse> listarPenalidades() {
         return Arrays.stream(Penalidade.values())
-                .map(s -> new EnumResponse(s.name(), s.getStatus()))
+                .map(s -> new EnumResponse(s.getPtBrCode(), s.getStatus()))
                 .collect(Collectors.toList());
     }
 
     private List<EnumResponse> listarClassificacaoEtaria() {
         return Arrays.stream(ClassificacaoEtaria.values())
-                .map(c -> new EnumResponse(c.name(), c.getStatus()))
+                .map(c -> new EnumResponse(c.getPtBrCode(), c.getStatus()))
                 .collect(Collectors.toList());
     }
 
     private List<EnumResponse> listarTipoCapa() {
         return Arrays.stream(TipoCapa.values())
-                .map(c -> new EnumResponse(c.name(), c.getStatus()))
+                .map(c -> new EnumResponse(c.getPtBrCode(), c.getStatus()))
                 .collect(Collectors.toList());
     }
 }

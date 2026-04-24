@@ -5,9 +5,9 @@ import br.com.lumilivre.api.dto.modulo.ModuloRequest;
 import br.com.lumilivre.api.dto.modulo.ModuloResponse;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
-import br.com.lumilivre.api.model.ModuloModel;
+import br.com.lumilivre.api.model.AcademicModule;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
-import br.com.lumilivre.api.repository.ModuloRepository;
+import br.com.lumilivre.api.repository.AcademicModuleRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,49 +20,49 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class ModuloService {
+public class AcademicModuleService {
 
-    private final ModuloRepository moduloRepository;
+    private final AcademicModuleRepository academicModuleRepository;
 
     public Page<ModuloResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
-        return moduloRepository.buscarPorTextoComDTO(texto, pageable);
+        return academicModuleRepository.buscarPorTextoComDTO(texto, pageable);
     }
 
     @Transactional
     @CacheEvict(value = "modulos", allEntries = true)
     public ResponseEntity<ModuloResponse> cadastrar(ModuloRequest dto) {
-        if (moduloRepository.existsByNomeIgnoreCase(dto.getNome())) {
+        if (academicModuleRepository.existsByNameIgnoreCase(dto.getNome())) {
             throw new RegraDeNegocioException("Já existe um módulo com este nome.");
         }
-        ModuloModel modulo = new ModuloModel();
-        modulo.setNome(dto.getNome());
-        ModuloModel salvo = moduloRepository.save(modulo);
+        AcademicModule modulo = new AcademicModule();
+        modulo.setName(dto.getNome());
+        AcademicModule salvo = academicModuleRepository.save(modulo);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ModuloResponse(salvo));
     }
 
     @Transactional
     @CacheEvict(value = "modulos", allEntries = true)
     public ResponseEntity<ModuloResponse> atualizar(Integer id, ModuloRequest dto) {
-        ModuloModel modulo = moduloRepository.findById(id)
+        AcademicModule modulo = academicModuleRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Módulo não encontrado."));
 
-        modulo.setNome(dto.getNome());
-        ModuloModel salvo = moduloRepository.save(modulo);
+        modulo.setName(dto.getNome());
+        AcademicModule salvo = academicModuleRepository.save(modulo);
         return ResponseEntity.ok(new ModuloResponse(salvo));
     }
 
     @Transactional
     @CacheEvict(value = "modulos", allEntries = true)
     public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
-        if (!moduloRepository.existsById(id)) {
+        if (!academicModuleRepository.existsById(id)) {
             throw new RecursoNaoEncontradoException("Módulo não encontrado.");
         }
-        moduloRepository.deleteById(id);
+        academicModuleRepository.deleteById(id);
 
         return ResponseEntity.ok(new ApiResponse<>(true, "Módulo removido com sucesso.", null));
     }
 
     public java.util.List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorModulo() {
-        return moduloRepository.findTotalEmprestimosPorModulo();
+        return academicModuleRepository.findTotalEmprestimosPorModulo();
     }
 }

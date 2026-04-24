@@ -1,0 +1,88 @@
+package br.com.lumilivre.api.repository;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse;
+import br.com.lumilivre.api.dto.curso.CursoResumoResponse;
+import br.com.lumilivre.api.model.Course;
+
+@Repository
+public interface CourseRepository extends JpaRepository<Course, Integer> {
+
+    boolean existsByNameIgnoreCase(String name);
+
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Integer id);
+
+    Optional<Course> findByNameIgnoreCase(String name);
+
+    @Query("""
+            SELECT c FROM Course c
+            WHERE c.name ILIKE :texto
+            """)
+    Page<Course> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
+
+    @Query("""
+            SELECT c FROM Course c
+            WHERE (:nome IS NULL OR c.name ILIKE :nome)
+            """)
+    Page<Course> buscarAvancado(@Param("nome") String nome, Pageable pageable);
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.name)
+            FROM Course c
+            ORDER BY c.name
+            """)
+    Page<CursoResumoResponse> findCursoParaListaAdmin(Pageable pageable);
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse(
+                c.name,
+                COUNT(a.matricula),
+                SUM(a.emprestimosCount)
+            )
+            FROM Course c
+            LEFT JOIN c.alunos a
+            GROUP BY c.id, c.name
+            ORDER BY c.name
+            """)
+    List<CursoEstatisticaResponse> findEstatisticasCursos();
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.name, COUNT(a))
+            FROM Course c
+            LEFT JOIN c.alunos a
+            WHERE (:texto IS NULL OR c.name ILIKE :texto)
+            GROUP BY c.id, c.name
+            """)
+    Page<CursoResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.name, COUNT(a))
+            FROM Course c
+            LEFT JOIN c.alunos a
+            WHERE (:nome IS NULL OR c.name ILIKE :nome)
+            GROUP BY c.id, c.name
+            """)
+    Page<CursoResumoResponse> buscarAvancadoComDTO(@Param("nome") String nome, Pageable pageable);
+
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.name, COUNT(a))
+            FROM Course c
+            LEFT JOIN c.alunos a
+            WHERE (:texto IS NULL OR c.name ILIKE %:texto%)
+            GROUP BY c.id, c.name
+            ORDER BY c.name
+            """)
+    Page<CursoResumoResponse> findCursoParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
+
+    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(c.name, SUM(a.emprestimosCount)) FROM Course c JOIN c.alunos a GROUP BY c.name HAVING SUM(a.emprestimosCount) > 0")
+    List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorCurso();
+}

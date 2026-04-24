@@ -40,7 +40,7 @@ public class LivroModel {
     @ManyToOne
     @JoinColumn(name = "cdd_codigo")
     @ToString.Exclude
-    private CddModel cdd;
+    private DeweyClassification cdd;
 
     @NotNull
     @Column(name = "editora", length = 55, nullable = false)
@@ -87,11 +87,11 @@ public class LivroModel {
     private List<ExemplarModel> exemplares;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "livro_genero", joinColumns = @JoinColumn(name = "livro_id"), inverseJoinColumns = @JoinColumn(name = "genero_id"))
+    @JoinTable(name = "book_genre", joinColumns = @JoinColumn(name = "book_id"), inverseJoinColumns = @JoinColumn(name = "genre_id"))
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Builder.Default
-    private Set<GeneroModel> generos = new HashSet<>();
+    private Set<Genre> generos = new HashSet<>();
 
     @PrePersist
     public void prePersist() {

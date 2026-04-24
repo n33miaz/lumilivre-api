@@ -43,7 +43,7 @@ public class ReservaModel {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private StatusReserva status = StatusReserva.AGUARDANDO;
+    private StatusReserva status = StatusReserva.WAITING;
 
     /** Posição FIFO na fila para este livro (1 = próximo) */
     @Column(nullable = false)

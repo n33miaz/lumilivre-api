@@ -137,36 +137,36 @@ public class SecurityConfig {
                                 "/cursos/home",
                                 "/modulos/home",
                                 "/turnos/home")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
                         .requestMatchers(HttpMethod.GET, "/livros/mobile/recomendacoes/**")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
                         .requestMatchers(HttpMethod.GET, "/livros/{id}")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
                         .requestMatchers(HttpMethod.GET, "/emprestimos/aluno/**")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
                         .requestMatchers(HttpMethod.GET, "/solicitacoes/aluno/**")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
                         .requestMatchers(HttpMethod.GET, "/alunos/{matricula}")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
                         .requestMatchers(HttpMethod.POST,
                                 "/solicitacoes/solicitar",
                                 "/solicitacoes/solicitar-mobile")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
                         .requestMatchers(HttpMethod.POST, "/reservas")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
                         .requestMatchers(HttpMethod.DELETE, "/reservas/*/cancelar")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
                         .requestMatchers(HttpMethod.PUT, "/emprestimos/renovar/**")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO", "ALUNO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
                         .requestMatchers(HttpMethod.PUT, "/usuarios/alterar-senha")
                                 .authenticated()
@@ -189,7 +189,7 @@ public class SecurityConfig {
                                 "/alunos/**",
                                 "/relatorios/**",
                                 "/importacao/**")
-                                .hasAnyRole("ADMIN", "BIBLIOTECARIO")
+                                .hasAnyRole("ADMIN", "LIBRARIAN")
 
                         .anyRequest().authenticated())
 

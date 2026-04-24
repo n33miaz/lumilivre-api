@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.service;
 
 import br.com.lumilivre.api.dto.genero.GeneroResponse;
-import br.com.lumilivre.api.repository.GeneroRepository;
+import br.com.lumilivre.api.repository.GenreRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -11,13 +11,13 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class GeneroService {
+public class GenreService {
 
-    private final GeneroRepository generoRepository;
+    private final GenreRepository genreRepository;
 
     @Cacheable("generos-dto")
     public List<GeneroResponse> listarTodos() {
-        return generoRepository.findAll()
+        return genreRepository.findAll()
                 .stream()
                 .map(GeneroResponse::new)
                 .collect(Collectors.toList());

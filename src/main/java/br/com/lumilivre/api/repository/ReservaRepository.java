@@ -22,7 +22,7 @@ public interface ReservaRepository extends JpaRepository<ReservaModel, Long> {
 
     boolean existsByAlunoMatriculaAndLivroIdAndStatusIn(String matricula, Long livroId, List<StatusReserva> statuses);
 
-    @Query("SELECT COALESCE(MAX(r.posicaoFila), 0) FROM ReservaModel r WHERE r.livro.id = :livroId AND r.status = 'AGUARDANDO'")
+    @Query("SELECT COALESCE(MAX(r.posicaoFila), 0) FROM ReservaModel r WHERE r.livro.id = :livroId AND r.status = 'WAITING'")
     int maxPosicaoFila(@Param("livroId") Long livroId);
 
     /** Reservas DISPONIVEL_PARA_RETIRADA com prazo expirado */

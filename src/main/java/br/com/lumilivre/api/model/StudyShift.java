@@ -2,27 +2,25 @@ package br.com.lumilivre.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "curso")
+@Table(name = "study_shift")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CursoModel {
+public class StudyShift {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
-    @Column(name = "nome", nullable = false, length = 255, unique = true)
-    private String nome;
+    @Column(nullable = false, unique = true, length = 50)
+    private String name;
 
-    @OneToMany(mappedBy = "curso", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "turno", fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

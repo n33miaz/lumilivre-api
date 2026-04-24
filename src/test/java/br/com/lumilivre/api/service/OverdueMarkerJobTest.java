@@ -35,9 +35,9 @@ class OverdueMarkerJobTest {
 
     @Test
     void marcarAtrasadosDeveAtualizarEmprestimosAtivosVencidos() {
-        EmprestimoModel vencido = emprestimo(StatusEmprestimo.ATIVO, LocalDateTime.now().minusDays(1));
+        EmprestimoModel vencido = emprestimo(StatusEmprestimo.ACTIVE, LocalDateTime.now().minusDays(1));
         when(emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoBefore(
-                eq(StatusEmprestimo.ATIVO),
+                eq(StatusEmprestimo.ACTIVE),
                 org.mockito.ArgumentMatchers.any(LocalDateTime.class)))
                 .thenReturn(List.of(vencido));
 
@@ -46,13 +46,13 @@ class OverdueMarkerJobTest {
         verify(emprestimoRepository).saveAll(emprestimosCaptor.capture());
 
         assertThat(emprestimosCaptor.getValue()).containsExactly(vencido);
-        assertThat(vencido.getStatusEmprestimo()).isEqualTo(StatusEmprestimo.ATRASADO);
+        assertThat(vencido.getStatusEmprestimo()).isEqualTo(StatusEmprestimo.OVERDUE);
     }
 
     @Test
     void marcarAtrasadosNaoDeveSalvarQuandoNaoHaEmprestimosVencidos() {
         when(emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoBefore(
-                eq(StatusEmprestimo.ATIVO),
+                eq(StatusEmprestimo.ACTIVE),
                 org.mockito.ArgumentMatchers.any(LocalDateTime.class)))
                 .thenReturn(List.of());
 

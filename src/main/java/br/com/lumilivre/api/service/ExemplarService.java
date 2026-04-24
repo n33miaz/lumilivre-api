@@ -7,7 +7,7 @@ import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.ExemplarModel;
-import br.com.lumilivre.api.model.GeneroModel;
+import br.com.lumilivre.api.model.Genre;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
@@ -124,7 +124,7 @@ public class ExemplarService {
                         "Exemplar com o tombo '" + tombo + "' não foi encontrado."));
 
         boolean estaEmprestado = emprestimoRepository.existsByExemplarTomboAndStatusEmprestimoIn(tombo,
-                List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
+                List.of(StatusEmprestimo.ACTIVE, StatusEmprestimo.OVERDUE));
 
         if (estaEmprestado) {
             throw new RegraDeNegocioException(
@@ -152,7 +152,7 @@ public class ExemplarService {
             return StatusLivro.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new RegraDeNegocioException(
-                    "Status do livro inválido. Valores permitidos: DISPONIVEL, EMPRESTADO, INDISPONIVEL, EM_MANUTENCAO.");
+                    "Status do livro inválido. Valores permitidos: AVAILABLE, BORROWED, UNAVAILABLE, MAINTENANCE.");
         }
     }
 
@@ -164,14 +164,14 @@ public class ExemplarService {
         }
 
         String generosFormatados = livro.getGeneros().stream()
-                .map(GeneroModel::getNome)
+                .map(Genre::getName)
                 .collect(Collectors.joining(", "));
 
         return new LivroListagemResponse(
                 exemplar.getStatus_livro(),
                 exemplar.getTombo(),
                 livro.getIsbn(),
-                livro.getCdd() != null ? livro.getCdd().getCodigo() : "N/A",
+                livro.getCdd() != null ? livro.getCdd().getCode() : "N/A",
                 livro.getNome(),
                 generosFormatados,
                 livro.getAutor(),

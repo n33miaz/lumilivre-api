@@ -34,7 +34,7 @@ public class SolicitacaoEmprestimoModel {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
 	@Builder.Default
-	private StatusSolicitacao status = StatusSolicitacao.PENDENTE;
+	private StatusSolicitacao status = StatusSolicitacao.PENDING;
 
 	@Column(name = "observacao")
 	private String observacao;

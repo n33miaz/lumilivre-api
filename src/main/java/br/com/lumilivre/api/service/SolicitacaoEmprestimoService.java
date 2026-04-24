@@ -19,7 +19,7 @@ import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
-import br.com.lumilivre.api.model.OutboxEventModel.EventType;
+import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
@@ -92,7 +92,7 @@ public class SolicitacaoEmprestimoService {
         if (aluno == null)
             return ResponseEntity.badRequest().body("Aluno não encontrado.");
 
-        ExemplarModel exemplar = exemplarRepository.findFirstDisponivel(livroId, StatusLivro.DISPONIVEL).orElse(null);
+        ExemplarModel exemplar = exemplarRepository.findFirstDisponivel(livroId, StatusLivro.AVAILABLE).orElse(null);
         if (exemplar == null)
             return ResponseEntity.badRequest().body("Não há exemplares disponíveis para este livro no momento.");
 
@@ -135,14 +135,14 @@ public class SolicitacaoEmprestimoService {
             dto.setData_devolucao(LocalDateTime.now().plusDays(14));
             emprestimoService.cadastrar(dto);
 
-            solicitacao.setStatus(StatusSolicitacao.ACEITA);
+            solicitacao.setStatus(StatusSolicitacao.ACCEPTED);
             solicitacaoRepository.save(solicitacao);
 
             outboxPublisher.publish(EventType.REQUEST_ACCEPTED, aluno.getEmail(), "Solicitação aceita",
                     "Sua solicitação do livro '" + exemplar.getLivro().getNome()
                             + "' foi aceita e o empréstimo registrado.");
         } else {
-            solicitacao.setStatus(StatusSolicitacao.REJEITADA);
+            solicitacao.setStatus(StatusSolicitacao.REJECTED);
             solicitacaoRepository.save(solicitacao);
 
             outboxPublisher.publish(EventType.REQUEST_REJECTED, aluno.getEmail(), "Solicitação rejeitada",
@@ -153,7 +153,7 @@ public class SolicitacaoEmprestimoService {
     }
 
     public List<SolicitacaoResponse> listarPendentesDTO() {
-        return solicitacaoRepository.findByStatus(StatusSolicitacao.PENDENTE)
+        return solicitacaoRepository.findByStatus(StatusSolicitacao.PENDING)
                 .stream()
                 .map(s -> new SolicitacaoResponse(
                         s.getId(),
@@ -185,7 +185,7 @@ public class SolicitacaoEmprestimoService {
     }
 
     private long contarEmprestimosAtivos(String matricula) {
-        return emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(matricula, StatusEmprestimo.ATIVO)
-                + emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(matricula, StatusEmprestimo.ATRASADO);
+        return emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(matricula, StatusEmprestimo.ACTIVE)
+                + emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(matricula, StatusEmprestimo.OVERDUE);
     }
 }

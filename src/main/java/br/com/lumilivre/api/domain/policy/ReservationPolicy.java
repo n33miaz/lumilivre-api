@@ -16,7 +16,7 @@ public final class ReservationPolicy {
     public static final int MAX_ACTIVE_RESERVATIONS = 3;
 
     private static final List<StatusReserva> ACTIVE_STATUSES =
-            List.of(StatusReserva.AGUARDANDO, StatusReserva.DISPONIVEL_PARA_RETIRADA);
+            List.of(StatusReserva.WAITING, StatusReserva.READY);
 
     private ReservationPolicy() {}
 

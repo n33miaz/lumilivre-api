@@ -30,7 +30,7 @@ public class StudentAuthorizationService {
         }
 
         Role role = details.getUsuario().getRole();
-        if (role == Role.ADMIN || role == Role.BIBLIOTECARIO) {
+        if (role == Role.ADMIN || role == Role.LIBRARIAN) {
             return true;
         }
 
@@ -55,7 +55,7 @@ public class StudentAuthorizationService {
         }
 
         Role role = details.getUsuario().getRole();
-        if (role == Role.ADMIN || role == Role.BIBLIOTECARIO) {
+        if (role == Role.ADMIN || role == Role.LIBRARIAN) {
             return true;
         }
 

@@ -10,7 +10,7 @@ public final class BookAvailabilityPolicy {
     private BookAvailabilityPolicy() {}
 
     public static void validateAvailable(StatusLivro status) {
-        if (status != StatusLivro.DISPONIVEL) {
+        if (status != StatusLivro.AVAILABLE) {
             throw new BookAvailabilityViolationException(
                     "O exemplar não está disponível para empréstimo. Status atual: " + status);
         }

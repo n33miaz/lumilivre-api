@@ -29,7 +29,7 @@ public class ExemplarController {
         this.exemplarService = es;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/livro/{livroId}")
     @Operation(summary = "Busca todos os exemplares de um livro pelo ID do livro")
     @ApiResponses({
@@ -48,7 +48,7 @@ public class ExemplarController {
         return ResponseEntity.ok(exemplares);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/cadastrar")
     @Operation(summary = "Cadastra um novo exemplar")
     @ApiResponses({
@@ -62,7 +62,7 @@ public class ExemplarController {
                 .body(new ApiResponse<>(true, "Exemplar cadastrado com sucesso.", null));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PutMapping("/atualizar/{tombo}")
     @Operation(summary = "Atualiza um exemplar existente")
     @ApiResponses({
@@ -78,7 +78,7 @@ public class ExemplarController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Exemplar atualizado com sucesso.", null));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @DeleteMapping("/excluir/{tombo}")
     @Operation(summary = "Exclui um exemplar")
     @ApiResponses({

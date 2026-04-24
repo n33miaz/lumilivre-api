@@ -23,7 +23,7 @@ import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.LivroModel;
-import br.com.lumilivre.api.model.OutboxEventModel.EventType;
+import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.ReservaModel;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
@@ -61,7 +61,7 @@ class ReservaServiceTest {
 
         assertThat(reserva.getAluno().getMatricula()).isEqualTo("12345");
         assertThat(reserva.getLivro().getId()).isEqualTo(10L);
-        assertThat(reserva.getStatus()).isEqualTo(StatusReserva.AGUARDANDO);
+        assertThat(reserva.getStatus()).isEqualTo(StatusReserva.WAITING);
         assertThat(reserva.getPosicaoFila()).isEqualTo(3);
         verify(outboxPublisher).publish(
                 eq(EventType.REQUEST_ACCEPTED),
@@ -88,7 +88,7 @@ class ReservaServiceTest {
 
     @Test
     void cancelarReservaDeveExigirAlunoDonoDaReserva() {
-        ReservaModel reserva = reserva("12345", StatusReserva.AGUARDANDO);
+        ReservaModel reserva = reserva("12345", StatusReserva.WAITING);
         when(reservaRepository.findById(7L)).thenReturn(Optional.of(reserva));
 
         assertThatThrownBy(() -> service.cancelarReserva(7L, "99999"))
@@ -99,24 +99,24 @@ class ReservaServiceTest {
 
     @Test
     void cancelarReservaDeveMarcarComoCanceladaQuandoAlunoEDono() {
-        ReservaModel reserva = reserva("12345", StatusReserva.AGUARDANDO);
+        ReservaModel reserva = reserva("12345", StatusReserva.WAITING);
         when(reservaRepository.findById(7L)).thenReturn(Optional.of(reserva));
 
         service.cancelarReserva(7L, "12345");
 
-        assertThat(reserva.getStatus()).isEqualTo(StatusReserva.CANCELADA);
+        assertThat(reserva.getStatus()).isEqualTo(StatusReserva.CANCELLED);
         verify(reservaRepository).save(reserva);
     }
 
     @Test
     void notificarProximoDaFilaDeveDisponibilizarReservaEPublicarOutbox() {
-        ReservaModel reserva = reserva("12345", StatusReserva.AGUARDANDO);
-        when(reservaRepository.findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(10L, StatusReserva.AGUARDANDO))
+        ReservaModel reserva = reserva("12345", StatusReserva.WAITING);
+        when(reservaRepository.findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(10L, StatusReserva.WAITING))
                 .thenReturn(Optional.of(reserva));
 
         service.notificarProximoDaFila(10L);
 
-        assertThat(reserva.getStatus()).isEqualTo(StatusReserva.DISPONIVEL_PARA_RETIRADA);
+        assertThat(reserva.getStatus()).isEqualTo(StatusReserva.READY);
         assertThat(reserva.getNotificadoEm()).isNotNull();
         assertThat(reserva.getExpiraEm()).isAfter(reserva.getNotificadoEm());
         verify(reservaRepository).save(reserva);
@@ -129,17 +129,17 @@ class ReservaServiceTest {
 
     @Test
     void expirarReservasVencidasDeveMarcarExpiradaENotificarProximo() {
-        ReservaModel vencida = reserva("12345", StatusReserva.DISPONIVEL_PARA_RETIRADA);
+        ReservaModel vencida = reserva("12345", StatusReserva.READY);
         vencida.setExpiraEm(LocalDateTime.now().minusDays(1));
 
-        when(reservaRepository.findByStatusAndExpiraEmBefore(eq(StatusReserva.DISPONIVEL_PARA_RETIRADA), any()))
+        when(reservaRepository.findByStatusAndExpiraEmBefore(eq(StatusReserva.READY), any()))
                 .thenReturn(List.of(vencida));
-        when(reservaRepository.findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(10L, StatusReserva.AGUARDANDO))
+        when(reservaRepository.findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(10L, StatusReserva.WAITING))
                 .thenReturn(Optional.empty());
 
         service.expirarReservasVencidas();
 
-        assertThat(vencida.getStatus()).isEqualTo(StatusReserva.EXPIRADA);
+        assertThat(vencida.getStatus()).isEqualTo(StatusReserva.EXPIRED);
         verify(reservaRepository).save(vencida);
     }
 

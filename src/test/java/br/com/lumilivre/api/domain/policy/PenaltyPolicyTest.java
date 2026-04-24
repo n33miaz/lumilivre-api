@@ -13,15 +13,15 @@ class PenaltyPolicyTest {
 
     @ParameterizedTest
     @CsvSource({
-            "0, REGISTRO",
-            "1, REGISTRO",
-            "2, ADVERTENCIA",
-            "5, ADVERTENCIA",
-            "6, SUSPENSAO",
-            "7, SUSPENSAO",
-            "8, BLOQUEIO",
-            "90, BLOQUEIO",
-            "91, BANIMENTO"
+            "0, RECORD",
+            "1, RECORD",
+            "2, WARNING",
+            "5, WARNING",
+            "6, SUSPENSION",
+            "7, SUSPENSION",
+            "8, BLOCK",
+            "90, BLOCK",
+            "91, BAN"
     })
     void calculateReturnsExpectedPenaltyForIntervalBoundaries(long daysLate, Penalidade expected) {
         assertThat(PenaltyPolicy.calculate(daysLate)).isEqualTo(expected);
@@ -36,13 +36,13 @@ class PenaltyPolicyTest {
 
     @Test
     void isMoreSevereAcceptsAnyCandidateWhenCurrentIsNull() {
-        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.REGISTRO, null)).isTrue();
+        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.RECORD, null)).isTrue();
     }
 
     @Test
     void isMoreSevereReturnsTrueOnlyForHigherSeverity() {
-        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.BLOQUEIO, Penalidade.SUSPENSAO)).isTrue();
-        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.ADVERTENCIA, Penalidade.BLOQUEIO)).isFalse();
-        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.SUSPENSAO, Penalidade.SUSPENSAO)).isFalse();
+        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.BLOCK, Penalidade.SUSPENSION)).isTrue();
+        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.WARNING, Penalidade.BLOCK)).isFalse();
+        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.SUSPENSION, Penalidade.SUSPENSION)).isFalse();
     }
 }

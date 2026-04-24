@@ -2,7 +2,7 @@ package br.com.lumilivre.api.service;
 
 import br.com.lumilivre.api.model.*;
 import br.com.lumilivre.api.repository.AlunoRepository;
-import br.com.lumilivre.api.repository.CursoRepository;
+import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
@@ -38,7 +38,7 @@ public class RelatorioService {
     private final EmprestimoRepository emprestimoRepository;
     private final AlunoRepository alunoRepository;
     private final LivroRepository livroRepository;
-    private final CursoRepository cursoRepository;
+    private final CourseRepository courseRepository;
     private final ExemplarRepository exemplarRepository;
 
     private static final Font FONT_TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
@@ -48,11 +48,11 @@ public class RelatorioService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public RelatorioService(EmprestimoRepository emprestimoRepository, AlunoRepository alunoRepository,
-            LivroRepository livroRepository, CursoRepository cursoRepository, ExemplarRepository exemplarRepository) {
+            LivroRepository livroRepository, CourseRepository courseRepository, ExemplarRepository exemplarRepository) {
         this.emprestimoRepository = emprestimoRepository;
         this.alunoRepository = alunoRepository;
         this.livroRepository = livroRepository;
-        this.cursoRepository = cursoRepository;
+        this.courseRepository = courseRepository;
         this.exemplarRepository = exemplarRepository;
     }
 
@@ -101,13 +101,13 @@ public class RelatorioService {
 
                     String nomeCurso = Optional.ofNullable(e.getAluno())
                             .map(AlunoModel::getCurso)
-                            .map(CursoModel::getNome)
+                            .map(Course::getName)
                             .orElse("N/A");
                     table.addCell(criarCelulaDados(nomeCurso));
 
                     String nomeModulo = Optional.ofNullable(e.getAluno())
                             .map(AlunoModel::getModulo)
-                            .map(ModuloModel::getNome)
+                            .map(AcademicModule::getName)
                             .orElse("-");
                     table.addCell(criarCelulaDados(nomeModulo));
 
@@ -178,9 +178,9 @@ public class RelatorioService {
                 table.addCell(criarCelulaDados(a.getMatricula()));
                 table.addCell(criarCelulaDados(a.getNomeCompleto()));
                 table.addCell(
-                        criarCelulaDados(Optional.ofNullable(a.getCurso()).map(CursoModel::getNome).orElse("N/A")));
+                        criarCelulaDados(Optional.ofNullable(a.getCurso()).map(Course::getName).orElse("N/A")));
                 table.addCell(
-                        criarCelulaDados(Optional.ofNullable(a.getModulo()).map(ModuloModel::getNome).orElse("-")));
+                        criarCelulaDados(Optional.ofNullable(a.getModulo()).map(AcademicModule::getName).orElse("-")));
                 table.addCell(criarCelulaDados(Optional.ofNullable(a.getPenalidade()).map(Enum::name).orElse("-")));
                 table.addCell(criarCelulaDados(String.valueOf(a.getEmprestimosCount())));
             }
@@ -201,7 +201,7 @@ public class RelatorioService {
             document.open();
             adicionarCabecalhoRelatorio(document, "Relatório Geral de Cursos", null, null);
 
-            List<CursoEstatisticaResponse> estatisticas = cursoRepository.findEstatisticasCursos();
+            List<CursoEstatisticaResponse> estatisticas = courseRepository.findEstatisticasCursos();
 
             PdfPTable table = new PdfPTable(4);
             table.setWidthPercentage(100);
@@ -264,9 +264,9 @@ public class RelatorioService {
                 table.addCell(criarCelulaDados(String.valueOf(l.getId())));
                 table.addCell(criarCelulaDados(l.getNome()));
                 table.addCell(criarCelulaDados(l.getAutor()));
-                String generos = l.getGeneros().stream().map(GeneroModel::getNome).collect(Collectors.joining(", "));
+                String generos = l.getGeneros().stream().map(Genre::getName).collect(Collectors.joining(", "));
                 table.addCell(criarCelulaDados(generos.isEmpty() ? "-" : generos));
-                table.addCell(criarCelulaDados(Optional.ofNullable(l.getCdd()).map(CddModel::getCodigo).orElse("-")));
+                table.addCell(criarCelulaDados(Optional.ofNullable(l.getCdd()).map(DeweyClassification::getCode).orElse("-")));
                 table.addCell(criarCelulaDados(String.valueOf(l.getQuantidade())));
             }
 

@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("solicitacoes")
 @Tag(name = "7. Solicitações")
 @SecurityRequirement(name = "bearerAuth")
-@PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+@PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
 @RequiredArgsConstructor
 public class SolicitacaoEmprestimoController {
 

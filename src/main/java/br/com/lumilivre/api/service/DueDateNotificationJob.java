@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.model.EmprestimoModel;
-import br.com.lumilivre.api.model.OutboxEventModel.EventType;
+import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -48,7 +48,7 @@ public class DueDateNotificationJob {
         LocalDateTime fim = inicio.plusDays(1);
 
         List<EmprestimoModel> vencendo = emprestimoRepository
-                .findByStatusEmprestimoAndDataDevolucaoGreaterThanEqual(StatusEmprestimo.ATIVO, inicio)
+                .findByStatusEmprestimoAndDataDevolucaoGreaterThanEqual(StatusEmprestimo.ACTIVE, inicio)
                 .stream()
                 .filter(e -> e.getDataDevolucao().isBefore(fim))
                 .toList();
@@ -68,7 +68,7 @@ public class DueDateNotificationJob {
 
     private void notificarAtrasados(LocalDateTime agora) {
         List<EmprestimoModel> atrasados = emprestimoRepository
-                .findByStatusEmprestimo(StatusEmprestimo.ATRASADO);
+                .findByStatusEmprestimo(StatusEmprestimo.OVERDUE);
 
         for (EmprestimoModel e : atrasados) {
             String nomeLivro = e.getExemplar().getLivro().getNome();

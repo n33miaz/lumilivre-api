@@ -48,7 +48,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
                 WHERE (:penalidadeEnum IS NULL OR a.penalidade = :penalidadeEnum)
                   AND (:matricula IS NULL OR a.matricula = :matricula)
                   AND (:nomeCompleto IS NULL OR a.nomeCompleto ILIKE :nomeCompleto)
-                  AND (:cursoNome IS NULL OR c.nome ILIKE :cursoNome)
+                  AND (:cursoNome IS NULL OR c.name ILIKE :cursoNome)
                   AND (:turnoId IS NULL OR a.turno.id = :turnoId)
                   AND (:moduloId IS NULL OR a.modulo.id = :moduloId)
                   AND (:dataNascimento IS NULL OR a.dataNascimento = :dataNascimento)
@@ -60,7 +60,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
                 WHERE (:penalidadeEnum IS NULL OR a.penalidade = :penalidadeEnum)
                   AND (:matricula IS NULL OR a.matricula = :matricula)
                   AND (:nomeCompleto IS NULL OR a.nomeCompleto ILIKE :nomeCompleto)
-                  AND (:cursoNome IS NULL OR c.nome ILIKE :cursoNome)
+                  AND (:cursoNome IS NULL OR c.name ILIKE :cursoNome)
                   AND (:turnoId IS NULL OR a.turno.id = :turnoId)
                   AND (:moduloId IS NULL OR a.modulo.id = :moduloId)
                   AND (:dataNascimento IS NULL OR a.dataNascimento = :dataNascimento)
@@ -83,7 +83,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
                 SELECT new br.com.lumilivre.api.dto.aluno.AlunoResumoResponse(
                     a.penalidade,
                     a.matricula,
-                    c.nome,
+                    c.name,
                     a.nomeCompleto,
                     a.dataNascimento,
                     a.email,
@@ -96,13 +96,13 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
 
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.aluno.AlunoResumoResponse(
-                    a.penalidade, a.matricula, c.nome, a.nomeCompleto, a.dataNascimento, a.email, a.celular
+                    a.penalidade, a.matricula, c.name, a.nomeCompleto, a.dataNascimento, a.email, a.celular
                 )
                 FROM AlunoModel a
                 JOIN a.curso c
                 WHERE a.nomeCompleto ILIKE CONCAT('%', :texto, '%')
                    OR a.matricula LIKE CONCAT('%', :texto, '%')
-                   OR LOWER(c.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
+                   OR LOWER(c.name) LIKE LOWER(CONCAT('%', :texto, '%'))
                    OR a.celular LIKE CONCAT('%', :texto, '%')
                    OR LOWER(a.email) LIKE LOWER(CONCAT('%', :texto, '%'))
             """)
@@ -138,7 +138,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
             SELECT new br.com.lumilivre.api.dto.aluno.AlunoResumoResponse(
                 a.penalidade,
                 a.matricula,
-                c.nome,
+                c.name,
                 a.nomeCompleto,
                 a.dataNascimento,
                 a.email,
@@ -151,7 +151,7 @@ public interface AlunoRepository extends JpaRepository<AlunoModel, String> {
             WHERE (:penalidadeEnum IS NULL OR a.penalidade = :penalidadeEnum)
               AND (:matricula IS NULL OR a.matricula = :matricula)
               AND (:nomeCompleto IS NULL OR a.nomeCompleto ILIKE :nomeCompleto)
-              AND (:cursoNome IS NULL OR c.nome ILIKE :cursoNome)
+              AND (:cursoNome IS NULL OR c.name ILIKE :cursoNome)
               AND (:turnoId IS NULL OR t.id = :turnoId)
               AND (:moduloId IS NULL OR m.id = :moduloId)
               AND (:dataNascimento IS NULL OR a.dataNascimento = :dataNascimento)

@@ -9,9 +9,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.model.OutboxEventModel;
-import br.com.lumilivre.api.model.OutboxEventModel.EventStatus;
-import br.com.lumilivre.api.model.OutboxEventModel.EventType;
+import br.com.lumilivre.api.model.OutboxEvent;
+import br.com.lumilivre.api.model.OutboxEvent.EventStatus;
+import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.repository.OutboxEventRepository;
 import br.com.lumilivre.api.service.infra.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +32,7 @@ public class OutboxPublisherService {
      */
     @Transactional
     public void publish(EventType type, String recipientEmail, String subject, String body) {
-        OutboxEventModel event = OutboxEventModel.builder()
+        OutboxEvent event = OutboxEvent.builder()
                 .eventType(type)
                 .recipientEmail(recipientEmail)
                 .subject(subject)
@@ -49,10 +49,10 @@ public class OutboxPublisherService {
     @Scheduled(fixedDelay = 30_000)
     @Transactional
     public void processPendingEvents() {
-        List<OutboxEventModel> pending = outboxRepository
+        List<OutboxEvent> pending = outboxRepository
                 .findByStatusAndRetryCountLessThan(EventStatus.PENDING, MAX_RETRIES);
 
-        for (OutboxEventModel event : pending) {
+        for (OutboxEvent event : pending) {
             try {
                 emailService.enviarEmail(event.getRecipientEmail(), event.getSubject(), event.getBody());
                 event.setStatus(EventStatus.SENT);

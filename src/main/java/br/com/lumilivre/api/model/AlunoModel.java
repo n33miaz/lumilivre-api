@@ -46,19 +46,19 @@ public class AlunoModel {
 	@JoinColumn(name = "curso_id", nullable = false)
 	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
-	private CursoModel curso;
+	private Course curso;
 
 	@ManyToOne
 	@JoinColumn(name = "turno_id", nullable = false)
 	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
-	private TurnoModel turno;
+	private StudyShift turno;
 
 	@ManyToOne
 	@JoinColumn(name = "modulo_id", nullable = false)
 	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
-	private ModuloModel modulo;
+	private AcademicModule modulo;
 
 	@JsonManagedReference
 	@OneToOne(mappedBy = "aluno", cascade = CascadeType.ALL, orphanRemoval = true)

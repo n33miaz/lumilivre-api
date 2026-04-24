@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.dto.curso;
 
-import br.com.lumilivre.api.model.CursoModel;
+import br.com.lumilivre.api.model.Course;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,8 +13,8 @@ public class CursoResponse {
     private Integer id;
     private String nome;
 
-    public CursoResponse(CursoModel curso) {
+    public CursoResponse(Course curso) {
         this.id = curso.getId();
-        this.nome = curso.getNome();
+        this.nome = curso.getName();
     }
 }

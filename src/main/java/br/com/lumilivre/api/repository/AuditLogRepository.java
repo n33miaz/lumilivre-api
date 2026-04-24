@@ -6,12 +6,12 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.model.AuditLogModel;
+import br.com.lumilivre.api.model.AuditLog;
 
 @Repository
-public interface AuditLogRepository extends JpaRepository<AuditLogModel, Long> {
+public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
-    List<AuditLogModel> findByActorOrderByOccurredAtDesc(String actor);
+    List<AuditLog> findByActorOrderByOccurredAtDesc(String actor);
 
-    List<AuditLogModel> findByActionAndOccurredAtBetween(String action, LocalDateTime from, LocalDateTime to);
+    List<AuditLog> findByActionAndOccurredAtBetween(String action, LocalDateTime from, LocalDateTime to);
 }

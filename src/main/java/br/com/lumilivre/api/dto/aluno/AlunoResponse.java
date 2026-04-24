@@ -47,9 +47,9 @@ public class AlunoResponse {
         this.celular = aluno.getCelular();
         this.cpf = aluno.getCpf();
         this.dataNascimento = aluno.getDataNascimento();
-        this.cursoNome = (aluno.getCurso() != null) ? aluno.getCurso().getNome() : null;
-        this.turnoNome = (aluno.getTurno() != null) ? aluno.getTurno().getNome() : null;
-        this.moduloNome = (aluno.getModulo() != null) ? aluno.getModulo().getNome() : null;
+        this.cursoNome = (aluno.getCurso() != null) ? aluno.getCurso().getName() : null;
+        this.turnoNome = (aluno.getTurno() != null) ? aluno.getTurno().getName() : null;
+        this.moduloNome = (aluno.getModulo() != null) ? aluno.getModulo().getName() : null;
         this.cep = aluno.getCep();
         this.logradouro = aluno.getLogradouro();
         this.bairro = aluno.getBairro();

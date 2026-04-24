@@ -26,21 +26,21 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/stats")
     @Operation(summary = "Retorna contadores consolidados (ativos, atrasados, pendentes, reservas)")
     public ResponseEntity<DashboardStatsResponse> stats() {
         return ResponseEntity.ok(dashboardService.getStats());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/top-livros")
     @Operation(summary = "Top 20 livros mais emprestados")
     public ResponseEntity<List<TopLivroResponse>> topLivros() {
         return ResponseEntity.ok(dashboardService.getTopLivros());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/emprestimos-por-mes")
     @Operation(summary = "Volume de empréstimos por mês (últimos 12 meses)")
     public ResponseEntity<List<EmprestimosPorMesResponse>> emprestimosPorMes() {

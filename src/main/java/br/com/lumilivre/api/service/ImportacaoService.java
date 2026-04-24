@@ -27,32 +27,32 @@ public class ImportacaoService {
 
     private final AlunoRepository alunoRepository;
     private final UsuarioRepository usuarioRepository;
-    private final CursoRepository cursoRepository;
-    private final TurnoRepository turnoRepository;
-    private final ModuloRepository moduloRepository;
+    private final CourseRepository courseRepository;
+    private final StudyShiftRepository studyShiftRepository;
+    private final AcademicModuleRepository academicModuleRepository;
     private final LivroRepository livroRepository;
     private final ExemplarRepository exemplarRepository;
-    private final CddRepository cddRepository;
+    private final DeweyClassificationRepository deweyClassificationRepository;
     private final PasswordEncoder passwordEncoder;
 
     public ImportacaoService(
             AlunoRepository alunoRepository,
             UsuarioRepository usuarioRepository,
-            CursoRepository cursoRepository,
-            TurnoRepository turnoRepository,
-            ModuloRepository moduloRepository,
+            CourseRepository courseRepository,
+            StudyShiftRepository studyShiftRepository,
+            AcademicModuleRepository academicModuleRepository,
             LivroRepository livroRepository,
             ExemplarRepository exemplarRepository,
-            CddRepository cddRepository,
+            DeweyClassificationRepository deweyClassificationRepository,
             PasswordEncoder passwordEncoder) {
         this.alunoRepository = alunoRepository;
         this.usuarioRepository = usuarioRepository;
-        this.cursoRepository = cursoRepository;
-        this.turnoRepository = turnoRepository;
-        this.moduloRepository = moduloRepository;
+        this.courseRepository = courseRepository;
+        this.studyShiftRepository = studyShiftRepository;
+        this.academicModuleRepository = academicModuleRepository;
         this.livroRepository = livroRepository;
         this.exemplarRepository = exemplarRepository;
-        this.cddRepository = cddRepository;
+        this.deweyClassificationRepository = deweyClassificationRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -84,12 +84,12 @@ public class ImportacaoService {
         Set<String> matriculasExistentes = alunoRepository.findAllMatriculas();
         Set<String> cpfsExistentes = alunoRepository.findAllCpfs();
 
-        Map<Integer, CursoModel> cursosMap = cursoRepository.findAll().stream()
-                .collect(Collectors.toMap(CursoModel::getId, c -> c));
-        Map<Integer, TurnoModel> turnosMap = turnoRepository.findAll().stream()
-                .collect(Collectors.toMap(TurnoModel::getId, t -> t));
-        Map<Integer, ModuloModel> modulosMap = moduloRepository.findAll().stream()
-                .collect(Collectors.toMap(ModuloModel::getId, m -> m));
+        Map<Integer, Course> coursesMap = courseRepository.findAll().stream()
+                .collect(Collectors.toMap(Course::getId, c -> c));
+        Map<Integer, StudyShift> studyShiftsMap = studyShiftRepository.findAll().stream()
+                .collect(Collectors.toMap(StudyShift::getId, t -> t));
+        Map<Integer, AcademicModule> academicModulesMap = academicModuleRepository.findAll().stream()
+                .collect(Collectors.toMap(AcademicModule::getId, m -> m));
 
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -116,7 +116,7 @@ public class ImportacaoService {
                         continue;
                     }
 
-                    AlunoModel aluno = criarAlunoFromRow(row, headerMap, cursosMap, turnosMap, modulosMap);
+                    AlunoModel aluno = criarAlunoFromRow(row, headerMap, coursesMap, studyShiftsMap, academicModulesMap);
 
                     if (aluno.getCpf() != null && cpfsExistentes.contains(aluno.getCpf())) {
                         logErros.add(new ErroImportacao(linhaNum, "CPF já existe no sistema: " + aluno.getCpf()));
@@ -131,7 +131,7 @@ public class ImportacaoService {
                     UsuarioModel usuario = new UsuarioModel();
                     usuario.setEmail(aluno.getEmail());
                     usuario.setSenha(passwordEncoder.encode(aluno.getMatricula())); // Senha padrão é a matrícula
-                    usuario.setRole(Role.ALUNO);
+                    usuario.setRole(Role.STUDENT);
                     usuario.setAluno(aluno);
                     aluno.setUsuario(usuario);
 
@@ -147,9 +147,9 @@ public class ImportacaoService {
     }
 
     private AlunoModel criarAlunoFromRow(Row row, Map<String, Integer> headerMap,
-            Map<Integer, CursoModel> cursos,
-            Map<Integer, TurnoModel> turnos,
-            Map<Integer, ModuloModel> modulos) {
+            Map<Integer, Course> courses,
+            Map<Integer, StudyShift> studyShifts,
+            Map<Integer, AcademicModule> academicModules) {
         AlunoModel aluno = new AlunoModel();
         aluno.setMatricula(ExcelUtils.getString(row.getCell(headerMap.get("matricula"))));
         aluno.setNomeCompleto(ExcelUtils.getString(row.getCell(headerMap.get("nome_completo"))));
@@ -170,15 +170,15 @@ public class ImportacaoService {
         Integer turnoId = ExcelUtils.getInteger(row.getCell(headerMap.get("turno_id")));
         Integer moduloId = ExcelUtils.getInteger(row.getCell(headerMap.get("modulo_id")));
 
-        if (cursoId != null && cursos.containsKey(cursoId))
-            aluno.setCurso(cursos.get(cursoId));
+        if (cursoId != null && courses.containsKey(cursoId))
+            aluno.setCurso(courses.get(cursoId));
         else
             throw new IllegalArgumentException("ID do Curso inválido ou não encontrado: " + cursoId);
 
-        if (turnoId != null && turnos.containsKey(turnoId))
-            aluno.setTurno(turnos.get(turnoId));
-        if (moduloId != null && modulos.containsKey(moduloId))
-            aluno.setModulo(modulos.get(moduloId));
+        if (turnoId != null && studyShifts.containsKey(turnoId))
+            aluno.setTurno(studyShifts.get(turnoId));
+        if (moduloId != null && academicModules.containsKey(moduloId))
+            aluno.setModulo(academicModules.get(moduloId));
 
         return aluno;
     }
@@ -239,15 +239,15 @@ public class ImportacaoService {
         livro.setImagem(ExcelUtils.getString(row.getCell(headerMap.get("imagem"))));
 
         livro.setClassificacao_etaria(ExcelUtils.getEnum(row.getCell(headerMap.get("classificacao_etaria")),
-                ClassificacaoEtaria.class, ClassificacaoEtaria.LIVRE));
+                ClassificacaoEtaria.class, ClassificacaoEtaria.GENERAL));
         livro.setTipo_capa(
-                ExcelUtils.getEnum(row.getCell(headerMap.get("tipo_capa")), TipoCapa.class, TipoCapa.BROCHURA));
+                ExcelUtils.getEnum(row.getCell(headerMap.get("tipo_capa")), TipoCapa.class, TipoCapa.PAPERBACK));
 
         String cddCodigo = ExcelUtils.getString(row.getCell(headerMap.get("cdd_codigo")));
         if (cddCodigo == null || cddCodigo.isBlank())
             throw new IllegalArgumentException("CDD é obrigatório");
 
-        CddModel cdd = cddRepository.findById(cddCodigo)
+        DeweyClassification cdd = deweyClassificationRepository.findById(cddCodigo)
                 .orElseThrow(() -> new IllegalArgumentException("CDD não encontrado: " + cddCodigo));
         livro.setCdd(cdd);
 
@@ -318,7 +318,7 @@ public class ImportacaoService {
         exemplar.setTombo(ExcelUtils.getString(row.getCell(headerMap.get("tombo"))));
         exemplar.setLocalizacao_fisica(ExcelUtils.getString(row.getCell(headerMap.get("localizacao_fisica"))));
         exemplar.setStatus_livro(ExcelUtils.getEnum(row.getCell(headerMap.get("status_livro")), StatusLivro.class,
-                StatusLivro.DISPONIVEL));
+                StatusLivro.AVAILABLE));
         exemplar.setLivro(livro);
 
         return exemplar;

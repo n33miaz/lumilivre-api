@@ -15,7 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import br.com.lumilivre.api.model.AuditLogModel;
+import br.com.lumilivre.api.model.AuditLog;
 import br.com.lumilivre.api.repository.AuditLogRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -88,7 +88,7 @@ public class AuditAspect {
                          String result, String errorMessage) {
         try {
             auditLogRepository.save(
-                    AuditLogModel.builder()
+                    AuditLog.builder()
                             .actor(actor)
                             .actorRole(role)
                             .action(action)

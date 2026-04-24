@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.dto.genero;
 
-import br.com.lumilivre.api.model.GeneroModel;
+import br.com.lumilivre.api.model.Genre;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,8 +13,8 @@ public class GeneroResponse {
     private Integer id;
     private String nome;
 
-    public GeneroResponse(GeneroModel model) {
+    public GeneroResponse(Genre model) {
         this.id = model.getId();
-        this.nome = model.getNome();
+        this.nome = model.getName();
     }
 }

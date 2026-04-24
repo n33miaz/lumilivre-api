@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import br.com.lumilivre.api.dto.comum.ItemSimplesResponse;
-import br.com.lumilivre.api.repository.GeneroRepository;
+import br.com.lumilivre.api.repository.GenreRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,20 +16,20 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/generos")
 @Tag(name = "12. Gêneros")
 @SecurityRequirement(name = "bearerAuth")
-public class GeneroController {
+public class GenreController {
 
-    private final GeneroRepository generoRepository;
+    private final GenreRepository genreRepository;
 
-    public GeneroController(GeneroRepository generoRepository) {
-        this.generoRepository = generoRepository;
+    public GenreController(GenreRepository genreRepository) {
+        this.genreRepository = genreRepository;
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LIBRARIAN')")
     @Operation(summary = "Lista todos os gêneros cadastrados")
     public ResponseEntity<List<ItemSimplesResponse>> listarTodos() {
-        var lista = generoRepository.findAll().stream()
-                .map(g -> new ItemSimplesResponse(g.getId(), g.getNome()))
+        var lista = genreRepository.findAll().stream()
+                .map(g -> new ItemSimplesResponse(g.getId(), g.getName()))
                 .toList();
         return ResponseEntity.ok(lista);
     }

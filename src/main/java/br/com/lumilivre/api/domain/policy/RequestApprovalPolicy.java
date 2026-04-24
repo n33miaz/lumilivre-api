@@ -40,7 +40,7 @@ public final class RequestApprovalPolicy {
      * Uma solicitação já processada não pode ser alterada.
      */
     public static void validateProcessable(StatusSolicitacao currentStatus) {
-        if (currentStatus != StatusSolicitacao.PENDENTE) {
+        if (currentStatus != StatusSolicitacao.PENDING) {
             throw new RequestApprovalViolationException(
                     "Solicitação não está pendente. Status atual: " + currentStatus);
         }

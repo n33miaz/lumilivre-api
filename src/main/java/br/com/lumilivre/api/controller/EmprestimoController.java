@@ -38,7 +38,7 @@ public class EmprestimoController {
 
     private final EmprestimoService es;
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/home")
     @Operation(summary = "Lista empréstimos para a tela principal do admin")
     public ResponseEntity<Page<EmprestimoListagemResponse>> listarParaAdmin(
@@ -62,7 +62,7 @@ public class EmprestimoController {
         return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/buscar")
     @Operation(summary = "Busca empréstimos com paginação e filtro de texto")
     public ResponseEntity<Page<EmprestimoListagemResponse>> buscarPorTexto(
@@ -72,7 +72,7 @@ public class EmprestimoController {
         return emprestimos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(emprestimos);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/buscar/avancado")
     @Operation(summary = "Busca avançada e paginada de empréstimos")
     public ResponseEntity<Page<EmprestimoListagemResponse>> buscarAvancado(
@@ -125,7 +125,7 @@ public class EmprestimoController {
         return ResponseEntity.ok(es.listarHistorico(matricula));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/dashboard")
     @Operation(summary = "Lista os empréstimos que estão vencendo para o dashboard")
     public List<EmprestimoDashboardResponse> listarVencendo() {
@@ -133,7 +133,7 @@ public class EmprestimoController {
     }
 
     @GetMapping("/ranking")
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO','ALUNO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     @Operation(summary = "Ranking de alunos por quantidade de empréstimos com filtros")
     public ResponseEntity<List<AlunoRankingResponse>> rankingAlunos(
             @RequestParam(defaultValue = "10") int top,
@@ -144,7 +144,7 @@ public class EmprestimoController {
         return ranking.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(ranking);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/cadastrar")
     @Operation(summary = "Registra um novo empréstimo")
     @ApiResponses({
@@ -157,7 +157,7 @@ public class EmprestimoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(novoEmprestimo);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PutMapping("/atualizar/{id}")
     @Operation(summary = "Atualiza um empréstimo existente")
     @ApiResponses({
@@ -173,7 +173,7 @@ public class EmprestimoController {
         return ResponseEntity.ok(atualizado);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PutMapping("/concluir/{id}")
     @Operation(summary = "Conclui (devolve) um empréstimo")
     @ApiResponses({
@@ -196,7 +196,7 @@ public class EmprestimoController {
         return ResponseEntity.ok(es.renovar(id));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','BIBLIOTECARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @DeleteMapping("/excluir/{id}")
     @Operation(summary = "Exclui um registro de empréstimo")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Empréstimo excluído com sucesso")

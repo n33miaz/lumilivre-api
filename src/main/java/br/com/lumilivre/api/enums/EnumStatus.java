@@ -4,4 +4,6 @@ public interface EnumStatus {
     String name();
 
     String getStatus();
+
+    String getPtBrCode();
 }

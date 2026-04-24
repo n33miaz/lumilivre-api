@@ -21,7 +21,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import br.com.lumilivre.api.model.AuditLogModel;
+import br.com.lumilivre.api.model.AuditLog;
 import br.com.lumilivre.api.repository.AuditLogRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -54,9 +54,9 @@ class AuditAspectTest {
 
         Object result = auditAspect.audit(joinPoint, auditable("BOOK_UPDATED", "#id"));
 
-        ArgumentCaptor<AuditLogModel> captor = ArgumentCaptor.forClass(AuditLogModel.class);
+        ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
         verify(auditLogRepository).save(captor.capture());
-        AuditLogModel audit = captor.getValue();
+        AuditLog audit = captor.getValue();
 
         assertThat(result).isEqualTo("ok");
         assertThat(audit.getActor()).isEqualTo("admin@lumilivre.test");
@@ -70,7 +70,7 @@ class AuditAspectTest {
 
     @Test
     void auditDevePersistirFalhaERelancarExcecao() throws Throwable {
-        authenticate("bibliotecario@lumilivre.test", "ROLE_BIBLIOTECARIO");
+        authenticate("bibliotecario@lumilivre.test", "ROLE_LIBRARIAN");
         when(joinPoint.getSignature()).thenReturn(signature);
         when(signature.getParameterNames()).thenReturn(new String[] { "matricula" });
         when(joinPoint.getArgs()).thenReturn(new Object[] { "12345" });
@@ -80,7 +80,7 @@ class AuditAspectTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("falha controlada");
 
-        ArgumentCaptor<AuditLogModel> captor = ArgumentCaptor.forClass(AuditLogModel.class);
+        ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
         verify(auditLogRepository).save(captor.capture());
 
         assertThat(captor.getValue().getResult()).isEqualTo("FAILURE");
@@ -96,7 +96,7 @@ class AuditAspectTest {
 
         auditAspect.audit(joinPoint, auditable("", ""));
 
-        ArgumentCaptor<AuditLogModel> captor = ArgumentCaptor.forClass(AuditLogModel.class);
+        ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
         verify(auditLogRepository).save(captor.capture());
 
         assertThat(captor.getValue().getActor()).isEqualTo("anonymous");

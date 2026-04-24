@@ -76,7 +76,7 @@ class AuthServiceTest {
         AlunoModel aluno = new AlunoModel();
         aluno.setMatricula("12345");
 
-        UsuarioModel usuario = usuario(Role.ALUNO, aluno);
+        UsuarioModel usuario = usuario(Role.STUDENT, aluno);
         when(usuarioRepository.findByEmailOrAluno_Matricula("12345", "12345")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("12345", "hash")).thenReturn(true);
         when(jwtUtil.generateToken(any(UserDetails.class))).thenReturn("jwt-token");
@@ -100,7 +100,7 @@ class AuthServiceTest {
 
     @Test
     void loginDeveFalharQuandoSenhaNaoConfere() {
-        UsuarioModel usuario = usuario(Role.BIBLIOTECARIO, null);
+        UsuarioModel usuario = usuario(Role.LIBRARIAN, null);
         when(usuarioRepository.findByEmailOrAluno_Matricula("biblioteca@lumilivre.test", "biblioteca@lumilivre.test"))
                 .thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("errada", "hash")).thenReturn(false);
@@ -187,7 +187,7 @@ class AuthServiceTest {
     private static UsuarioModel usuario(Role role, AlunoModel aluno) {
         UsuarioModel usuario = new UsuarioModel();
         usuario.setId(1);
-        usuario.setEmail(role == Role.ALUNO ? "aluno@lumilivre.test" : role.name().toLowerCase() + "@lumilivre.test");
+        usuario.setEmail(role == Role.STUDENT ? "aluno@lumilivre.test" : role.name().toLowerCase() + "@lumilivre.test");
         usuario.setSenha("hash");
         usuario.setRole(role);
         usuario.setAluno(aluno);

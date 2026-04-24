@@ -330,8 +330,8 @@ class SecurityRoleMatrixTest {
     private static UserDetails userDetailsFor(Actor actor) {
         Role role = switch (actor) {
             case ADMIN -> Role.ADMIN;
-            case BIBLIOTECARIO -> Role.BIBLIOTECARIO;
-            case ALUNO -> Role.ALUNO;
+            case BIBLIOTECARIO -> Role.LIBRARIAN;
+            case ALUNO -> Role.STUDENT;
             case ANONYMOUS -> throw new IllegalArgumentException("Anonymous actor has no principal");
         };
 
@@ -341,7 +341,7 @@ class SecurityRoleMatrixTest {
         usuario.setSenha("{noop}password");
         usuario.setRole(role);
 
-        if (role == Role.ALUNO) {
+        if (role == Role.STUDENT) {
             AlunoModel aluno = new AlunoModel();
             aluno.setMatricula(STUDENT_MATRICULA);
             usuario.setAluno(aluno);

@@ -71,9 +71,9 @@ class ReservationPolicyTest {
     void activeStatusesIncludesWaitingAndAvailable() {
         assertThat(ReservationPolicy.activeStatuses())
                 .containsExactlyInAnyOrder(
-                        StatusReserva.AGUARDANDO,
-                        StatusReserva.DISPONIVEL_PARA_RETIRADA)
-                .doesNotContain(StatusReserva.CONVERTIDA, StatusReserva.CANCELADA, StatusReserva.EXPIRADA);
+                        StatusReserva.WAITING,
+                        StatusReserva.READY)
+                .doesNotContain(StatusReserva.FULFILLED, StatusReserva.CANCELLED, StatusReserva.EXPIRED);
     }
 
     @Test

@@ -31,7 +31,7 @@ import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
 import br.com.lumilivre.api.model.AlunoModel;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
-import br.com.lumilivre.api.model.OutboxEventModel.EventType;
+import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.repository.AlunoRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
@@ -78,7 +78,7 @@ public class EmprestimoService {
         }
 
         long emprestimosAtivos = emprestimoRepository
-                .countByAlunoMatriculaAndStatusEmprestimo(aluno.getMatricula(), StatusEmprestimo.ATIVO);
+                .countByAlunoMatriculaAndStatusEmprestimo(aluno.getMatricula(), StatusEmprestimo.ACTIVE);
         LoanPolicy.validateNewLoan(emprestimosAtivos, aluno.getPenalidadeExpiraEm());
 
         ExemplarModel exemplar = exemplarRepository.findByTombo(dto.getExemplar_tombo())
@@ -91,9 +91,9 @@ public class EmprestimoService {
         emprestimo.setExemplar(exemplar);
         emprestimo.setDataEmprestimo(dto.getData_emprestimo());
         emprestimo.setDataDevolucao(dto.getData_devolucao());
-        emprestimo.setStatusEmprestimo(StatusEmprestimo.ATIVO);
+        emprestimo.setStatusEmprestimo(StatusEmprestimo.ACTIVE);
 
-        exemplar.setStatus_livro(StatusLivro.EMPRESTADO);
+        exemplar.setStatus_livro(StatusLivro.BORROWED);
         exemplarRepository.save(exemplar);
 
         aluno.incrementarEmprestimos();
@@ -116,7 +116,7 @@ public class EmprestimoService {
         EmprestimoModel emprestimo = emprestimoRepository.findById(dto.getId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
 
-        if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.CONCLUIDO) {
+        if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.COMPLETED) {
             throw new RegraDeNegocioException("Este empréstimo já foi concluído e não pode ser alterado.");
         }
 
@@ -138,7 +138,7 @@ public class EmprestimoService {
         EmprestimoModel emprestimo = emprestimoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
 
-        if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.CONCLUIDO) {
+        if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.COMPLETED) {
             throw new RegraDeNegocioException("Este empréstimo já foi concluído.");
         }
 
@@ -158,10 +158,10 @@ public class EmprestimoService {
             }
         }
 
-        emprestimo.setStatusEmprestimo(StatusEmprestimo.CONCLUIDO);
+        emprestimo.setStatusEmprestimo(StatusEmprestimo.COMPLETED);
 
         ExemplarModel exemplar = emprestimo.getExemplar();
-        exemplar.setStatus_livro(StatusLivro.DISPONIVEL);
+        exemplar.setStatus_livro(StatusLivro.AVAILABLE);
         exemplarRepository.save(exemplar);
 
         EmprestimoModel salvo = emprestimoRepository.save(emprestimo);
@@ -170,9 +170,9 @@ public class EmprestimoService {
 
         // Notifica o próximo da fila de reservas para este livro
         reservaRepository.findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(
-                exemplar.getLivro().getId(), StatusReserva.AGUARDANDO)
+                exemplar.getLivro().getId(), StatusReserva.WAITING)
                 .ifPresent(proxima -> {
-                    proxima.setStatus(StatusReserva.DISPONIVEL_PARA_RETIRADA);
+                    proxima.setStatus(StatusReserva.READY);
                     LocalDateTime agora2 = LocalDateTime.now();
                     proxima.setNotificadoEm(agora2);
                     proxima.setExpiraEm(agora2.plusDays(2));
@@ -198,11 +198,11 @@ public class EmprestimoService {
             alunoRepository.save(aluno);
         }
 
-        if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.ATIVO ||
-                emprestimo.getStatusEmprestimo() == StatusEmprestimo.ATRASADO) {
+        if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.ACTIVE ||
+                emprestimo.getStatusEmprestimo() == StatusEmprestimo.OVERDUE) {
             ExemplarModel exemplar = emprestimo.getExemplar();
             if (exemplar != null) {
-                exemplar.setStatus_livro(StatusLivro.DISPONIVEL);
+                exemplar.setStatus_livro(StatusLivro.AVAILABLE);
                 exemplarRepository.save(exemplar);
             }
         }
@@ -221,7 +221,7 @@ public class EmprestimoService {
         EmprestimoModel emprestimo = emprestimoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
 
-        if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.CONCLUIDO) {
+        if (emprestimo.getStatusEmprestimo() == StatusEmprestimo.COMPLETED) {
             throw new RegraDeNegocioException("Empréstimo já concluído não pode ser renovado.");
         }
 
@@ -229,7 +229,7 @@ public class EmprestimoService {
         Long livroId = emprestimo.getExemplar().getLivro().getId();
 
         boolean hasReservation = reservaRepository
-                .findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(livroId, StatusReserva.AGUARDANDO)
+                .findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(livroId, StatusReserva.WAITING)
                 .map(r -> !r.getAluno().getMatricula().equals(aluno.getMatricula()))
                 .orElse(false);
 
@@ -240,7 +240,7 @@ public class EmprestimoService {
 
         emprestimo.setDataDevolucao(emprestimo.getDataDevolucao().plusDays(LoanPolicy.RENEWAL_DAYS));
         emprestimo.setRenovacoes(emprestimo.getRenovacoes() + 1);
-        emprestimo.setStatusEmprestimo(StatusEmprestimo.ATIVO);
+        emprestimo.setStatusEmprestimo(StatusEmprestimo.ACTIVE);
 
         EmprestimoModel salvo = emprestimoRepository.save(emprestimo);
 
@@ -271,14 +271,14 @@ public class EmprestimoService {
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
                         JpaSort.unsafe(Sort.Direction.ASC,
-                                "(CASE WHEN e.statusEmprestimo = 'CONCLUIDO' THEN 1 ELSE 0 END)",
+                                "(CASE WHEN e.statusEmprestimo = 'COMPLETED' THEN 1 ELSE 0 END)",
                                 "dataDevolucao"));
             } else {
                 pageableNativo = PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
                         JpaSort.unsafe(Sort.Direction.ASC,
-                                "(CASE WHEN e.statusEmprestimo = 'CONCLUIDO' THEN 1 ELSE 0 END)")
+                                "(CASE WHEN e.statusEmprestimo = 'COMPLETED' THEN 1 ELSE 0 END)")
                                 .and(JpaSort.unsafe(Sort.Direction.DESC, "dataDevolucao")));
             }
         }
@@ -310,15 +310,15 @@ public class EmprestimoService {
     @Cacheable(value = "dashboard_atrasados_count")
     public long getContagemAtrasadosReal() {
         LocalDateTime agora = LocalDateTime.now();
-        return emprestimoRepository.countByStatusEmprestimoIn(List.of(StatusEmprestimo.ATRASADO))
-                + emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoBefore(StatusEmprestimo.ATIVO, agora)
+        return emprestimoRepository.countByStatusEmprestimoIn(List.of(StatusEmprestimo.OVERDUE))
+                + emprestimoRepository.findByStatusEmprestimoAndDataDevolucaoBefore(StatusEmprestimo.ACTIVE, agora)
                         .size();
     }
 
     @Cacheable(value = "dashboard_stats_emprestimos")
     public long getContagemEmprestimosAtivosEAtrasados() {
         return emprestimoRepository.countByStatusEmprestimoIn(
-                List.of(StatusEmprestimo.ATIVO, StatusEmprestimo.ATRASADO));
+                List.of(StatusEmprestimo.ACTIVE, StatusEmprestimo.OVERDUE));
     }
 
     public List<EmprestimoAtivoResponse> buscarApenasAtrasados() {

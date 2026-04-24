@@ -28,7 +28,7 @@ public interface SolicitacaoEmprestimoRepository extends JpaRepository<Solicitac
 			    JOIN s.aluno a
 			    JOIN s.exemplar ex
 			    JOIN ex.livro l
-			    WHERE s.status = br.com.lumilivre.api.enums.StatusSolicitacao.PENDENTE
+			    WHERE s.status = br.com.lumilivre.api.enums.StatusSolicitacao.PENDING
 			    ORDER BY s.dataSolicitacao ASC
 			""")
 	List<SolicitacaoDashboardResponse> findSolicitacoesPendentes();

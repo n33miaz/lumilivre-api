@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/relatorios")
 @Tag(name = "14. Relatórios")
 @SecurityRequirement(name = "bearerAuth")
-@PreAuthorize("hasAnyRole('ADMIN', 'BIBLIOTECARIO')")
+@PreAuthorize("hasAnyRole('ADMIN', 'LIBRARIAN')")
 public class RelatorioController {
 
     private final RelatorioService relatorioService;

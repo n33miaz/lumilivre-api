@@ -96,7 +96,7 @@ class EmprestimoServiceTest {
         EmprestimoRequest request = request();
         when(alunoRepository.findByMatricula("12345")).thenReturn(Optional.of(aluno()));
         when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(any(), any())).thenReturn(0L);
-        when(exemplarRepository.findByTombo("T001")).thenReturn(Optional.of(exemplar(StatusLivro.EMPRESTADO)));
+        when(exemplarRepository.findByTombo("T001")).thenReturn(Optional.of(exemplar(StatusLivro.BORROWED)));
 
         assertThatThrownBy(() -> service.cadastrar(request))
                 .isInstanceOf(BookAvailabilityViolationException.class);

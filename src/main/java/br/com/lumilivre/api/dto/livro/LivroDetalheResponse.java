@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.dto.livro;
 
-import br.com.lumilivre.api.model.GeneroModel;
+import br.com.lumilivre.api.model.Genre;
 import br.com.lumilivre.api.model.LivroModel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,8 +53,8 @@ public class LivroDetalheResponse {
         this.volume = livro.getVolume();
 
         if (livro.getCdd() != null) {
-            this.cdd = livro.getCdd().getDescricao();
-            this.cddCodigo = livro.getCdd().getCodigo();
+            this.cdd = livro.getCdd().getDescription();
+            this.cddCodigo = livro.getCdd().getCode();
         }
 
         if (livro.getTipo_capa() != null) {
@@ -68,7 +68,7 @@ public class LivroDetalheResponse {
         }
 
         this.generos = livro.getGeneros().stream()
-                .map(GeneroModel::getNome)
+                .map(Genre::getName)
                 .collect(Collectors.toSet());
 
         this.exemplaresDisponiveis = exemplaresDisponiveis;

@@ -41,7 +41,7 @@ public class RecomendacaoService {
 
         Set<String> generos = historico.stream()
                 .flatMap(e -> e.getExemplar().getLivro().getGeneros().stream())
-                .map(g -> g.getNome().toLowerCase())
+                .map(g -> g.getName().toLowerCase())
                 .collect(Collectors.toSet());
 
         List<Long> jaLidos = historico.stream()
