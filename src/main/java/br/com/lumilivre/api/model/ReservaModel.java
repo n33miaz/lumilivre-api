@@ -35,7 +35,7 @@ public class ReservaModel {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "aluno_id", nullable = false)
-    private AlunoModel aluno;
+    private Student aluno;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "livro_id", nullable = false)

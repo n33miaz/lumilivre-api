@@ -18,13 +18,21 @@ public interface ReservaRepository extends JpaRepository<ReservaModel, Long> {
     /** Próximo da fila FIFO para um livro específico */
     Optional<ReservaModel> findFirstByLivroIdAndStatusOrderByPosicaoFilaAsc(Long livroId, StatusReserva status);
 
-    List<ReservaModel> findByAlunoMatriculaOrderByCriadaEmDesc(String matricula);
+    List<ReservaModel> findByAlunoRegistrationNumberOrderByCriadaEmDesc(String registrationNumber);
 
-    boolean existsByAlunoMatriculaAndLivroIdAndStatusIn(String matricula, Long livroId, List<StatusReserva> statuses);
+    boolean existsByAlunoRegistrationNumberAndLivroIdAndStatusIn(String registrationNumber, Long livroId, List<StatusReserva> statuses);
 
     @Query("SELECT COALESCE(MAX(r.posicaoFila), 0) FROM ReservaModel r WHERE r.livro.id = :livroId AND r.status = 'WAITING'")
     int maxPosicaoFila(@Param("livroId") Long livroId);
 
     /** Reservas DISPONIVEL_PARA_RETIRADA com prazo expirado */
     List<ReservaModel> findByStatusAndExpiraEmBefore(StatusReserva status, LocalDateTime now);
+
+    default List<ReservaModel> findByAlunoMatriculaOrderByCriadaEmDesc(String matricula) {
+        return findByAlunoRegistrationNumberOrderByCriadaEmDesc(matricula);
+    }
+
+    default boolean existsByAlunoMatriculaAndLivroIdAndStatusIn(String matricula, Long livroId, List<StatusReserva> statuses) {
+        return existsByAlunoRegistrationNumberAndLivroIdAndStatusIn(matricula, livroId, statuses);
+    }
 }

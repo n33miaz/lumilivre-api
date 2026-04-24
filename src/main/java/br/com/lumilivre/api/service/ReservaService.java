@@ -10,11 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.lumilivre.api.domain.policy.ReservationPolicy;
 import br.com.lumilivre.api.enums.StatusReserva;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
-import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.model.Student;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.ReservaModel;
-import br.com.lumilivre.api.repository.AlunoRepository;
+import br.com.lumilivre.api.repository.StudentRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
 import br.com.lumilivre.api.repository.ReservaRepository;
 import br.com.lumilivre.api.security.Auditable;
@@ -27,14 +27,14 @@ import lombok.extern.slf4j.Slf4j;
 public class ReservaService {
 
     private final ReservaRepository reservaRepository;
-    private final AlunoRepository alunoRepository;
+    private final StudentRepository alunoRepository;
     private final LivroRepository livroRepository;
     private final OutboxPublisherService outboxPublisher;
 
     @Auditable(action = "RESERVATION_CREATED", targetParam = "#matricula")
     @Transactional
     public ReservaModel criarReserva(String matricula, Long livroId) {
-        AlunoModel aluno = alunoRepository.findByMatricula(matricula)
+        Student aluno = alunoRepository.findByMatricula(matricula)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));
 
         LivroModel livro = livroRepository.findById(livroId)

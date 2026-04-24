@@ -21,11 +21,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import br.com.lumilivre.api.enums.StatusReserva;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
-import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.model.Student;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.ReservaModel;
-import br.com.lumilivre.api.repository.AlunoRepository;
+import br.com.lumilivre.api.repository.StudentRepository;
 import br.com.lumilivre.api.repository.LivroRepository;
 import br.com.lumilivre.api.repository.ReservaRepository;
 
@@ -36,7 +36,7 @@ class ReservaServiceTest {
     private ReservaRepository reservaRepository;
 
     @Mock
-    private AlunoRepository alunoRepository;
+    private StudentRepository alunoRepository;
 
     @Mock
     private LivroRepository livroRepository;
@@ -153,8 +153,8 @@ class ReservaServiceTest {
         return reserva;
     }
 
-    private static AlunoModel aluno(String matricula) {
-        AlunoModel aluno = new AlunoModel();
+    private static Student aluno(String matricula) {
+        Student aluno = new Student();
         aluno.setMatricula(matricula);
         aluno.setNomeCompleto("Aluno Teste");
         aluno.setEmail("aluno@lumilivre.test");

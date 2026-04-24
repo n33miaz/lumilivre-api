@@ -38,7 +38,7 @@ public class EmprestimoModel {
 	@ManyToOne
 	@JoinColumn(name = "aluno_matricula", nullable = false)
 	@ToString.Exclude
-	private AlunoModel aluno;
+	private Student aluno;
 
 	@ManyToOne
 	@JoinColumn(name = "exemplar_tombo", nullable = false)

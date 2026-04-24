@@ -23,13 +23,13 @@ public interface StudyShiftRepository extends JpaRepository<StudyShift, Integer>
     @Query("""
             SELECT new br.com.lumilivre.api.dto.turno.TurnoResumoResponse(t.id, t.name, COUNT(a))
             FROM StudyShift t
-            LEFT JOIN t.alunos a
+            LEFT JOIN t.students a
             WHERE (:texto IS NULL OR t.name ILIKE %:texto%)
             GROUP BY t.id, t.name
             ORDER BY t.name
             """)
     Page<TurnoResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
-    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(t.name, SUM(a.emprestimosCount)) FROM StudyShift t JOIN t.alunos a GROUP BY t.name HAVING SUM(a.emprestimosCount) > 0")
+    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(t.name, SUM(a.loansCount)) FROM StudyShift t JOIN t.students a GROUP BY t.name HAVING SUM(a.loansCount) > 0")
     List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorTurno();
 }

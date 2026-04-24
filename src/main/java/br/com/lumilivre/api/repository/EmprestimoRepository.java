@@ -29,7 +29,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     List<EmprestimoModel> findByStatusEmprestimoAndDataDevolucaoGreaterThanEqual(StatusEmprestimo status,
             LocalDateTime now);
 
-    List<EmprestimoModel> findByAluno_Matricula(String matricula);
+    List<EmprestimoModel> findByAluno_RegistrationNumber(String registrationNumber);
 
     List<EmprestimoModel> findByDataEmprestimoGreaterThanEqual(LocalDateTime dataInicio);
 
@@ -43,7 +43,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
 
     boolean existsByExemplarTomboAndStatusEmprestimoIn(String tombo, List<StatusEmprestimo> statuses);
 
-    long countByAlunoMatriculaAndStatusEmprestimo(String matricula, StatusEmprestimo status);
+    long countByAlunoRegistrationNumberAndStatusEmprestimo(String registrationNumber, StatusEmprestimo status);
 
     List<EmprestimoModel> findByStatusEmprestimo(StatusEmprestimo atrasado);
 
@@ -53,8 +53,8 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 e.statusEmprestimo,
                 l.nome,
                 ex.tombo,
-                a.nomeCompleto,
-                a.matricula,
+                a.fullName,
+                a.registrationNumber,
                 c.name,
                 e.dataEmprestimo,
                 e.dataDevolucao
@@ -63,9 +63,9 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             JOIN e.aluno a
             JOIN e.exemplar ex
             JOIN ex.livro l
-            JOIN a.curso c
-            WHERE LOWER(a.nomeCompleto) LIKE LOWER(CONCAT('%', :texto, '%'))
-               OR a.matricula LIKE CONCAT('%', :texto, '%')
+            JOIN a.course c
+            WHERE LOWER(a.fullName) LIKE LOWER(CONCAT('%', :texto, '%'))
+               OR a.registrationNumber LIKE CONCAT('%', :texto, '%')
                OR LOWER(l.nome) LIKE LOWER(CONCAT('%', :texto, '%'))
                OR ex.tombo LIKE CONCAT('%', :texto, '%')
             """)
@@ -77,8 +77,8 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                     e.statusEmprestimo,
                     l.nome,
                     ex.tombo,
-                    a.nomeCompleto,
-                    a.matricula,
+                    a.fullName,
+                    a.registrationNumber,
                     c.name,
                     e.dataEmprestimo,
                     e.dataDevolucao
@@ -87,7 +87,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 JOIN e.aluno a
                 JOIN e.exemplar ex
                 JOIN ex.livro l
-                JOIN a.curso c
+                JOIN a.course c
                 WHERE
                 (
                     (:statusEmprestimo IS NULL) OR
@@ -97,7 +97,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                 )
                 AND (:tombo IS NULL OR ex.tombo ILIKE :tombo)
                 AND (:livroNome IS NULL OR l.nome ILIKE :livroNome)
-                AND (:alunoNomeCompleto IS NULL OR a.nomeCompleto ILIKE :alunoNomeCompleto)
+                AND (:alunoNomeCompleto IS NULL OR a.fullName ILIKE :alunoNomeCompleto)
                 AND (cast(:dataEmprestimoInicio as timestamp) IS NULL OR e.dataEmprestimo >= :dataEmprestimoInicio)
                 AND (cast(:dataEmprestimoFim as timestamp) IS NULL OR e.dataEmprestimo <= :dataEmprestimoFim)
                 AND (cast(:dataDevolucaoInicio as timestamp) IS NULL OR e.dataDevolucao >= :dataDevolucaoInicio)
@@ -127,7 +127,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                     e.exemplar.livro.imagem
                 )
                 FROM EmprestimoModel e
-                WHERE e.aluno.matricula = :matricula
+                WHERE e.aluno.registrationNumber = :matricula
                   AND e.statusEmprestimo = 'ACTIVE'
             """)
     List<EmprestimoResponse> findEmprestimosAtivos(@Param("matricula") String matricula);
@@ -144,7 +144,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                     e.exemplar.livro.imagem
                 )
                 FROM EmprestimoModel e
-                WHERE e.aluno.matricula = :matricula
+                WHERE e.aluno.registrationNumber = :matricula
                   AND e.statusEmprestimo = 'COMPLETED'
             """)
     List<EmprestimoResponse> findHistoricoEmprestimos(@Param("matricula") String matricula);
@@ -155,9 +155,9 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                     e.statusEmprestimo,
                     l.nome,
                     ex.tombo,
-                    a.nomeCompleto,
-                    a.matricula,
-                    a.curso.name,
+                    a.fullName,
+                    a.registrationNumber,
+                    a.course.name,
                     e.dataEmprestimo,
                     e.dataDevolucao
                 )
@@ -171,7 +171,7 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     @Query("""
                 SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse(
                     livro.nome,
-                    aluno.nomeCompleto,
+                    aluno.fullName,
                     emprestimo.dataDevolucao,
                     emprestimo.statusEmprestimo
                 )
@@ -190,16 +190,16 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
     @Query("""
             SELECT DISTINCT e FROM EmprestimoModel e
             LEFT JOIN FETCH e.aluno a
-            LEFT JOIN FETCH a.curso
-            LEFT JOIN FETCH a.modulo
+            LEFT JOIN FETCH a.course
+            LEFT JOIN FETCH a.academicModule
             LEFT JOIN FETCH e.exemplar ex
             LEFT JOIN FETCH ex.livro l
             WHERE (cast(:inicio as timestamp) IS NULL OR e.dataEmprestimo >= :inicio)
               AND (cast(:fim as timestamp) IS NULL OR e.dataEmprestimo <= :fim)
               AND (:status IS NULL OR e.statusEmprestimo = :status)
-              AND (:matriculaAluno IS NULL OR a.matricula ILIKE :matriculaAluno OR a.nomeCompleto ILIKE :matriculaAluno)
-              AND (cast(:idCurso as integer) IS NULL OR a.curso.id = :idCurso)
-              AND (cast(:idModulo as integer) IS NULL OR a.modulo.id = :idModulo)
+              AND (:matriculaAluno IS NULL OR a.registrationNumber ILIKE :matriculaAluno OR a.fullName ILIKE :matriculaAluno)
+              AND (cast(:idCurso as integer) IS NULL OR a.course.id = :idCurso)
+              AND (cast(:idModulo as integer) IS NULL OR a.academicModule.id = :idModulo)
               AND (
                     :isbnOuTombo IS NULL
                     OR ex.tombo ILIKE :isbnOuTombo
@@ -221,8 +221,8 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse(
                 e.id,
                 l.nome,
-                a.nomeCompleto,
-                a.matricula,
+                a.fullName,
+                a.registrationNumber,
                 ex.tombo,
                 CAST(e.dataEmprestimo AS LocalDate),
                 CAST(e.dataDevolucao AS LocalDate),
@@ -241,8 +241,8 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
             SELECT new br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse(
                 e.id,
                 l.nome,
-                a.nomeCompleto,
-                a.matricula,
+                a.fullName,
+                a.registrationNumber,
                 ex.tombo,
                 CAST(e.dataEmprestimo AS LocalDate),
                 CAST(e.dataDevolucao AS LocalDate),
@@ -266,5 +266,13 @@ public interface EmprestimoRepository extends JpaRepository<EmprestimoModel, Int
                         .toHours() / 24.0)
                 .average()
                 .orElse(0.0);
+    }
+
+    default List<EmprestimoModel> findByAluno_Matricula(String matricula) {
+        return findByAluno_RegistrationNumber(matricula);
+    }
+
+    default long countByAlunoMatriculaAndStatusEmprestimo(String matricula, StatusEmprestimo status) {
+        return countByAlunoRegistrationNumberAndStatusEmprestimo(matricula, status);
     }
 }

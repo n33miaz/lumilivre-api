@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.service;
 
 import br.com.lumilivre.api.model.*;
-import br.com.lumilivre.api.repository.AlunoRepository;
+import br.com.lumilivre.api.repository.StudentRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
@@ -36,7 +36,7 @@ public class RelatorioService {
     private static final Logger log = LoggerFactory.getLogger(RelatorioService.class);
 
     private final EmprestimoRepository emprestimoRepository;
-    private final AlunoRepository alunoRepository;
+    private final StudentRepository alunoRepository;
     private final LivroRepository livroRepository;
     private final CourseRepository courseRepository;
     private final ExemplarRepository exemplarRepository;
@@ -47,7 +47,7 @@ public class RelatorioService {
     private static final Color COR_CABECALHO_TABELA = new Color(118, 32, 117);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    public RelatorioService(EmprestimoRepository emprestimoRepository, AlunoRepository alunoRepository,
+    public RelatorioService(EmprestimoRepository emprestimoRepository, StudentRepository alunoRepository,
             LivroRepository livroRepository, CourseRepository courseRepository, ExemplarRepository exemplarRepository) {
         this.emprestimoRepository = emprestimoRepository;
         this.alunoRepository = alunoRepository;
@@ -95,18 +95,18 @@ public class RelatorioService {
                     table.addCell(criarCelulaDados(String.valueOf(e.getId())));
 
                     String nomeAluno = Optional.ofNullable(e.getAluno())
-                            .map(AlunoModel::getNomeCompleto)
+                            .map(Student::getNomeCompleto)
                             .orElse("Aluno Desconhecido");
                     table.addCell(criarCelulaDados(nomeAluno));
 
                     String nomeCurso = Optional.ofNullable(e.getAluno())
-                            .map(AlunoModel::getCurso)
+                            .map(Student::getCurso)
                             .map(Course::getName)
                             .orElse("N/A");
                     table.addCell(criarCelulaDados(nomeCurso));
 
                     String nomeModulo = Optional.ofNullable(e.getAluno())
-                            .map(AlunoModel::getModulo)
+                            .map(Student::getModulo)
                             .map(AcademicModule::getName)
                             .orElse("-");
                     table.addCell(criarCelulaDados(nomeModulo));
@@ -160,7 +160,7 @@ public class RelatorioService {
             LocalDateTime inicio = (dataInicio != null) ? dataInicio.atStartOfDay() : null;
             LocalDateTime fim = (dataFim != null) ? dataFim.atTime(23, 59, 59) : null;
 
-            List<AlunoModel> alunos = alunoRepository.findForReport(idModulo, idCurso, idTurno, penalidade, inicio,
+            List<Student> alunos = alunoRepository.findForReport(idModulo, idCurso, idTurno, penalidade, inicio,
                     fim);
 
             PdfPTable table = new PdfPTable(6);
@@ -174,7 +174,7 @@ public class RelatorioService {
             adicionarCelulaHeader(table, "Penalidade");
             adicionarCelulaHeader(table, "Qtd. Empréstimos");
 
-            for (AlunoModel a : alunos) {
+            for (Student a : alunos) {
                 table.addCell(criarCelulaDados(a.getMatricula()));
                 table.addCell(criarCelulaDados(a.getNomeCompleto()));
                 table.addCell(

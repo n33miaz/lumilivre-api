@@ -25,8 +25,8 @@ public class ImportacaoService {
     private static final Logger log = LoggerFactory.getLogger(ImportacaoService.class);
     private static final int BATCH_SIZE = 50;
 
-    private final AlunoRepository alunoRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final StudentRepository alunoRepository;
+    private final AppUserRepository usuarioRepository;
     private final CourseRepository courseRepository;
     private final StudyShiftRepository studyShiftRepository;
     private final AcademicModuleRepository academicModuleRepository;
@@ -36,8 +36,8 @@ public class ImportacaoService {
     private final PasswordEncoder passwordEncoder;
 
     public ImportacaoService(
-            AlunoRepository alunoRepository,
-            UsuarioRepository usuarioRepository,
+            StudentRepository alunoRepository,
+            AppUserRepository usuarioRepository,
             CourseRepository courseRepository,
             StudyShiftRepository studyShiftRepository,
             AcademicModuleRepository academicModuleRepository,
@@ -77,7 +77,7 @@ public class ImportacaoService {
 
     @Transactional
     protected String importarAlunos(MultipartFile file) throws Exception {
-        List<AlunoModel> alunosParaSalvar = new ArrayList<>();
+        List<Student> alunosParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> matriculasNoExcel = new HashSet<>();
 
@@ -116,7 +116,7 @@ public class ImportacaoService {
                         continue;
                     }
 
-                    AlunoModel aluno = criarAlunoFromRow(row, headerMap, coursesMap, studyShiftsMap, academicModulesMap);
+                    Student aluno = criarAlunoFromRow(row, headerMap, coursesMap, studyShiftsMap, academicModulesMap);
 
                     if (aluno.getCpf() != null && cpfsExistentes.contains(aluno.getCpf())) {
                         logErros.add(new ErroImportacao(linhaNum, "CPF já existe no sistema: " + aluno.getCpf()));
@@ -128,7 +128,7 @@ public class ImportacaoService {
                         continue;
                     }
 
-                    UsuarioModel usuario = new UsuarioModel();
+                    AppUser usuario = new AppUser();
                     usuario.setEmail(aluno.getEmail());
                     usuario.setSenha(passwordEncoder.encode(aluno.getMatricula())); // Senha padrão é a matrícula
                     usuario.setRole(Role.STUDENT);
@@ -146,11 +146,11 @@ public class ImportacaoService {
         return salvarEmLotes(alunosParaSalvar, alunoRepository, "alunos", logErros);
     }
 
-    private AlunoModel criarAlunoFromRow(Row row, Map<String, Integer> headerMap,
+    private Student criarAlunoFromRow(Row row, Map<String, Integer> headerMap,
             Map<Integer, Course> courses,
             Map<Integer, StudyShift> studyShifts,
             Map<Integer, AcademicModule> academicModules) {
-        AlunoModel aluno = new AlunoModel();
+        Student aluno = new Student();
         aluno.setMatricula(ExcelUtils.getString(row.getCell(headerMap.get("matricula"))));
         aluno.setNomeCompleto(ExcelUtils.getString(row.getCell(headerMap.get("nome_completo"))));
         aluno.setCpf(normalizeNumber(ExcelUtils.getString(row.getCell(headerMap.get("cpf")))));

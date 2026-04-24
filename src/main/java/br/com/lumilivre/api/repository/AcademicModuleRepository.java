@@ -23,13 +23,13 @@ public interface AcademicModuleRepository extends JpaRepository<AcademicModule, 
     @Query("""
             SELECT new br.com.lumilivre.api.dto.modulo.ModuloResumoResponse(m.id, m.name, COUNT(a))
             FROM AcademicModule m
-            LEFT JOIN m.alunos a
+            LEFT JOIN m.students a
             WHERE (:texto IS NULL OR m.name ILIKE %:texto%)
             GROUP BY m.id, m.name
             ORDER BY m.name
             """)
     Page<ModuloResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
-    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(m.name, SUM(a.emprestimosCount)) FROM AcademicModule m JOIN m.alunos a GROUP BY m.name HAVING SUM(a.emprestimosCount) > 0")
+    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(m.name, SUM(a.loansCount)) FROM AcademicModule m JOIN m.students a GROUP BY m.name HAVING SUM(a.loansCount) > 0")
     List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorModulo();
 }

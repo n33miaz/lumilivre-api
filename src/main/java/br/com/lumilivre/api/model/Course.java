@@ -20,9 +20,9 @@ public class Course {
     @Column(name = "name", nullable = false, length = 120, unique = true)
     private String name;
 
-    @OneToMany(mappedBy = "curso", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<AlunoModel> alunos = new ArrayList<>();
+    private List<Student> students = new ArrayList<>();
 }

@@ -11,7 +11,7 @@ import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;
 
 public interface SolicitacaoEmprestimoRepository extends JpaRepository<SolicitacaoEmprestimoModel, Integer> {
 
-	List<SolicitacaoEmprestimoModel> findByAlunoMatriculaAndStatus(String matricula, StatusSolicitacao status);
+	List<SolicitacaoEmprestimoModel> findByAlunoRegistrationNumberAndStatus(String registrationNumber, StatusSolicitacao status);
 
 	List<SolicitacaoEmprestimoModel> findByStatus(StatusSolicitacao status);
 
@@ -19,7 +19,7 @@ public interface SolicitacaoEmprestimoRepository extends JpaRepository<Solicitac
 
 	@Query("""
 			    SELECT new br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse(
-			        a.nomeCompleto,
+			        a.fullName,
 			        l.nome,
 			        ex.tombo,
 			        s.dataSolicitacao
@@ -33,7 +33,15 @@ public interface SolicitacaoEmprestimoRepository extends JpaRepository<Solicitac
 			""")
 	List<SolicitacaoDashboardResponse> findSolicitacoesPendentes();
 
-	List<SolicitacaoEmprestimoModel> findByAlunoMatriculaOrderByDataSolicitacaoDesc(String matricula);
+	List<SolicitacaoEmprestimoModel> findByAlunoRegistrationNumberOrderByDataSolicitacaoDesc(String registrationNumber);
 
 	long countByStatus(StatusSolicitacao status);
+
+	default List<SolicitacaoEmprestimoModel> findByAlunoMatriculaAndStatus(String matricula, StatusSolicitacao status) {
+		return findByAlunoRegistrationNumberAndStatus(matricula, status);
+	}
+
+	default List<SolicitacaoEmprestimoModel> findByAlunoMatriculaOrderByDataSolicitacaoDesc(String matricula) {
+		return findByAlunoRegistrationNumberOrderByDataSolicitacaoDesc(matricula);
+	}
 }

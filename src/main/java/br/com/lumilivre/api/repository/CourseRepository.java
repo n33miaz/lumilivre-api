@@ -45,11 +45,11 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     @Query("""
             SELECT new br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse(
                 c.name,
-                COUNT(a.matricula),
-                SUM(a.emprestimosCount)
+                COUNT(a.registrationNumber),
+                SUM(a.loansCount)
             )
             FROM Course c
-            LEFT JOIN c.alunos a
+            LEFT JOIN c.students a
             GROUP BY c.id, c.name
             ORDER BY c.name
             """)
@@ -58,7 +58,7 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     @Query("""
             SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.name, COUNT(a))
             FROM Course c
-            LEFT JOIN c.alunos a
+            LEFT JOIN c.students a
             WHERE (:texto IS NULL OR c.name ILIKE :texto)
             GROUP BY c.id, c.name
             """)
@@ -67,7 +67,7 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     @Query("""
             SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.name, COUNT(a))
             FROM Course c
-            LEFT JOIN c.alunos a
+            LEFT JOIN c.students a
             WHERE (:nome IS NULL OR c.name ILIKE :nome)
             GROUP BY c.id, c.name
             """)
@@ -76,13 +76,13 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     @Query("""
             SELECT new br.com.lumilivre.api.dto.curso.CursoResumoResponse(c.id, c.name, COUNT(a))
             FROM Course c
-            LEFT JOIN c.alunos a
+            LEFT JOIN c.students a
             WHERE (:texto IS NULL OR c.name ILIKE %:texto%)
             GROUP BY c.id, c.name
             ORDER BY c.name
             """)
     Page<CursoResumoResponse> findCursoParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 
-    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(c.name, SUM(a.emprestimosCount)) FROM Course c JOIN c.alunos a GROUP BY c.name HAVING SUM(a.emprestimosCount) > 0")
+    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(c.name, SUM(a.loansCount)) FROM Course c JOIN c.students a GROUP BY c.name HAVING SUM(a.loansCount) > 0")
     List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorCurso();
 }

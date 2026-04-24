@@ -34,11 +34,11 @@ import br.com.lumilivre.api.controller.EmprestimoController;
 import br.com.lumilivre.api.controller.LivroController;
 import br.com.lumilivre.api.controller.ReservaController;
 import br.com.lumilivre.api.controller.SolicitacaoEmprestimoController;
-import br.com.lumilivre.api.controller.system.UsuarioController;
+import br.com.lumilivre.api.controller.system.AppUserController;
 import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.model.Student;
 import br.com.lumilivre.api.model.EmprestimoModel;
-import br.com.lumilivre.api.model.UsuarioModel;
+import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.security.CustomUserDetails;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
@@ -50,14 +50,14 @@ import br.com.lumilivre.api.service.LivroService;
 import br.com.lumilivre.api.service.RecomendacaoService;
 import br.com.lumilivre.api.service.ReservaService;
 import br.com.lumilivre.api.service.SolicitacaoEmprestimoService;
-import br.com.lumilivre.api.service.UsuarioService;
+import br.com.lumilivre.api.service.AppUserService;
 
 @WebMvcTest(controllers = {
         LivroController.class,
         EmprestimoController.class,
         SolicitacaoEmprestimoController.class,
         ReservaController.class,
-        UsuarioController.class
+        AppUserController.class
 })
 @Import({
         SecurityConfig.class,
@@ -87,7 +87,7 @@ class SecurityRoleMatrixTest {
     private ReservaService reservaService;
 
     @MockBean
-    private UsuarioService usuarioService;
+    private AppUserService usuarioService;
 
     @MockBean
     private EmprestimoRepository emprestimoRepository;
@@ -240,7 +240,7 @@ class SecurityRoleMatrixTest {
 
     private static EmprestimoModel emprestimo(String matricula) {
         EmprestimoModel emprestimo = new EmprestimoModel();
-        AlunoModel aluno = new AlunoModel();
+        Student aluno = new Student();
         aluno.setMatricula(matricula);
         emprestimo.setAluno(aluno);
         return emprestimo;
@@ -335,14 +335,14 @@ class SecurityRoleMatrixTest {
             case ANONYMOUS -> throw new IllegalArgumentException("Anonymous actor has no principal");
         };
 
-        UsuarioModel usuario = new UsuarioModel();
+        AppUser usuario = new AppUser();
         usuario.setId(actor.ordinal());
         usuario.setEmail(actor.name().toLowerCase() + "@lumilivre.test");
         usuario.setSenha("{noop}password");
         usuario.setRole(role);
 
         if (role == Role.STUDENT) {
-            AlunoModel aluno = new AlunoModel();
+            Student aluno = new Student();
             aluno.setMatricula(STUDENT_MATRICULA);
             usuario.setAluno(aluno);
         }

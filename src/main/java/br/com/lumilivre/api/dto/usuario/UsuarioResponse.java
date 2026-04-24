@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.dto.usuario;
 
 import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.model.UsuarioModel;
+import br.com.lumilivre.api.model.AppUser;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +18,7 @@ public class UsuarioResponse {
     private Role role;
     private String matriculaAluno;
 
-    public UsuarioResponse(UsuarioModel usuario) {
+    public UsuarioResponse(AppUser usuario) {
         this.id = usuario.getId();
         this.email = usuario.getEmail();
         this.role = usuario.getRole();

@@ -20,11 +20,11 @@ import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilit
 import br.com.lumilivre.api.domain.policy.LoanPolicy.LoanPolicyViolationException;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
-import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.model.Student;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.LivroModel;
-import br.com.lumilivre.api.repository.AlunoRepository;
+import br.com.lumilivre.api.repository.StudentRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.ReservaRepository;
@@ -33,7 +33,7 @@ import br.com.lumilivre.api.repository.ReservaRepository;
 class EmprestimoServiceTest {
 
     @Mock
-    private AlunoRepository alunoRepository;
+    private StudentRepository alunoRepository;
 
     @Mock
     private ExemplarRepository exemplarRepository;
@@ -65,7 +65,7 @@ class EmprestimoServiceTest {
     @Test
     void cadastrarDeveBloquearAlunoComLimiteDeEmprestimosAtivos() {
         EmprestimoRequest request = request();
-        AlunoModel aluno = aluno();
+        Student aluno = aluno();
         when(alunoRepository.findByMatricula("12345")).thenReturn(Optional.of(aluno));
         when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(any(), any())).thenReturn(3L);
 
@@ -79,7 +79,7 @@ class EmprestimoServiceTest {
     @Test
     void cadastrarDeveBloquearAlunoComPenalidadeAtiva() {
         EmprestimoRequest request = request();
-        AlunoModel aluno = aluno();
+        Student aluno = aluno();
         aluno.setPenalidadeExpiraEm(LocalDateTime.now().plusDays(2));
         when(alunoRepository.findByMatricula("12345")).thenReturn(Optional.of(aluno));
         when(emprestimoRepository.countByAlunoMatriculaAndStatusEmprestimo(any(), any())).thenReturn(0L);
@@ -114,8 +114,8 @@ class EmprestimoServiceTest {
                 .build();
     }
 
-    private static AlunoModel aluno() {
-        AlunoModel aluno = new AlunoModel();
+    private static Student aluno() {
+        Student aluno = new Student();
         aluno.setMatricula("12345");
         aluno.setNomeCompleto("Aluno Teste");
         aluno.setEmail("aluno@lumilivre.test");

@@ -24,12 +24,12 @@ import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
-import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.model.Student;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.LivroModel;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;
-import br.com.lumilivre.api.repository.AlunoRepository;
+import br.com.lumilivre.api.repository.StudentRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.SolicitacaoEmprestimoRepository;
@@ -38,7 +38,7 @@ import br.com.lumilivre.api.repository.SolicitacaoEmprestimoRepository;
 class SolicitacaoEmprestimoServiceTest {
 
     @Mock
-    private AlunoRepository alunoRepository;
+    private StudentRepository alunoRepository;
 
     @Mock
     private ExemplarRepository exemplarRepository;
@@ -225,8 +225,8 @@ class SolicitacaoEmprestimoServiceTest {
         return solicitacao;
     }
 
-    private static AlunoModel aluno() {
-        AlunoModel aluno = new AlunoModel();
+    private static Student aluno() {
+        Student aluno = new Student();
         aluno.setMatricula("12345");
         aluno.setNomeCompleto("Aluno Teste");
         aluno.setEmail("aluno@lumilivre.test");

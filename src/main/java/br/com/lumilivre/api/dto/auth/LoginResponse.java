@@ -1,7 +1,8 @@
 package br.com.lumilivre.api.dto.auth;
 
-import br.com.lumilivre.api.model.UsuarioModel;
-import com.fasterxml.jackson.annotation.JsonProperty; // <--- IMPORTANTE
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import br.com.lumilivre.api.model.AppUser;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,7 +23,7 @@ public class LoginResponse {
     @JsonProperty("isInitialPassword")
     private boolean isInitialPassword;
 
-    public LoginResponse(UsuarioModel usuario, String token, boolean isInitialPassword) {
+    public LoginResponse(AppUser usuario, String token, boolean isInitialPassword) {
         this.id = usuario.getId();
         this.email = usuario.getEmail();
         this.role = usuario.getRole().name();

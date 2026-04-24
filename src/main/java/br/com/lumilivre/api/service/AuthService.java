@@ -15,10 +15,10 @@ import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.LoginResponse;
 import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
-import br.com.lumilivre.api.model.TokenResetSenhaModel;
-import br.com.lumilivre.api.model.UsuarioModel;
-import br.com.lumilivre.api.repository.TokenResetSenhaRepository;
-import br.com.lumilivre.api.repository.UsuarioRepository;
+import br.com.lumilivre.api.model.AppUser;
+import br.com.lumilivre.api.model.PasswordResetToken;
+import br.com.lumilivre.api.repository.AppUserRepository;
+import br.com.lumilivre.api.repository.PasswordResetTokenRepository;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.service.infra.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -27,79 +27,73 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UsuarioRepository ur;
+    private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final TokenResetSenhaRepository tokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
 
     public LoginResponse login(LoginRequest dto) {
-        UsuarioModel usuario = ur.findByEmailOrAluno_Matricula(dto.getUser(), dto.getUser())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
+        AppUser appUser = appUserRepository.findByEmailOrAluno_Matricula(dto.getUser(), dto.getUser())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("UsuÃ¡rio nÃ£o encontrado"));
 
-        if (!passwordEncoder.matches(dto.getSenha(), usuario.getSenha())) {
+        if (!passwordEncoder.matches(dto.getSenha(), appUser.getSenha())) {
             throw new BadCredentialsException("Senha incorreta");
         }
 
         boolean isInitialPassword = false;
-        if (usuario.getAluno() != null) {
-            String matricula = usuario.getAluno().getMatricula();
+        if (appUser.getAluno() != null) {
+            String matricula = appUser.getAluno().getMatricula();
             if (dto.getSenha().equals(matricula)) {
                 isInitialPassword = true;
             }
-        } else {
-            if (dto.getSenha().equals(usuario.getEmail())) {
-                isInitialPassword = true;
-            }
+        } else if (dto.getSenha().equals(appUser.getEmail())) {
+            isInitialPassword = true;
         }
 
         List<SimpleGrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + usuario.getRole().name()));
+                new SimpleGrantedAuthority("ROLE_" + appUser.getRole().name()));
 
-        User userDetails = new User(
-                usuario.getEmail(),
-                usuario.getSenha(),
-                authorities);
-
+        User userDetails = new User(appUser.getEmail(), appUser.getSenha(), authorities);
         String token = jwtUtil.generateToken(userDetails);
 
-        return new LoginResponse(usuario, token, isInitialPassword);
+        return new LoginResponse(appUser, token, isInitialPassword);
     }
 
     @Transactional
     public void solicitarResetSenha(String email) {
-        Optional<UsuarioModel> usuarioOpt = ur.findByEmail(email);
+        Optional<AppUser> appUserOpt = appUserRepository.findByEmail(email);
 
-        if (usuarioOpt.isPresent()) {
-            UsuarioModel usuario = usuarioOpt.get();
+        if (appUserOpt.isPresent()) {
+            AppUser appUser = appUserOpt.get();
             String token = UUID.randomUUID().toString();
 
-            TokenResetSenhaModel tokenReset = new TokenResetSenhaModel(token, usuario, 30);
-            tokenRepository.save(tokenReset);
+            PasswordResetToken passwordResetToken = new PasswordResetToken(token, appUser, 30);
+            passwordResetTokenRepository.save(passwordResetToken);
 
             String linkReset = "https://www.lumilivre.com.br/mudar-senha?token=" + token;
-            emailService.enviarEmailResetSenha(usuario.getEmail(), linkReset);
+            emailService.enviarEmailResetSenha(appUser.getEmail(), linkReset);
         }
     }
 
     public boolean validarTokenReset(String token) {
-        Optional<TokenResetSenhaModel> tokenOpt = tokenRepository.findByToken(token);
+        Optional<PasswordResetToken> tokenOpt = passwordResetTokenRepository.findByToken(token);
         return tokenOpt.isPresent() && !tokenOpt.get().isExpirado();
     }
 
     @Transactional
     public void mudarSenhaComToken(MudarSenhaTokenRequest dto) {
-        TokenResetSenhaModel tokenReset = tokenRepository.findByToken(dto.getToken())
-                .orElseThrow(() -> new IllegalArgumentException("Token inválido ou não encontrado."));
+        PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(dto.getToken())
+                .orElseThrow(() -> new IllegalArgumentException("Token invÃ¡lido ou nÃ£o encontrado."));
 
-        if (tokenReset.isExpirado()) {
+        if (passwordResetToken.isExpirado()) {
             throw new IllegalArgumentException("Token expirado.");
         }
 
-        UsuarioModel usuario = tokenReset.getUsuario();
-        usuario.setSenha(passwordEncoder.encode(dto.getNovaSenha()));
-        ur.save(usuario);
+        AppUser appUser = passwordResetToken.getUsuario();
+        appUser.setSenha(passwordEncoder.encode(dto.getNovaSenha()));
+        appUserRepository.save(appUser);
 
-        tokenRepository.delete(tokenReset);
+        passwordResetTokenRepository.delete(passwordResetToken);
     }
 }

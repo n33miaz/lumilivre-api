@@ -28,11 +28,11 @@ import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
 import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
-import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.model.Student;
 import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
-import br.com.lumilivre.api.repository.AlunoRepository;
+import br.com.lumilivre.api.repository.StudentRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.ReservaRepository;
@@ -43,7 +43,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EmprestimoService {
 
-    private final AlunoRepository alunoRepository;
+    private final StudentRepository alunoRepository;
     private final ExemplarRepository exemplarRepository;
     private final EmprestimoRepository emprestimoRepository;
     private final ReservaRepository reservaRepository;
@@ -66,7 +66,7 @@ public class EmprestimoService {
             throw new RegraDeNegocioException("A data de devolução não pode ser anterior à data de empréstimo.");
         }
 
-        AlunoModel aluno = alunoRepository.findByMatricula(dto.getAluno_matricula())
+        Student aluno = alunoRepository.findByMatricula(dto.getAluno_matricula())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno não encontrado."));
 
         // Limpa penalidade expirada antes de validar
@@ -143,7 +143,7 @@ public class EmprestimoService {
         }
 
         LocalDateTime agora = LocalDateTime.now();
-        AlunoModel aluno = emprestimo.getAluno();
+        Student aluno = emprestimo.getAluno();
 
         // cálculo de penalidade via PenaltyPolicy
         if (emprestimo.getDataDevolucao().isBefore(agora)) {
@@ -192,7 +192,7 @@ public class EmprestimoService {
         EmprestimoModel emprestimo = emprestimoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empréstimo não encontrado."));
 
-        AlunoModel aluno = emprestimo.getAluno();
+        Student aluno = emprestimo.getAluno();
         if (aluno != null) {
             aluno.decrementarEmprestimos();
             alunoRepository.save(aluno);
@@ -225,7 +225,7 @@ public class EmprestimoService {
             throw new RegraDeNegocioException("Empréstimo já concluído não pode ser renovado.");
         }
 
-        AlunoModel aluno = emprestimo.getAluno();
+        Student aluno = emprestimo.getAluno();
         Long livroId = emprestimo.getExemplar().getLivro().getId();
 
         boolean hasReservation = reservaRepository
@@ -379,7 +379,7 @@ public class EmprestimoService {
 
     // ================ MÉTODOS AUXILIARES ================
 
-    private void enviarEmailEmprestimo(AlunoModel aluno, ExemplarModel exemplar, EmprestimoRequest dto) {
+    private void enviarEmailEmprestimo(Student aluno, ExemplarModel exemplar, EmprestimoRequest dto) {
         String body = String.format(
                 "Olá %s,\n\nSeu empréstimo do livro '%s' foi registrado com sucesso.\n" +
                         "Data de empréstimo: %s\nData de devolução: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
@@ -390,7 +390,7 @@ public class EmprestimoService {
         outboxPublisher.publish(EventType.LOAN_CREATED, aluno.getEmail(), "Empréstimo registrado", body);
     }
 
-    private void enviarEmailConclusao(AlunoModel aluno, ExemplarModel exemplar, EmprestimoModel emprestimo) {
+    private void enviarEmailConclusao(Student aluno, ExemplarModel exemplar, EmprestimoModel emprestimo) {
         String body = String.format(
                 "Olá %s,\n\nSeu empréstimo do livro '%s' foi concluído.\n" +
                         "Status da penalidade: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",

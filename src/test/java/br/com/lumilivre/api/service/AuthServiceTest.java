@@ -26,11 +26,11 @@ import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
-import br.com.lumilivre.api.model.AlunoModel;
-import br.com.lumilivre.api.model.TokenResetSenhaModel;
-import br.com.lumilivre.api.model.UsuarioModel;
-import br.com.lumilivre.api.repository.TokenResetSenhaRepository;
-import br.com.lumilivre.api.repository.UsuarioRepository;
+import br.com.lumilivre.api.model.AppUser;
+import br.com.lumilivre.api.model.PasswordResetToken;
+import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.repository.AppUserRepository;
+import br.com.lumilivre.api.repository.PasswordResetTokenRepository;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.service.infra.EmailService;
 
@@ -38,7 +38,7 @@ import br.com.lumilivre.api.service.infra.EmailService;
 class AuthServiceTest {
 
     @Mock
-    private UsuarioRepository usuarioRepository;
+    private AppUserRepository usuarioRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -47,7 +47,7 @@ class AuthServiceTest {
     private JwtUtil jwtUtil;
 
     @Mock
-    private TokenResetSenhaRepository tokenRepository;
+    private PasswordResetTokenRepository tokenRepository;
 
     @Mock
     private EmailService emailService;
@@ -57,7 +57,7 @@ class AuthServiceTest {
 
     @Test
     void loginDeveAutenticarUsuarioAdminComEmail() {
-        UsuarioModel usuario = usuario(Role.ADMIN, null);
+        AppUser usuario = usuario(Role.ADMIN, null);
         when(usuarioRepository.findByEmailOrAluno_Matricula("admin@lumilivre.test", "admin@lumilivre.test"))
                 .thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("senha-segura", "hash")).thenReturn(true);
@@ -73,10 +73,10 @@ class AuthServiceTest {
 
     @Test
     void loginDeveMarcarSenhaInicialQuandoAlunoUsaMatricula() {
-        AlunoModel aluno = new AlunoModel();
+        Student aluno = new Student();
         aluno.setMatricula("12345");
 
-        UsuarioModel usuario = usuario(Role.STUDENT, aluno);
+        AppUser usuario = usuario(Role.STUDENT, aluno);
         when(usuarioRepository.findByEmailOrAluno_Matricula("12345", "12345")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("12345", "hash")).thenReturn(true);
         when(jwtUtil.generateToken(any(UserDetails.class))).thenReturn("jwt-token");
@@ -100,7 +100,7 @@ class AuthServiceTest {
 
     @Test
     void loginDeveFalharQuandoSenhaNaoConfere() {
-        UsuarioModel usuario = usuario(Role.LIBRARIAN, null);
+        AppUser usuario = usuario(Role.LIBRARIAN, null);
         when(usuarioRepository.findByEmailOrAluno_Matricula("biblioteca@lumilivre.test", "biblioteca@lumilivre.test"))
                 .thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("errada", "hash")).thenReturn(false);
@@ -113,12 +113,12 @@ class AuthServiceTest {
 
     @Test
     void solicitarResetSenhaDeveSalvarTokenEEnviarEmailQuandoUsuarioExiste() {
-        UsuarioModel usuario = usuario(Role.ADMIN, null);
+        AppUser usuario = usuario(Role.ADMIN, null);
         when(usuarioRepository.findByEmail("admin@lumilivre.test")).thenReturn(Optional.of(usuario));
 
         service.solicitarResetSenha("admin@lumilivre.test");
 
-        ArgumentCaptor<TokenResetSenhaModel> tokenCaptor = ArgumentCaptor.forClass(TokenResetSenhaModel.class);
+        ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
         verify(tokenRepository).save(tokenCaptor.capture());
         assertThat(tokenCaptor.getValue().getUsuario()).isSameAs(usuario);
         assertThat(tokenCaptor.getValue().isExpirado()).isFalse();
@@ -151,7 +151,7 @@ class AuthServiceTest {
 
     @Test
     void mudarSenhaComTokenDeveAtualizarSenhaEInvalidarToken() {
-        TokenResetSenhaModel tokenReset = tokenReset(LocalDateTime.now().plusMinutes(5));
+        PasswordResetToken tokenReset = tokenReset(LocalDateTime.now().plusMinutes(5));
         when(tokenRepository.findByToken("token-123")).thenReturn(Optional.of(tokenReset));
         when(passwordEncoder.encode("nova-senha")).thenReturn("novo-hash");
 
@@ -164,7 +164,7 @@ class AuthServiceTest {
 
     @Test
     void mudarSenhaComTokenDeveBloquearTokenExpirado() {
-        TokenResetSenhaModel tokenReset = tokenReset(LocalDateTime.now().minusMinutes(1));
+        PasswordResetToken tokenReset = tokenReset(LocalDateTime.now().minusMinutes(1));
         when(tokenRepository.findByToken("token-123")).thenReturn(Optional.of(tokenReset));
 
         assertThatThrownBy(() -> service.mudarSenhaComToken(new MudarSenhaTokenRequest("token-123", "nova-senha")))
@@ -176,16 +176,16 @@ class AuthServiceTest {
         verify(tokenRepository, never()).delete(any());
     }
 
-    private static TokenResetSenhaModel tokenReset(LocalDateTime expiration) {
-        TokenResetSenhaModel token = new TokenResetSenhaModel();
+    private static PasswordResetToken tokenReset(LocalDateTime expiration) {
+        PasswordResetToken token = new PasswordResetToken();
         token.setToken("token-123");
         token.setUsuario(usuario(Role.ADMIN, null));
         token.setDataExpiracao(expiration);
         return token;
     }
 
-    private static UsuarioModel usuario(Role role, AlunoModel aluno) {
-        UsuarioModel usuario = new UsuarioModel();
+    private static AppUser usuario(Role role, Student aluno) {
+        AppUser usuario = new AppUser();
         usuario.setId(1);
         usuario.setEmail(role == Role.STUDENT ? "aluno@lumilivre.test" : role.name().toLowerCase() + "@lumilivre.test");
         usuario.setSenha("hash");

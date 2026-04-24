@@ -1,14 +1,15 @@
 package br.com.lumilivre.api.dto.aluno;
 
-import br.com.lumilivre.api.enums.Penalidade;
-import br.com.lumilivre.api.model.AlunoModel;
+import java.time.LocalDate;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
+
+import br.com.lumilivre.api.enums.Penalidade;
+import br.com.lumilivre.api.model.Student;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
 
 @Data
 @Builder
@@ -39,7 +40,7 @@ public class AlunoResponse {
     private Penalidade penalidade;
     private Integer emprestimosCount;
 
-    public AlunoResponse(AlunoModel aluno) {
+    public AlunoResponse(Student aluno) {
         this.matricula = aluno.getMatricula();
         this.nomeCompleto = aluno.getNomeCompleto();
         this.foto = aluno.getFoto();

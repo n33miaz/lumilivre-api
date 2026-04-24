@@ -1,20 +1,19 @@
 package br.com.lumilivre.api.security;
 
 import java.util.Collection;
-
 import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import br.com.lumilivre.api.model.UsuarioModel;
+import br.com.lumilivre.api.model.AppUser;
 
 public class CustomUserDetails implements UserDetails {
 
-    private final UsuarioModel usuario;
+    private final AppUser usuario;
 
-    public CustomUserDetails(UsuarioModel usuario) {
+    public CustomUserDetails(AppUser usuario) {
         this.usuario = usuario;
     }
 
@@ -53,7 +52,7 @@ public class CustomUserDetails implements UserDetails {
         return true;
     }
 
-    public UsuarioModel getUsuario() {
+    public AppUser getUsuario() {
         return this.usuario;
     }
 }

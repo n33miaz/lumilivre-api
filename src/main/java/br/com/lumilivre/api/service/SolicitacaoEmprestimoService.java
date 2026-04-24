@@ -17,11 +17,11 @@ import br.com.lumilivre.api.dto.solicitacao.SolicitacaoResponse;
 import br.com.lumilivre.api.enums.StatusEmprestimo;
 import br.com.lumilivre.api.enums.StatusLivro;
 import br.com.lumilivre.api.enums.StatusSolicitacao;
-import br.com.lumilivre.api.model.AlunoModel;
+import br.com.lumilivre.api.model.Student;
 import br.com.lumilivre.api.model.ExemplarModel;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.SolicitacaoEmprestimoModel;
-import br.com.lumilivre.api.repository.AlunoRepository;
+import br.com.lumilivre.api.repository.StudentRepository;
 import br.com.lumilivre.api.repository.EmprestimoRepository;
 import br.com.lumilivre.api.repository.ExemplarRepository;
 import br.com.lumilivre.api.repository.SolicitacaoEmprestimoRepository;
@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SolicitacaoEmprestimoService {
 
-    private final AlunoRepository alunoRepository;
+    private final StudentRepository alunoRepository;
     private final ExemplarRepository exemplarRepository;
     private final SolicitacaoEmprestimoRepository solicitacaoRepository;
     private final EmprestimoService emprestimoService;
@@ -63,7 +63,7 @@ public class SolicitacaoEmprestimoService {
     @Transactional
     @CacheEvict(value = "dashboard_solicitacoes", allEntries = true)
     public ResponseEntity<String> solicitarEmprestimo(String matriculaAluno, String tomboExemplar) {
-        AlunoModel aluno = alunoRepository.findByMatricula(matriculaAluno).orElse(null);
+        Student aluno = alunoRepository.findByMatricula(matriculaAluno).orElse(null);
         if (aluno == null)
             return ResponseEntity.badRequest().body("Aluno não encontrado.");
 
@@ -88,7 +88,7 @@ public class SolicitacaoEmprestimoService {
     @Transactional
     @CacheEvict(value = "dashboard_solicitacoes", allEntries = true)
     public ResponseEntity<String> solicitarEmprestimoPorLivro(String matriculaAluno, Long livroId) {
-        AlunoModel aluno = alunoRepository.findByMatricula(matriculaAluno).orElse(null);
+        Student aluno = alunoRepository.findByMatricula(matriculaAluno).orElse(null);
         if (aluno == null)
             return ResponseEntity.badRequest().body("Aluno não encontrado.");
 
@@ -123,7 +123,7 @@ public class SolicitacaoEmprestimoService {
         if (solicitacao == null)
             return ResponseEntity.badRequest().body("Solicitação não encontrada.");
 
-        AlunoModel aluno = solicitacao.getAluno();
+        Student aluno = solicitacao.getAluno();
         ExemplarModel exemplar = solicitacao.getExemplar();
         RequestApprovalPolicy.validateProcessable(solicitacao.getStatus());
 
