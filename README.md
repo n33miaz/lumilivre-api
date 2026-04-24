@@ -165,14 +165,15 @@ O `application.properties` usa variáveis de ambiente (`${LUMILIVRE_*}`) para ma
 
 Variáveis obrigatórias:
 
-- `LUMILIVRE_DB_URL`
-- `LUMILIVRE_DB_USER`
+- `LUMILIVRE_DB_URL` (JDBC, Session pooler do Supabase em `:5432`, com `sslmode=require`)
+- `LUMILIVRE_DB_USER` (formato `postgres.<project-ref>`)
 - `LUMILIVRE_DB_PASSWORD`
-- `LUMILIVRE_JWT_SECRET`
+- `LUMILIVRE_JWT_SECRET` (≥ 64 caracteres aleatórios)
 - `LUMILIVRE_MAIL_USERNAME`
 - `LUMILIVRE_MAIL_PASSWORD`
 - `LUMILIVRE_SUPABASE_URL`
-- `LUMILIVRE_SUPABASE_KEY`
+- `LUMILIVRE_SUPABASE_KEY` (publishable / anon — exposição pública controlada)
+- `LUMILIVRE_SUPABASE_SERVICE_ROLE_KEY` (JWT `service_role` — **backend apenas**; bypassa RLS)
 
 ### Git Bash
 
@@ -225,7 +226,6 @@ As mensagens `Spring Data Redis - Could not safely identify store assignment` po
 ### Banco de dados e migrations
 
 Toda alteração de schema passa por **Flyway** em `src/main/resources/db/migration/V<seq>__<desc>.sql`.
-Veja `DATABASE.md` para convenção e ordem de aplicação (V1 baseline, V2 outbox, V3 audit+reserva, V4 views materializadas).
 
 <br/>
 
