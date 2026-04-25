@@ -1,16 +1,17 @@
 package br.com.lumilivre.api.dto.emprestimo;
 
-import br.com.lumilivre.api.enums.StatusEmprestimo;
 import java.time.LocalDate;
+import java.util.UUID;
+
+import br.com.lumilivre.api.enums.LoanStatus;
 
 public record EmprestimoAtivoResponse(
-
-                Integer id,
-                String livroNome,
-                String alunoNome,
-                String alunoMatricula,
-                String tombo,
-                LocalDate dataEmprestimo,
-                LocalDate dataDevolucao,
-                StatusEmprestimo statusEmprestimo) {
+		UUID id,
+		String livroNome,
+		String alunoNome,
+		String alunoMatricula,
+		String tombo,
+		LocalDate dataEmprestimo,
+		LocalDate dataDevolucao,
+		LoanStatus statusEmprestimo) {
 }

@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.LoginResponse;
 import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
-import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.PasswordResetToken;
 import br.com.lumilivre.api.repository.AppUserRepository;
@@ -34,16 +34,16 @@ public class AuthService {
     private final EmailService emailService;
 
     public LoginResponse login(LoginRequest dto) {
-        AppUser appUser = appUserRepository.findByEmailOrAluno_Matricula(dto.getUser(), dto.getUser())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("UsuÃ¡rio nÃ£o encontrado"));
+        AppUser appUser = appUserRepository.findByEmailOrRegistrationNumber(dto.getUser(), dto.getUser())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
-        if (!passwordEncoder.matches(dto.getSenha(), appUser.getSenha())) {
+        if (!passwordEncoder.matches(dto.getSenha(), appUser.getPasswordHash())) {
             throw new BadCredentialsException("Senha incorreta");
         }
 
         boolean isInitialPassword = false;
-        if (appUser.getAluno() != null) {
-            String matricula = appUser.getAluno().getMatricula();
+        if (appUser.getStudent() != null) {
+            String matricula = appUser.getStudent().getRegistrationNumber();
             if (dto.getSenha().equals(matricula)) {
                 isInitialPassword = true;
             }
@@ -54,7 +54,7 @@ public class AuthService {
         List<SimpleGrantedAuthority> authorities = List.of(
                 new SimpleGrantedAuthority("ROLE_" + appUser.getRole().name()));
 
-        User userDetails = new User(appUser.getEmail(), appUser.getSenha(), authorities);
+        User userDetails = new User(appUser.getEmail(), appUser.getPasswordHash(), authorities);
         String token = jwtUtil.generateToken(userDetails);
 
         return new LoginResponse(appUser, token, isInitialPassword);
@@ -78,20 +78,20 @@ public class AuthService {
 
     public boolean validarTokenReset(String token) {
         Optional<PasswordResetToken> tokenOpt = passwordResetTokenRepository.findByToken(token);
-        return tokenOpt.isPresent() && !tokenOpt.get().isExpirado();
+        return tokenOpt.isPresent() && !tokenOpt.get().isExpired();
     }
 
     @Transactional
     public void mudarSenhaComToken(MudarSenhaTokenRequest dto) {
         PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(dto.getToken())
-                .orElseThrow(() -> new IllegalArgumentException("Token invÃ¡lido ou nÃ£o encontrado."));
+                .orElseThrow(() -> new IllegalArgumentException("Token inválido ou não encontrado."));
 
-        if (passwordResetToken.isExpirado()) {
+        if (passwordResetToken.isExpired()) {
             throw new IllegalArgumentException("Token expirado.");
         }
 
-        AppUser appUser = passwordResetToken.getUsuario();
-        appUser.setSenha(passwordEncoder.encode(dto.getNovaSenha()));
+        AppUser appUser = passwordResetToken.getAppUser();
+        appUser.setPasswordHash(passwordEncoder.encode(dto.getNovaSenha()));
         appUserRepository.save(appUser);
 
         passwordResetTokenRepository.delete(passwordResetToken);

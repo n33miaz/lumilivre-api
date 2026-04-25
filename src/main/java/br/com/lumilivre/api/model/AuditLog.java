@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.model;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,5 +44,5 @@ public class AuditLog {
     private String errorMessage;
 
     @Column(nullable = false)
-    private LocalDateTime occurredAt;
+    private OffsetDateTime occurredAt;
 }

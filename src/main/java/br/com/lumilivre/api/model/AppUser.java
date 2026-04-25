@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import br.com.lumilivre.api.enums.Role;
 import jakarta.persistence.Column;
@@ -12,56 +13,66 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Entity(name = "AppUser")
-@Table(name = "usuario")
+@Table(name = "app_user")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class AppUser {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
+    private UUID id;
 
     @NotNull
-    @Column(name = "email", nullable = false, length = 255)
+    @Column(name = "email", nullable = false, length = 255, unique = true)
     private String email;
 
-    @Column(name = "senha", length = 255)
+    @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 255)
+    @Column(name = "role", nullable = false, length = 30)
     private Role role;
 
     @OneToOne
-    @JsonBackReference
-    @JoinColumn(name = "aluno_matricula", referencedColumnName = "matricula")
+    @JoinColumn(name = "student_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Student student;
 
-    public String getSenha() {
-        return passwordHash;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
+    @PrePersist
+    void prePersist() {
+        OffsetDateTime now = OffsetDateTime.now();
+        if (createdAt == null) createdAt = now;
+        if (updatedAt == null) updatedAt = now;
     }
 
-    public void setSenha(String senha) {
-        this.passwordHash = senha;
-    }
-
-    public Student getAluno() {
-        return student;
-    }
-
-    public void setAluno(Student aluno) {
-        this.student = aluno;
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = OffsetDateTime.now();
     }
 }

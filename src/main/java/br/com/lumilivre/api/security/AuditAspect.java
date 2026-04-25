@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.security;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -53,8 +53,8 @@ public class AuditAspect {
         if (auth == null || !auth.isAuthenticated()) return "anonymous";
         Object principal = auth.getPrincipal();
         if (principal instanceof CustomUserDetails cud) {
-            var aluno = cud.getUsuario().getAluno();
-            return aluno != null ? aluno.getMatricula() : cud.getUsername();
+            var student = cud.getAppUser().getStudent();
+            return student != null ? student.getRegistrationNumber() : cud.getUsername();
         }
         return auth.getName();
     }
@@ -95,7 +95,7 @@ public class AuditAspect {
                             .targetId(targetId)
                             .result(result)
                             .errorMessage(errorMessage)
-                            .occurredAt(LocalDateTime.now())
+                            .occurredAt(OffsetDateTime.now())
                             .build()
             );
         } catch (Exception e) {

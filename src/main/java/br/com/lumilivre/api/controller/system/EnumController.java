@@ -3,17 +3,18 @@ package br.com.lumilivre.api.controller.system;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import br.com.lumilivre.api.enums.StatusLivro;
-import br.com.lumilivre.api.enums.TipoCapa;
-import br.com.lumilivre.api.enums.StatusEmprestimo;
-import br.com.lumilivre.api.enums.Penalidade;
+
 import br.com.lumilivre.api.dto.comum.EnumResponse;
-import br.com.lumilivre.api.enums.ClassificacaoEtaria;
+import br.com.lumilivre.api.enums.AgeRating;
+import br.com.lumilivre.api.enums.BookCopyStatus;
+import br.com.lumilivre.api.enums.CoverType;
+import br.com.lumilivre.api.enums.LoanStatus;
+import br.com.lumilivre.api.enums.PenaltyCode;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,55 +26,31 @@ public class EnumController {
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/enums/{tipo}")
-    @Operation(summary = "Lista os valores de um Enum", description = "Endpoint para obter listas de valores de Enums estáticos.")
+    @Operation(summary = "Lista os valores de um Enum",
+               description = "Valores: STATUS_LIVRO, STATUS_EMPRESTIMO, PENALIDADE, TIPO_CAPA, CLASSIFICACAO_ETARIA.")
     @ApiResponse(responseCode = "200", description = "Lista de valores retornada com sucesso")
     @ApiResponse(responseCode = "400", description = "Tipo de lista não encontrado", content = @Content)
     public List<EnumResponse> listarEnum(
-            @Parameter(description = "O tipo de lista. Valores: STATUS_LIVRO, STATUS_EMPRESTIMO, PENALIDADE, TIPO_CAPA, CLASSIFICACAO_ETARIA.", example = "STATUS_LIVRO") @PathVariable String tipo) {
+            @Parameter(description = "O tipo de lista.", example = "STATUS_LIVRO")
+            @PathVariable String tipo) {
 
-        switch (tipo.toUpperCase()) {
-            case "STATUS_LIVRO":
-                return listarStatusLivros();
-            case "STATUS_EMPRESTIMO":
-                return listarStatusEmprestimos();
-            case "PENALIDADE":
-                return listarPenalidades();
-            case "TIPO_CAPA":
-                return listarTipoCapa();
-            case "CLASSIFICACAO_ETARIA":
-                return listarClassificacaoEtaria();
-            default:
-                throw new IllegalArgumentException("Tipo de lista não encontrado: " + tipo);
-        }
-    }
-
-    private List<EnumResponse> listarStatusLivros() {
-        return Arrays.stream(StatusLivro.values())
-                .map(s -> new EnumResponse(s.getPtBrCode(), s.getStatus()))
-                .collect(Collectors.toList());
-    }
-
-    private List<EnumResponse> listarStatusEmprestimos() {
-        return Arrays.stream(StatusEmprestimo.values())
-                .map(s -> new EnumResponse(s.getPtBrCode(), s.getStatus()))
-                .collect(Collectors.toList());
-    }
-
-    private List<EnumResponse> listarPenalidades() {
-        return Arrays.stream(Penalidade.values())
-                .map(s -> new EnumResponse(s.getPtBrCode(), s.getStatus()))
-                .collect(Collectors.toList());
-    }
-
-    private List<EnumResponse> listarClassificacaoEtaria() {
-        return Arrays.stream(ClassificacaoEtaria.values())
-                .map(c -> new EnumResponse(c.getPtBrCode(), c.getStatus()))
-                .collect(Collectors.toList());
-    }
-
-    private List<EnumResponse> listarTipoCapa() {
-        return Arrays.stream(TipoCapa.values())
-                .map(c -> new EnumResponse(c.getPtBrCode(), c.getStatus()))
-                .collect(Collectors.toList());
+        return switch (tipo.toUpperCase()) {
+            case "STATUS_LIVRO" -> Arrays.stream(BookCopyStatus.values())
+                    .map(s -> new EnumResponse(s.getPtBrCode(), s.getStatus()))
+                    .collect(Collectors.toList());
+            case "STATUS_EMPRESTIMO" -> Arrays.stream(LoanStatus.values())
+                    .map(s -> new EnumResponse(s.getPtBrCode(), s.getStatus()))
+                    .collect(Collectors.toList());
+            case "PENALIDADE" -> Arrays.stream(PenaltyCode.values())
+                    .map(s -> new EnumResponse(s.getPtBrCode(), s.getStatus()))
+                    .collect(Collectors.toList());
+            case "TIPO_CAPA" -> Arrays.stream(CoverType.values())
+                    .map(c -> new EnumResponse(c.getPtBrCode(), c.getStatus()))
+                    .collect(Collectors.toList());
+            case "CLASSIFICACAO_ETARIA" -> Arrays.stream(AgeRating.values())
+                    .map(c -> new EnumResponse(c.getPtBrCode(), c.getStatus()))
+                    .collect(Collectors.toList());
+            default -> throw new IllegalArgumentException("Tipo de lista não encontrado: " + tipo);
+        };
     }
 }

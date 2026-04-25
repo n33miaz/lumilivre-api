@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.service;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -56,11 +56,11 @@ public class OutboxPublisherService {
             try {
                 emailService.enviarEmail(event.getRecipientEmail(), event.getSubject(), event.getBody());
                 event.setStatus(EventStatus.SENT);
-                event.setProcessedAt(LocalDateTime.now());
+                event.setProcessedAt(OffsetDateTime.now());
                 log.info("Outbox email sent: id={}, type={}", event.getId(), event.getEventType());
             } catch (Exception e) {
                 event.setRetryCount(event.getRetryCount() + 1);
-                event.setNextRetryAt(LocalDateTime.now().plusMinutes(5L * event.getRetryCount()));
+                event.setNextRetryAt(OffsetDateTime.now().plusMinutes(5L * event.getRetryCount()));
 
                 if (event.getRetryCount() >= MAX_RETRIES) {
                     event.setStatus(EventStatus.FAILED);

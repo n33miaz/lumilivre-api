@@ -1,10 +1,13 @@
 package br.com.lumilivre.api.dto.emprestimo;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
-import br.com.lumilivre.api.enums.Penalidade;
-import br.com.lumilivre.api.enums.StatusEmprestimo;
-import br.com.lumilivre.api.model.EmprestimoModel;
+
+import br.com.lumilivre.api.enums.LoanStatus;
+import br.com.lumilivre.api.enums.PenaltyCode;
+import br.com.lumilivre.api.model.Loan;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,18 +17,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class EmprestimoResponse {
 
-	private Integer id;
+	private UUID id;
 
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-	private LocalDateTime dataEmprestimo;
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX")
+	private OffsetDateTime dataEmprestimo;
 
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-	private LocalDateTime dataDevolucao;
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX")
+	private OffsetDateTime dataDevolucao;
 
-	private StatusEmprestimo status;
-	private Penalidade penalidade;
+	private LoanStatus status;
+	private PenaltyCode penalidade;
 
-	private Long livroId;
+	private UUID livroId;
 	private String livroTitulo;
 	private String imagemUrl;
 
@@ -34,12 +37,12 @@ public class EmprestimoResponse {
 	private String exemplarTombo;
 
 	public EmprestimoResponse(
-			Integer id,
-			LocalDateTime dataEmprestimo,
-			LocalDateTime dataDevolucao,
-			StatusEmprestimo status,
-			Penalidade penalidade,
-			Long livroId,
+			UUID id,
+			OffsetDateTime dataEmprestimo,
+			OffsetDateTime dataDevolucao,
+			LoanStatus status,
+			PenaltyCode penalidade,
+			UUID livroId,
 			String livroTitulo,
 			String imagemUrl) {
 		this.id = id;
@@ -52,26 +55,26 @@ public class EmprestimoResponse {
 		this.imagemUrl = imagemUrl;
 	}
 
-	public EmprestimoResponse(EmprestimoModel model) {
-		this.id = model.getId();
-		this.dataEmprestimo = model.getDataEmprestimo();
-		this.dataDevolucao = model.getDataDevolucao();
-		this.status = model.getStatusEmprestimo();
-		this.penalidade = model.getPenalidade();
+	public EmprestimoResponse(Loan loan) {
+		this.id = loan.getId();
+		this.dataEmprestimo = loan.getBorrowedAt();
+		this.dataDevolucao = loan.getDueAt();
+		this.status = loan.getStatus();
+		this.penalidade = loan.getPenaltyCode();
 
-		if (model.getExemplar() != null) {
-			this.exemplarTombo = model.getExemplar().getTombo();
+		if (loan.getBookCopy() != null) {
+			this.exemplarTombo = loan.getBookCopy().getCopyCode();
 
-			if (model.getExemplar().getLivro() != null) {
-				this.livroTitulo = model.getExemplar().getLivro().getNome();
-				this.livroId = model.getExemplar().getLivro().getId();
-				this.imagemUrl = model.getExemplar().getLivro().getImagem();
+			if (loan.getBookCopy().getBook() != null) {
+				this.livroTitulo = loan.getBookCopy().getBook().getTitle();
+				this.livroId = loan.getBookCopy().getBook().getId();
+				this.imagemUrl = loan.getBookCopy().getBook().getCoverUrl();
 			}
 		}
 
-		if (model.getAluno() != null) {
-			this.alunoNome = model.getAluno().getNomeCompleto();
-			this.alunoMatricula = model.getAluno().getMatricula();
+		if (loan.getStudent() != null) {
+			this.alunoNome = loan.getStudent().getFullName();
+			this.alunoMatricula = loan.getStudent().getRegistrationNumber();
 		}
 	}
 }

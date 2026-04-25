@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.dto.livro;
 
-import br.com.lumilivre.api.enums.StatusLivro;
+import br.com.lumilivre.api.enums.BookCopyStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LivroListagemResponse {
 
-    private StatusLivro status;
+    private BookCopyStatus status;
     private String tomboExemplar;
     private String isbn;
     private String cdd;

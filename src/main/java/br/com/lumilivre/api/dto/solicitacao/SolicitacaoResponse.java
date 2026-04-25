@@ -1,7 +1,9 @@
 package br.com.lumilivre.api.dto.solicitacao;
 
-import java.time.LocalDateTime;
-import br.com.lumilivre.api.enums.StatusSolicitacao;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+import br.com.lumilivre.api.enums.LoanRequestStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,15 +15,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SolicitacaoResponse {
 
-    private Integer id;
+    private UUID id;
     private String alunoNome;
     private String alunoMatricula;
     private String exemplarTombo;
-    
-    private Long livroId;
+
+    private UUID livroId;
     private String livroNome;
-    
-    private LocalDateTime dataSolicitacao;
-    private StatusSolicitacao status;
+
+    private OffsetDateTime dataSolicitacao;
+    private LoanRequestStatus status;
     private String observacao;
 }

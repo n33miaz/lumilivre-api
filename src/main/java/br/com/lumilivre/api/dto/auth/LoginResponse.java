@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.dto.auth;
 
+import java.util.UUID;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import br.com.lumilivre.api.model.AppUser;
@@ -14,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoginResponse {
 
-    private Integer id;
+    private UUID id;
     private String email;
     private String role;
     private String matriculaAluno;
@@ -30,8 +32,8 @@ public class LoginResponse {
         this.token = token;
         this.isInitialPassword = isInitialPassword;
 
-        if (usuario.getAluno() != null) {
-            this.matriculaAluno = usuario.getAluno().getMatricula();
+        if (usuario.getStudent() != null) {
+            this.matriculaAluno = usuario.getStudent().getRegistrationNumber();
         }
     }
 }

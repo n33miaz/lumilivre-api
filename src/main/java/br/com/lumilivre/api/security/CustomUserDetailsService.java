@@ -19,12 +19,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<AppUser> usuarioOpt = appUserRepository.findByEmailOrAluno_Matricula(username, username);
+        Optional<AppUser> appUser = appUserRepository.findByEmailOrRegistrationNumber(username, username);
 
-        if (usuarioOpt.isEmpty()) {
-            throw new UsernameNotFoundException("UsuÃ¡rio nÃ£o encontrado: " + username);
+        if (appUser.isEmpty()) {
+            throw new UsernameNotFoundException("Usuário não encontrado: " + username);
         }
 
-        return new CustomUserDetails(usuarioOpt.get());
+        return new CustomUserDetails(appUser.get());
     }
 }

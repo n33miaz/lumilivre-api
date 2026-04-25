@@ -1,7 +1,9 @@
 package br.com.lumilivre.api.dto.emprestimo;
 
-import java.time.LocalDateTime;
-import br.com.lumilivre.api.enums.StatusEmprestimo;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+import br.com.lumilivre.api.enums.LoanStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,13 +13,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class EmprestimoListagemResponse {
 
-	private Integer id;
-	private StatusEmprestimo statusEmprestimo;
+	private UUID id;
+	private LoanStatus statusEmprestimo;
 	private String livroNome;
 	private String livroTombo;
 	private String nomeAluno;
 	private String matriculaAluno;
 	private String curso;
-	private LocalDateTime dataEmprestimo;
-	private LocalDateTime dataDevolucao;
+	private OffsetDateTime dataEmprestimo;
+	private OffsetDateTime dataDevolucao;
 }

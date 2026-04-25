@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.dto.livro;
 
+import java.util.UUID;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -19,7 +21,7 @@ public class ExemplarRequest {
 	private String status_livro;
 
 	@NotNull(message = "O ID do livro é obrigatório")
-	private Long livro_id;
+	private UUID livro_id;
 
 	@NotBlank(message = "A localização física é obrigatória")
 	private String localizacao_fisica;

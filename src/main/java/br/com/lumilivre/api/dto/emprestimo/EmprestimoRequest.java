@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.dto.emprestimo;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -17,15 +18,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class EmprestimoRequest {
 
-	private Integer id;
+	private UUID id;
 
 	@NotNull(message = "A data de empréstimo é obrigatória")
-	@JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
-	private LocalDateTime data_emprestimo;
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy HH:mm:ssXXX")
+	private OffsetDateTime data_emprestimo;
 
 	@NotNull(message = "A data de devolução é obrigatória")
-	@JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
-	private LocalDateTime data_devolucao;
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy HH:mm:ssXXX")
+	private OffsetDateTime data_devolucao;
 
 	private String penalidade;
 	private String status_emprestimo;

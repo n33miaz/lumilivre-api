@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.model;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Entity(name = "PasswordResetToken")
-@Table(name = "token_reset_senha")
+@Table(name = "password_reset_token")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,36 +33,25 @@ public class PasswordResetToken {
     private String token;
 
     @OneToOne(targetEntity = AppUser.class, fetch = FetchType.EAGER)
-    @JoinColumn(nullable = false, name = "usuario_id")
+    @JoinColumn(nullable = false, name = "app_user_id")
     @ToString.Exclude
     private AppUser appUser;
 
-    @Column(name = "data_expiracao", nullable = false)
-    private LocalDateTime expiresAt;
+    @Column(name = "expires_at", nullable = false)
+    private OffsetDateTime expiresAt;
 
-    public PasswordResetToken(String token, AppUser appUser, int minutosParaExpirar) {
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    public PasswordResetToken(String token, AppUser appUser, int minutesToExpire) {
         this.token = token;
         this.appUser = appUser;
-        this.expiresAt = LocalDateTime.now().plusMinutes(minutosParaExpirar);
+        OffsetDateTime now = OffsetDateTime.now();
+        this.expiresAt = now.plusMinutes(minutesToExpire);
+        this.createdAt = now;
     }
 
-    public AppUser getUsuario() {
-        return appUser;
-    }
-
-    public void setUsuario(AppUser usuario) {
-        this.appUser = usuario;
-    }
-
-    public LocalDateTime getDataExpiracao() {
-        return expiresAt;
-    }
-
-    public void setDataExpiracao(LocalDateTime dataExpiracao) {
-        this.expiresAt = dataExpiracao;
-    }
-
-    public boolean isExpirado() {
-        return LocalDateTime.now().isAfter(this.expiresAt);
+    public boolean isExpired() {
+        return OffsetDateTime.now().isAfter(this.expiresAt);
     }
 }

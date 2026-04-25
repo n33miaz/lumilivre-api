@@ -11,25 +11,25 @@ import br.com.lumilivre.api.model.AppUser;
 
 public class CustomUserDetails implements UserDetails {
 
-    private final AppUser usuario;
+    private final AppUser appUser;
 
-    public CustomUserDetails(AppUser usuario) {
-        this.usuario = usuario;
+    public CustomUserDetails(AppUser appUser) {
+        this.appUser = appUser;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRole().name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + appUser.getRole().name()));
     }
 
     @Override
     public String getPassword() {
-        return usuario.getSenha();
+        return appUser.getPasswordHash();
     }
 
     @Override
     public String getUsername() {
-        return usuario.getEmail();
+        return appUser.getEmail();
     }
 
     @Override
@@ -52,7 +52,7 @@ public class CustomUserDetails implements UserDetails {
         return true;
     }
 
-    public AppUser getUsuario() {
-        return this.usuario;
+    public AppUser getAppUser() {
+        return this.appUser;
     }
 }

@@ -17,7 +17,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import br.com.lumilivre.api.dto.integracao.google.GoogleBooksResponse;
 import br.com.lumilivre.api.dto.integracao.google.ImageLinks;
 import br.com.lumilivre.api.dto.integracao.google.VolumeInfo;
-import br.com.lumilivre.api.model.LivroModel;
+import br.com.lumilivre.api.model.Book;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 
@@ -33,9 +33,9 @@ public class GoogleBooksService {
         this.restTemplate = restTemplate;
     }
 
-    public record GoogleBookData(LivroModel livro, List<String> categories, Double averageRating) {}
+    public record GoogleBookData(Book livro, List<String> categories, Double averageRating) {}
 
-    public Optional<GoogleBookData> buscarLivroInteligente(String isbn, String titulo, String autor) {
+    public Optional<GoogleBookData> findBestBookMatch(String isbn, String titulo, String autor) {
         if (isbn != null && !isbn.isBlank()) {
             Optional<GoogleBookData> porIsbn = buscarNaApi("isbn:" + isbn);
             if (porIsbn.isPresent()) {
@@ -84,21 +84,21 @@ public class GoogleBooksService {
     private Optional<GoogleBookData> converterParaModel(VolumeInfo volumeInfo) {
         if (volumeInfo == null) return Optional.empty();
 
-        LivroModel livro = new LivroModel();
-        livro.setNome(volumeInfo.title());
-        livro.setEditora(volumeInfo.publisher());
-        livro.setSinopse(volumeInfo.description());
+        Book livro = new Book();
+        livro.setTitle(volumeInfo.title());
+        livro.setPublisher(volumeInfo.publisher());
+        livro.setSynopsis(volumeInfo.description());
 
         if (volumeInfo.authors() != null && !volumeInfo.authors().isEmpty()) {
-            livro.setAutor(String.join(", ", volumeInfo.authors()));
+            livro.setAuthor(String.join(", ", volumeInfo.authors()));
         }
 
         if (volumeInfo.pageCount() != null) {
-            livro.setNumero_paginas(volumeInfo.pageCount());
+            livro.setPageCount(volumeInfo.pageCount());
         }
 
-        parsearDataPublicacao(volumeInfo.publishedDate()).ifPresent(livro::setData_lancamento);
-        obterUrlImagem(volumeInfo.imageLinks()).ifPresent(livro::setImagem);
+        parsePublicationDate(volumeInfo.publishedDate()).ifPresent(livro::setPublicationDate);
+        getImageUrl(volumeInfo.imageLinks()).ifPresent(livro::setCoverUrl);
 
         Double rating = volumeInfo.averageRating();
         List<String> categories = volumeInfo.categories() != null ? volumeInfo.categories() : Collections.emptyList();
@@ -106,7 +106,7 @@ public class GoogleBooksService {
         return Optional.of(new GoogleBookData(livro, categories, rating));
     }
 
-    private Optional<LocalDate> parsearDataPublicacao(String publishedDate) {
+    private Optional<LocalDate> parsePublicationDate(String publishedDate) {
         if (publishedDate == null || publishedDate.isBlank()) return Optional.empty();
         try {
             return Optional.of(LocalDate.parse(publishedDate));
@@ -123,7 +123,7 @@ public class GoogleBooksService {
         }
     }
 
-    private Optional<String> obterUrlImagem(ImageLinks links) {
+    private Optional<String> getImageUrl(ImageLinks links) {
         if (links == null) return Optional.empty();
         String url = Optional.ofNullable(links.extraLarge())
                 .or(() -> Optional.ofNullable(links.large()))

@@ -7,7 +7,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.api.Test;
 
-import br.com.lumilivre.api.enums.Penalidade;
+import br.com.lumilivre.api.enums.PenaltyCode;
 
 class PenaltyPolicyTest {
 
@@ -23,7 +23,7 @@ class PenaltyPolicyTest {
             "90, BLOCK",
             "91, BAN"
     })
-    void calculateReturnsExpectedPenaltyForIntervalBoundaries(long daysLate, Penalidade expected) {
+    void calculateReturnsExpectedPenaltyForIntervalBoundaries(long daysLate, PenaltyCode expected) {
         assertThat(PenaltyPolicy.calculate(daysLate)).isEqualTo(expected);
     }
 
@@ -31,18 +31,18 @@ class PenaltyPolicyTest {
     void calculateRejectsNegativeDaysLate() {
         assertThatThrownBy(() -> PenaltyPolicy.calculate(-1))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("negativo");
+                .hasMessageContaining("negative");
     }
 
     @Test
     void isMoreSevereAcceptsAnyCandidateWhenCurrentIsNull() {
-        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.RECORD, null)).isTrue();
+        assertThat(PenaltyPolicy.isMoreSevere(PenaltyCode.RECORD, null)).isTrue();
     }
 
     @Test
     void isMoreSevereReturnsTrueOnlyForHigherSeverity() {
-        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.BLOCK, Penalidade.SUSPENSION)).isTrue();
-        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.WARNING, Penalidade.BLOCK)).isFalse();
-        assertThat(PenaltyPolicy.isMoreSevere(Penalidade.SUSPENSION, Penalidade.SUSPENSION)).isFalse();
+        assertThat(PenaltyPolicy.isMoreSevere(PenaltyCode.BLOCK, PenaltyCode.SUSPENSION)).isTrue();
+        assertThat(PenaltyPolicy.isMoreSevere(PenaltyCode.WARNING, PenaltyCode.BLOCK)).isFalse();
+        assertThat(PenaltyPolicy.isMoreSevere(PenaltyCode.SUSPENSION, PenaltyCode.SUSPENSION)).isFalse();
     }
 }

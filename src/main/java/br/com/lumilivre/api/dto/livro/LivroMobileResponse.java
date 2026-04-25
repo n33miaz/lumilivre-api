@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.dto.livro;
 
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,9 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LivroMobileResponse {
 
-    private Long id;
+    private UUID id;
     private String imagem;
     private String titulo;
     private String autor;
-    private Double avaliacao; 
+    private Double avaliacao;
 }

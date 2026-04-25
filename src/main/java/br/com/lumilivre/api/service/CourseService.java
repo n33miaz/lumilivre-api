@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.lumilivre.api.dto.curso.CursoRequest;
 import br.com.lumilivre.api.dto.curso.CursoResponse;
 import br.com.lumilivre.api.dto.curso.CursoResumoResponse;
-import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.Course;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.repository.CourseRepository;
@@ -51,7 +51,7 @@ public class CourseService {
     @Transactional
     public ResponseEntity<CursoResponse> atualizar(Integer id, CursoRequest dto) {
         Course curso = courseRepository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Curso não encontrado com ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com ID: " + id));
 
         curso.setName(dto.getNome());
 
@@ -63,7 +63,7 @@ public class CourseService {
     @Transactional
     public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
         if (!courseRepository.existsById(id)) {
-            throw new RecursoNaoEncontradoException("Curso não encontrado com ID: " + id);
+            throw new ResourceNotFoundException("Curso não encontrado com ID: " + id);
         }
 
         courseRepository.deleteById(id);

@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.model;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -64,8 +64,8 @@ public class OutboxEvent {
 
     @Builder.Default
     @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private OffsetDateTime createdAt = OffsetDateTime.now();
 
-    private LocalDateTime processedAt;
-    private LocalDateTime nextRetryAt;
+    private OffsetDateTime processedAt;
+    private OffsetDateTime nextRetryAt;
 }

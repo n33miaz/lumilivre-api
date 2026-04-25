@@ -48,8 +48,8 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()
                 && auth.getPrincipal() instanceof CustomUserDetails details) {
-            MDC.put("userId", String.valueOf(details.getUsuario().getId()));
-            MDC.put("userRole", details.getUsuario().getRole().name());
+            MDC.put("userId", String.valueOf(details.getAppUser().getId()));
+            MDC.put("userRole", details.getAppUser().getRole().name());
         }
     }
 }

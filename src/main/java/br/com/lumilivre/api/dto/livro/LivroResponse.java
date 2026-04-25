@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.dto.livro;
 
+import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.Genre;
-import br.com.lumilivre.api.model.LivroModel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Data
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class LivroResponse {
 
-    private Long id;
+    private UUID id;
     private String isbn;
     private String nome;
     private String autor;
@@ -31,50 +32,39 @@ public class LivroResponse {
     private String cdd;
     private String classificacaoEtaria;
     private String tipoCapa;
-    private Integer edicao;
+    private String edicao;
     private Integer volume;
-    private Integer quantidade;
     private Set<String> generos;
 
-    public LivroResponse(LivroModel livro) {
+    public LivroResponse(Book livro) {
         this.id = livro.getId();
         this.isbn = livro.getIsbn();
-        this.nome = livro.getNome();
-        this.autor = livro.getAutor();
-        this.editora = livro.getEditora();
-        this.dataLancamento = livro.getData_lancamento();
-        this.numeroPaginas = livro.getNumero_paginas();
-        this.sinopse = livro.getSinopse();
-        this.imagem = livro.getImagem();
+        this.nome = livro.getTitle();
+        this.autor = livro.getAuthor();
+        this.editora = livro.getPublisher();
+        this.dataLancamento = livro.getPublicationDate();
+        this.numeroPaginas = livro.getPageCount();
+        this.sinopse = livro.getSynopsis();
+        this.imagem = livro.getCoverUrl();
         this.volume = livro.getVolume();
-        this.quantidade = livro.getQuantidade();
+        this.edicao = livro.getEdition();
 
-        this.cdd = (livro.getCdd() != null)
-                ? livro.getCdd().getCode() + " - " + livro.getCdd().getDescription()
+        this.cdd = (livro.getDeweyClassification() != null)
+                ? livro.getDeweyClassification().getCode() + " - " + livro.getDeweyClassification().getDescription()
                 : null;
 
-        this.classificacaoEtaria = (livro.getClassificacao_etaria() != null)
-                ? livro.getClassificacao_etaria().getStatus()
+        this.classificacaoEtaria = (livro.getAgeRating() != null)
+                ? livro.getAgeRating().getStatus()
                 : null;
 
-        this.tipoCapa = (livro.getTipo_capa() != null)
-                ? livro.getTipo_capa().getStatus()
+        this.tipoCapa = (livro.getCoverType() != null)
+                ? livro.getCoverType().getStatus()
                 : null;
 
-        this.edicao = extrairNumeroEdicao(livro.getEdicao());
-
-        this.generos = Optional.ofNullable(livro.getGeneros())
+        this.generos = Optional.ofNullable(livro.getGenres())
                 .orElse(Collections.emptySet())
                 .stream()
                 .map(Genre::getName)
                 .collect(Collectors.toSet());
-    }
-
-    private Integer extrairNumeroEdicao(String edicaoTexto) {
-        if (edicaoTexto == null || edicaoTexto.isBlank()) {
-            return null;
-        }
-        String apenasNumeros = edicaoTexto.replaceAll("\\D", "");
-        return apenasNumeros.isEmpty() ? null : Integer.parseInt(apenasNumeros);
     }
 }

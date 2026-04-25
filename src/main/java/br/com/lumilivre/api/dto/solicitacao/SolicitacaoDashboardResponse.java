@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.dto.solicitacao;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,5 +14,5 @@ public class SolicitacaoDashboardResponse {
     private String alunoNome;
     private String livroNome;
     private String tombo;
-    private LocalDateTime dataSolicitacao;
+    private OffsetDateTime dataSolicitacao;
 }

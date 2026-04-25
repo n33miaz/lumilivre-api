@@ -9,6 +9,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -30,33 +31,33 @@ import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import br.com.lumilivre.api.controller.EmprestimoController;
-import br.com.lumilivre.api.controller.LivroController;
-import br.com.lumilivre.api.controller.ReservaController;
-import br.com.lumilivre.api.controller.SolicitacaoEmprestimoController;
+import br.com.lumilivre.api.controller.LoanController;
+import br.com.lumilivre.api.controller.BookController;
+import br.com.lumilivre.api.controller.ReservationController;
+import br.com.lumilivre.api.controller.LoanRequestController;
 import br.com.lumilivre.api.controller.system.AppUserController;
 import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.model.Student;
-import br.com.lumilivre.api.model.EmprestimoModel;
 import br.com.lumilivre.api.model.AppUser;
-import br.com.lumilivre.api.repository.EmprestimoRepository;
+import br.com.lumilivre.api.model.Loan;
+import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.security.CustomUserDetails;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtAuthenticationFilter;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.security.StudentAuthorizationService;
-import br.com.lumilivre.api.service.EmprestimoService;
-import br.com.lumilivre.api.service.LivroService;
-import br.com.lumilivre.api.service.RecomendacaoService;
-import br.com.lumilivre.api.service.ReservaService;
-import br.com.lumilivre.api.service.SolicitacaoEmprestimoService;
+import br.com.lumilivre.api.service.BookService;
+import br.com.lumilivre.api.service.LoanRequestService;
+import br.com.lumilivre.api.service.LoanService;
+import br.com.lumilivre.api.service.RecommendationService;
 import br.com.lumilivre.api.service.AppUserService;
+import br.com.lumilivre.api.service.ReservationService;
 
 @WebMvcTest(controllers = {
-        LivroController.class,
-        EmprestimoController.class,
-        SolicitacaoEmprestimoController.class,
-        ReservaController.class,
+        BookController.class,
+        LoanController.class,
+        LoanRequestController.class,
+        ReservationController.class,
         AppUserController.class
 })
 @Import({
@@ -67,30 +68,34 @@ import br.com.lumilivre.api.service.AppUserService;
 class SecurityRoleMatrixTest {
 
     private static final String STUDENT_MATRICULA = "12345";
+    private static final UUID BOOK_ID = UUID.fromString("00000000-0000-0000-0000-000000000010");
+    private static final UUID OWN_LOAN_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID OTHER_LOAN_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    private static final UUID RESERVATION_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
-    private LivroService livroService;
+    private BookService livroService;
 
     @MockBean
-    private RecomendacaoService recomendacaoService;
+    private RecommendationService recommendationService;
 
     @MockBean
-    private EmprestimoService emprestimoService;
+    private LoanService loanService;
 
     @MockBean
-    private SolicitacaoEmprestimoService solicitacaoEmprestimoService;
+    private LoanRequestService loanRequestService;
 
     @MockBean
-    private ReservaService reservaService;
+    private ReservationService reservationService;
 
     @MockBean
     private AppUserService usuarioService;
 
     @MockBean
-    private EmprestimoRepository emprestimoRepository;
+    private LoanRepository loanRepository;
 
     @MockBean
     private JwtUtil jwtUtil;
@@ -104,19 +109,19 @@ class SecurityRoleMatrixTest {
         when(livroService.findById(any())).thenReturn(Optional.empty());
         when(livroService.buscarParaListaAdmin(any(Pageable.class))).thenReturn(Page.empty());
 
-        when(emprestimoService.gerarRankingAlunos(anyInt(), any(), any(), any())).thenReturn(List.of());
-        when(emprestimoService.buscarEmprestimoParaListaAdmin(any(Pageable.class))).thenReturn(Page.empty());
-        when(emprestimoService.listarEmprestimosAluno(anyString())).thenReturn(List.of());
+        when(loanService.gerarRankingAlunos(anyInt(), any(), any(), any())).thenReturn(List.of());
+        when(loanService.buscarEmprestimoParaListaAdmin(any(Pageable.class))).thenReturn(Page.empty());
+        when(loanService.listarEmprestimosAluno(anyString())).thenReturn(List.of());
 
-        when(solicitacaoEmprestimoService.solicitarEmprestimo(anyString(), anyString()))
+        when(loanRequestService.solicitarEmprestimo(anyString(), anyString()))
                 .thenReturn(ResponseEntity.ok("Solicitacao registrada"));
-        when(solicitacaoEmprestimoService.solicitarEmprestimoPorLivro(anyString(), any()))
+        when(loanRequestService.solicitarEmprestimoPorLivro(anyString(), any()))
                 .thenReturn(ResponseEntity.ok("Solicitacao registrada"));
 
         when(usuarioService.buscarUsuarioParaListaAdmin(any(Pageable.class))).thenReturn(Page.empty());
 
-        when(emprestimoRepository.findById(1)).thenReturn(Optional.of(emprestimo(STUDENT_MATRICULA)));
-        when(emprestimoRepository.findById(2)).thenReturn(Optional.of(emprestimo("99999")));
+        when(loanRepository.findById(OWN_LOAN_ID)).thenReturn(Optional.of(loan(STUDENT_MATRICULA)));
+        when(loanRepository.findById(OTHER_LOAN_ID)).thenReturn(Optional.of(loan("99999")));
     }
 
     @ParameterizedTest(name = "{0} as {1} => {2}")
@@ -138,7 +143,7 @@ class SecurityRoleMatrixTest {
                 EndpointCase.get("catalogo publico", "/livros/catalogo-mobile",
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
-                EndpointCase.get("detalhe livro", "/livros/1",
+                EndpointCase.get("detalhe livro", "/livros/" + BOOK_ID,
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.ALLOWED,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
                 EndpointCase.get("livros admin", "/livros/home",
@@ -167,19 +172,19 @@ class SecurityRoleMatrixTest {
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.FORBIDDEN,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
                 EndpointCase.post("solicitar emprestimo mobile",
-                        "/solicitacoes/solicitar-mobile?matriculaAluno=" + STUDENT_MATRICULA + "&livroId=1",
+                        "/solicitacoes/solicitar-mobile?matriculaAluno=" + STUDENT_MATRICULA + "&livroId=" + BOOK_ID,
                         null,
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.ALLOWED,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
                 EndpointCase.post("solicitar emprestimo mobile outro aluno",
-                        "/solicitacoes/solicitar-mobile?matriculaAluno=99999&livroId=1",
+                        "/solicitacoes/solicitar-mobile?matriculaAluno=99999&livroId=" + BOOK_ID,
                         null,
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.FORBIDDEN,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
-                EndpointCase.put("renovar emprestimo proprio", "/emprestimos/renovar/1", null,
+                EndpointCase.put("renovar emprestimo proprio", "/emprestimos/renovar/" + OWN_LOAN_ID, null,
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.ALLOWED,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
-                EndpointCase.put("renovar emprestimo outro aluno", "/emprestimos/renovar/2", null,
+                EndpointCase.put("renovar emprestimo outro aluno", "/emprestimos/renovar/" + OTHER_LOAN_ID, null,
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.FORBIDDEN,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
                 EndpointCase.get("recomendacoes proprio aluno",
@@ -191,21 +196,21 @@ class SecurityRoleMatrixTest {
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.FORBIDDEN,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
                 EndpointCase.post("reserva proprio aluno",
-                        "/reservas?matricula=" + STUDENT_MATRICULA + "&livroId=1",
+                        "/reservas?matricula=" + STUDENT_MATRICULA + "&livroId=" + BOOK_ID,
                         null,
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.ALLOWED,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
                 EndpointCase.post("reserva outro aluno",
-                        "/reservas?matricula=99999&livroId=1",
+                        "/reservas?matricula=99999&livroId=" + BOOK_ID,
                         null,
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.FORBIDDEN,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
                 EndpointCase.delete("cancelar reserva proprio aluno",
-                        "/reservas/1/cancelar?matricula=" + STUDENT_MATRICULA,
+                        "/reservas/" + RESERVATION_ID + "/cancelar?matricula=" + STUDENT_MATRICULA,
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.ALLOWED,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
                 EndpointCase.delete("cancelar reserva outro aluno",
-                        "/reservas/1/cancelar?matricula=99999",
+                        "/reservas/" + RESERVATION_ID + "/cancelar?matricula=99999",
                         AccessExpectation.UNAUTHORIZED, AccessExpectation.FORBIDDEN,
                         AccessExpectation.ALLOWED, AccessExpectation.ALLOWED),
                 EndpointCase.get("usuarios home", "/usuarios/home",
@@ -238,12 +243,12 @@ class SecurityRoleMatrixTest {
         ADMIN
     }
 
-    private static EmprestimoModel emprestimo(String matricula) {
-        EmprestimoModel emprestimo = new EmprestimoModel();
-        Student aluno = new Student();
-        aluno.setMatricula(matricula);
-        emprestimo.setAluno(aluno);
-        return emprestimo;
+    private static Loan loan(String matricula) {
+        Loan loan = new Loan();
+        Student student = new Student();
+        student.setRegistrationNumber(matricula);
+        loan.setStudent(student);
+        return loan;
     }
 
     private record EndpointCase(
@@ -336,15 +341,15 @@ class SecurityRoleMatrixTest {
         };
 
         AppUser usuario = new AppUser();
-        usuario.setId(actor.ordinal());
+        usuario.setId(new UUID(0L, actor.ordinal()));
         usuario.setEmail(actor.name().toLowerCase() + "@lumilivre.test");
-        usuario.setSenha("{noop}password");
+        usuario.setPasswordHash("{noop}password");
         usuario.setRole(role);
 
         if (role == Role.STUDENT) {
             Student aluno = new Student();
-            aluno.setMatricula(STUDENT_MATRICULA);
-            usuario.setAluno(aluno);
+            aluno.setRegistrationNumber(STUDENT_MATRICULA);
+            usuario.setStudent(aluno);
         }
 
         return new CustomUserDetails(usuario);

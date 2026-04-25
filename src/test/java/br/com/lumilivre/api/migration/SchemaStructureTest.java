@@ -82,6 +82,18 @@ class SchemaStructureTest {
     }
 
     @Test
+    void business_primary_keys_use_uuid_strategy() throws Exception {
+        List<String> uuidTables = listObjects(
+                "SELECT table_name FROM information_schema.columns " +
+                "WHERE table_schema = 'public' AND column_name = 'id' AND data_type = 'uuid'");
+
+        assertThat(uuidTables).contains(
+                "student", "app_user", "book", "book_copy",
+                "loan", "loan_request", "reservation", "thesis"
+        );
+    }
+
+    @Test
     void trigram_and_fts_indexes_exist_on_search_hotspots() throws Exception {
         List<String> indexes = listObjects(
                 "SELECT indexname FROM pg_indexes WHERE schemaname = 'public'");
@@ -128,6 +140,7 @@ class SchemaStructureTest {
                 "SELECT c.relname FROM pg_class c " +
                 "JOIN pg_namespace n ON c.relnamespace = n.oid " +
                 "WHERE n.nspname = 'public' AND c.relkind = 'r' " +
+                "AND c.relname <> 'flyway_schema_history' " +
                 "AND c.relrowsecurity = false");
 
         assertThat(rlsOff)

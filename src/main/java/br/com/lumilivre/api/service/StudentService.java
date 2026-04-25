@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.service;
 
+import static br.com.lumilivre.api.config.CacheNames.STUDENT_COUNT;
+
 import java.time.LocalDate;
 
 import org.springframework.cache.annotation.CacheEvict;
@@ -13,10 +15,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import br.com.lumilivre.api.dto.aluno.AlunoRequest;
 import br.com.lumilivre.api.dto.aluno.AlunoResumoResponse;
-import br.com.lumilivre.api.enums.Penalidade;
+import br.com.lumilivre.api.enums.PenaltyCode;
 import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
-import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.AcademicModule;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.Course;
@@ -79,7 +81,7 @@ public class StudentService {
     public Page<AlunoResumoResponse> buscarAvancado(String penalidadeStr, String matricula, String nome,
             String cursoNome, Integer turnoId, Integer moduloId, LocalDate dataNascimento,
             String email, String celular, Pageable pageable) {
-        Penalidade penalidadeEnum = parseEnum(penalidadeStr, Penalidade.class);
+        PenaltyCode penalidadeEnum = parseEnum(penalidadeStr, PenaltyCode.class);
         String nomeFiltro = criarFiltroLike(nome);
         String cursoNomeFiltro = criarFiltroLike(cursoNome);
         String emailFiltro = criarFiltroLike(email);
@@ -90,28 +92,28 @@ public class StudentService {
     }
 
     public Student buscarPorMatricula(String matricula) {
-        return studentRepository.findByMatricula(matricula)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno nÃ£o encontrado."));
+        return studentRepository.findByRegistrationNumber(matricula)
+                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
     }
 
-    @Cacheable(value = "contagem_alunos")
+    @Cacheable(value = STUDENT_COUNT)
     public long getContagemTotal() {
         return studentRepository.count();
     }
 
     @Transactional
-    @CacheEvict(value = "contagem_alunos", allEntries = true)
+    @CacheEvict(value = STUDENT_COUNT, allEntries = true)
     public Student cadastrar(AlunoRequest dto) {
-        if (studentRepository.existsByMatricula(dto.getMatricula())) {
-            throw new RegraDeNegocioException("MatrÃ­cula jÃ¡ cadastrada.");
+        if (studentRepository.existsByRegistrationNumber(dto.getMatricula())) {
+            throw new BusinessRuleException("Matrícula já cadastrada.");
         }
 
         if (dto.getCpf() != null && !dto.getCpf().isBlank() && studentRepository.existsByCpf(dto.getCpf())) {
-            throw new RegraDeNegocioException("CPF jÃ¡ cadastrado.");
+            throw new BusinessRuleException("CPF já cadastrado.");
         }
 
         if (dto.getEmail() != null && !dto.getEmail().isBlank() && appUserRepository.existsByEmail(dto.getEmail())) {
-            throw new RegraDeNegocioException("E-mail jÃ¡ estÃ¡ em uso.");
+            throw new BusinessRuleException("E-mail já está em uso.");
         }
 
         RelatedEntities relatedEntities = buscarEntidadesRelacionadas(dto);
@@ -122,14 +124,14 @@ public class StudentService {
 
         if (student.getEmail() != null && !student.getEmail().isBlank()) {
             AppUser appUser = criarUsuarioParaAluno(student);
-            student.setUsuario(appUser);
+            student.setAppUser(appUser);
         }
 
         Student savedStudent = studentRepository.save(student);
 
         if (student.getEmail() != null && !student.getEmail().isBlank()) {
             try {
-                emailService.enviarSenhaInicial(student.getEmail(), student.getNomeCompleto(), dto.getMatricula());
+                emailService.enviarSenhaInicial(student.getEmail(), student.getFullName(), dto.getMatricula());
             } catch (Exception e) {
                 System.err.println("Erro ao enviar email: " + e.getMessage());
             }
@@ -140,13 +142,13 @@ public class StudentService {
 
     @Transactional
     public Student atualizar(String matricula, AlunoRequest dto) {
-        Student student = studentRepository.findByMatricula(matricula)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno nÃ£o encontrado."));
+        Student student = studentRepository.findByRegistrationNumber(matricula)
+                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
 
         if (dto.getCpf() != null && !dto.getCpf().isBlank()) {
             boolean cpfMudou = student.getCpf() == null || !student.getCpf().equals(dto.getCpf());
             if (cpfMudou && studentRepository.existsByCpf(dto.getCpf())) {
-                throw new RegraDeNegocioException("Este CPF jÃ¡ estÃ¡ sendo usado por outro aluno.");
+                throw new BusinessRuleException("Este CPF já está sendo usado por outro aluno.");
             }
         }
 
@@ -159,50 +161,50 @@ public class StudentService {
         mapearDtoParaEntidade(student, dto, relatedEntities);
         preencherEnderecoPorCep(student, dto.getCep());
 
-        if (cpfMudou && student.getUsuario() != null && dto.getCpf() != null) {
-            student.getUsuario().setSenha(passwordEncoder.encode(dto.getCpf()));
+        if (cpfMudou && student.getAppUser() != null && dto.getCpf() != null) {
+            student.getAppUser().setPasswordHash(passwordEncoder.encode(dto.getCpf()));
         }
 
-        if (student.getUsuario() != null && !student.getEmail().equals(student.getUsuario().getEmail())) {
-            student.getUsuario().setEmail(student.getEmail());
+        if (student.getAppUser() != null && !student.getEmail().equals(student.getAppUser().getEmail())) {
+            student.getAppUser().setEmail(student.getEmail());
         }
 
         return studentRepository.save(student);
     }
 
     @Transactional
-    @CacheEvict(value = "contagem_alunos", allEntries = true)
+    @CacheEvict(value = STUDENT_COUNT, allEntries = true)
     public void excluir(String matricula) {
-        Student student = studentRepository.findByMatricula(matricula)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno nÃ£o encontrado."));
+        Student student = studentRepository.findByRegistrationNumber(matricula)
+                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
 
-        if (student.getUsuario() != null) {
-            appUserRepository.delete(student.getUsuario());
+        if (student.getAppUser() != null) {
+            appUserRepository.delete(student.getAppUser());
         }
         studentRepository.delete(student);
     }
 
     @Transactional
     public void resetarSenha(String matricula) {
-        Student student = studentRepository.findByMatricula(matricula)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno nÃ£o encontrado."));
+        Student student = studentRepository.findByRegistrationNumber(matricula)
+                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
 
-        if (student.getUsuario() == null) {
-            throw new RegraDeNegocioException("Este aluno nÃ£o possui um usuÃ¡rio vinculado para resetar a senha.");
+        if (student.getAppUser() == null) {
+            throw new BusinessRuleException("Este aluno não possui um usuário vinculado para resetar a senha.");
         }
 
-        student.getUsuario().setSenha(passwordEncoder.encode(student.getMatricula()));
-        appUserRepository.save(student.getUsuario());
+        student.getAppUser().setPasswordHash(passwordEncoder.encode(student.getRegistrationNumber()));
+        appUserRepository.save(student.getAppUser());
     }
 
     @Transactional
     public void uploadFoto(String matricula, MultipartFile file) {
-        Student student = studentRepository.findByMatricula(matricula)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Aluno nÃ£o encontrado."));
+        Student student = studentRepository.findByRegistrationNumber(matricula)
+                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
 
         try {
             String url = storageService.uploadFile(file, "alunos");
-            student.setFoto(url);
+            student.setAvatarUrl(url);
             studentRepository.save(student);
         } catch (Exception e) {
             throw new RuntimeException("Erro ao enviar foto de perfil: " + e.getMessage());
@@ -211,37 +213,37 @@ public class StudentService {
 
     private RelatedEntities buscarEntidadesRelacionadas(AlunoRequest dto) {
         Course course = courseRepository.findById(dto.getCursoId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Curso nÃ£o encontrado (ID: " + dto.getCursoId() + ")"));
+                .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado (ID: " + dto.getCursoId() + ")"));
 
         StudyShift studyShift = studyShiftRepository.findById(dto.getTurnoId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Turno nÃ£o encontrado (ID: " + dto.getTurnoId() + ")"));
+                .orElseThrow(() -> new ResourceNotFoundException("Turno não encontrado (ID: " + dto.getTurnoId() + ")"));
 
         AcademicModule academicModule = academicModuleRepository.findById(dto.getModuloId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("MÃ³dulo nÃ£o encontrado (ID: " + dto.getModuloId() + ")"));
+                .orElseThrow(() -> new ResourceNotFoundException("Módulo não encontrado (ID: " + dto.getModuloId() + ")"));
 
         return new RelatedEntities(course, studyShift, academicModule);
     }
 
     private void mapearDtoParaEntidade(Student student, AlunoRequest dto, RelatedEntities relatedEntities) {
         if (dto.getMatricula() != null) {
-            student.setMatricula(dto.getMatricula());
+            student.setRegistrationNumber(dto.getMatricula());
         }
-        student.setNomeCompleto(dto.getNomeCompleto());
+        student.setFullName(dto.getNomeCompleto());
         student.setCpf(dto.getCpf());
-        student.setDataNascimento(dto.getDataNascimento());
-        student.setCelular(dto.getCelular());
+        student.setBirthDate(dto.getDataNascimento());
+        student.setPhoneNumber(dto.getCelular());
         student.setEmail(dto.getEmail());
-        student.setNumero_casa(dto.getNumeroCasa());
-        student.setComplemento(dto.getComplemento());
-        student.setCurso(relatedEntities.course());
-        student.setTurno(relatedEntities.studyShift());
-        student.setModulo(relatedEntities.academicModule());
+        student.setStreetNumber(dto.getNumeroCasa());
+        student.setAddressComplement(dto.getComplemento());
+        student.setCourse(relatedEntities.course());
+        student.setStudyShift(relatedEntities.studyShift());
+        student.setAcademicModule(relatedEntities.academicModule());
 
         if (dto.getPenalidade() != null) {
             if (dto.getPenalidade().isBlank()) {
-                student.setPenalidade(null);
+                student.setPenaltyCode(null);
             } else {
-                student.setPenalidade(parseEnum(dto.getPenalidade(), Penalidade.class));
+                student.setPenaltyCode(parseEnum(dto.getPenalidade(), PenaltyCode.class));
             }
         }
     }
@@ -256,11 +258,11 @@ public class StudentService {
             try {
                 AlunoRequest enderecoDTO = cepService.buscarEnderecoPorCep(cepLimpo);
                 if (enderecoDTO != null && enderecoDTO.getLogradouro() != null) {
-                    student.setCep(cepLimpo);
-                    student.setLogradouro(enderecoDTO.getLogradouro());
-                    student.setLocalidade(enderecoDTO.getLocalidade());
-                    student.setBairro(enderecoDTO.getBairro());
-                    student.setUf(enderecoDTO.getUf());
+                    student.setPostalCode(cepLimpo);
+                    student.setStreet(enderecoDTO.getLogradouro());
+                    student.setCity(enderecoDTO.getLocalidade());
+                    student.setDistrict(enderecoDTO.getBairro());
+                    student.setStateCode(enderecoDTO.getUf());
                 }
             } catch (Exception e) {
                 // falha silenciosa
@@ -271,9 +273,9 @@ public class StudentService {
     private AppUser criarUsuarioParaAluno(Student student) {
         AppUser appUser = new AppUser();
         appUser.setEmail(student.getEmail());
-        appUser.setSenha(passwordEncoder.encode(student.getMatricula()));
+        appUser.setPasswordHash(passwordEncoder.encode(student.getRegistrationNumber()));
         appUser.setRole(Role.STUDENT);
-        appUser.setAluno(student);
+        appUser.setStudent(student);
         return appUser;
     }
 

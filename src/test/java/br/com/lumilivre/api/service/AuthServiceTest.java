@@ -9,8 +9,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
 import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.PasswordResetToken;
 import br.com.lumilivre.api.model.Student;
@@ -58,7 +59,7 @@ class AuthServiceTest {
     @Test
     void loginDeveAutenticarUsuarioAdminComEmail() {
         AppUser usuario = usuario(Role.ADMIN, null);
-        when(usuarioRepository.findByEmailOrAluno_Matricula("admin@lumilivre.test", "admin@lumilivre.test"))
+        when(usuarioRepository.findByEmailOrRegistrationNumber("admin@lumilivre.test", "admin@lumilivre.test"))
                 .thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("senha-segura", "hash")).thenReturn(true);
         when(jwtUtil.generateToken(any(UserDetails.class))).thenReturn("jwt-token");
@@ -74,10 +75,10 @@ class AuthServiceTest {
     @Test
     void loginDeveMarcarSenhaInicialQuandoAlunoUsaMatricula() {
         Student aluno = new Student();
-        aluno.setMatricula("12345");
+        aluno.setRegistrationNumber("12345");
 
         AppUser usuario = usuario(Role.STUDENT, aluno);
-        when(usuarioRepository.findByEmailOrAluno_Matricula("12345", "12345")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByEmailOrRegistrationNumber("12345", "12345")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("12345", "hash")).thenReturn(true);
         when(jwtUtil.generateToken(any(UserDetails.class))).thenReturn("jwt-token");
 
@@ -89,10 +90,10 @@ class AuthServiceTest {
 
     @Test
     void loginDeveFalharQuandoUsuarioNaoExiste() {
-        when(usuarioRepository.findByEmailOrAluno_Matricula("ninguemm", "ninguemm")).thenReturn(Optional.empty());
+        when(usuarioRepository.findByEmailOrRegistrationNumber("ninguemm", "ninguemm")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.login(new LoginRequest("ninguemm", "senha")))
-                .isInstanceOf(RecursoNaoEncontradoException.class);
+                .isInstanceOf(ResourceNotFoundException.class);
 
         verify(passwordEncoder, never()).matches(any(), any());
         verify(jwtUtil, never()).generateToken(any());
@@ -101,7 +102,7 @@ class AuthServiceTest {
     @Test
     void loginDeveFalharQuandoSenhaNaoConfere() {
         AppUser usuario = usuario(Role.LIBRARIAN, null);
-        when(usuarioRepository.findByEmailOrAluno_Matricula("biblioteca@lumilivre.test", "biblioteca@lumilivre.test"))
+        when(usuarioRepository.findByEmailOrRegistrationNumber("biblioteca@lumilivre.test", "biblioteca@lumilivre.test"))
                 .thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("errada", "hash")).thenReturn(false);
 
@@ -120,8 +121,8 @@ class AuthServiceTest {
 
         ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
         verify(tokenRepository).save(tokenCaptor.capture());
-        assertThat(tokenCaptor.getValue().getUsuario()).isSameAs(usuario);
-        assertThat(tokenCaptor.getValue().isExpirado()).isFalse();
+        assertThat(tokenCaptor.getValue().getAppUser()).isSameAs(usuario);
+        assertThat(tokenCaptor.getValue().isExpired()).isFalse();
 
         verify(emailService).enviarEmailResetSenha(
                 eq("admin@lumilivre.test"),
@@ -140,8 +141,8 @@ class AuthServiceTest {
 
     @Test
     void validarTokenResetDeveRetornarTrueSomenteParaTokenExistenteENaoExpirado() {
-        when(tokenRepository.findByToken("valido")).thenReturn(Optional.of(tokenReset(LocalDateTime.now().plusMinutes(5))));
-        when(tokenRepository.findByToken("expirado")).thenReturn(Optional.of(tokenReset(LocalDateTime.now().minusMinutes(1))));
+        when(tokenRepository.findByToken("valido")).thenReturn(Optional.of(tokenReset(OffsetDateTime.now().plusMinutes(5))));
+        when(tokenRepository.findByToken("expirado")).thenReturn(Optional.of(tokenReset(OffsetDateTime.now().minusMinutes(1))));
         when(tokenRepository.findByToken("ausente")).thenReturn(Optional.empty());
 
         assertThat(service.validarTokenReset("valido")).isTrue();
@@ -151,20 +152,20 @@ class AuthServiceTest {
 
     @Test
     void mudarSenhaComTokenDeveAtualizarSenhaEInvalidarToken() {
-        PasswordResetToken tokenReset = tokenReset(LocalDateTime.now().plusMinutes(5));
+        PasswordResetToken tokenReset = tokenReset(OffsetDateTime.now().plusMinutes(5));
         when(tokenRepository.findByToken("token-123")).thenReturn(Optional.of(tokenReset));
         when(passwordEncoder.encode("nova-senha")).thenReturn("novo-hash");
 
         service.mudarSenhaComToken(new MudarSenhaTokenRequest("token-123", "nova-senha"));
 
-        assertThat(tokenReset.getUsuario().getSenha()).isEqualTo("novo-hash");
-        verify(usuarioRepository).save(tokenReset.getUsuario());
+        assertThat(tokenReset.getAppUser().getPasswordHash()).isEqualTo("novo-hash");
+        verify(usuarioRepository).save(tokenReset.getAppUser());
         verify(tokenRepository).delete(tokenReset);
     }
 
     @Test
     void mudarSenhaComTokenDeveBloquearTokenExpirado() {
-        PasswordResetToken tokenReset = tokenReset(LocalDateTime.now().minusMinutes(1));
+        PasswordResetToken tokenReset = tokenReset(OffsetDateTime.now().minusMinutes(1));
         when(tokenRepository.findByToken("token-123")).thenReturn(Optional.of(tokenReset));
 
         assertThatThrownBy(() -> service.mudarSenhaComToken(new MudarSenhaTokenRequest("token-123", "nova-senha")))
@@ -176,21 +177,22 @@ class AuthServiceTest {
         verify(tokenRepository, never()).delete(any());
     }
 
-    private static PasswordResetToken tokenReset(LocalDateTime expiration) {
+    private static PasswordResetToken tokenReset(OffsetDateTime expiration) {
         PasswordResetToken token = new PasswordResetToken();
         token.setToken("token-123");
-        token.setUsuario(usuario(Role.ADMIN, null));
-        token.setDataExpiracao(expiration);
+        token.setAppUser(usuario(Role.ADMIN, null));
+        token.setExpiresAt(expiration);
+        token.setCreatedAt(OffsetDateTime.now());
         return token;
     }
 
     private static AppUser usuario(Role role, Student aluno) {
         AppUser usuario = new AppUser();
-        usuario.setId(1);
+        usuario.setId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         usuario.setEmail(role == Role.STUDENT ? "aluno@lumilivre.test" : role.name().toLowerCase() + "@lumilivre.test");
-        usuario.setSenha("hash");
+        usuario.setPasswordHash("hash");
         usuario.setRole(role);
-        usuario.setAluno(aluno);
+        usuario.setStudent(aluno);
         return usuario;
     }
 }

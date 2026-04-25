@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.dto.livro;
 
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LivroAgrupadoResponse {
 
-    private Long id;
+    private UUID id;
     private String isbn;
     private String nome;
     private String autor;

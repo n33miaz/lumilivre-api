@@ -1,48 +1,34 @@
 package br.com.lumilivre.api.domain.policy;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
-import br.com.lumilivre.api.enums.StatusLivro;
-import br.com.lumilivre.api.enums.StatusSolicitacao;
+import br.com.lumilivre.api.enums.BookCopyStatus;
+import br.com.lumilivre.api.enums.LoanRequestStatus;
 
-/**
- * Regras de aprovação/rejeição de solicitações de empréstimo.
- */
 public final class RequestApprovalPolicy {
 
     private RequestApprovalPolicy() {}
 
-    /**
-     * Valida se é possível criar uma solicitação de empréstimo.
-     *
-     * @param penaltyExpiry    expiração da penalidade do aluno (null = sem penalidade)
-     * @param activeLoans      total de empréstimos ATIVO + ATRASADO do aluno
-     * @param exemplarStatus   status atual do exemplar solicitado
-     */
     public static void validateRequest(
-            LocalDateTime penaltyExpiry,
+            OffsetDateTime penaltyExpiry,
             long activeLoans,
-            StatusLivro exemplarStatus) {
+            BookCopyStatus copyStatus) {
 
-        if (penaltyExpiry != null && penaltyExpiry.isAfter(LocalDateTime.now())) {
-            throw new RequestApprovalViolationException("Aluno possui penalidade ativa.");
+        if (penaltyExpiry != null && penaltyExpiry.isAfter(OffsetDateTime.now())) {
+            throw new RequestApprovalViolationException("Student has an active penalty.");
         }
 
         if (activeLoans >= LoanPolicy.MAX_ACTIVE_LOANS) {
-            throw new RequestApprovalViolationException("Aluno atingiu limite de empréstimos ativos.");
+            throw new RequestApprovalViolationException("Student reached the active loan limit.");
         }
 
-        BookAvailabilityPolicy.validateAvailable(exemplarStatus);
+        BookAvailabilityPolicy.validateAvailable(copyStatus);
     }
 
-    /**
-     * Valida se uma solicitação pode ser processada (aceita ou rejeitada).
-     * Uma solicitação já processada não pode ser alterada.
-     */
-    public static void validateProcessable(StatusSolicitacao currentStatus) {
-        if (currentStatus != StatusSolicitacao.PENDING) {
+    public static void validateProcessable(LoanRequestStatus currentStatus) {
+        if (currentStatus != LoanRequestStatus.PENDING) {
             throw new RequestApprovalViolationException(
-                    "Solicitação não está pendente. Status atual: " + currentStatus);
+                    "Loan request is not pending. Current status: " + currentStatus);
         }
     }
 

@@ -1,8 +1,8 @@
 package br.com.lumilivre.api.dto.emprestimo;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
-import br.com.lumilivre.api.enums.StatusEmprestimo;
+import br.com.lumilivre.api.enums.LoanStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,6 +14,6 @@ public class EmprestimoDashboardResponse {
 
 	private String livroNome;
 	private String alunoNome;
-	private LocalDateTime dataDevolucao;
-	private StatusEmprestimo statusEmprestimo;
+	private OffsetDateTime dataDevolucao;
+	private LoanStatus statusEmprestimo;
 }

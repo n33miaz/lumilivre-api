@@ -39,12 +39,12 @@ class DashboardServiceTest {
     @Test
     void getStatsDeveMapearContadoresDaViewMaterializada() {
         when(jdbc.queryForMap("SELECT * FROM mv_dashboard_stats")).thenReturn(Map.of(
-                "emprestimos_ativos", 4,
-                "emprestimos_atrasados", 2L,
-                "emprestimos_concluidos", 10,
-                "media_dias_devolucao", 7.5,
-                "solicitacoes_pendentes", 3,
-                "reservas_aguardando", 1));
+                "active_loans", 4,
+                "overdue_loans", 2L,
+                "completed_loans", 10,
+                "avg_return_days", 7.5,
+                "pending_requests", 3,
+                "waiting_reservations", 1));
 
         var stats = service.getStats();
 
@@ -72,8 +72,8 @@ class DashboardServiceTest {
         service.refreshViews();
 
         verify(jdbc).execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_stats");
-        verify(jdbc).execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_top_livros");
-        verify(jdbc).execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_emprestimos_por_mes");
+        verify(jdbc).execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_top_books");
+        verify(jdbc).execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_loans_by_month");
     }
 
     private void mockDatabaseProduct(String productName) throws Exception {

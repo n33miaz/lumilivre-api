@@ -3,7 +3,7 @@ package br.com.lumilivre.api.domain.policy;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilityViolationException;
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy.RequestApprovalViolationException;
-import br.com.lumilivre.api.enums.StatusLivro;
-import br.com.lumilivre.api.enums.StatusSolicitacao;
+import br.com.lumilivre.api.enums.BookCopyStatus;
+import br.com.lumilivre.api.enums.LoanRequestStatus;
 
 class RequestApprovalPolicyTest {
 
@@ -21,27 +21,27 @@ class RequestApprovalPolicyTest {
         assertThatCode(() -> RequestApprovalPolicy.validateRequest(
                 null,
                 LoanPolicy.MAX_ACTIVE_LOANS - 1,
-                StatusLivro.AVAILABLE))
+                BookCopyStatus.AVAILABLE))
                 .doesNotThrowAnyException();
     }
 
     @Test
     void validateRequestAllowsExpiredPenalty() {
         assertThatCode(() -> RequestApprovalPolicy.validateRequest(
-                LocalDateTime.now().minusMinutes(1),
+                OffsetDateTime.now().minusMinutes(1),
                 0,
-                StatusLivro.AVAILABLE))
+                BookCopyStatus.AVAILABLE))
                 .doesNotThrowAnyException();
     }
 
     @Test
     void validateRequestRejectsActivePenalty() {
         assertThatThrownBy(() -> RequestApprovalPolicy.validateRequest(
-                LocalDateTime.now().plusMinutes(1),
+                OffsetDateTime.now().plusMinutes(1),
                 0,
-                StatusLivro.AVAILABLE))
+                BookCopyStatus.AVAILABLE))
                 .isInstanceOf(RequestApprovalViolationException.class)
-                .hasMessageContaining("penalidade");
+                .hasMessageContaining("active penalty");
     }
 
     @Test
@@ -49,9 +49,9 @@ class RequestApprovalPolicyTest {
         assertThatThrownBy(() -> RequestApprovalPolicy.validateRequest(
                 null,
                 LoanPolicy.MAX_ACTIVE_LOANS,
-                StatusLivro.AVAILABLE))
+                BookCopyStatus.AVAILABLE))
                 .isInstanceOf(RequestApprovalViolationException.class)
-                .hasMessageContaining("limite");
+                .hasMessageContaining("active loan limit");
     }
 
     @Test
@@ -59,22 +59,22 @@ class RequestApprovalPolicyTest {
         assertThatThrownBy(() -> RequestApprovalPolicy.validateRequest(
                 null,
                 0,
-                StatusLivro.BORROWED))
+                BookCopyStatus.BORROWED))
                 .isInstanceOf(BookAvailabilityViolationException.class);
     }
 
     @Test
     void validateProcessableAllowsPendingRequest() {
-        assertThatCode(() -> RequestApprovalPolicy.validateProcessable(StatusSolicitacao.PENDING))
+        assertThatCode(() -> RequestApprovalPolicy.validateProcessable(LoanRequestStatus.PENDING))
                 .doesNotThrowAnyException();
     }
 
     @ParameterizedTest
-    @EnumSource(value = StatusSolicitacao.class, names = "PENDING", mode = EnumSource.Mode.EXCLUDE)
-    void validateProcessableRejectsAlreadyProcessedRequests(StatusSolicitacao status) {
+    @EnumSource(value = LoanRequestStatus.class, names = "PENDING", mode = EnumSource.Mode.EXCLUDE)
+    void validateProcessableRejectsAlreadyProcessedRequests(LoanRequestStatus status) {
         assertThatThrownBy(() -> RequestApprovalPolicy.validateProcessable(status))
                 .isInstanceOf(RequestApprovalViolationException.class)
-                .hasMessageContaining("pendente");
+                .hasMessageContaining("not pending");
     }
 
     @Test

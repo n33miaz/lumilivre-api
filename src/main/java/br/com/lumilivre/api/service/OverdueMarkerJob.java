@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.service;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -9,41 +9,36 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.enums.StatusEmprestimo;
-import br.com.lumilivre.api.model.EmprestimoModel;
-import br.com.lumilivre.api.repository.EmprestimoRepository;
+import br.com.lumilivre.api.enums.LoanStatus;
+import br.com.lumilivre.api.model.Loan;
+import br.com.lumilivre.api.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Marca empréstimos ATIVO com dataDevolucao < agora como ATRASADO.
- * Executa diariamente às 03:00.
- */
 @Service
 @RequiredArgsConstructor
 public class OverdueMarkerJob {
 
     private static final Logger log = LoggerFactory.getLogger(OverdueMarkerJob.class);
 
-    private final EmprestimoRepository emprestimoRepository;
+    private final LoanRepository loanRepository;
 
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void marcarAtrasados() {
-        LocalDateTime agora = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
 
-        List<EmprestimoModel> vencidos = emprestimoRepository
-                .findByStatusEmprestimoAndDataDevolucaoBefore(StatusEmprestimo.ACTIVE, agora);
+        List<Loan> overdue = loanRepository.findByStatusAndDueAtBefore(LoanStatus.ACTIVE, now);
 
-        if (vencidos.isEmpty()) {
-            log.info("OverdueMarkerJob: nenhum empréstimo para marcar como atrasado.");
+        if (overdue.isEmpty()) {
+            log.info("OverdueMarkerJob: no loans to mark as overdue.");
             return;
         }
 
-        for (EmprestimoModel e : vencidos) {
-            e.setStatusEmprestimo(StatusEmprestimo.OVERDUE);
+        for (Loan loan : overdue) {
+            loan.setStatus(LoanStatus.OVERDUE);
         }
 
-        emprestimoRepository.saveAll(vencidos);
-        log.info("OverdueMarkerJob: {} empréstimo(s) marcado(s) como ATRASADO.", vencidos.size());
+        loanRepository.saveAll(overdue);
+        log.info("OverdueMarkerJob: {} loan(s) marked as OVERDUE.", overdue.size());
     }
 }

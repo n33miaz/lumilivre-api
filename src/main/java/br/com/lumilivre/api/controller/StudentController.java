@@ -59,7 +59,7 @@ public class StudentController {
 
     @GetMapping("/buscar")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
-    @Operation(summary = "Busca alunos com paginaÃ§Ã£o e filtro de texto")
+    @Operation(summary = "Busca alunos com paginação e filtro de texto")
     public ResponseEntity<Page<AlunoResumoResponse>> buscarPorTexto(
             @RequestParam(required = false) String texto,
             Pageable pageable) {
@@ -69,7 +69,7 @@ public class StudentController {
 
     @GetMapping("/buscar/avancado")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
-    @Operation(summary = "Busca avanÃ§ada e paginada de alunos")
+    @Operation(summary = "Busca avançada e paginada de alunos")
     public ResponseEntity<Page<AlunoResumoResponse>> buscarAvancado(
             @RequestParam(required = false) String penalidade,
             @RequestParam(required = false) String matricula,
@@ -89,7 +89,7 @@ public class StudentController {
 
     @GetMapping("/{matricula}")
     @CanAccessStudent
-    @Operation(summary = "Busca detalhes de um aluno especÃ­fico")
+    @Operation(summary = "Busca detalhes de um aluno específico")
     public ResponseEntity<ApiResponse<AlunoResponse>> buscarPorMatricula(@PathVariable String matricula) {
         Student student = studentService.buscarPorMatricula(matricula);
         return ResponseEntity.ok(new ApiResponse<>(true, "Aluno encontrado", new AlunoResponse(student)));
@@ -111,7 +111,7 @@ public class StudentController {
     @Operation(summary = "Cadastra um novo aluno")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Aluno cadastrado com sucesso", content = @Content(schema = @Schema(implementation = AlunoResponse.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Dados invÃ¡lidos")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Dados inválidos")
     })
     public ResponseEntity<ApiResponse<AlunoResponse>> cadastrar(@RequestBody @Valid AlunoRequest alunoDTO) {
         Student savedStudent = studentService.cadastrar(alunoDTO);
@@ -135,10 +135,10 @@ public class StudentController {
 
     @PatchMapping("/{matricula}/reset-senha")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
-    @Operation(summary = "Reseta a senha do aluno para a matrÃ­cula")
+    @Operation(summary = "Reseta a senha do aluno para a matrícula")
     public ResponseEntity<ApiResponse<Void>> resetarSenha(@PathVariable String matricula) {
         studentService.resetarSenha(matricula);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Senha resetada para a matrÃ­cula com sucesso.", null));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Senha resetada para a matrícula com sucesso.", null));
     }
 
     @DeleteMapping("/excluir/{matricula}")
@@ -146,6 +146,6 @@ public class StudentController {
     @Operation(summary = "Exclui um aluno (Acesso: ADMIN)")
     public ResponseEntity<ApiResponse<Void>> excluir(@PathVariable String matricula) {
         studentService.excluir(matricula);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Aluno excluÃ­do com sucesso.", null));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Aluno excluído com sucesso.", null));
     }
 }

@@ -1,7 +1,9 @@
 package br.com.lumilivre.api.dto.dashboard;
 
+import java.util.UUID;
+
 public record TopLivroResponse(
-        Long livroId,
+        UUID livroId,
         String titulo,
         String autor,
         String imagem,

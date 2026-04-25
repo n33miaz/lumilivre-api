@@ -1,61 +1,40 @@
 package br.com.lumilivre.api.domain.policy;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
-/**
- * Regras de negócio puras para empréstimos.
- * Sem dependência de Spring ou infraestrutura.
- */
 public final class LoanPolicy {
 
     public static final int MAX_ACTIVE_LOANS = 3;
+    public static final int MAX_RENEWALS = 2;
+    public static final int RENEWAL_DAYS = 14;
 
     private LoanPolicy() {}
 
-    /**
-     * Verifica se o aluno pode tomar um novo empréstimo.
-     *
-     * @param activeLoans   quantidade atual de empréstimos ATIVO + ATRASADO
-     * @param penaltyExpiry data de expiração da penalidade ativa (null se sem penalidade)
-     */
-    public static void validateNewLoan(long activeLoans, LocalDateTime penaltyExpiry) {
-        if (penaltyExpiry != null && penaltyExpiry.isAfter(LocalDateTime.now())) {
+    public static void validateNewLoan(long activeLoans, OffsetDateTime penaltyExpiry) {
+        if (penaltyExpiry != null && penaltyExpiry.isAfter(OffsetDateTime.now())) {
             throw new LoanPolicyViolationException(
-                    "Aluno possui penalidade ativa até " + penaltyExpiry);
+                    "Student has an active penalty until " + penaltyExpiry);
         }
 
         if (activeLoans >= MAX_ACTIVE_LOANS) {
             throw new LoanPolicyViolationException(
-                    "Aluno já atingiu o limite de " + MAX_ACTIVE_LOANS + " empréstimos ativos.");
+                    "Student has reached the limit of " + MAX_ACTIVE_LOANS + " active loans.");
         }
     }
 
-    /** Maximum number of renewals allowed per loan. */
-    public static final int MAX_RENEWALS = 2;
-
-    /** Extension in days granted per renewal. */
-    public static final int RENEWAL_DAYS = 14;
-
-    /**
-     * Validates whether a loan can be renewed.
-     *
-     * @param currentRenewals renewals already used for this loan
-     * @param hasQueuedReservation whether another student is waiting for this book
-     * @param penaltyExpiry active penalty expiry (null = no penalty)
-     */
     public static void validateRenewal(int currentRenewals, boolean hasQueuedReservation,
-                                       LocalDateTime penaltyExpiry) {
-        if (penaltyExpiry != null && penaltyExpiry.isAfter(LocalDateTime.now())) {
+                                       OffsetDateTime penaltyExpiry) {
+        if (penaltyExpiry != null && penaltyExpiry.isAfter(OffsetDateTime.now())) {
             throw new LoanPolicyViolationException(
-                    "Aluno possui penalidade ativa. Renovação bloqueada.");
+                    "Student has an active penalty. Renewal blocked.");
         }
         if (hasQueuedReservation) {
             throw new LoanPolicyViolationException(
-                    "Não é possível renovar: outro aluno está aguardando este livro na fila de reservas.");
+                    "Cannot renew: another student is waiting for this book in the reservation queue.");
         }
         if (currentRenewals >= MAX_RENEWALS) {
             throw new LoanPolicyViolationException(
-                    "Limite de " + MAX_RENEWALS + " renovação(ões) por empréstimo atingido.");
+                    "Renewal limit of " + MAX_RENEWALS + " reached for this loan.");
         }
     }
 

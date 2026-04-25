@@ -1,18 +1,15 @@
 package br.com.lumilivre.api.domain.policy;
 
-import br.com.lumilivre.api.enums.StatusLivro;
+import br.com.lumilivre.api.enums.BookCopyStatus;
 
-/**
- * Regra de disponibilidade de exemplar.
- */
 public final class BookAvailabilityPolicy {
 
     private BookAvailabilityPolicy() {}
 
-    public static void validateAvailable(StatusLivro status) {
-        if (status != StatusLivro.AVAILABLE) {
+    public static void validateAvailable(BookCopyStatus status) {
+        if (status != BookCopyStatus.AVAILABLE) {
             throw new BookAvailabilityViolationException(
-                    "O exemplar não está disponível para empréstimo. Status atual: " + status);
+                    "Book copy is not available for loan. Current status: " + status);
         }
     }
 

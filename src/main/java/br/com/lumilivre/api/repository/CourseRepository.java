@@ -45,11 +45,12 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     @Query("""
             SELECT new br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse(
                 c.name,
-                COUNT(a.registrationNumber),
-                SUM(a.loansCount)
+                COUNT(DISTINCT a.id),
+                COUNT(l)
             )
             FROM Course c
             LEFT JOIN c.students a
+            LEFT JOIN Loan l ON l.student = a
             GROUP BY c.id, c.name
             ORDER BY c.name
             """)
@@ -83,6 +84,13 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
             """)
     Page<CursoResumoResponse> findCursoParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
 
-    @Query("SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(c.name, SUM(a.loansCount)) FROM Course c JOIN c.students a GROUP BY c.name HAVING SUM(a.loansCount) > 0")
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(c.name, COUNT(l))
+            FROM Course c
+            JOIN c.students a
+            JOIN Loan l ON l.student = a
+            GROUP BY c.name
+            HAVING COUNT(l) > 0
+            """)
     List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorCurso();
 }

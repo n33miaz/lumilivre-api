@@ -1,5 +1,17 @@
 package br.com.lumilivre.api.config;
 
+import static br.com.lumilivre.api.config.CacheNames.BOOK_COUNT;
+import static br.com.lumilivre.api.config.CacheNames.BOOK_DETAIL;
+import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_LOANS_BY_MONTH;
+import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_LOAN_REQUESTS;
+import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_OVERDUE_COUNT;
+import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_OVERDUE_LIST;
+import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_STATS;
+import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_TOP_BOOKS;
+import static br.com.lumilivre.api.config.CacheNames.MOBILE_CATALOG;
+import static br.com.lumilivre.api.config.CacheNames.MOBILE_RECOMMENDATIONS;
+import static br.com.lumilivre.api.config.CacheNames.STUDENT_COUNT;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,12 +37,15 @@ public class CacheConfig {
 
     /** Per-cache TTLs; unlisted caches get DEFAULT_TTL. */
     private static final Map<String, Duration> CACHE_TTLS = Map.of(
-            "dashboard_stats_emprestimos", Duration.ofMinutes(5),
-            "dashboard_atrasados_count",   Duration.ofMinutes(5),
-            "dashboard_atrasados_list",    Duration.ofMinutes(5),
-            "dashboard_solicitacoes",      Duration.ofMinutes(3),
-            "catalogo-mobile",             Duration.ofHours(1),
-            "livro-detalhe",               Duration.ofMinutes(30)
+            DASHBOARD_STATS, Duration.ofMinutes(5),
+            DASHBOARD_TOP_BOOKS, Duration.ofMinutes(5),
+            DASHBOARD_LOANS_BY_MONTH, Duration.ofMinutes(5),
+            DASHBOARD_OVERDUE_COUNT, Duration.ofMinutes(5),
+            DASHBOARD_OVERDUE_LIST, Duration.ofMinutes(5),
+            DASHBOARD_LOAN_REQUESTS, Duration.ofMinutes(3),
+            MOBILE_CATALOG, Duration.ofHours(1),
+            MOBILE_RECOMMENDATIONS, Duration.ofMinutes(30),
+            BOOK_DETAIL, Duration.ofMinutes(30)
     );
 
     /**
@@ -64,17 +79,20 @@ public class CacheConfig {
     @ConditionalOnMissingBean(CacheManager.class)
     public CacheManager concurrentMapCacheManager() {
         return new ConcurrentMapCacheManager(
-                "dashboard_stats_emprestimos",
-                "dashboard_atrasados_count",
-                "dashboard_atrasados_list",
-                "dashboard_solicitacoes",
-                "contagem_livros",
-                "contagem_alunos",
+                DASHBOARD_STATS,
+                DASHBOARD_TOP_BOOKS,
+                DASHBOARD_LOANS_BY_MONTH,
+                DASHBOARD_OVERDUE_COUNT,
+                DASHBOARD_OVERDUE_LIST,
+                DASHBOARD_LOAN_REQUESTS,
+                BOOK_COUNT,
+                STUDENT_COUNT,
                 "cdds",
                 "generos-dto",
                 "modulos",
                 "turnos",
-                "catalogo-mobile",
-                "livro-detalhe");
+                MOBILE_CATALOG,
+                MOBILE_RECOMMENDATIONS,
+                BOOK_DETAIL);
     }
 }

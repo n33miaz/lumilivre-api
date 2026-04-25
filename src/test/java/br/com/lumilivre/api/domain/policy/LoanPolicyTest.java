@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import org.junit.jupiter.api.Test;
 
@@ -20,29 +20,29 @@ class LoanPolicyTest {
 
     @Test
     void validateNewLoanAllowsExpiredPenalty() {
-        assertThatCode(() -> LoanPolicy.validateNewLoan(0, LocalDateTime.now().minusMinutes(1)))
+        assertThatCode(() -> LoanPolicy.validateNewLoan(0, OffsetDateTime.now().minusMinutes(1)))
                 .doesNotThrowAnyException();
     }
 
     @Test
     void validateNewLoanRejectsActivePenalty() {
-        assertThatThrownBy(() -> LoanPolicy.validateNewLoan(0, LocalDateTime.now().plusMinutes(1)))
+        assertThatThrownBy(() -> LoanPolicy.validateNewLoan(0, OffsetDateTime.now().plusMinutes(1)))
                 .isInstanceOf(LoanPolicyViolationException.class)
-                .hasMessageContaining("penalidade ativa");
+                .hasMessageContaining("active penalty");
     }
 
     @Test
     void validateNewLoanRejectsLimitBoundary() {
         assertThatThrownBy(() -> LoanPolicy.validateNewLoan(LoanPolicy.MAX_ACTIVE_LOANS, null))
                 .isInstanceOf(LoanPolicyViolationException.class)
-                .hasMessageContaining("limite");
+                .hasMessageContaining("limit");
     }
 
     @Test
     void validateNewLoanRejectsAboveLimit() {
         assertThatThrownBy(() -> LoanPolicy.validateNewLoan(LoanPolicy.MAX_ACTIVE_LOANS + 1, null))
                 .isInstanceOf(LoanPolicyViolationException.class)
-                .hasMessageContaining("limite");
+                .hasMessageContaining("limit");
     }
 
     @Test
@@ -61,13 +61,13 @@ class LoanPolicyTest {
     void validateRenewalRejectsUsedLimit() {
         assertThatThrownBy(() -> LoanPolicy.validateRenewal(LoanPolicy.MAX_RENEWALS, false, null))
                 .isInstanceOf(LoanPolicyViolationException.class)
-                .hasMessageContaining("Limite");
+                .hasMessageContaining("limit");
     }
 
     @Test
     void validateRenewalRejectsQueuedReservationFromOtherStudent() {
         assertThatThrownBy(() -> LoanPolicy.validateRenewal(0, true, null))
                 .isInstanceOf(LoanPolicyViolationException.class)
-                .hasMessageContaining("fila de reservas");
+                .hasMessageContaining("reservation queue");
     }
 }

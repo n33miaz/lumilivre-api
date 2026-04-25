@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-import br.com.lumilivre.api.enums.Penalidade;
+import br.com.lumilivre.api.enums.PenaltyCode;
 import br.com.lumilivre.api.model.Student;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,28 +37,26 @@ public class AlunoResponse {
     private String uf;
     private Integer numeroCasa;
     private String complemento;
-    private Penalidade penalidade;
-    private Integer emprestimosCount;
+    private PenaltyCode penalidade;
 
     public AlunoResponse(Student aluno) {
-        this.matricula = aluno.getMatricula();
-        this.nomeCompleto = aluno.getNomeCompleto();
-        this.foto = aluno.getFoto();
+        this.matricula = aluno.getRegistrationNumber();
+        this.nomeCompleto = aluno.getFullName();
+        this.foto = aluno.getAvatarUrl();
         this.email = aluno.getEmail();
-        this.celular = aluno.getCelular();
+        this.celular = aluno.getPhoneNumber();
         this.cpf = aluno.getCpf();
-        this.dataNascimento = aluno.getDataNascimento();
-        this.cursoNome = (aluno.getCurso() != null) ? aluno.getCurso().getName() : null;
-        this.turnoNome = (aluno.getTurno() != null) ? aluno.getTurno().getName() : null;
-        this.moduloNome = (aluno.getModulo() != null) ? aluno.getModulo().getName() : null;
-        this.cep = aluno.getCep();
-        this.logradouro = aluno.getLogradouro();
-        this.bairro = aluno.getBairro();
-        this.localidade = aluno.getLocalidade();
-        this.uf = aluno.getUf();
-        this.numeroCasa = aluno.getNumero_casa();
-        this.complemento = aluno.getComplemento();
-        this.penalidade = aluno.getPenalidade();
-        this.emprestimosCount = aluno.getEmprestimosCount();
+        this.dataNascimento = aluno.getBirthDate();
+        this.cursoNome = (aluno.getCourse() != null) ? aluno.getCourse().getName() : null;
+        this.turnoNome = (aluno.getStudyShift() != null) ? aluno.getStudyShift().getName() : null;
+        this.moduloNome = (aluno.getAcademicModule() != null) ? aluno.getAcademicModule().getName() : null;
+        this.cep = aluno.getPostalCode();
+        this.logradouro = aluno.getStreet();
+        this.bairro = aluno.getDistrict();
+        this.localidade = aluno.getCity();
+        this.uf = aluno.getStateCode();
+        this.numeroCasa = aluno.getStreetNumber();
+        this.complemento = aluno.getAddressComplement();
+        this.penalidade = aluno.getPenaltyCode();
     }
 }

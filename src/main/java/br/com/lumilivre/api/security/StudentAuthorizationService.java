@@ -1,23 +1,21 @@
 package br.com.lumilivre.api.security;
 
+import java.util.UUID;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.repository.EmprestimoRepository;
+import br.com.lumilivre.api.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service("studentAuthz")
 @RequiredArgsConstructor
 public class StudentAuthorizationService {
 
-    private final EmprestimoRepository emprestimoRepository;
+    private final LoanRepository loanRepository;
 
-    /**
-     * Retorna true se o principal autenticado é ADMIN/BIBLIOTECARIO,
-     * ou se é o próprio aluno dono da matrícula informada.
-     */
     public boolean canAccess(String matricula) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
@@ -29,21 +27,16 @@ public class StudentAuthorizationService {
             return false;
         }
 
-        Role role = details.getUsuario().getRole();
+        Role role = details.getAppUser().getRole();
         if (role == Role.ADMIN || role == Role.LIBRARIAN) {
             return true;
         }
 
-        // Aluno só acessa o próprio recurso
-        var alunoVinculado = details.getUsuario().getAluno();
-        return alunoVinculado != null && alunoVinculado.getMatricula().equals(matricula);
+        var student = details.getAppUser().getStudent();
+        return student != null && student.getRegistrationNumber().equals(matricula);
     }
 
-    /**
-     * Retorna true se o principal autenticado e ADMIN/BIBLIOTECARIO,
-     * ou se o emprestimo pertence ao aluno autenticado.
-     */
-    public boolean canAccessLoan(Integer emprestimoId) {
+    public boolean canAccessLoan(UUID loanId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
             return false;
@@ -54,19 +47,19 @@ public class StudentAuthorizationService {
             return false;
         }
 
-        Role role = details.getUsuario().getRole();
+        Role role = details.getAppUser().getRole();
         if (role == Role.ADMIN || role == Role.LIBRARIAN) {
             return true;
         }
 
-        var alunoVinculado = details.getUsuario().getAluno();
-        if (alunoVinculado == null || emprestimoId == null) {
+        var student = details.getAppUser().getStudent();
+        if (student == null || loanId == null) {
             return false;
         }
 
-        return emprestimoRepository.findById(emprestimoId)
-                .map(emprestimo -> emprestimo.getAluno() != null
-                        && alunoVinculado.getMatricula().equals(emprestimo.getAluno().getMatricula()))
+        return loanRepository.findById(loanId)
+                .map(loan -> loan.getStudent() != null
+                        && student.getRegistrationNumber().equals(loan.getStudent().getRegistrationNumber()))
                 .orElse(false);
     }
 }

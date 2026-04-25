@@ -8,7 +8,7 @@ import br.com.lumilivre.api.model.Thesis;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.ThesisRepository;
 import br.com.lumilivre.api.service.infra.SupabaseStorageService;
-import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -117,7 +117,7 @@ public class ThesisService {
             MultipartFile arquivoFoto) {
         try {
             Thesis thesis = thesisRepository.findById(id)
-                    .orElseThrow(() -> new RecursoNaoEncontradoException("TCC não encontrado."));
+                    .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado."));
 
             ThesisRequest dto = objectMapper.readValue(dadosJson, ThesisRequest.class);
 

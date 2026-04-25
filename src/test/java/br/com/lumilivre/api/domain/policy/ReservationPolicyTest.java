@@ -4,12 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import org.junit.jupiter.api.Test;
 
-import br.com.lumilivre.api.enums.StatusReserva;
-import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
+import br.com.lumilivre.api.enums.ReservationStatus;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 
 class ReservationPolicyTest {
 
@@ -22,47 +22,47 @@ class ReservationPolicyTest {
     @Test
     void validateNewReservationAllowsExpiredPenalty() {
         assertThatCode(() -> ReservationPolicy.validateNewReservation(
-                LocalDateTime.now().minusMinutes(1), 0, false))
+                OffsetDateTime.now().minusMinutes(1), 0, false))
                 .doesNotThrowAnyException();
     }
 
     @Test
     void validateNewReservationRejectsActivePenalty() {
-        LocalDateTime expiry = LocalDateTime.now().plusDays(3);
+        OffsetDateTime expiry = OffsetDateTime.now().plusDays(3);
 
         assertThatThrownBy(() -> ReservationPolicy.validateNewReservation(expiry, 0, false))
-                .isInstanceOf(RegraDeNegocioException.class)
-                .hasMessageContaining("penalidade ativa");
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("active penalty");
     }
 
     @Test
     void validateNewReservationRejectsDuplicateReservationForSameBook() {
         assertThatThrownBy(() -> ReservationPolicy.validateNewReservation(null, 0, true))
-                .isInstanceOf(RegraDeNegocioException.class)
-                .hasMessageContaining("reserva ativa para este livro");
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("active reservation for this book");
     }
 
     @Test
     void validateNewReservationRejectsBoundaryLimit() {
         assertThatThrownBy(() -> ReservationPolicy.validateNewReservation(
                 null, ReservationPolicy.MAX_ACTIVE_RESERVATIONS, false))
-                .isInstanceOf(RegraDeNegocioException.class)
-                .hasMessageContaining("Limite");
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("Limit");
     }
 
     @Test
     void validateNewReservationRejectsAboveLimit() {
         assertThatThrownBy(() -> ReservationPolicy.validateNewReservation(
                 null, ReservationPolicy.MAX_ACTIVE_RESERVATIONS + 1, false))
-                .isInstanceOf(RegraDeNegocioException.class)
-                .hasMessageContaining("Limite");
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("Limit");
     }
 
     @Test
     void calculatePickupDeadlineAddsToleranceDays() {
-        LocalDateTime notified = LocalDateTime.of(2026, 4, 10, 9, 0);
+        OffsetDateTime notified = OffsetDateTime.parse("2026-04-10T09:00:00-03:00");
 
-        LocalDateTime deadline = ReservationPolicy.calculatePickupDeadline(notified);
+        OffsetDateTime deadline = ReservationPolicy.calculatePickupDeadline(notified);
 
         assertThat(deadline).isEqualTo(notified.plusDays(ReservationPolicy.PICKUP_DEADLINE_DAYS));
     }
@@ -71,9 +71,9 @@ class ReservationPolicyTest {
     void activeStatusesIncludesWaitingAndAvailable() {
         assertThat(ReservationPolicy.activeStatuses())
                 .containsExactlyInAnyOrder(
-                        StatusReserva.WAITING,
-                        StatusReserva.READY)
-                .doesNotContain(StatusReserva.FULFILLED, StatusReserva.CANCELLED, StatusReserva.EXPIRED);
+                        ReservationStatus.WAITING,
+                        ReservationStatus.READY)
+                .doesNotContain(ReservationStatus.FULFILLED, ReservationStatus.CANCELLED, ReservationStatus.EXPIRED);
     }
 
     @Test

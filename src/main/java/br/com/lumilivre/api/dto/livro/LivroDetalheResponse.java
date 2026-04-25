@@ -1,7 +1,7 @@
 package br.com.lumilivre.api.dto.livro;
 
+import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.Genre;
-import br.com.lumilivre.api.model.LivroModel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Data
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class LivroDetalheResponse {
 
-    private Long id;
+    private UUID id;
     private String isbn;
     private String nome;
     private String autor;
@@ -39,40 +40,40 @@ public class LivroDetalheResponse {
     private long totalExemplares;
     private Double avaliacao;
 
-    public LivroDetalheResponse(LivroModel livro, long exemplaresDisponiveis, long totalExemplares) {
+    public LivroDetalheResponse(Book livro, long exemplaresDisponiveis, long totalExemplares) {
         this.id = livro.getId();
         this.isbn = livro.getIsbn();
-        this.nome = livro.getNome();
-        this.autor = livro.getAutor();
-        this.editora = livro.getEditora();
-        this.dataLancamento = livro.getData_lancamento();
-        this.numeroPaginas = livro.getNumero_paginas();
-        this.sinopse = livro.getSinopse();
-        this.imagem = livro.getImagem();
-        this.edicao = livro.getEdicao();
+        this.nome = livro.getTitle();
+        this.autor = livro.getAuthor();
+        this.editora = livro.getPublisher();
+        this.dataLancamento = livro.getPublicationDate();
+        this.numeroPaginas = livro.getPageCount();
+        this.sinopse = livro.getSynopsis();
+        this.imagem = livro.getCoverUrl();
+        this.edicao = livro.getEdition();
         this.volume = livro.getVolume();
 
-        if (livro.getCdd() != null) {
-            this.cdd = livro.getCdd().getDescription();
-            this.cddCodigo = livro.getCdd().getCode();
+        if (livro.getDeweyClassification() != null) {
+            this.cdd = livro.getDeweyClassification().getDescription();
+            this.cddCodigo = livro.getDeweyClassification().getCode();
         }
 
-        if (livro.getTipo_capa() != null) {
-            this.tipoCapa = livro.getTipo_capa().getStatus();
-            this.tipoCapaRaw = livro.getTipo_capa().name();
+        if (livro.getCoverType() != null) {
+            this.tipoCapa = livro.getCoverType().getStatus();
+            this.tipoCapaRaw = livro.getCoverType().name();
         }
 
-        if (livro.getClassificacao_etaria() != null) {
-            this.classificacaoEtaria = livro.getClassificacao_etaria().getStatus();
-            this.classificacaoEtariaRaw = livro.getClassificacao_etaria().name();
+        if (livro.getAgeRating() != null) {
+            this.classificacaoEtaria = livro.getAgeRating().getStatus();
+            this.classificacaoEtariaRaw = livro.getAgeRating().name();
         }
 
-        this.generos = livro.getGeneros().stream()
+        this.generos = livro.getGenres().stream()
                 .map(Genre::getName)
                 .collect(Collectors.toSet());
 
         this.exemplaresDisponiveis = exemplaresDisponiveis;
         this.totalExemplares = totalExemplares;
-        this.avaliacao = livro.getAvaliacao();
+        this.avaliacao = livro.getRating();
     }
 }

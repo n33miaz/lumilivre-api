@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.repository;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,5 +13,5 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     List<AuditLog> findByActorOrderByOccurredAtDesc(String actor);
 
-    List<AuditLog> findByActionAndOccurredAtBetween(String action, LocalDateTime from, LocalDateTime to);
+    List<AuditLog> findByActionAndOccurredAtBetween(String action, OffsetDateTime from, OffsetDateTime to);
 }

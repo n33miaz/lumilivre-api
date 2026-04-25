@@ -3,8 +3,8 @@ package br.com.lumilivre.api.service;
 import br.com.lumilivre.api.dto.turno.TurnoResumoResponse;
 import br.com.lumilivre.api.dto.turno.TurnoRequest;
 import br.com.lumilivre.api.dto.turno.TurnoResponse;
-import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
-import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.StudyShift;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.repository.StudyShiftRepository;
@@ -32,7 +32,7 @@ public class StudyShiftService {
     @CacheEvict(value = "turnos", allEntries = true)
     public ResponseEntity<TurnoResponse> cadastrar(TurnoRequest dto) {
         if (studyShiftRepository.existsByNameIgnoreCase(dto.getNome())) {
-            throw new RegraDeNegocioException("Já existe um turno com este nome.");
+            throw new BusinessRuleException("Já existe um turno com este nome.");
         }
         StudyShift turno = new StudyShift();
         turno.setName(dto.getNome());
@@ -44,7 +44,7 @@ public class StudyShiftService {
     @CacheEvict(value = "turnos", allEntries = true)
     public ResponseEntity<TurnoResponse> atualizar(Integer id, TurnoRequest dto) {
         StudyShift turno = studyShiftRepository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Turno não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Turno não encontrado."));
 
         turno.setName(dto.getNome());
         StudyShift salvo = studyShiftRepository.save(turno);
@@ -55,7 +55,7 @@ public class StudyShiftService {
     @CacheEvict(value = "turnos", allEntries = true)
     public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
         if (!studyShiftRepository.existsById(id)) {
-            throw new RecursoNaoEncontradoException("Turno não encontrado.");
+            throw new ResourceNotFoundException("Turno não encontrado.");
         }
         studyShiftRepository.deleteById(id);
 

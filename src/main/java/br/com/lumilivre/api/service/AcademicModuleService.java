@@ -3,8 +3,8 @@ package br.com.lumilivre.api.service;
 import br.com.lumilivre.api.dto.modulo.ModuloResumoResponse;
 import br.com.lumilivre.api.dto.modulo.ModuloRequest;
 import br.com.lumilivre.api.dto.modulo.ModuloResponse;
-import br.com.lumilivre.api.exception.custom.RecursoNaoEncontradoException;
-import br.com.lumilivre.api.exception.custom.RegraDeNegocioException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.AcademicModule;
 import br.com.lumilivre.api.dto.comum.ApiResponse;
 import br.com.lumilivre.api.repository.AcademicModuleRepository;
@@ -32,7 +32,7 @@ public class AcademicModuleService {
     @CacheEvict(value = "modulos", allEntries = true)
     public ResponseEntity<ModuloResponse> cadastrar(ModuloRequest dto) {
         if (academicModuleRepository.existsByNameIgnoreCase(dto.getNome())) {
-            throw new RegraDeNegocioException("Já existe um módulo com este nome.");
+            throw new BusinessRuleException("Já existe um módulo com este nome.");
         }
         AcademicModule modulo = new AcademicModule();
         modulo.setName(dto.getNome());
@@ -44,7 +44,7 @@ public class AcademicModuleService {
     @CacheEvict(value = "modulos", allEntries = true)
     public ResponseEntity<ModuloResponse> atualizar(Integer id, ModuloRequest dto) {
         AcademicModule modulo = academicModuleRepository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Módulo não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Módulo não encontrado."));
 
         modulo.setName(dto.getNome());
         AcademicModule salvo = academicModuleRepository.save(modulo);
@@ -55,7 +55,7 @@ public class AcademicModuleService {
     @CacheEvict(value = "modulos", allEntries = true)
     public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
         if (!academicModuleRepository.existsById(id)) {
-            throw new RecursoNaoEncontradoException("Módulo não encontrado.");
+            throw new ResourceNotFoundException("Módulo não encontrado.");
         }
         academicModuleRepository.deleteById(id);
 
