@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version>
+        <version>4.0.6</version>
         <relativePath/>
     </parent>
 
@@ -21,7 +21,7 @@
     <properties>
         <java.version>17</java.version>
         <lombok.version>1.18.32</lombok.version>
-        <testcontainers.version>1.19.7</testcontainers.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
         <!-- Flip via -Djacoco.enforce=true in CI once Phase 2 integration tests land -->
         <jacoco.enforce>false</jacoco.enforce>
         <jacoco.line.minimum>0.70</jacoco.line.minimum>
@@ -49,7 +49,7 @@
         <dependency>
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
-            <version>1.3.32</version>
+            <version>3.0.3</version>
         </dependency>
 
         <dependency>
@@ -182,7 +182,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.5.0</version>
+            <version>3.0.3</version>
         </dependency>
 
         <dependency>
@@ -213,7 +213,7 @@
         <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
-            <version>7.4</version>
+            <version>9.0</version>
         </dependency>
 
         <!-- Resilience4j — circuit breaker, retry, timeout para chamadas externas -->
