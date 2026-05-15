@@ -9,12 +9,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.curso.CursoRequest;
-import br.com.lumilivre.api.dto.curso.CursoResponse;
-import br.com.lumilivre.api.dto.curso.CursoResumoResponse;
+import br.com.lumilivre.api.dto.v1.curso.CursoRequest;
+import br.com.lumilivre.api.dto.v1.curso.CursoResponse;
+import br.com.lumilivre.api.dto.v1.curso.CursoResumoResponse;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.Course;
-import br.com.lumilivre.api.dto.comum.ApiResponse;
+import br.com.lumilivre.api.dto.v1.comum.ApiResponse;
 import br.com.lumilivre.api.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -71,11 +71,11 @@ public class CourseService {
         return ResponseEntity.ok(new ApiResponse<>(true, "O Curso foi removido com sucesso", null));
     }
 
-    public List<br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse> buscarEstatisticas() {
+    public List<br.com.lumilivre.api.dto.v1.curso.CursoEstatisticaResponse> buscarEstatisticas() {
         return courseRepository.findEstatisticasCursos();
     }
 
-    public List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorCurso() {
+    public List<br.com.lumilivre.api.dto.v1.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorCurso() {
         return courseRepository.findTotalEmprestimosPorCurso();
     }
 }

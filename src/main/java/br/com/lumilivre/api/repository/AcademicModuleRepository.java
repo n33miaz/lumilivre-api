@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.repository;
 
-import br.com.lumilivre.api.dto.modulo.ModuloResumoResponse;
+import br.com.lumilivre.api.dto.v1.modulo.ModuloResumoResponse;
 import br.com.lumilivre.api.model.AcademicModule;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -21,7 +21,7 @@ public interface AcademicModuleRepository extends JpaRepository<AcademicModule, 
     boolean existsByNameIgnoreCase(String name);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.modulo.ModuloResumoResponse(m.id, m.name, COUNT(a))
+            SELECT new br.com.lumilivre.api.dto.v1.modulo.ModuloResumoResponse(m.id, m.name, COUNT(a))
             FROM AcademicModule m
             LEFT JOIN m.students a
             WHERE (:texto IS NULL OR m.name ILIKE %:texto%)
@@ -31,12 +31,12 @@ public interface AcademicModuleRepository extends JpaRepository<AcademicModule, 
     Page<ModuloResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse(m.name, COUNT(l))
+            SELECT new br.com.lumilivre.api.dto.v1.comum.EstatisticaGraficoResponse(m.name, COUNT(l))
             FROM AcademicModule m
             JOIN m.students a
             JOIN Loan l ON l.student = a
             GROUP BY m.name
             HAVING COUNT(l) > 0
             """)
-    List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorModulo();
+    List<br.com.lumilivre.api.dto.v1.comum.EstatisticaGraficoResponse> findTotalEmprestimosPorModulo();
 }

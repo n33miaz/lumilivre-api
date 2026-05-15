@@ -6,7 +6,7 @@ import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.BookRepository;
-import br.com.lumilivre.api.dto.curso.CursoEstatisticaResponse;
+import br.com.lumilivre.api.dto.v1.curso.CursoEstatisticaResponse;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.enums.PenaltyCode;
@@ -228,7 +228,7 @@ public class ReportService {
     // ================= RELATÓRIOS DE LIVROS E EXEMPLARES =================
 
     public void gerarRelatorioLivrosFiltrados(OutputStream out, String genero, String autor,
-            String cdd, String classificacaoEtaria, String tipoCapa, LocalDate dataInicio, LocalDate dataFim)
+            String editora, String cdd, String classificacaoEtaria, String tipoCapa, LocalDate dataInicio, LocalDate dataFim)
             throws IOException {
         try (Document document = new Document(PageSize.A4.rotate())) {
             PdfWriter.getInstance(document, out);
@@ -242,6 +242,7 @@ public class ReportService {
             List<Book> livros = livroRepository.findForReport(
                     prepararFiltroLike(genero),
                     prepararFiltroLike(autor),
+                    prepararFiltroLike(editora),
                     cdd,
                     classificacaoEtaria,
                     tipoCapa,

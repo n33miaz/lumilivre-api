@@ -22,10 +22,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import br.com.lumilivre.api.dto.common.ErrorResponse;
 import br.com.lumilivre.api.security.AuthRateLimitFilter;
 import br.com.lumilivre.api.security.CorrelationIdFilter;
 import br.com.lumilivre.api.security.JwtAuthenticationFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Locale;
+import org.slf4j.MDC;
+import org.springframework.http.HttpStatus;
 
 @Configuration
 @EnableWebSecurity
@@ -35,16 +41,25 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthRateLimitFilter authRateLimitFilter;
     private final CorrelationIdFilter correlationIdFilter;
+    private final ObjectMapper objectMapper;
+    private final MessageResolver messageResolver;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:8080}")
     private String[] allowedOrigins;
 
+    @Value("${app.api.v2.enabled:true}")
+    private boolean v2ApiEnabled;
+
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           AuthRateLimitFilter authRateLimitFilter,
-                          CorrelationIdFilter correlationIdFilter) {
+                          CorrelationIdFilter correlationIdFilter,
+                          ObjectMapper objectMapper,
+                          MessageResolver messageResolver) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.authRateLimitFilter = authRateLimitFilter;
         this.correlationIdFilter = correlationIdFilter;
+        this.objectMapper = objectMapper;
+        this.messageResolver = messageResolver;
     }
 
     @PostConstruct
@@ -106,26 +121,55 @@ public class SecurityConfig {
 
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
+                            Locale locale = resolveLocale(req);
+                            ErrorResponse body = ErrorResponse.builder()
+                                    .status(HttpStatus.UNAUTHORIZED.value())
+                                    .error(messageResolver.resolve("error.unauthorized.title", locale))
+                                    .message(messageResolver.resolve("error.unauthorized.message", locale))
+                                    .path(req.getRequestURI())
+                                    .correlationId(MDC.get("correlationId"))
+                                    .build();
                             res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            res.setContentType("application/json");
-                            res.getWriter().write("{\"error\":\"Unauthorized\"}");
+                            res.setContentType("application/json;charset=UTF-8");
+                            res.setHeader("Content-Language", locale.toLanguageTag());
+                            objectMapper.writeValue(res.getWriter(), body);
                         })
                         .accessDeniedHandler((req, res, e) -> {
+                            Locale locale = resolveLocale(req);
+                            ErrorResponse body = ErrorResponse.builder()
+                                    .status(HttpStatus.FORBIDDEN.value())
+                                    .error(messageResolver.resolve("error.access-denied.title", locale))
+                                    .message(messageResolver.resolve("error.access-denied.message", locale))
+                                    .path(req.getRequestURI())
+                                    .correlationId(MDC.get("correlationId"))
+                                    .build();
                             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            res.setContentType("application/json");
-                            res.getWriter().write("{\"error\":\"Access Denied\"}");
+                            res.setContentType("application/json;charset=UTF-8");
+                            res.setHeader("Content-Language", locale.toLanguageTag());
+                            objectMapper.writeValue(res.getWriter(), body);
                         }))
 
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> {
+                    if (!v2ApiEnabled) {
+                        auth.requestMatchers("/api/v2/**").denyAll();
+                    }
+                    auth
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // Endpoints públicos
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/v2/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
 
                         // Endpoints mobile de catálogo (GET público para leitura)
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v2/books/catalog",
+                                "/api/v2/books/public/search",
+                                "/api/v2/books/genres/**")
+                                .permitAll()
+
                         .requestMatchers(HttpMethod.GET,
                                 "/livros/catalogo-mobile",
                                 "/livros/mobile/buscar",
@@ -174,6 +218,55 @@ public class SecurityConfig {
                         // Admin exclusivo
                         .requestMatchers("/usuarios/**").hasRole("ADMIN")
 
+                        // v2 — acesso misto por role (lógica idêntica à v1)
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v2/students/ranking",
+                                "/api/v2/loans/student/**",
+                                "/api/v2/students/{registrationNumber}",
+                                "/api/v2/books/recommendations/**")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
+
+                        .requestMatchers(HttpMethod.GET, "/api/v2/books/{id}")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/v2/loans/*/renew")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
+
+                        .requestMatchers("/api/v2/students/**", "/api/v2/books/**", "/api/v2/loans/**",
+                                "/api/v2/book-copies/**")
+                                .hasAnyRole("ADMIN", "LIBRARIAN")
+
+                        // v2 — Acesso estudante: reservas, solicitações, referência
+                        .requestMatchers("/api/v2/reservations/**", "/api/v2/loan-requests/**")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
+
+                        // v2 — Dados de referência (leitura liberada para autenticados)
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v2/courses/**",
+                                "/api/v2/genres/**",
+                                "/api/v2/metadata/**",
+                                "/api/v2/dewey-classifications/**",
+                                "/api/v2/academic-modules/**",
+                                "/api/v2/study-shifts/**",
+                                "/api/v2/theses/**")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
+
+                        // v2 — Escrita de referência requer ADMIN/LIBRARIAN
+                        .requestMatchers("/api/v2/courses/**",
+                                "/api/v2/genres/**",
+                                "/api/v2/dewey-classifications/**",
+                                "/api/v2/academic-modules/**",
+                                "/api/v2/study-shifts/**",
+                                "/api/v2/theses/**")
+                                .hasAnyRole("ADMIN", "LIBRARIAN")
+
+                        .requestMatchers("/api/v2/dashboard/**", "/api/v2/reports/**")
+                                .hasAnyRole("ADMIN", "LIBRARIAN")
+
+                        // v2 — Admin exclusivo
+                        .requestMatchers("/api/v2/imports/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v2/users/**").hasRole("ADMIN")
+
                         // Admin ou Bibliotecário
                         .requestMatchers(
                                 "/livros/**",
@@ -191,7 +284,8 @@ public class SecurityConfig {
                                 "/importacao/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN")
 
-                        .anyRequest().authenticated())
+                        .anyRequest().authenticated();
+                })
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -211,6 +305,12 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
+    }
+
+    private Locale resolveLocale(HttpServletRequest req) {
+        Locale requested = req.getLocale();
+        if ("en".equals(requested.getLanguage())) return Locale.forLanguageTag("en-US");
+        return Locale.forLanguageTag("pt-BR");
     }
 
     @Bean

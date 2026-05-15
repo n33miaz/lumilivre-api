@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse;
+import br.com.lumilivre.api.dto.v1.usuario.UsuarioResumoResponse;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.Student;
@@ -52,7 +52,7 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
             Pageable pageable);
 
     @Query("""
-                    SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(
+                    SELECT new br.com.lumilivre.api.dto.v1.usuario.UsuarioResumoResponse(
                         u.id,
                         u.email,
                         u.role
@@ -63,7 +63,7 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
     Page<UsuarioResumoResponse> findUsuarioParaListaAdmin(Pageable pageable);
 
     @Query("""
-                        SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(u.id, u.email, u.role)
+                        SELECT new br.com.lumilivre.api.dto.v1.usuario.UsuarioResumoResponse(u.id, u.email, u.role)
                         FROM AppUser u
                         WHERE (:texto IS NULL OR :texto = ''
                            OR CAST(u.id AS string) LIKE %:texto%
@@ -73,7 +73,7 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
     Page<UsuarioResumoResponse> buscarPorTextoComDTO(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-                        SELECT new br.com.lumilivre.api.dto.usuario.UsuarioResumoResponse(u.id, u.email, u.role)
+                        SELECT new br.com.lumilivre.api.dto.v1.usuario.UsuarioResumoResponse(u.id, u.email, u.role)
                         FROM AppUser u
                         WHERE (:id IS NULL OR u.id = :id)
                           AND (:email IS NULL OR u.email ILIKE CONCAT('%', :email, '%'))

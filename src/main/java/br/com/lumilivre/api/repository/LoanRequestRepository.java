@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse;
+import br.com.lumilivre.api.dto.v1.solicitacao.SolicitacaoDashboardResponse;
 import br.com.lumilivre.api.enums.LoanRequestStatus;
 import br.com.lumilivre.api.model.LoanRequest;
 
@@ -21,7 +21,7 @@ public interface LoanRequestRepository extends JpaRepository<LoanRequest, UUID> 
     List<LoanRequest> findAllByOrderByRequestedAtDesc();
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse(
+            SELECT new br.com.lumilivre.api.dto.v1.solicitacao.SolicitacaoDashboardResponse(
                 a.fullName,
                 l.title,
                 ex.copyCode,

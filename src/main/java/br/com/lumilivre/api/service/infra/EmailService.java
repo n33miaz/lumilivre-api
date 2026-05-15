@@ -1,5 +1,8 @@
 package br.com.lumilivre.api.service.infra;
 
+import java.util.Locale;
+
+import br.com.lumilivre.api.config.MessageResolver;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final MessageResolver messages;
 
     private static final String FROM = "contato.lumlivre@gmail.com.br";
     private static final String SITE = "https://www.lumilivre.com.br";
@@ -98,19 +102,35 @@ public class EmailService {
     // RESET DE SENHA (HTML)
     // =========================
     public void enviarEmailResetSenha(String destino, String link) {
+        enviarEmailResetSenha(destino, link, Locale.forLanguageTag("pt-BR"));
+    }
 
-        String conteudo = "<p>Olá,</p>" +
-                "<p>Recebemos uma solicitação para redefinir sua senha.</p>" +
-                "<p>Clique no botão abaixo para criar uma nova senha:</p>" +
+    public void enviarEmailResetSenha(String destino, String link, Locale locale) {
+        String subject = messages.resolve("email.reset-password.subject", locale);
+        String greeting = messages.resolve("email.reset-password.greeting", locale);
+        String body = messages.resolve("email.reset-password.body", locale);
+        String ignore = messages.resolve("email.reset-password.ignore", locale);
+
+        String conteudo = "<p>" + greeting + "</p>" +
+                "<p>" + body + "</p>" +
                 "<p style='text-align:center;'>" +
                 "  <a href='" + link
                 + "' style='background:#762075; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;'>"
-                +
-                "    Redefinir Senha" +
-                "  </a>" +
+                + subject + "</a>" +
                 "</p>" +
-                "<p>Se você não solicitou esta alteração, ignore este e-mail.</p>";
+                "<p>" + ignore + "</p>";
 
-        enviarEmailHtml(destino, "Redefinição de Senha - LumiLivre", conteudo);
+        enviarEmailHtml(destino, subject, conteudo);
+    }
+
+    // =========================
+    // NOTIFICAÇÃO DE EMPRÉSTIMO
+    // =========================
+    public void enviarNotificacaoEmprestimo(String destino, String subjectKey, String bodyKey,
+            String bookTitle, Locale locale) {
+        String subject = messages.resolve(subjectKey, locale);
+        String bodyText = messages.resolve(bodyKey, locale, bookTitle);
+        String conteudo = "<p>" + bodyText + "</p>";
+        enviarEmailHtml(destino, subject, conteudo);
     }
 }

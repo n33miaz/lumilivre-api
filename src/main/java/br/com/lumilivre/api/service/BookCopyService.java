@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.livro.ExemplarRequest;
-import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
+import br.com.lumilivre.api.dto.v1.livro.ExemplarRequest;
+import br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;

@@ -1,6 +1,6 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.genero.GeneroResponse;
+import br.com.lumilivre.api.dto.v1.genero.GeneroResponse;
 import br.com.lumilivre.api.repository.GenreRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;

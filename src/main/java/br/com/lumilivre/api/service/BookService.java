@@ -27,14 +27,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import br.com.lumilivre.api.dto.genero.GeneroCatalogoResponse;
-import br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse;
-import br.com.lumilivre.api.dto.livro.LivroDetalheResponse;
-import br.com.lumilivre.api.dto.livro.LivroListagemProjection;
-import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
-import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
-import br.com.lumilivre.api.dto.livro.LivroRequest;
-import br.com.lumilivre.api.dto.livro.LivroResponse;
+import br.com.lumilivre.api.dto.v1.genero.GeneroCatalogoResponse;
+import br.com.lumilivre.api.dto.v1.livro.LivroAgrupadoResponse;
+import br.com.lumilivre.api.dto.v1.livro.LivroDetalheResponse;
+import br.com.lumilivre.api.dto.v1.livro.LivroListagemProjection;
+import br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse;
+import br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse;
+import br.com.lumilivre.api.dto.v1.livro.LivroRequest;
+import br.com.lumilivre.api.dto.v1.livro.LivroResponse;
 import br.com.lumilivre.api.enums.AgeRating;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
@@ -190,19 +190,22 @@ public class BookService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = MOBILE_CATALOG, allEntries = true),
+            @CacheEvict(value = BOOK_DETAIL, key = "#id")
     })
-    public void uploadCapa(UUID id, MultipartFile file) {
+    public LivroResponse uploadCapa(UUID id, MultipartFile file) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Livro não encontrado para o ID: " + id));
 
         if (file != null && !file.isEmpty()) {
             try {
-                String url = storageService.uploadFile(file, "capas");
+                String url = storageService.uploadFile(file, "covers");
                 book.setCoverUrl(url);
             } catch (Exception e) {
                 throw new RuntimeException("Erro ao enviar a capa: " + e.getMessage(), e);
             }
         }
+
+        return new LivroResponse(bookRepository.save(book));
     }
 
     @Transactional
@@ -409,7 +412,7 @@ public class BookService {
 
         if (file != null && !file.isEmpty()) {
             try {
-                book.setCoverUrl(storageService.uploadFile(file, "capas"));
+                book.setCoverUrl(storageService.uploadFile(file, "covers"));
             } catch (Exception e) {
                 throw new RuntimeException("Erro ao enviar a capa: " + e.getMessage(), e);
             }

@@ -55,6 +55,10 @@ public class AppUser {
     @EqualsAndHashCode.Exclude
     private Student student;
 
+    @Column(name = "preferred_locale", nullable = false, length = 10)
+    @Builder.Default
+    private String preferredLocale = "pt-BR";
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 

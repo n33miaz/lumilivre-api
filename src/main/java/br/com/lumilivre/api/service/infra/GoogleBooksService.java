@@ -14,9 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import br.com.lumilivre.api.dto.integracao.google.GoogleBooksResponse;
-import br.com.lumilivre.api.dto.integracao.google.ImageLinks;
-import br.com.lumilivre.api.dto.integracao.google.VolumeInfo;
+import br.com.lumilivre.api.dto.integration.google.GoogleBooksResponse;
+import br.com.lumilivre.api.dto.integration.google.ImageLinks;
+import br.com.lumilivre.api.dto.integration.google.VolumeInfo;
 import br.com.lumilivre.api.model.Book;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;

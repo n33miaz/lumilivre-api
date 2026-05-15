@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,10 +24,10 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
+import br.com.lumilivre.api.dto.v1.auth.LoginRequest;
 import br.com.lumilivre.api.enums.Role;
-import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.PasswordResetToken;
 import br.com.lumilivre.api.model.Student;
@@ -93,7 +94,7 @@ class AuthServiceTest {
         when(usuarioRepository.findByEmailOrRegistrationNumber("ninguemm", "ninguemm")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.login(new LoginRequest("ninguemm", "senha")))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(BadCredentialsException.class);
 
         verify(passwordEncoder, never()).matches(any(), any());
         verify(jwtUtil, never()).generateToken(any());
@@ -126,7 +127,8 @@ class AuthServiceTest {
 
         verify(emailService).enviarEmailResetSenha(
                 eq("admin@lumilivre.test"),
-                contains(tokenCaptor.getValue().getToken()));
+                contains(tokenCaptor.getValue().getToken()),
+                any(Locale.class));
     }
 
     @Test
@@ -136,7 +138,7 @@ class AuthServiceTest {
         service.solicitarResetSenha("desconhecido@lumilivre.test");
 
         verify(tokenRepository, never()).save(any());
-        verify(emailService, never()).enviarEmailResetSenha(any(), any());
+        verify(emailService, never()).enviarEmailResetSenha(any(), any(), any());
     }
 
     @Test
@@ -169,8 +171,7 @@ class AuthServiceTest {
         when(tokenRepository.findByToken("token-123")).thenReturn(Optional.of(tokenReset));
 
         assertThatThrownBy(() -> service.mudarSenhaComToken(new MudarSenhaTokenRequest("token-123", "nova-senha")))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("expirado");
+                .isInstanceOf(BusinessRuleException.class);
 
         verify(passwordEncoder, never()).encode(any());
         verify(usuarioRepository, never()).save(any());

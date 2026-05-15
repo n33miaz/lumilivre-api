@@ -1,0 +1,2 @@
+ALTER TABLE app_user
+    ADD COLUMN IF NOT EXISTS preferred_locale VARCHAR(10) NOT NULL DEFAULT 'pt-BR';

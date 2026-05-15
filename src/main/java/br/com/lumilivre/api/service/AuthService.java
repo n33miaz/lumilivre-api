@@ -11,10 +11,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.LoginResponse;
 import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
-import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
+import br.com.lumilivre.api.dto.v1.auth.LoginRequest;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.PasswordResetToken;
 import br.com.lumilivre.api.repository.AppUserRepository;
@@ -33,21 +33,42 @@ public class AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
 
-    public LoginResponse login(LoginRequest dto) {
-        AppUser appUser = appUserRepository.findByEmailOrRegistrationNumber(dto.getUser(), dto.getUser())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+    public br.com.lumilivre.api.dto.v1.auth.LoginResponse login(LoginRequest dto) {
+        AuthenticatedLogin login = authenticate(dto.getUser(), dto.getSenha());
+        return new br.com.lumilivre.api.dto.v1.auth.LoginResponse(
+                login.appUser(), login.token(), login.initialPassword());
+    }
 
-        if (!passwordEncoder.matches(dto.getSenha(), appUser.getPasswordHash())) {
-            throw new BadCredentialsException("Senha incorreta");
+    public LoginResponse login(String username, String password) {
+        AuthenticatedLogin login = authenticate(username, password);
+        return LoginResponse.builder()
+                .id(login.appUser().getId())
+                .email(login.appUser().getEmail())
+                .role(login.appUser().getRole().name())
+                .studentRegistrationNumber(
+                        login.appUser().getStudent() != null
+                                ? login.appUser().getStudent().getRegistrationNumber()
+                                : null)
+                .token(login.token())
+                .initialPasswordChange(login.initialPassword())
+                .build();
+    }
+
+    private AuthenticatedLogin authenticate(String username, String password) {
+        AppUser appUser = appUserRepository.findByEmailOrRegistrationNumber(username, username)
+                .orElseThrow(() -> new BadCredentialsException("auth.login.error.invalid-credentials"));
+
+        if (!passwordEncoder.matches(password, appUser.getPasswordHash())) {
+            throw new BadCredentialsException("auth.login.error.invalid-credentials");
         }
 
         boolean isInitialPassword = false;
         if (appUser.getStudent() != null) {
             String matricula = appUser.getStudent().getRegistrationNumber();
-            if (dto.getSenha().equals(matricula)) {
+            if (password.equals(matricula)) {
                 isInitialPassword = true;
             }
-        } else if (dto.getSenha().equals(appUser.getEmail())) {
+        } else if (password.equals(appUser.getEmail())) {
             isInitialPassword = true;
         }
 
@@ -57,7 +78,7 @@ public class AuthService {
         User userDetails = new User(appUser.getEmail(), appUser.getPasswordHash(), authorities);
         String token = jwtUtil.generateToken(userDetails);
 
-        return new LoginResponse(appUser, token, isInitialPassword);
+        return new AuthenticatedLogin(appUser, token, isInitialPassword);
     }
 
     @Transactional
@@ -72,7 +93,9 @@ public class AuthService {
             passwordResetTokenRepository.save(passwordResetToken);
 
             String linkReset = "https://www.lumilivre.com.br/mudar-senha?token=" + token;
-            emailService.enviarEmailResetSenha(appUser.getEmail(), linkReset);
+            String preferredLocale = appUser.getPreferredLocale() != null ? appUser.getPreferredLocale() : "pt-BR";
+            emailService.enviarEmailResetSenha(appUser.getEmail(), linkReset,
+                    java.util.Locale.forLanguageTag(preferredLocale));
         }
     }
 
@@ -84,10 +107,10 @@ public class AuthService {
     @Transactional
     public void mudarSenhaComToken(MudarSenhaTokenRequest dto) {
         PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(dto.getToken())
-                .orElseThrow(() -> new IllegalArgumentException("Token inválido ou não encontrado."));
+                .orElseThrow(() -> BusinessRuleException.ofKey("auth.password-reset.error.token-invalid"));
 
         if (passwordResetToken.isExpired()) {
-            throw new IllegalArgumentException("Token expirado.");
+            throw BusinessRuleException.ofKey("auth.password-reset.error.token-invalid");
         }
 
         AppUser appUser = passwordResetToken.getAppUser();
@@ -96,4 +119,6 @@ public class AuthService {
 
         passwordResetTokenRepository.delete(passwordResetToken);
     }
+
+    private record AuthenticatedLogin(AppUser appUser, String token, boolean initialPassword) {}
 }

@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilityViolationException;
 import br.com.lumilivre.api.domain.policy.LoanPolicy.LoanPolicyViolationException;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
+import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoRequest;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;

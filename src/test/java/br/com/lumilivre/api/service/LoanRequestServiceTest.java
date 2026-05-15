@@ -21,7 +21,7 @@ import org.springframework.http.HttpStatus;
 
 import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilityViolationException;
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy.RequestApprovalViolationException;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
+import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoRequest;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.LoanRequestStatus;
 import br.com.lumilivre.api.enums.LoanStatus;
@@ -183,7 +183,7 @@ class LoanRequestServiceTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(request.getStatus()).isEqualTo(LoanRequestStatus.REJECTED);
-        verify(loanService, never()).cadastrar(any());
+        verify(loanService, never()).cadastrar(any(EmprestimoRequest.class));
         verify(loanRequestRepository).save(request);
         verify(outboxPublisher).publish(
                 eq(EventType.REQUEST_REJECTED),
@@ -199,7 +199,7 @@ class LoanRequestServiceTest {
         var response = service.processarSolicitacao(REQUEST_ID, true);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        verify(loanService, never()).cadastrar(any());
+        verify(loanService, never()).cadastrar(any(EmprestimoRequest.class));
         verify(loanRequestRepository, never()).save(any());
         verify(outboxPublisher, never()).publish(any(), any(), any(), any());
     }
@@ -213,7 +213,7 @@ class LoanRequestServiceTest {
                 .isInstanceOf(RequestApprovalViolationException.class)
                 .hasMessageContaining("not pending");
 
-        verify(loanService, never()).cadastrar(any());
+        verify(loanService, never()).cadastrar(any(EmprestimoRequest.class));
         verify(loanRequestRepository, never()).save(any());
         verify(outboxPublisher, never()).publish(any(), any(), any(), any());
     }

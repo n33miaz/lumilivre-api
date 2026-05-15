@@ -1,12 +1,12 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.turno.TurnoResumoResponse;
-import br.com.lumilivre.api.dto.turno.TurnoRequest;
-import br.com.lumilivre.api.dto.turno.TurnoResponse;
+import br.com.lumilivre.api.dto.v1.turno.TurnoResumoResponse;
+import br.com.lumilivre.api.dto.v1.turno.TurnoRequest;
+import br.com.lumilivre.api.dto.v1.turno.TurnoResponse;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.StudyShift;
-import br.com.lumilivre.api.dto.comum.ApiResponse;
+import br.com.lumilivre.api.dto.v1.comum.ApiResponse;
 import br.com.lumilivre.api.repository.StudyShiftRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
@@ -62,7 +62,7 @@ public class StudyShiftService {
         return ResponseEntity.ok(new ApiResponse<>(true, "Turno removido com sucesso.", null));
     }
 
-    public java.util.List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorTurno() {
+    public java.util.List<br.com.lumilivre.api.dto.v1.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorTurno() {
         return studyShiftRepository.findTotalEmprestimosPorTurno();
     }
 }

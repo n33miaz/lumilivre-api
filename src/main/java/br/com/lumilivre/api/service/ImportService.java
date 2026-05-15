@@ -9,6 +9,7 @@ import br.com.lumilivre.api.enums.CoverType;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.*;
 import br.com.lumilivre.api.repository.*;
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.utils.ExcelUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ public class ImportService {
     private final BookCopyRepository exemplarRepository;
     private final DeweyClassificationRepository deweyClassificationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MessageResolver messages;
 
     public ImportService(
             StudentRepository alunoRepository,
@@ -44,7 +46,8 @@ public class ImportService {
             BookRepository livroRepository,
             BookCopyRepository exemplarRepository,
             DeweyClassificationRepository deweyClassificationRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            MessageResolver messages) {
         this.alunoRepository = alunoRepository;
         this.usuarioRepository = usuarioRepository;
         this.courseRepository = courseRepository;
@@ -54,17 +57,22 @@ public class ImportService {
         this.exemplarRepository = exemplarRepository;
         this.deweyClassificationRepository = deweyClassificationRepository;
         this.passwordEncoder = passwordEncoder;
+        this.messages = messages;
     }
 
     public String importar(String tipo, MultipartFile file) throws Exception {
+        return importar(tipo, file, Locale.forLanguageTag("pt-BR"));
+    }
+
+    public String importar(String tipo, MultipartFile file, Locale locale) throws Exception {
         log.info("Iniciando importação unificada do tipo: {}", tipo);
         validarArquivo(file);
 
         try {
             return switch (tipo.toLowerCase()) {
-                case "aluno" -> importarAlunos(file);
-                case "livro" -> importarLivros(file);
-                case "exemplar" -> importarExemplares(file);
+                case "aluno" -> importarAlunos(file, locale);
+                case "livro" -> importarLivros(file, locale);
+                case "exemplar" -> importarExemplares(file, locale);
                 default -> throw new IllegalArgumentException("Tipo de importação inválido: " + tipo);
             };
         } catch (Exception e) {
@@ -76,7 +84,7 @@ public class ImportService {
     // ==================== IMPORTAÇÃO DE ALUNOS =====================
 
     @Transactional
-    protected String importarAlunos(MultipartFile file) throws Exception {
+    protected String importarAlunos(MultipartFile file, Locale locale) throws Exception {
         List<Student> alunosParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> matriculasNoExcel = new HashSet<>();
@@ -142,7 +150,7 @@ public class ImportService {
             }
         }
 
-        return salvarEmLotes(alunosParaSalvar, alunoRepository, "alunos", logErros);
+        return salvarEmLotes(alunosParaSalvar, alunoRepository, "alunos", logErros, locale);
     }
 
     private Student criarAlunoFromRow(Row row, Map<String, Integer> headerMap,
@@ -185,7 +193,7 @@ public class ImportService {
     // ===================== IMPORTAÇÃO DE LIVROS =====================
 
     @Transactional
-    protected String importarLivros(MultipartFile file) throws Exception {
+    protected String importarLivros(MultipartFile file, Locale locale) throws Exception {
         List<Book> livrosParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> isbnsNoExcel = new HashSet<>();
@@ -221,7 +229,7 @@ public class ImportService {
                 }
             }
         }
-        return salvarEmLotes(livrosParaSalvar, livroRepository, "livros", logErros);
+        return salvarEmLotes(livrosParaSalvar, livroRepository, "livros", logErros, locale);
     }
 
     private Book criarLivroFromRow(Row row, Map<String, Integer> headerMap) {
@@ -258,7 +266,7 @@ public class ImportService {
     // ===================== IMPORTAÇÃO DE EXEMPLARES =====================
 
     @Transactional
-    protected String importarExemplares(MultipartFile file) throws Exception {
+    protected String importarExemplares(MultipartFile file, Locale locale) throws Exception {
         List<BookCopy> exemplaresParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> tombosNoExcel = new HashSet<>();
@@ -296,7 +304,7 @@ public class ImportService {
             }
         }
 
-        return salvarEmLotes(exemplaresParaSalvar, exemplarRepository, "exemplares", logErros);
+        return salvarEmLotes(exemplaresParaSalvar, exemplarRepository, "exemplares", logErros, locale);
     }
 
     private BookCopy criarExemplarFromRow(Row row, Map<String, Integer> headerMap) {
@@ -327,7 +335,7 @@ public class ImportService {
     // ===================== UTILITÁRIOS =====================
 
     private <T> String salvarEmLotes(List<T> lista, JpaRepository<T, ?> repository, String nomeEntidade,
-            List<ErroImportacao> erros) {
+            List<ErroImportacao> erros, Locale locale) {
         int salvos = 0;
         for (int i = 0; i < lista.size(); i += BATCH_SIZE) {
             int fim = Math.min(i + BATCH_SIZE, lista.size());
@@ -340,7 +348,7 @@ public class ImportService {
                 log.error("Erro ao salvar lote de {}", nomeEntidade, e);
             }
         }
-        return gerarResumo(nomeEntidade, salvos, erros);
+        return gerarResumo(nomeEntidade, salvos, erros, locale);
     }
 
     private Map<String, Integer> mapearCabecalhos(Row headerRow) {
@@ -366,9 +374,9 @@ public class ImportService {
         return val == null ? null : val.replaceAll("\\D", "");
     }
 
-    private String gerarResumo(String tipo, int salvos, List<ErroImportacao> erros) {
+    private String gerarResumo(String tipo, int salvos, List<ErroImportacao> erros, Locale locale) {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Importação de %s concluída. Salvos: %d. Erros: %d.", tipo, salvos, erros.size()));
+        sb.append(messages.resolve("email.import.summary", locale, tipo, salvos, erros.size()));
         if (!erros.isEmpty()) {
             sb.append(" Detalhes: ")
                     .append(erros.stream().limit(5).map(ErroImportacao::toString).collect(Collectors.joining("; ")));

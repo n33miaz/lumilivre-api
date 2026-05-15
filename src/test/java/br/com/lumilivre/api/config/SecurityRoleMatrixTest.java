@@ -31,11 +31,11 @@ import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import br.com.lumilivre.api.controller.LoanController;
-import br.com.lumilivre.api.controller.BookController;
-import br.com.lumilivre.api.controller.ReservationController;
-import br.com.lumilivre.api.controller.LoanRequestController;
-import br.com.lumilivre.api.controller.system.AppUserController;
+import br.com.lumilivre.api.controller.v1.EmprestimoController;
+import br.com.lumilivre.api.controller.v1.LivroController;
+import br.com.lumilivre.api.controller.v1.ReservaController;
+import br.com.lumilivre.api.controller.v1.SolicitacaoEmprestimoController;
+import br.com.lumilivre.api.controller.v1.system.UsuarioController;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.Loan;
@@ -52,13 +52,14 @@ import br.com.lumilivre.api.service.LoanService;
 import br.com.lumilivre.api.service.RecommendationService;
 import br.com.lumilivre.api.service.AppUserService;
 import br.com.lumilivre.api.service.ReservationService;
+import br.com.lumilivre.api.config.MessageResolver;
 
 @WebMvcTest(controllers = {
-        BookController.class,
-        LoanController.class,
-        LoanRequestController.class,
-        ReservationController.class,
-        AppUserController.class
+        LivroController.class,
+        EmprestimoController.class,
+        SolicitacaoEmprestimoController.class,
+        ReservaController.class,
+        UsuarioController.class
 })
 @Import({
         SecurityConfig.class,
@@ -96,6 +97,9 @@ class SecurityRoleMatrixTest {
 
     @MockBean
     private LoanRepository loanRepository;
+
+    @MockBean
+    private MessageResolver messageResolver;
 
     @MockBean
     private JwtUtil jwtUtil;

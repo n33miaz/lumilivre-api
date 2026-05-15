@@ -24,12 +24,15 @@ import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy;
 import br.com.lumilivre.api.domain.policy.LoanPolicy;
 import br.com.lumilivre.api.domain.policy.PenaltyPolicy;
 import br.com.lumilivre.api.domain.policy.ReservationPolicy;
-import br.com.lumilivre.api.dto.aluno.AlunoRankingResponse;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoAtivoResponse;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoDashboardResponse;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoListagemResponse;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoResponse;
+import br.com.lumilivre.api.dto.v1.aluno.AlunoRankingResponse;
+import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoAtivoResponse;
+import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoDashboardResponse;
+import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoListagemResponse;
+import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoRequest;
+import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoResponse;
+import br.com.lumilivre.api.dto.loan.ActiveLoanItem;
+import br.com.lumilivre.api.dto.loan.LoanListItem;
+import br.com.lumilivre.api.dto.loan.LoanRequest;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.PenaltyCode;
@@ -112,6 +115,30 @@ public class LoanService {
         return new EmprestimoResponse(saved);
     }
 
+    @Auditable(action = "LOAN_CREATED", targetParam = "#request.studentRegistrationNumber")
+    @Transactional
+    @CacheEvict(value = {
+            DASHBOARD_STATS,
+            DASHBOARD_OVERDUE_COUNT,
+            DASHBOARD_OVERDUE_LIST
+    }, allEntries = true)
+    public Loan cadastrar(LoanRequest request) {
+        EmprestimoRequest dto = EmprestimoRequest.builder()
+                .id(request.getId())
+                .data_emprestimo(request.getBorrowedAt())
+                .data_devolucao(request.getDueAt())
+                .penalidade(request.getPenaltyCode())
+                .status_emprestimo(request.getStatus())
+                .aluno_matricula(request.getStudentRegistrationNumber())
+                .exemplar_tombo(request.getCopyCode())
+                .build();
+        cadastrar(dto);
+        return loanRepository.findByStudent_RegistrationNumber(request.getStudentRegistrationNumber()).stream()
+                .filter(loan -> loan.getBookCopy() != null && loan.getBookCopy().getCopyCode().equals(request.getCopyCode()))
+                .max(java.util.Comparator.comparing(Loan::getCreatedAt))
+                .orElseThrow(() -> new ResourceNotFoundException("EmprÃ©stimo nÃ£o encontrado."));
+    }
+
     @Transactional
     @CacheEvict(value = {
             DASHBOARD_STATS,
@@ -130,6 +157,27 @@ public class LoanService {
         loan.setDueAt(dto.getData_devolucao());
 
         return new EmprestimoResponse(loanRepository.save(loan));
+    }
+
+    @Transactional
+    @CacheEvict(value = {
+            DASHBOARD_STATS,
+            DASHBOARD_OVERDUE_COUNT,
+            DASHBOARD_OVERDUE_LIST
+    }, allEntries = true)
+    public Loan atualizar(UUID id, LoanRequest request) {
+        EmprestimoRequest dto = EmprestimoRequest.builder()
+                .id(id)
+                .data_emprestimo(request.getBorrowedAt())
+                .data_devolucao(request.getDueAt())
+                .penalidade(request.getPenaltyCode())
+                .status_emprestimo(request.getStatus())
+                .aluno_matricula(request.getStudentRegistrationNumber())
+                .exemplar_tombo(request.getCopyCode())
+                .build();
+        atualizar(dto);
+        return loanRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("EmprÃ©stimo nÃ£o encontrado."));
     }
 
     @Auditable(action = "LOAN_RETURNED", targetParam = "#id")
@@ -249,6 +297,10 @@ public class LoanService {
         return loanRepository.findEmprestimoParaListaAdmin(tratarOrdenacao(pageable));
     }
 
+    public Page<LoanListItem> buscarEmprestimoParaListaAdminV2(Pageable pageable) {
+        return loanRepository.findLoanListItems(tratarOrdenacao(pageable));
+    }
+
     public Page<EmprestimoListagemResponse> buscarPorTexto(String texto, Pageable pageable) {
         Pageable pageableNativo = pageable;
         Sort.Order statusOrder = pageable.getSort().getOrderFor("status");
@@ -263,17 +315,49 @@ public class LoanService {
                               .and(JpaSort.unsafe(Sort.Direction.DESC, "dueAt")));
         }
         if (texto == null || texto.isBlank()) {
-            return buscarAvancado(null, null, null, null, null, null, null, tratarOrdenacao(pageable));
+            return buscarAvancado(null, null, null, null, null, null, (OffsetDateTime) null, tratarOrdenacao(pageable));
         }
         return loanRepository.buscarPorTexto(texto, pageableNativo);
+    }
+
+    public Page<LoanListItem> buscarPorTextoV2(String texto, Pageable pageable) {
+        Pageable pageableNativo = pageable;
+        Sort.Order statusOrder = pageable.getSort().getOrderFor("status");
+        if (statusOrder != null) {
+            boolean isAsc = statusOrder.isAscending();
+            pageableNativo = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                    isAsc
+                    ? JpaSort.unsafe(Sort.Direction.ASC,
+                            "(CASE WHEN e.status = 'COMPLETED' THEN 1 ELSE 0 END)", "dueAt")
+                    : JpaSort.unsafe(Sort.Direction.ASC,
+                            "(CASE WHEN e.status = 'COMPLETED' THEN 1 ELSE 0 END)")
+                              .and(JpaSort.unsafe(Sort.Direction.DESC, "dueAt")));
+        }
+        if (texto == null || texto.isBlank()) {
+            return buscarAvancadoV2(null, null, null, null, null, null, (OffsetDateTime) null, tratarOrdenacao(pageable));
+        }
+        return loanRepository.searchListItems(texto, pageableNativo);
     }
 
     public List<EmprestimoResponse> listarEmprestimosAluno(String matricula) {
         return loanRepository.findEmprestimosAtivos(matricula);
     }
 
+    public List<Loan> listarEmprestimosAlunoV2(String matricula) {
+        return loanRepository.findActiveLoansForStudent(matricula);
+    }
+
     public List<EmprestimoResponse> listarHistorico(String matricula) {
         return loanRepository.findHistoricoEmprestimos(matricula);
+    }
+
+    public List<Loan> listarHistoricoV2(String matricula) {
+        return loanRepository.findLoanHistoryForStudent(matricula);
+    }
+
+    public Loan buscarPorId(UUID id) {
+        return loanRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("EmprÃ©stimo nÃ£o encontrado."));
     }
 
     @Cacheable(value = DASHBOARD_OVERDUE_LIST)
@@ -283,6 +367,10 @@ public class LoanService {
 
     public List<EmprestimoAtivoResponse> buscarAtivosEAtrasados() {
         return loanRepository.findAtivosEAtrasadosDTO();
+    }
+
+    public List<ActiveLoanItem> buscarAtivosEAtrasadosV2() {
+        return loanRepository.findActiveAndOverdueItems();
     }
 
     @Cacheable(value = DASHBOARD_OVERDUE_COUNT)
@@ -299,6 +387,11 @@ public class LoanService {
 
     public List<EmprestimoAtivoResponse> buscarApenasAtrasados() {
         return loanRepository.findApenasAtrasadosDTO(
+                LocalDate.now().atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
+    }
+
+    public List<ActiveLoanItem> buscarApenasAtrasadosV2() {
+        return loanRepository.findOverdueItems(
                 LocalDate.now().atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
     }
 
@@ -342,6 +435,97 @@ public class LoanService {
                 dataDevolucaoFim,
                 OffsetDateTime.now(),
                 tratarOrdenacao(pageable));
+    }
+
+    public Page<LoanListItem> buscarAvancadoV2(
+            LoanStatus statusEmprestimo,
+            String tombo,
+            String livroNome,
+            String alunoNomeCompleto,
+            String dataEmprestimo,
+            String dataDevolucao,
+            String dataDevolucaoInicio,
+            Pageable pageable) {
+        OffsetDateTime dueAtStart = null;
+        if (dataDevolucaoInicio != null && !dataDevolucaoInicio.isBlank()) {
+            dueAtStart = LocalDate.parse(dataDevolucaoInicio)
+                    .atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
+        }
+        return buscarAvancadoV2(
+                statusEmprestimo,
+                tombo,
+                livroNome,
+                alunoNomeCompleto,
+                dataEmprestimo,
+                dataDevolucao,
+                dueAtStart,
+                pageable);
+    }
+
+    public Page<LoanListItem> buscarAvancadoV2(
+            LoanStatus statusEmprestimo,
+            String tombo,
+            String livroNome,
+            String alunoNomeCompleto,
+            String dataEmprestimo,
+            String dataDevolucao,
+            OffsetDateTime dataDevolucaoInicio,
+            Pageable pageable) {
+        String tomboFiltro = (tombo != null && !tombo.isBlank()) ? "%" + tombo + "%" : null;
+        String livroNomeFiltro = (livroNome != null && !livroNome.isBlank()) ? "%" + livroNome + "%" : null;
+        String alunoNomeFiltro = (alunoNomeCompleto != null && !alunoNomeCompleto.isBlank())
+                ? "%" + alunoNomeCompleto + "%" : null;
+
+        OffsetDateTime dataEmprestimoInicio = null;
+        if (dataEmprestimo != null && !dataEmprestimo.isBlank()) {
+            dataEmprestimoInicio = LocalDate.parse(dataEmprestimo)
+                    .atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
+        }
+
+        OffsetDateTime dataDevolucaoFim = null;
+        if (dataDevolucao != null && !dataDevolucao.isBlank()) {
+            dataDevolucaoFim = LocalDate.parse(dataDevolucao)
+                    .atTime(23, 59, 59).atOffset(OffsetDateTime.now().getOffset());
+        }
+
+        String statusString = (statusEmprestimo != null) ? statusEmprestimo.name() : null;
+
+        return loanRepository.searchAdvancedListItems(
+                statusString,
+                tomboFiltro,
+                livroNomeFiltro,
+                alunoNomeFiltro,
+                dataEmprestimoInicio,
+                null,
+                dataDevolucaoInicio,
+                dataDevolucaoFim,
+                OffsetDateTime.now(),
+                tratarOrdenacao(pageable));
+    }
+
+    public Page<EmprestimoListagemResponse> buscarAvancado(
+            LoanStatus statusEmprestimo,
+            String tombo,
+            String livroNome,
+            String alunoNomeCompleto,
+            String dataEmprestimo,
+            String dataDevolucao,
+            String dataDevolucaoInicio,
+            Pageable pageable) {
+        OffsetDateTime dueAtStart = null;
+        if (dataDevolucaoInicio != null && !dataDevolucaoInicio.isBlank()) {
+            dueAtStart = LocalDate.parse(dataDevolucaoInicio)
+                    .atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
+        }
+        return buscarAvancado(
+                statusEmprestimo,
+                tombo,
+                livroNome,
+                alunoNomeCompleto,
+                dataEmprestimo,
+                dataDevolucao,
+                dueAtStart,
+                pageable);
     }
 
     public List<AlunoRankingResponse> gerarRankingAlunos(int top, Integer cursoId, Integer moduloId, Integer turnoId) {

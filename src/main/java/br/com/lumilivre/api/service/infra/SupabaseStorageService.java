@@ -15,6 +15,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -25,7 +26,7 @@ public class SupabaseStorageService {
     @Value("${supabase.url}")
     private String supabaseUrl;
 
-    @Value("${supabase.key}")
+    @Value("${supabase.service-role.key:${supabase.key}}")
     private String supabaseKey;
 
     @Value("${supabase.bucket.capas}")
@@ -34,29 +35,50 @@ public class SupabaseStorageService {
     @Value("${supabase.bucket.tccs}")
     private String bucketTccs;
 
+    @Value("${supabase.bucket.avatars}")
+    private String bucketAvatars;
+
     private final HttpClient client = HttpClient.newHttpClient();
 
     @CircuitBreaker(name = "supabaseStorage", fallbackMethod = "uploadFileFallback")
     public String uploadFile(MultipartFile file, String tipo) throws IOException, InterruptedException {
         if (file.isEmpty()) {
-            throw new IllegalArgumentException("O arquivo está vazio.");
+            throw new IllegalArgumentException("The file is empty.");
         }
 
+        String normalizedType = tipo == null ? "" : tipo.toLowerCase(Locale.ROOT);
         String bucketName;
-        if ("capas".equalsIgnoreCase(tipo)) {
-            bucketName = bucketCapas;
-        } else if ("alunos".equalsIgnoreCase(tipo)) {
-            bucketName = bucketCapas;
-        } else if ("tccs".equalsIgnoreCase(tipo)) {
-            bucketName = bucketTccs;
-            if (!"application/pdf".equalsIgnoreCase(file.getContentType())) {
-                throw new IllegalArgumentException("Apenas arquivos PDF são permitidos no bucket de TCCs.");
+        String folderName;
+        boolean imageUpload = false;
+
+        switch (normalizedType) {
+            case "capas", "covers" -> {
+                bucketName = bucketCapas;
+                folderName = "covers";
+                imageUpload = true;
             }
-        } else {
-            throw new IllegalArgumentException("Tipo de bucket inválido. Use 'capas' ou 'tccs'.");
+            case "tccs", "theses" -> {
+                bucketName = bucketTccs;
+                folderName = "theses";
+                if (!"application/pdf".equalsIgnoreCase(file.getContentType())) {
+                    throw new IllegalArgumentException("Only PDF files are allowed for theses.");
+                }
+            }
+            case "avatars" -> {
+                bucketName = bucketAvatars;
+                folderName = "avatars";
+                imageUpload = true;
+            }
+            default -> throw new IllegalArgumentException("Invalid bucket type. Use 'covers', 'theses' or 'avatars'.");
         }
 
-        String fileName = tipo.toLowerCase() + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        if (imageUpload && (file.getContentType() == null || !file.getContentType().startsWith("image/"))) {
+            throw new IllegalArgumentException("Only image files are allowed for covers and avatars.");
+        }
+
+        String originalFileName = file.getOriginalFilename() == null ? "upload" : file.getOriginalFilename();
+        String objectName = UUID.randomUUID() + "_" + originalFileName;
+        String fileName = folderName + "/" + objectName;
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(supabaseUrl + "/storage/v1/object/" + bucketName + "/" + fileName))
@@ -69,17 +91,17 @@ public class SupabaseStorageService {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() == 200 || response.statusCode() == 201) {
-            String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+            String encodedFileName = folderName + "/" + URLEncoder.encode(objectName, StandardCharsets.UTF_8)
                     .replace("+", "%20");
             return supabaseUrl + "/storage/v1/object/public/" + bucketName + "/" + encodedFileName;
-        } else {
-            throw new RuntimeException("Erro ao enviar arquivo: " + response.statusCode() + " - " + response.body());
         }
+
+        throw new RuntimeException("File upload failed: " + response.statusCode() + " - " + response.body());
     }
 
     @SuppressWarnings("unused")
     private String uploadFileFallback(MultipartFile file, String tipo, Exception e) {
-        log.error("Supabase Storage indisponível (circuit open): {}", e.getMessage());
-        throw new RuntimeException("Serviço de armazenamento temporariamente indisponível. Tente novamente.");
+        log.error("Supabase Storage unavailable (circuit open): {}", e.getMessage());
+        throw new RuntimeException("Storage service is temporarily unavailable. Try again.");
     }
 }

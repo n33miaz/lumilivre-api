@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import br.com.lumilivre.api.dto.integracao.brasilapi.BrasilApiResponse;
+import br.com.lumilivre.api.dto.integration.brasilapi.BrasilApiResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 

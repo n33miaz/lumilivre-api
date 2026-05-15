@@ -3,6 +3,7 @@ package br.com.lumilivre.api.service;
 import static br.com.lumilivre.api.config.CacheNames.STUDENT_COUNT;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -13,8 +14,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import br.com.lumilivre.api.dto.aluno.AlunoRequest;
-import br.com.lumilivre.api.dto.aluno.AlunoResumoResponse;
+import br.com.lumilivre.api.dto.v1.aluno.AlunoRequest;
+import br.com.lumilivre.api.dto.v1.aluno.AlunoResumoResponse;
+import br.com.lumilivre.api.dto.student.StudentListItem;
+import br.com.lumilivre.api.dto.student.StudentRankingItem;
+import br.com.lumilivre.api.dto.student.StudentRequest;
 import br.com.lumilivre.api.enums.PenaltyCode;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
@@ -78,6 +82,13 @@ public class StudentService {
         return studentRepository.findAlunosParaListaAdminComFiltro(texto, pageable);
     }
 
+    public Page<StudentListItem> listarParaAdminV2(String texto, Pageable pageable) {
+        if (texto == null || texto.isBlank()) {
+            return studentRepository.findStudentListItems(pageable);
+        }
+        return studentRepository.findStudentListItemsByText(texto, pageable);
+    }
+
     public Page<AlunoResumoResponse> buscarAvancado(String penalidadeStr, String matricula, String nome,
             String cursoNome, Integer turnoId, Integer moduloId, LocalDate dataNascimento,
             String email, String celular, Pageable pageable) {
@@ -87,6 +98,19 @@ public class StudentService {
         String emailFiltro = criarFiltroLike(email);
 
         return studentRepository.buscarAvancadoComDTO(
+                penalidadeEnum, matricula, nomeFiltro, cursoNomeFiltro, turnoId, moduloId, dataNascimento,
+                emailFiltro, celular, pageable);
+    }
+
+    public Page<StudentListItem> buscarAvancadoV2(String penalidadeStr, String matricula, String nome,
+            String cursoNome, Integer turnoId, Integer moduloId, LocalDate dataNascimento,
+            String email, String celular, Pageable pageable) {
+        PenaltyCode penalidadeEnum = parseEnum(penalidadeStr, PenaltyCode.class);
+        String nomeFiltro = criarFiltroLike(nome);
+        String cursoNomeFiltro = criarFiltroLike(cursoNome);
+        String emailFiltro = criarFiltroLike(email);
+
+        return studentRepository.buscarAvancadoV2(
                 penalidadeEnum, matricula, nomeFiltro, cursoNomeFiltro, turnoId, moduloId, dataNascimento,
                 emailFiltro, celular, pageable);
     }
@@ -141,6 +165,30 @@ public class StudentService {
     }
 
     @Transactional
+    @CacheEvict(value = STUDENT_COUNT, allEntries = true)
+    public Student cadastrar(StudentRequest request) {
+        return cadastrar(AlunoRequest.builder()
+                .matricula(request.getRegistrationNumber())
+                .nomeCompleto(request.getFullName())
+                .cpf(request.getCpf())
+                .dataNascimento(request.getBirthDate())
+                .celular(request.getPhoneNumber())
+                .email(request.getEmail())
+                .cursoId(request.getCourseId())
+                .turnoId(request.getStudyShiftId())
+                .moduloId(request.getAcademicModuleId())
+                .cep(request.getPostalCode())
+                .logradouro(request.getStreet())
+                .complemento(request.getAddressComplement())
+                .localidade(request.getCity())
+                .bairro(request.getDistrict())
+                .uf(request.getStateCode())
+                .numeroCasa(request.getStreetNumber())
+                .penalidade(request.getPenaltyCode())
+                .build());
+    }
+
+    @Transactional
     public Student atualizar(String matricula, AlunoRequest dto) {
         Student student = studentRepository.findByRegistrationNumber(matricula)
                 .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
@@ -170,6 +218,29 @@ public class StudentService {
         }
 
         return studentRepository.save(student);
+    }
+
+    @Transactional
+    public Student atualizar(String matricula, StudentRequest request) {
+        return atualizar(matricula, AlunoRequest.builder()
+                .matricula(request.getRegistrationNumber())
+                .nomeCompleto(request.getFullName())
+                .cpf(request.getCpf())
+                .dataNascimento(request.getBirthDate())
+                .celular(request.getPhoneNumber())
+                .email(request.getEmail())
+                .cursoId(request.getCourseId())
+                .turnoId(request.getStudyShiftId())
+                .moduloId(request.getAcademicModuleId())
+                .cep(request.getPostalCode())
+                .logradouro(request.getStreet())
+                .complemento(request.getAddressComplement())
+                .localidade(request.getCity())
+                .bairro(request.getDistrict())
+                .uf(request.getStateCode())
+                .numeroCasa(request.getStreetNumber())
+                .penalidade(request.getPenaltyCode())
+                .build());
     }
 
     @Transactional
@@ -203,12 +274,17 @@ public class StudentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
 
         try {
-            String url = storageService.uploadFile(file, "alunos");
+            String url = storageService.uploadFile(file, "avatars");
             student.setAvatarUrl(url);
             studentRepository.save(student);
         } catch (Exception e) {
             throw new RuntimeException("Erro ao enviar foto de perfil: " + e.getMessage());
         }
+    }
+
+    public List<StudentRankingItem> gerarRankingAlunosV2(int top, Integer cursoId, Integer moduloId, Integer turnoId) {
+        return studentRepository.findRankingItems(cursoId, moduloId, turnoId, org.springframework.data.domain.PageRequest.of(0, top))
+                .getContent();
     }
 
     private RelatedEntities buscarEntidadesRelacionadas(AlunoRequest dto) {

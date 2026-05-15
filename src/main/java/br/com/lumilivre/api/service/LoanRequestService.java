@@ -15,10 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy;
-import br.com.lumilivre.api.dto.emprestimo.EmprestimoRequest;
-import br.com.lumilivre.api.dto.solicitacao.SolicitacaoCompletaResponse;
-import br.com.lumilivre.api.dto.solicitacao.SolicitacaoDashboardResponse;
-import br.com.lumilivre.api.dto.solicitacao.SolicitacaoResponse;
+import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoRequest;
+import br.com.lumilivre.api.dto.v1.solicitacao.SolicitacaoCompletaResponse;
+import br.com.lumilivre.api.dto.v1.solicitacao.SolicitacaoDashboardResponse;
+import br.com.lumilivre.api.dto.v1.solicitacao.SolicitacaoResponse;
 import br.com.lumilivre.api.enums.LoanRequestStatus;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.LoanRequest;
@@ -42,6 +42,18 @@ public class LoanRequestService {
     private final LoanService loanService;
     private final LoanRepository loanRepository;
     private final OutboxPublisherService outboxPublisher;
+
+    public List<LoanRequest> listAll() {
+        return loanRequestRepository.findAllByOrderByRequestedAtDesc();
+    }
+
+    public List<LoanRequest> listPending() {
+        return loanRequestRepository.findByStatus(LoanRequestStatus.PENDING);
+    }
+
+    public List<LoanRequest> listByStudent(String registrationNumber) {
+        return loanRequestRepository.findByStudent_RegistrationNumberOrderByRequestedAtDesc(registrationNumber);
+    }
 
     public List<SolicitacaoCompletaResponse> listarTodasSolicitacoes() {
         return loanRequestRepository.findAllByOrderByRequestedAtDesc()

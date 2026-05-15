@@ -1,12 +1,12 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.modulo.ModuloResumoResponse;
-import br.com.lumilivre.api.dto.modulo.ModuloRequest;
-import br.com.lumilivre.api.dto.modulo.ModuloResponse;
+import br.com.lumilivre.api.dto.v1.modulo.ModuloResumoResponse;
+import br.com.lumilivre.api.dto.v1.modulo.ModuloRequest;
+import br.com.lumilivre.api.dto.v1.modulo.ModuloResponse;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.AcademicModule;
-import br.com.lumilivre.api.dto.comum.ApiResponse;
+import br.com.lumilivre.api.dto.v1.comum.ApiResponse;
 import br.com.lumilivre.api.repository.AcademicModuleRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
@@ -62,7 +62,7 @@ public class AcademicModuleService {
         return ResponseEntity.ok(new ApiResponse<>(true, "Módulo removido com sucesso.", null));
     }
 
-    public java.util.List<br.com.lumilivre.api.dto.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorModulo() {
+    public java.util.List<br.com.lumilivre.api.dto.v1.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorModulo() {
         return academicModuleRepository.findTotalEmprestimosPorModulo();
     }
 }

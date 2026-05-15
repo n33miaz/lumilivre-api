@@ -69,7 +69,7 @@ class CorsAllowedOriginsBootTest {
     }
 
     private static SecurityConfig newConfigWithOrigins(String origins) throws Exception {
-        SecurityConfig cfg = new SecurityConfig(null, null, null);
+        SecurityConfig cfg = new SecurityConfig(null, null, null, null, null);
         Field f = SecurityConfig.class.getDeclaredField("allowedOrigins");
         f.setAccessible(true);
         String[] value;

@@ -12,7 +12,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
+import br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse;
 import br.com.lumilivre.api.model.Loan;
 import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.repository.BookRepository;

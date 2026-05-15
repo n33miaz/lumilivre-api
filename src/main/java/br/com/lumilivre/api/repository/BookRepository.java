@@ -14,10 +14,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse;
-import br.com.lumilivre.api.dto.livro.LivroListagemProjection;
-import br.com.lumilivre.api.dto.livro.LivroListagemResponse;
-import br.com.lumilivre.api.dto.livro.LivroMobileResponse;
+import br.com.lumilivre.api.dto.v1.livro.LivroAgrupadoResponse;
+import br.com.lumilivre.api.dto.v1.livro.LivroListagemProjection;
+import br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse;
+import br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse;
 import br.com.lumilivre.api.enums.AgeRating;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
@@ -47,7 +47,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
     Page<Book> findIdsPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse(
+            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroAgrupadoResponse(
                 l.id,
                 l.isbn,
                 l.title,
@@ -83,7 +83,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
             Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.livro.LivroListagemResponse(
+            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse(
                 null,
                 null,
                 l.isbn,
@@ -119,7 +119,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
     Page<LivroListagemProjection> findLivrosParaListaAdmin(Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.livro.LivroAgrupadoResponse(
+            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroAgrupadoResponse(
                 l.id,
                 l.isbn,
                 l.title,
@@ -178,6 +178,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
             LEFT JOIN FETCH l.deweyClassification c
             WHERE (:genero IS NULL OR g.name ILIKE :genero)
               AND (:autor IS NULL OR l.author ILIKE :autor)
+              AND (:editora IS NULL OR l.publisher ILIKE :editora)
               AND (:cdd IS NULL OR c.code = :cdd)
               AND (:classificacaoEtaria IS NULL OR CAST(l.ageRating AS text) = :classificacaoEtaria)
               AND (:tipoCapa IS NULL OR CAST(l.coverType AS text) = :tipoCapa)
@@ -188,6 +189,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
     List<Book> findForReport(
             @Param("genero") String genero,
             @Param("autor") String autor,
+            @Param("editora") String editora,
             @Param("cdd") String cdd,
             @Param("classificacaoEtaria") String classificacaoEtaria,
             @Param("tipoCapa") String tipoCapa,
@@ -224,7 +226,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
     long countCopiesByStatus(@Param("bookId") UUID bookId, @Param("status") BookCopyStatus status);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.livro.LivroMobileResponse(
+            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse(
                 l.id,
                 l.coverUrl,
                 l.title,
@@ -238,7 +240,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
     Page<LivroMobileResponse> findByGeneroAsCatalogoDTO(@Param("nomeGenero") String nomeGenero, Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.livro.LivroMobileResponse(
+            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse(
                 l.id,
                 COALESCE(l.coverUrl, ''),
                 l.title,
@@ -252,7 +254,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
     Page<LivroMobileResponse> buscarMobilePorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.livro.LivroMobileResponse(
+            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse(
                 l.id,
                 COALESCE(l.coverUrl, ''),
                 l.title,
@@ -270,7 +272,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
             Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.livro.LivroMobileResponse(
+            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse(
                 l.id,
                 COALESCE(l.coverUrl, ''),
                 l.title,

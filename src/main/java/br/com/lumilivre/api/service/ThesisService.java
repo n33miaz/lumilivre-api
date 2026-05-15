@@ -1,8 +1,8 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.comum.ApiResponse;
-import br.com.lumilivre.api.dto.tcc.ThesisRequest;
-import br.com.lumilivre.api.dto.tcc.ThesisResponse;
+import br.com.lumilivre.api.dto.v1.comum.ApiResponse;
+import br.com.lumilivre.api.dto.v1.tcc.ThesisRequest;
+import br.com.lumilivre.api.dto.v1.tcc.ThesisResponse;
 import br.com.lumilivre.api.model.Course;
 import br.com.lumilivre.api.model.Thesis;
 import br.com.lumilivre.api.repository.CourseRepository;
@@ -58,12 +58,12 @@ public class ThesisService {
             applyRequest(thesis, dto, curso);
 
             if (arquivoPdf != null && !arquivoPdf.isEmpty()) {
-                String urlPdf = storageService.uploadFile(arquivoPdf, "tccs");
+                String urlPdf = storageService.uploadFile(arquivoPdf, "theses");
                 thesis.setPdfUrl(urlPdf);
             }
 
             if (arquivoFoto != null && !arquivoFoto.isEmpty()) {
-                String urlFoto = storageService.uploadFile(arquivoFoto, "capas");
+                String urlFoto = storageService.uploadFile(arquivoFoto, "covers");
                 thesis.setCoverUrl(urlFoto);
             }
 
@@ -133,12 +133,12 @@ public class ThesisService {
             applyRequest(thesis, dto, curso);
 
             if (arquivoPdf != null && !arquivoPdf.isEmpty()) {
-                String urlPdf = storageService.uploadFile(arquivoPdf, "tccs");
+                String urlPdf = storageService.uploadFile(arquivoPdf, "theses");
                 thesis.setPdfUrl(urlPdf);
             }
 
             if (arquivoFoto != null && !arquivoFoto.isEmpty()) {
-                String urlFoto = storageService.uploadFile(arquivoFoto, "capas");
+                String urlFoto = storageService.uploadFile(arquivoFoto, "covers");
                 thesis.setCoverUrl(urlFoto);
             }
 
