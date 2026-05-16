@@ -24,11 +24,6 @@ import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy;
 import br.com.lumilivre.api.domain.policy.LoanPolicy;
 import br.com.lumilivre.api.domain.policy.PenaltyPolicy;
 import br.com.lumilivre.api.domain.policy.ReservationPolicy;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoAtivoResponse;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoDashboardResponse;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoListagemResponse;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoRequest;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoResponse;
 import br.com.lumilivre.api.dto.loan.ActiveLoanItem;
 import br.com.lumilivre.api.dto.loan.LoanListItem;
 import br.com.lumilivre.api.dto.loan.LoanRequest;
@@ -59,22 +54,22 @@ public class LoanService {
     private final ReservationRepository reservationRepository;
     private final OutboxPublisherService outboxPublisher;
 
-    @Auditable(action = "LOAN_CREATED", targetParam = "#dto.aluno_matricula")
+    @Auditable(action = "LOAN_CREATED", targetParam = "#request.studentRegistrationNumber")
     @Transactional
     @CacheEvict(value = {
             DASHBOARD_STATS,
             DASHBOARD_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_LIST
     }, allEntries = true)
-    public EmprestimoResponse cadastrar(EmprestimoRequest dto) {
-        if (dto.getData_emprestimo() == null || dto.getData_devolucao() == null) {
+    public Loan cadastrar(LoanRequest request) {
+        if (request.getBorrowedAt() == null || request.getDueAt() == null) {
             throw BusinessRuleException.ofKey("loan.dates.required");
         }
-        if (dto.getData_devolucao().isBefore(dto.getData_emprestimo())) {
+        if (request.getDueAt().isBefore(request.getBorrowedAt())) {
             throw BusinessRuleException.ofKey("loan.return-date.before-borrow-date");
         }
 
-        Student student = studentRepository.findByRegistrationNumber(dto.getAluno_matricula())
+        Student student = studentRepository.findByRegistrationNumber(request.getStudentRegistrationNumber())
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
 
         OffsetDateTime now = OffsetDateTime.now();
@@ -91,7 +86,7 @@ public class LoanService {
 
         LoanPolicy.validateNewLoan(activeLoans, student.getPenaltyExpiresAt());
 
-        BookCopy bookCopy = bookCopyRepository.findByCopyCode(dto.getExemplar_tombo())
+        BookCopy bookCopy = bookCopyRepository.findByCopyCode(request.getCopyCode())
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.copy.not-found"));
 
         BookAvailabilityPolicy.validateAvailable(bookCopy.getStatus());
@@ -99,8 +94,8 @@ public class LoanService {
         Loan loan = Loan.builder()
                 .student(student)
                 .bookCopy(bookCopy)
-                .borrowedAt(dto.getData_emprestimo())
-                .dueAt(dto.getData_devolucao())
+                .borrowedAt(request.getBorrowedAt())
+                .dueAt(request.getDueAt())
                 .status(LoanStatus.ACTIVE)
                 .build();
 
@@ -109,53 +104,9 @@ public class LoanService {
 
         Loan saved = loanRepository.save(loan);
 
-        enviarEmailEmprestimo(student, bookCopy, dto);
+        enviarEmailEmprestimo(student, bookCopy, request);
 
-        return new EmprestimoResponse(saved);
-    }
-
-    @Auditable(action = "LOAN_CREATED", targetParam = "#request.studentRegistrationNumber")
-    @Transactional
-    @CacheEvict(value = {
-            DASHBOARD_STATS,
-            DASHBOARD_OVERDUE_COUNT,
-            DASHBOARD_OVERDUE_LIST
-    }, allEntries = true)
-    public Loan cadastrar(LoanRequest request) {
-        EmprestimoRequest dto = EmprestimoRequest.builder()
-                .id(request.getId())
-                .data_emprestimo(request.getBorrowedAt())
-                .data_devolucao(request.getDueAt())
-                .penalidade(request.getPenaltyCode())
-                .status_emprestimo(request.getStatus())
-                .aluno_matricula(request.getStudentRegistrationNumber())
-                .exemplar_tombo(request.getCopyCode())
-                .build();
-        cadastrar(dto);
-        return loanRepository.findByStudent_RegistrationNumber(request.getStudentRegistrationNumber()).stream()
-                .filter(loan -> loan.getBookCopy() != null && loan.getBookCopy().getCopyCode().equals(request.getCopyCode()))
-                .max(java.util.Comparator.comparing(Loan::getCreatedAt))
-                .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
-    }
-
-    @Transactional
-    @CacheEvict(value = {
-            DASHBOARD_STATS,
-            DASHBOARD_OVERDUE_COUNT,
-            DASHBOARD_OVERDUE_LIST
-    }, allEntries = true)
-    public EmprestimoResponse atualizar(EmprestimoRequest dto) {
-        Loan loan = loanRepository.findById(dto.getId())
-                .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
-
-        if (loan.getStatus() == LoanStatus.COMPLETED) {
-            throw BusinessRuleException.ofKey("loan.already-completed-cannot-update");
-        }
-
-        loan.setBorrowedAt(dto.getData_emprestimo());
-        loan.setDueAt(dto.getData_devolucao());
-
-        return new EmprestimoResponse(loanRepository.save(loan));
+        return saved;
     }
 
     @Transactional
@@ -165,18 +116,17 @@ public class LoanService {
             DASHBOARD_OVERDUE_LIST
     }, allEntries = true)
     public Loan atualizar(UUID id, LoanRequest request) {
-        EmprestimoRequest dto = EmprestimoRequest.builder()
-                .id(id)
-                .data_emprestimo(request.getBorrowedAt())
-                .data_devolucao(request.getDueAt())
-                .penalidade(request.getPenaltyCode())
-                .status_emprestimo(request.getStatus())
-                .aluno_matricula(request.getStudentRegistrationNumber())
-                .exemplar_tombo(request.getCopyCode())
-                .build();
-        atualizar(dto);
-        return loanRepository.findById(id)
+        Loan loan = loanRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
+
+        if (loan.getStatus() == LoanStatus.COMPLETED) {
+            throw BusinessRuleException.ofKey("loan.already-completed-cannot-update");
+        }
+
+        loan.setBorrowedAt(request.getBorrowedAt());
+        loan.setDueAt(request.getDueAt());
+
+        return loanRepository.save(loan);
     }
 
     @Auditable(action = "LOAN_RETURNED", targetParam = "#id")
@@ -186,7 +136,7 @@ public class LoanService {
             DASHBOARD_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_LIST
     }, allEntries = true)
-    public EmprestimoResponse concluirEmprestimo(UUID id) {
+    public Loan concluirEmprestimo(UUID id) {
         Loan loan = loanRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
 
@@ -234,7 +184,7 @@ public class LoanService {
                             "' está disponível. Retire até " + next.getExpiresAt().toLocalDate() + ".");
                 });
 
-        return new EmprestimoResponse(saved);
+        return saved;
     }
 
     @Transactional
@@ -260,7 +210,7 @@ public class LoanService {
             DASHBOARD_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_LIST
     }, allEntries = true)
-    public EmprestimoResponse renovar(UUID id) {
+    public Loan renovar(UUID id) {
         Loan loan = loanRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
 
@@ -289,34 +239,11 @@ public class LoanService {
                 "Seu empréstimo do livro '" + loan.getBookCopy().getBook().getTitle() +
                 "' foi renovado. Nova data de devolução: " + saved.getDueAt().toLocalDate() + ".");
 
-        return new EmprestimoResponse(saved);
-    }
-
-    public Page<EmprestimoListagemResponse> buscarEmprestimoParaListaAdmin(Pageable pageable) {
-        return loanRepository.findEmprestimoParaListaAdmin(tratarOrdenacao(pageable));
+        return saved;
     }
 
     public Page<LoanListItem> buscarEmprestimoParaListaAdminV2(Pageable pageable) {
         return loanRepository.findLoanListItems(tratarOrdenacao(pageable));
-    }
-
-    public Page<EmprestimoListagemResponse> buscarPorTexto(String texto, Pageable pageable) {
-        Pageable pageableNativo = pageable;
-        Sort.Order statusOrder = pageable.getSort().getOrderFor("status");
-        if (statusOrder != null) {
-            boolean isAsc = statusOrder.isAscending();
-            pageableNativo = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
-                    isAsc
-                    ? JpaSort.unsafe(Sort.Direction.ASC,
-                            "(CASE WHEN e.status = 'COMPLETED' THEN 1 ELSE 0 END)", "dueAt")
-                    : JpaSort.unsafe(Sort.Direction.ASC,
-                            "(CASE WHEN e.status = 'COMPLETED' THEN 1 ELSE 0 END)")
-                              .and(JpaSort.unsafe(Sort.Direction.DESC, "dueAt")));
-        }
-        if (texto == null || texto.isBlank()) {
-            return buscarAvancado(null, null, null, null, null, null, (OffsetDateTime) null, tratarOrdenacao(pageable));
-        }
-        return loanRepository.buscarPorTexto(texto, pageableNativo);
     }
 
     public Page<LoanListItem> buscarPorTextoV2(String texto, Pageable pageable) {
@@ -338,16 +265,8 @@ public class LoanService {
         return loanRepository.searchListItems(texto, pageableNativo);
     }
 
-    public List<EmprestimoResponse> listarEmprestimosAluno(String matricula) {
-        return loanRepository.findEmprestimosAtivos(matricula);
-    }
-
     public List<Loan> listarEmprestimosAlunoV2(String matricula) {
         return loanRepository.findActiveLoansForStudent(matricula);
-    }
-
-    public List<EmprestimoResponse> listarHistorico(String matricula) {
-        return loanRepository.findHistoricoEmprestimos(matricula);
     }
 
     public List<Loan> listarHistoricoV2(String matricula) {
@@ -357,15 +276,6 @@ public class LoanService {
     public Loan buscarPorId(UUID id) {
         return loanRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
-    }
-
-    @Cacheable(value = DASHBOARD_OVERDUE_LIST)
-    public List<EmprestimoDashboardResponse> listarEmprestimosAtivosEAtrasados() {
-        return loanRepository.findEmprestimosAtivosEAtrasados();
-    }
-
-    public List<EmprestimoAtivoResponse> buscarAtivosEAtrasados() {
-        return loanRepository.findAtivosEAtrasadosDTO();
     }
 
     public List<ActiveLoanItem> buscarAtivosEAtrasadosV2() {
@@ -384,56 +294,9 @@ public class LoanService {
         return loanRepository.countByStatusIn(List.of(LoanStatus.ACTIVE, LoanStatus.OVERDUE));
     }
 
-    public List<EmprestimoAtivoResponse> buscarApenasAtrasados() {
-        return loanRepository.findApenasAtrasadosDTO(
-                LocalDate.now().atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
-    }
-
     public List<ActiveLoanItem> buscarApenasAtrasadosV2() {
         return loanRepository.findOverdueItems(
                 LocalDate.now().atStartOfDay().atOffset(OffsetDateTime.now().getOffset()));
-    }
-
-    public Page<EmprestimoListagemResponse> buscarAvancado(
-            LoanStatus statusEmprestimo,
-            String tombo,
-            String livroNome,
-            String alunoNomeCompleto,
-            String dataEmprestimo,
-            String dataDevolucao,
-            OffsetDateTime dataDevolucaoInicio,
-            Pageable pageable) {
-
-        String tomboFiltro = (tombo != null && !tombo.isBlank()) ? "%" + tombo + "%" : null;
-        String livroNomeFiltro = (livroNome != null && !livroNome.isBlank()) ? "%" + livroNome + "%" : null;
-        String alunoNomeFiltro = (alunoNomeCompleto != null && !alunoNomeCompleto.isBlank())
-                ? "%" + alunoNomeCompleto + "%" : null;
-
-        OffsetDateTime dataEmprestimoInicio = null;
-        if (dataEmprestimo != null && !dataEmprestimo.isBlank()) {
-            dataEmprestimoInicio = LocalDate.parse(dataEmprestimo)
-                    .atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
-        }
-
-        OffsetDateTime dataDevolucaoFim = null;
-        if (dataDevolucao != null && !dataDevolucao.isBlank()) {
-            dataDevolucaoFim = LocalDate.parse(dataDevolucao)
-                    .atTime(23, 59, 59).atOffset(OffsetDateTime.now().getOffset());
-        }
-
-        String statusString = (statusEmprestimo != null) ? statusEmprestimo.name() : null;
-
-        return loanRepository.buscarAvancado(
-                statusString,
-                tomboFiltro,
-                livroNomeFiltro,
-                alunoNomeFiltro,
-                dataEmprestimoInicio,
-                null,
-                dataDevolucaoInicio,
-                dataDevolucaoFim,
-                OffsetDateTime.now(),
-                tratarOrdenacao(pageable));
     }
 
     public Page<LoanListItem> buscarAvancadoV2(
@@ -502,43 +365,18 @@ public class LoanService {
                 tratarOrdenacao(pageable));
     }
 
-    public Page<EmprestimoListagemResponse> buscarAvancado(
-            LoanStatus statusEmprestimo,
-            String tombo,
-            String livroNome,
-            String alunoNomeCompleto,
-            String dataEmprestimo,
-            String dataDevolucao,
-            String dataDevolucaoInicio,
-            Pageable pageable) {
-        OffsetDateTime dueAtStart = null;
-        if (dataDevolucaoInicio != null && !dataDevolucaoInicio.isBlank()) {
-            dueAtStart = LocalDate.parse(dataDevolucaoInicio)
-                    .atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
-        }
-        return buscarAvancado(
-                statusEmprestimo,
-                tombo,
-                livroNome,
-                alunoNomeCompleto,
-                dataEmprestimo,
-                dataDevolucao,
-                dueAtStart,
-                pageable);
-    }
-
     public List<Loan> buscarTodos() {
         return loanRepository.findAll();
     }
 
-    private void enviarEmailEmprestimo(Student student, BookCopy bookCopy, EmprestimoRequest dto) {
+    private void enviarEmailEmprestimo(Student student, BookCopy bookCopy, LoanRequest request) {
         String body = String.format(
                 "Olá %s,\n\nSeu empréstimo do livro '%s' foi registrado com sucesso.\n" +
                 "Data de empréstimo: %s\nData de devolução: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
                 student.getFullName(),
                 bookCopy.getBook().getTitle(),
-                dto.getData_emprestimo(),
-                dto.getData_devolucao());
+                request.getBorrowedAt(),
+                request.getDueAt());
         outboxPublisher.publish(EventType.LOAN_CREATED, student.getEmail(), "Empréstimo registrado", body);
     }
 

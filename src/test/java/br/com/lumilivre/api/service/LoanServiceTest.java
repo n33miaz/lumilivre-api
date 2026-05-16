@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilityViolationException;
 import br.com.lumilivre.api.domain.policy.LoanPolicy.LoanPolicyViolationException;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoRequest;
+import br.com.lumilivre.api.dto.loan.LoanRequest;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
@@ -55,8 +55,8 @@ class LoanServiceTest {
 
     @Test
     void cadastrarRejectsDueDateBeforeBorrowDate() {
-        EmprestimoRequest request = request();
-        request.setData_devolucao(request.getData_emprestimo().minusDays(1));
+        LoanRequest request = request();
+        request.setDueAt(request.getBorrowedAt().minusDays(1));
 
         assertThatThrownBy(() -> service.cadastrar(request))
                 .isInstanceOf(BusinessRuleException.class)
@@ -108,13 +108,13 @@ class LoanServiceTest {
         verify(loanRepository, never()).save(any(Loan.class));
     }
 
-    private static EmprestimoRequest request() {
+    private static LoanRequest request() {
         OffsetDateTime now = OffsetDateTime.now();
-        return EmprestimoRequest.builder()
-                .aluno_matricula("12345")
-                .exemplar_tombo("T001")
-                .data_emprestimo(now)
-                .data_devolucao(now.plusDays(14))
+        return LoanRequest.builder()
+                .studentRegistrationNumber("12345")
+                .copyCode("T001")
+                .borrowedAt(now)
+                .dueAt(now.plusDays(14))
                 .build();
     }
 

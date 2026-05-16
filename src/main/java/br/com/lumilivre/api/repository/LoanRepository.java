@@ -11,10 +11,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoAtivoResponse;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoDashboardResponse;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoListagemResponse;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoResponse;
 import br.com.lumilivre.api.dto.loan.ActiveLoanItem;
 import br.com.lumilivre.api.dto.loan.LoanListItem;
 import br.com.lumilivre.api.enums.LoanStatus;
@@ -50,30 +46,6 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
     List<Loan> findByStatus(LoanStatus status);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoListagemResponse(
-                e.id,
-                e.status,
-                l.title,
-                ex.copyCode,
-                a.fullName,
-                a.registrationNumber,
-                c.name,
-                e.borrowedAt,
-                e.dueAt
-            )
-            FROM Loan e
-            JOIN e.student a
-            JOIN e.bookCopy ex
-            JOIN ex.book l
-            JOIN a.course c
-            WHERE LOWER(a.fullName) LIKE LOWER(CONCAT('%', :texto, '%'))
-               OR a.registrationNumber LIKE CONCAT('%', :texto, '%')
-               OR LOWER(l.title) LIKE LOWER(CONCAT('%', :texto, '%'))
-               OR ex.copyCode LIKE CONCAT('%', :texto, '%')
-            """)
-    Page<EmprestimoListagemResponse> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
-
-    @Query("""
             SELECT new br.com.lumilivre.api.dto.loan.LoanListItem(
                 e.id,
                 e.status,
@@ -96,50 +68,6 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
                OR ex.copyCode LIKE CONCAT('%', :texto, '%')
             """)
     Page<LoanListItem> searchListItems(@Param("texto") String texto, Pageable pageable);
-
-    @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoListagemResponse(
-                e.id,
-                e.status,
-                l.title,
-                ex.copyCode,
-                a.fullName,
-                a.registrationNumber,
-                c.name,
-                e.borrowedAt,
-                e.dueAt
-            )
-            FROM Loan e
-            JOIN e.student a
-            JOIN e.bookCopy ex
-            JOIN ex.book l
-            JOIN a.course c
-            WHERE
-            (
-                (:statusEmprestimo IS NULL) OR
-                (:statusEmprestimo = 'COMPLETED' AND e.status = br.com.lumilivre.api.enums.LoanStatus.COMPLETED) OR
-                (:statusEmprestimo = 'OVERDUE' AND (e.status = br.com.lumilivre.api.enums.LoanStatus.OVERDUE OR (e.status = br.com.lumilivre.api.enums.LoanStatus.ACTIVE AND e.dueAt < :now))) OR
-                (:statusEmprestimo = 'ACTIVE' AND (e.status = br.com.lumilivre.api.enums.LoanStatus.ACTIVE AND e.dueAt >= :now))
-            )
-            AND (:tombo IS NULL OR ex.copyCode ILIKE :tombo)
-            AND (:livroNome IS NULL OR l.title ILIKE :livroNome)
-            AND (:alunoNomeCompleto IS NULL OR a.fullName ILIKE :alunoNomeCompleto)
-            AND (cast(:dataEmprestimoInicio as timestamp) IS NULL OR e.borrowedAt >= :dataEmprestimoInicio)
-            AND (cast(:dataEmprestimoFim as timestamp) IS NULL OR e.borrowedAt <= :dataEmprestimoFim)
-            AND (cast(:dataDevolucaoInicio as timestamp) IS NULL OR e.dueAt >= :dataDevolucaoInicio)
-            AND (cast(:dataDevolucaoFim as timestamp) IS NULL OR e.dueAt <= :dataDevolucaoFim)
-            """)
-    Page<EmprestimoListagemResponse> buscarAvancado(
-            @Param("statusEmprestimo") String statusEmprestimo,
-            @Param("tombo") String tombo,
-            @Param("livroNome") String livroNome,
-            @Param("alunoNomeCompleto") String alunoNomeCompleto,
-            @Param("dataEmprestimoInicio") OffsetDateTime dataEmprestimoInicio,
-            @Param("dataEmprestimoFim") OffsetDateTime dataEmprestimoFim,
-            @Param("dataDevolucaoInicio") OffsetDateTime dataDevolucaoInicio,
-            @Param("dataDevolucaoFim") OffsetDateTime dataDevolucaoFim,
-            @Param("now") OffsetDateTime now,
-            Pageable pageable);
 
     @Query("""
             SELECT new br.com.lumilivre.api.dto.loan.LoanListItem(
@@ -186,40 +114,6 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
             Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoResponse(
-                e.id,
-                e.borrowedAt,
-                e.dueAt,
-                e.status,
-                e.penaltyCode,
-                e.bookCopy.book.id,
-                e.bookCopy.book.title,
-                e.bookCopy.book.coverUrl
-            )
-            FROM Loan e
-            WHERE e.student.registrationNumber = :matricula
-              AND e.status = br.com.lumilivre.api.enums.LoanStatus.ACTIVE
-            """)
-    List<EmprestimoResponse> findEmprestimosAtivos(@Param("matricula") String matricula);
-
-    @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoResponse(
-                e.id,
-                e.borrowedAt,
-                e.dueAt,
-                e.status,
-                e.penaltyCode,
-                e.bookCopy.book.id,
-                e.bookCopy.book.title,
-                e.bookCopy.book.coverUrl
-            )
-            FROM Loan e
-            WHERE e.student.registrationNumber = :matricula
-              AND e.status = br.com.lumilivre.api.enums.LoanStatus.COMPLETED
-            """)
-    List<EmprestimoResponse> findHistoricoEmprestimos(@Param("matricula") String matricula);
-
-    @Query("""
             SELECT e
             FROM Loan e
             JOIN FETCH e.bookCopy ex
@@ -244,25 +138,6 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
     List<Loan> findLoanHistoryForStudent(@Param("matricula") String matricula);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoListagemResponse(
-                e.id,
-                e.status,
-                l.title,
-                ex.copyCode,
-                a.fullName,
-                a.registrationNumber,
-                a.course.name,
-                e.borrowedAt,
-                e.dueAt
-            )
-            FROM Loan e
-            JOIN e.bookCopy ex
-            JOIN ex.book l
-            JOIN e.student a
-            """)
-    Page<EmprestimoListagemResponse> findEmprestimoParaListaAdmin(Pageable pageable);
-
-    @Query("""
             SELECT new br.com.lumilivre.api.dto.loan.LoanListItem(
                 e.id,
                 e.status,
@@ -280,25 +155,6 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
             JOIN e.student a
             """)
     Page<LoanListItem> findLoanListItems(Pageable pageable);
-
-    @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoDashboardResponse(
-                livro.title,
-                aluno.fullName,
-                emprestimo.dueAt,
-                emprestimo.status
-            )
-            FROM Loan emprestimo
-            JOIN emprestimo.bookCopy exemplar
-            JOIN exemplar.book livro
-            JOIN emprestimo.student aluno
-            WHERE emprestimo.status IN (
-                br.com.lumilivre.api.enums.LoanStatus.ACTIVE,
-                br.com.lumilivre.api.enums.LoanStatus.OVERDUE
-            )
-            ORDER BY emprestimo.dueAt ASC
-            """)
-    List<EmprestimoDashboardResponse> findEmprestimosAtivosEAtrasados();
 
     @Query("""
             SELECT DISTINCT e FROM Loan e
@@ -331,26 +187,6 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
             @Param("idModulo") Integer idModulo);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoAtivoResponse(
-                e.id,
-                l.title,
-                a.fullName,
-                a.registrationNumber,
-                ex.copyCode,
-                CAST(e.borrowedAt AS LocalDate),
-                CAST(e.dueAt AS LocalDate),
-                e.status
-            )
-            FROM Loan e
-            JOIN e.student a
-            JOIN e.bookCopy ex
-            JOIN ex.book l
-            WHERE e.status IN (br.com.lumilivre.api.enums.LoanStatus.ACTIVE, br.com.lumilivre.api.enums.LoanStatus.OVERDUE)
-            ORDER BY e.dueAt ASC
-            """)
-    List<EmprestimoAtivoResponse> findAtivosEAtrasadosDTO();
-
-    @Query("""
             SELECT new br.com.lumilivre.api.dto.loan.ActiveLoanItem(
                 e.id,
                 l.title,
@@ -369,27 +205,6 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
             ORDER BY e.dueAt ASC
             """)
     List<ActiveLoanItem> findActiveAndOverdueItems();
-
-    @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoAtivoResponse(
-                e.id,
-                l.title,
-                a.fullName,
-                a.registrationNumber,
-                ex.copyCode,
-                CAST(e.borrowedAt AS LocalDate),
-                CAST(e.dueAt AS LocalDate),
-                e.status
-            )
-            FROM Loan e
-            JOIN e.student a
-            JOIN e.bookCopy ex
-            JOIN ex.book l
-            WHERE e.status = br.com.lumilivre.api.enums.LoanStatus.OVERDUE
-               OR (e.status = br.com.lumilivre.api.enums.LoanStatus.ACTIVE AND e.dueAt < :dataRef)
-            ORDER BY e.dueAt ASC
-            """)
-    List<EmprestimoAtivoResponse> findApenasAtrasadosDTO(@Param("dataRef") OffsetDateTime dataRef);
 
     @Query("""
             SELECT new br.com.lumilivre.api.dto.loan.ActiveLoanItem(

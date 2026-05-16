@@ -21,7 +21,6 @@ import org.springframework.http.HttpStatus;
 
 import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilityViolationException;
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy.RequestApprovalViolationException;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoRequest;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.LoanRequestStatus;
 import br.com.lumilivre.api.enums.LoanStatus;
@@ -159,12 +158,12 @@ class LoanRequestServiceTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(request.getStatus()).isEqualTo(LoanRequestStatus.ACCEPTED);
 
-        ArgumentCaptor<EmprestimoRequest> requestCaptor = ArgumentCaptor.forClass(EmprestimoRequest.class);
+        ArgumentCaptor<br.com.lumilivre.api.dto.loan.LoanRequest> requestCaptor =
+                ArgumentCaptor.forClass(br.com.lumilivre.api.dto.loan.LoanRequest.class);
         verify(loanService).cadastrar(requestCaptor.capture());
-        assertThat(requestCaptor.getValue().getAluno_matricula()).isEqualTo("12345");
-        assertThat(requestCaptor.getValue().getExemplar_tombo()).isEqualTo("T001");
-        assertThat(requestCaptor.getValue().getData_devolucao())
-                .isAfter(requestCaptor.getValue().getData_emprestimo());
+        assertThat(requestCaptor.getValue().getStudentRegistrationNumber()).isEqualTo("12345");
+        assertThat(requestCaptor.getValue().getCopyCode()).isEqualTo("T001");
+        assertThat(requestCaptor.getValue().getDueAt()).isAfter(requestCaptor.getValue().getBorrowedAt());
 
         verify(loanRequestRepository).save(request);
         verify(outboxPublisher).publish(
@@ -183,7 +182,7 @@ class LoanRequestServiceTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(request.getStatus()).isEqualTo(LoanRequestStatus.REJECTED);
-        verify(loanService, never()).cadastrar(any(EmprestimoRequest.class));
+        verify(loanService, never()).cadastrar(any(br.com.lumilivre.api.dto.loan.LoanRequest.class));
         verify(loanRequestRepository).save(request);
         verify(outboxPublisher).publish(
                 eq(EventType.REQUEST_REJECTED),
@@ -199,7 +198,7 @@ class LoanRequestServiceTest {
         var response = service.processarSolicitacao(REQUEST_ID, true);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        verify(loanService, never()).cadastrar(any(EmprestimoRequest.class));
+        verify(loanService, never()).cadastrar(any(br.com.lumilivre.api.dto.loan.LoanRequest.class));
         verify(loanRequestRepository, never()).save(any());
         verify(outboxPublisher, never()).publish(any(), any(), any(), any());
     }
@@ -213,7 +212,7 @@ class LoanRequestServiceTest {
                 .isInstanceOf(RequestApprovalViolationException.class)
                 .hasMessageContaining("not pending");
 
-        verify(loanService, never()).cadastrar(any(EmprestimoRequest.class));
+        verify(loanService, never()).cadastrar(any(br.com.lumilivre.api.dto.loan.LoanRequest.class));
         verify(loanRequestRepository, never()).save(any());
         verify(outboxPublisher, never()).publish(any(), any(), any(), any());
     }

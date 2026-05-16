@@ -14,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy;
-import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoRequest;
 import br.com.lumilivre.api.enums.LoanRequestStatus;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.LoanRequest;
@@ -117,12 +116,13 @@ public class LoanRequestService {
         RequestApprovalPolicy.validateProcessable(request.getStatus());
 
         if (aceitar) {
-            EmprestimoRequest dto = new EmprestimoRequest();
-            dto.setAluno_matricula(student.getRegistrationNumber());
-            dto.setExemplar_tombo(bookCopy.getCopyCode());
-            dto.setData_emprestimo(OffsetDateTime.now());
-            dto.setData_devolucao(OffsetDateTime.now().plusDays(14));
-            loanService.cadastrar(dto);
+            br.com.lumilivre.api.dto.loan.LoanRequest loanReq = br.com.lumilivre.api.dto.loan.LoanRequest.builder()
+                    .studentRegistrationNumber(student.getRegistrationNumber())
+                    .copyCode(bookCopy.getCopyCode())
+                    .borrowedAt(OffsetDateTime.now())
+                    .dueAt(OffsetDateTime.now().plusDays(14))
+                    .build();
+            loanService.cadastrar(loanReq);
 
             request.setStatus(LoanRequestStatus.ACCEPTED);
             loanRequestRepository.save(request);
