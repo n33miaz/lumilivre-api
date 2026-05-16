@@ -118,7 +118,7 @@ public class StudentService {
 
     public Student buscarPorMatricula(String matricula) {
         return studentRepository.findByRegistrationNumber(matricula)
-                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
     }
 
     @Cacheable(value = STUDENT_COUNT)
@@ -130,15 +130,15 @@ public class StudentService {
     @CacheEvict(value = STUDENT_COUNT, allEntries = true)
     public Student cadastrar(AlunoRequest dto) {
         if (studentRepository.existsByRegistrationNumber(dto.getMatricula())) {
-            throw new BusinessRuleException("Matrícula já cadastrada.");
+            throw BusinessRuleException.ofKey("student.registration.already-registered");
         }
 
         if (dto.getCpf() != null && !dto.getCpf().isBlank() && studentRepository.existsByCpf(dto.getCpf())) {
-            throw new BusinessRuleException("CPF já cadastrado.");
+            throw BusinessRuleException.ofKey("student.cpf.already-registered");
         }
 
         if (dto.getEmail() != null && !dto.getEmail().isBlank() && appUserRepository.existsByEmail(dto.getEmail())) {
-            throw new BusinessRuleException("E-mail já está em uso.");
+            throw BusinessRuleException.ofKey("student.email.already-in-use");
         }
 
         RelatedEntities relatedEntities = buscarEntidadesRelacionadas(dto);
@@ -192,12 +192,12 @@ public class StudentService {
     @Transactional
     public Student atualizar(String matricula, AlunoRequest dto) {
         Student student = studentRepository.findByRegistrationNumber(matricula)
-                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
 
         if (dto.getCpf() != null && !dto.getCpf().isBlank()) {
             boolean cpfMudou = student.getCpf() == null || !student.getCpf().equals(dto.getCpf());
             if (cpfMudou && studentRepository.existsByCpf(dto.getCpf())) {
-                throw new BusinessRuleException("Este CPF já está sendo usado por outro aluno.");
+                throw BusinessRuleException.ofKey("student.cpf.already-in-use-by-other");
             }
         }
 
@@ -248,7 +248,7 @@ public class StudentService {
     @CacheEvict(value = STUDENT_COUNT, allEntries = true)
     public void excluir(String matricula) {
         Student student = studentRepository.findByRegistrationNumber(matricula)
-                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
 
         if (student.getAppUser() != null) {
             appUserRepository.delete(student.getAppUser());
@@ -259,10 +259,10 @@ public class StudentService {
     @Transactional
     public void resetarSenha(String matricula) {
         Student student = studentRepository.findByRegistrationNumber(matricula)
-                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
 
         if (student.getAppUser() == null) {
-            throw new BusinessRuleException("Este aluno não possui um usuário vinculado para resetar a senha.");
+            throw BusinessRuleException.ofKey("student.no-app-user-linked");
         }
 
         student.getAppUser().setPasswordHash(passwordEncoder.encode(student.getRegistrationNumber()));
@@ -272,7 +272,7 @@ public class StudentService {
     @Transactional
     public void uploadFoto(String matricula, MultipartFile file) {
         Student student = studentRepository.findByRegistrationNumber(matricula)
-                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
 
         try {
             String url = storageService.uploadFile(file, "avatars");
