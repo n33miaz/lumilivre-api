@@ -13,9 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.dto.auth.AlterarSenhaRequest;
 import br.com.lumilivre.api.dto.user.UserRequest;
-import br.com.lumilivre.api.dto.v1.usuario.UsuarioRequest;
-import br.com.lumilivre.api.dto.v1.usuario.UsuarioResponse;
-import br.com.lumilivre.api.dto.v1.usuario.UsuarioResumoResponse;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
@@ -44,18 +41,6 @@ public class AppUserService {
         return appUserRepository.buscarAvancado(id, email, role, pageable);
     }
 
-    public Page<UsuarioResumoResponse> buscarUsuarioParaListaAdmin(Pageable pageable) {
-        return appUserRepository.findUsuarioParaListaAdmin(pageable);
-    }
-
-    public Page<UsuarioResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
-        return appUserRepository.buscarPorTextoComDTO(texto, pageable);
-    }
-
-    public Page<UsuarioResumoResponse> buscarAvancado(UUID id, String email, Role role, Pageable pageable) {
-        return appUserRepository.buscarAvancadoComDTO(id, email, role, pageable);
-    }
-
     @Transactional
     public AppUser createAdmin(UserRequest request) {
         AppUser appUser = AppUser.builder()
@@ -66,22 +51,8 @@ public class AppUserService {
     }
 
     @Transactional
-    public UsuarioResponse cadastrarAdmin(UsuarioRequest dto) {
-        AppUser appUser = AppUser.builder()
-                .email(dto.getEmail())
-                .role(dto.getRole())
-                .build();
-        return new UsuarioResponse(saveAdmin(appUser, dto.getSenha()));
-    }
-
-    @Transactional
     public AppUser updateUser(UUID id, UserRequest request) {
         return updateUser(id, request.getEmail(), request.getPassword());
-    }
-
-    @Transactional
-    public UsuarioResponse atualizar(UUID id, UsuarioRequest dto) {
-        return new UsuarioResponse(updateUser(id, dto.getEmail(), dto.getSenha()));
     }
 
     private AppUser saveAdmin(AppUser appUser, String rawPassword) {
