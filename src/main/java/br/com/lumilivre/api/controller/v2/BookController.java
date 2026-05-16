@@ -11,7 +11,6 @@ import br.com.lumilivre.api.dto.book.BookCardResponse;
 import br.com.lumilivre.api.dto.book.BookCatalogResponse;
 import br.com.lumilivre.api.dto.book.BookGroupedResponse;
 import br.com.lumilivre.api.dto.book.BookSummaryResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroRequest;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.mapper.v2.BookMapper;
 import br.com.lumilivre.api.service.BookService;
@@ -168,26 +167,7 @@ public class BookController {
     @GetMapping("/isbn/{isbn}")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<BookRequest> isbnLookup(@PathVariable String isbn, Locale locale) {
-        LivroRequest v1 = bookService.pesquisarDadosPorIsbn(isbn);
-        BookRequest body = BookRequest.builder()
-                .isbn(v1.getIsbn())
-                .title(v1.getNome())
-                .author(v1.getAutor())
-                .publisher(v1.getEditora())
-                .publicationDate(v1.getData_lancamento())
-                .pageCount(v1.getNumero_paginas())
-                .chapterCount(v1.getNumero_capitulos())
-                .deweyCode(v1.getCdd())
-                .ageRating(v1.getClassificacao_etaria())
-                .edition(v1.getEdicao())
-                .volume(v1.getVolume())
-                .copyCount(v1.getQuantidade())
-                .synopsis(v1.getSinopse())
-                .coverType(v1.getTipo_capa())
-                .coverUrl(v1.getImagem())
-                .genres(v1.getGeneros())
-                .rating(v1.getAvaliacao())
-                .build();
+        BookRequest body = mapper.fromV1IsbnLookup(bookService.pesquisarDadosPorIsbn(isbn));
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);

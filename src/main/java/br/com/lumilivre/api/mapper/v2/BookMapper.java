@@ -154,6 +154,28 @@ public class BookMapper {
                 .build();
     }
 
+    public BookRequest fromV1IsbnLookup(LivroRequest v1) {
+        return BookRequest.builder()
+                .isbn(v1.getIsbn())
+                .title(v1.getNome())
+                .author(v1.getAutor())
+                .publisher(v1.getEditora())
+                .publicationDate(v1.getData_lancamento())
+                .pageCount(v1.getNumero_paginas())
+                .chapterCount(v1.getNumero_capitulos())
+                .deweyCode(v1.getCdd())
+                .ageRating(v1.getClassificacao_etaria())
+                .edition(v1.getEdicao())
+                .volume(v1.getVolume())
+                .copyCount(v1.getQuantidade())
+                .synopsis(v1.getSinopse())
+                .coverType(v1.getTipo_capa())
+                .coverUrl(v1.getImagem())
+                .genres(v1.getGeneros())
+                .rating(v1.getAvaliacao())
+                .build();
+    }
+
     public LivroRequest toV1Request(BookRequest req) {
         return LivroRequest.builder()
                 .isbn(req.getIsbn())
