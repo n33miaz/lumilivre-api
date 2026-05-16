@@ -7,11 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
-import java.util.UUID;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
-import br.com.lumilivre.api.dto.v1.solicitacao.SolicitacaoCompletaResponse;
 import br.com.lumilivre.api.mapper.v2.LoanRequestMapper;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
@@ -48,9 +46,7 @@ class LoanRequestControllerTest {
 
     @Test
     void listAllReturnsPtBRContentLanguage() throws Exception {
-        SolicitacaoCompletaResponse item = new SolicitacaoCompletaResponse();
-        item.setId(UUID.randomUUID());
-        when(loanRequestService.listarTodasSolicitacoes()).thenReturn(List.of(item));
+        when(loanRequestService.listAll()).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v2/loan-requests").header("Accept-Language", "pt-BR"))
                 .andExpect(status().isOk())
@@ -59,7 +55,7 @@ class LoanRequestControllerTest {
 
     @Test
     void listAllReturnsEnUSContentLanguage() throws Exception {
-        when(loanRequestService.listarTodasSolicitacoes()).thenReturn(List.of());
+        when(loanRequestService.listAll()).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v2/loan-requests").header("Accept-Language", "en-US"))
                 .andExpect(status().isOk())

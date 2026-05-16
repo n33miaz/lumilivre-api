@@ -9,16 +9,12 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy;
 import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoRequest;
-import br.com.lumilivre.api.dto.v1.solicitacao.SolicitacaoCompletaResponse;
-import br.com.lumilivre.api.dto.v1.solicitacao.SolicitacaoDashboardResponse;
-import br.com.lumilivre.api.dto.v1.solicitacao.SolicitacaoResponse;
 import br.com.lumilivre.api.enums.LoanRequestStatus;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.LoanRequest;
@@ -53,26 +49,6 @@ public class LoanRequestService {
 
     public List<LoanRequest> listByStudent(String registrationNumber) {
         return loanRequestRepository.findByStudent_RegistrationNumberOrderByRequestedAtDesc(registrationNumber);
-    }
-
-    public List<SolicitacaoCompletaResponse> listarTodasSolicitacoes() {
-        return loanRequestRepository.findAllByOrderByRequestedAtDesc()
-                .stream()
-                .map(s -> new SolicitacaoCompletaResponse(
-                        s.getId(),
-                        s.getStudent().getFullName(),
-                        s.getStudent().getRegistrationNumber(),
-                        s.getBookCopy().getCopyCode(),
-                        s.getBookCopy().getBook().getTitle(),
-                        s.getRequestedAt(),
-                        s.getStatus(),
-                        s.getNote()))
-                .toList();
-    }
-
-    @Cacheable(value = DASHBOARD_LOAN_REQUESTS)
-    public List<SolicitacaoDashboardResponse> listarSolicitacoesPendentes() {
-        return loanRequestRepository.findSolicitacoesPendentes();
     }
 
     @Transactional
@@ -163,38 +139,6 @@ public class LoanRequestService {
         }
 
         return ResponseEntity.ok("Solicitação processada com sucesso.");
-    }
-
-    public List<SolicitacaoResponse> listarPendentesDTO() {
-        return loanRequestRepository.findByStatus(LoanRequestStatus.PENDING)
-                .stream()
-                .map(s -> new SolicitacaoResponse(
-                        s.getId(),
-                        s.getStudent().getFullName(),
-                        s.getStudent().getRegistrationNumber(),
-                        s.getBookCopy().getCopyCode(),
-                        s.getBookCopy().getBook().getId(),
-                        s.getBookCopy().getBook().getTitle(),
-                        s.getRequestedAt(),
-                        s.getStatus(),
-                        s.getNote()))
-                .toList();
-    }
-
-    public List<SolicitacaoResponse> listarSolicitacoesDoAlunoDTO(String matricula) {
-        return loanRequestRepository.findByStudent_RegistrationNumberOrderByRequestedAtDesc(matricula)
-                .stream()
-                .map(s -> new SolicitacaoResponse(
-                        s.getId(),
-                        s.getStudent().getFullName(),
-                        s.getStudent().getRegistrationNumber(),
-                        s.getBookCopy().getCopyCode(),
-                        s.getBookCopy().getBook().getId(),
-                        s.getBookCopy().getBook().getTitle(),
-                        s.getRequestedAt(),
-                        s.getStatus(),
-                        s.getNote()))
-                .toList();
     }
 
     private long contarEmprestimosAtivos(String matricula) {
