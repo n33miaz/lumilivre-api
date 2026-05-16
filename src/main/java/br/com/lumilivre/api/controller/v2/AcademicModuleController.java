@@ -40,9 +40,7 @@ public class AcademicModuleController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable,
             Locale locale) {
-        Page<AcademicModuleSummaryResponse> page = academicModuleService
-                .buscarPorTexto(q, pageable)
-                .map(mapper::toSummary);
+        Page<AcademicModuleSummaryResponse> page = academicModuleService.buscarPorTexto(q, pageable);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(page);
@@ -53,10 +51,10 @@ public class AcademicModuleController {
     public ResponseEntity<AcademicModuleResponse> create(
             @Valid @RequestBody AcademicModuleRequest request,
             Locale locale) {
-        var v1 = academicModuleService.cadastrar(mapper.toV1Request(request));
-        return ResponseEntity.status(v1.getStatusCode())
+        AcademicModuleResponse body = mapper.toResponse(academicModuleService.cadastrar(request));
+        return ResponseEntity.status(201)
                 .header("Content-Language", locale.toLanguageTag())
-                .body(mapper.toResponse(v1.getBody()));
+                .body(body);
     }
 
     @PutMapping("/{id}")
@@ -65,10 +63,10 @@ public class AcademicModuleController {
             @PathVariable Integer id,
             @Valid @RequestBody AcademicModuleRequest request,
             Locale locale) {
-        var v1 = academicModuleService.atualizar(id, mapper.toV1Request(request));
-        return ResponseEntity.status(v1.getStatusCode())
+        AcademicModuleResponse body = mapper.toResponse(academicModuleService.atualizar(id, request));
+        return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(mapper.toResponse(v1.getBody()));
+                .body(body);
     }
 
     @DeleteMapping("/{id}")
@@ -81,12 +79,8 @@ public class AcademicModuleController {
     @GetMapping("/loan-statistics")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<ChartItemResponse>> loanStatistics(Locale locale) {
-        List<ChartItemResponse> body = academicModuleService.buscarTotalEmprestimosPorModulo()
-                .stream()
-                .map(item -> new ChartItemResponse(item.nome(), item.total()))
-                .toList();
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(body);
+                .body(academicModuleService.buscarTotalEmprestimosPorModulo());
     }
 }

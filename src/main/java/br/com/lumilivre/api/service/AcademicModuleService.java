@@ -1,21 +1,20 @@
 package br.com.lumilivre.api.service;
 
-import br.com.lumilivre.api.dto.v1.modulo.ModuloResumoResponse;
-import br.com.lumilivre.api.dto.v1.modulo.ModuloRequest;
-import br.com.lumilivre.api.dto.v1.modulo.ModuloResponse;
-import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
-import br.com.lumilivre.api.exception.custom.BusinessRuleException;
-import br.com.lumilivre.api.model.AcademicModule;
-import br.com.lumilivre.api.dto.v1.comum.ApiResponse;
-import br.com.lumilivre.api.repository.AcademicModuleRepository;
+import java.util.List;
+
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.lumilivre.api.dto.academicmodule.AcademicModuleRequest;
+import br.com.lumilivre.api.dto.academicmodule.AcademicModuleSummaryResponse;
+import br.com.lumilivre.api.dto.common.ChartItemResponse;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
+import br.com.lumilivre.api.model.AcademicModule;
+import br.com.lumilivre.api.repository.AcademicModuleRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,45 +23,41 @@ public class AcademicModuleService {
 
     private final AcademicModuleRepository academicModuleRepository;
 
-    public Page<ModuloResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
-        return academicModuleRepository.buscarPorTextoComDTO(texto, pageable);
+    public Page<AcademicModuleSummaryResponse> buscarPorTexto(String texto, Pageable pageable) {
+        return academicModuleRepository.findSummaries(texto, pageable);
     }
 
     @Transactional
     @CacheEvict(value = "modulos", allEntries = true)
-    public ResponseEntity<ModuloResponse> cadastrar(ModuloRequest dto) {
-        if (academicModuleRepository.existsByNameIgnoreCase(dto.getNome())) {
+    public AcademicModule cadastrar(AcademicModuleRequest request) {
+        if (academicModuleRepository.existsByNameIgnoreCase(request.getName())) {
             throw BusinessRuleException.ofKey("metadata.academic-module.name.already-exists");
         }
         AcademicModule modulo = new AcademicModule();
-        modulo.setName(dto.getNome());
-        AcademicModule salvo = academicModuleRepository.save(modulo);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ModuloResponse(salvo));
+        modulo.setName(request.getName());
+        return academicModuleRepository.save(modulo);
     }
 
     @Transactional
     @CacheEvict(value = "modulos", allEntries = true)
-    public ResponseEntity<ModuloResponse> atualizar(Integer id, ModuloRequest dto) {
+    public AcademicModule atualizar(Integer id, AcademicModuleRequest request) {
         AcademicModule modulo = academicModuleRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("metadata.academic-module.not-found"));
 
-        modulo.setName(dto.getNome());
-        AcademicModule salvo = academicModuleRepository.save(modulo);
-        return ResponseEntity.ok(new ModuloResponse(salvo));
+        modulo.setName(request.getName());
+        return academicModuleRepository.save(modulo);
     }
 
     @Transactional
     @CacheEvict(value = "modulos", allEntries = true)
-    public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
+    public void excluir(Integer id) {
         if (!academicModuleRepository.existsById(id)) {
             throw ResourceNotFoundException.ofKey("metadata.academic-module.not-found");
         }
         academicModuleRepository.deleteById(id);
-
-        return ResponseEntity.ok(new ApiResponse<>(true, "Módulo removido com sucesso.", null));
     }
 
-    public java.util.List<br.com.lumilivre.api.dto.v1.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorModulo() {
+    public List<ChartItemResponse> buscarTotalEmprestimosPorModulo() {
         return academicModuleRepository.findTotalEmprestimosPorModulo();
     }
 }
