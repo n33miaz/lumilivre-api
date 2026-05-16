@@ -86,20 +86,20 @@ public class AppUserService {
 
     private AppUser saveAdmin(AppUser appUser, String rawPassword) {
         if (appUser.getEmail() == null || appUser.getEmail().isBlank()) {
-            throw new BusinessRuleException("O e-mail é obrigatório");
+            throw BusinessRuleException.ofKey("user.email.required");
         }
         if (appUserRepository.existsByEmail(appUser.getEmail())) {
-            throw new BusinessRuleException("E-mail já está em uso");
+            throw BusinessRuleException.ofKey("user.email.in-use");
         }
         if (rawPassword == null || rawPassword.isBlank()) {
-            throw new BusinessRuleException("A senha é obrigatória");
+            throw BusinessRuleException.ofKey("user.password.required");
         }
 
         appUser.setPasswordHash(passwordEncoder.encode(rawPassword));
         appUser.setRole(appUser.getRole() != null ? appUser.getRole() : Role.LIBRARIAN);
 
         if (appUser.getRole() == Role.STUDENT) {
-            throw new BusinessRuleException("Para cadastrar alunos, use a rota de Alunos.");
+            throw BusinessRuleException.ofKey("user.cannot-register-student-here");
         }
 
         AppUser savedAppUser = appUserRepository.save(appUser);
@@ -116,14 +116,14 @@ public class AppUserService {
 
     private AppUser updateUser(UUID id, String email, String rawPassword) {
         AppUser appUser = appUserRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("user.not-found"));
 
         if (email == null || email.isBlank()) {
-            throw new BusinessRuleException("O e-mail é obrigatório");
+            throw BusinessRuleException.ofKey("user.email.required");
         }
 
         if (!email.equals(appUser.getEmail()) && appUserRepository.existsByEmail(email)) {
-            throw new BusinessRuleException("E-mail já está em uso");
+            throw BusinessRuleException.ofKey("user.email.in-use");
         }
 
         appUser.setEmail(email);
@@ -138,7 +138,7 @@ public class AppUserService {
     @Transactional
     public void excluir(UUID id) {
         AppUser appUser = appUserRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("user.not-found"));
 
         if (appUser.getRole() == Role.STUDENT && appUser.getStudent() != null) {
             appUser.getStudent().setAppUser(null);
@@ -153,7 +153,7 @@ public class AppUserService {
         String usernameLogado = userDetails.getUsername();
 
         AppUser appUser = appUserRepository.findByEmailOrRegistrationNumber(usernameLogado, usernameLogado)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário logado não encontrado no sistema."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("user.logged-in-not-found"));
 
         if (appUser.getRole() == Role.STUDENT
                 && (appUser.getStudent() == null
@@ -162,7 +162,7 @@ public class AppUserService {
         }
 
         if (!passwordEncoder.matches(dto.getSenhaAtual(), appUser.getPasswordHash())) {
-            throw new BusinessRuleException("Senha atual incorreta");
+            throw BusinessRuleException.ofKey("user.password.incorrect");
         }
 
         appUser.setPasswordHash(passwordEncoder.encode(dto.getNovaSenha()));

@@ -60,7 +60,7 @@ class LoanServiceTest {
 
         assertThatThrownBy(() -> service.cadastrar(request))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("devolu");
+                .hasMessageContaining("loan.return-date.before-borrow-date");
 
         verify(loanRepository, never()).save(any(Loan.class));
     }

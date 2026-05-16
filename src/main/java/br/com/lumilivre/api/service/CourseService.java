@@ -63,7 +63,7 @@ public class CourseService {
     @Transactional
     public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
         if (!courseRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Curso não encontrado com ID: " + id);
+            throw ResourceNotFoundException.ofKey("course.not-found-with-id", id);
         }
 
         courseRepository.deleteById(id);

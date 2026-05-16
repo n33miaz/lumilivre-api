@@ -32,7 +32,7 @@ public class AcademicModuleService {
     @CacheEvict(value = "modulos", allEntries = true)
     public ResponseEntity<ModuloResponse> cadastrar(ModuloRequest dto) {
         if (academicModuleRepository.existsByNameIgnoreCase(dto.getNome())) {
-            throw new BusinessRuleException("Já existe um módulo com este nome.");
+            throw BusinessRuleException.ofKey("metadata.academic-module.name.already-exists");
         }
         AcademicModule modulo = new AcademicModule();
         modulo.setName(dto.getNome());
@@ -44,7 +44,7 @@ public class AcademicModuleService {
     @CacheEvict(value = "modulos", allEntries = true)
     public ResponseEntity<ModuloResponse> atualizar(Integer id, ModuloRequest dto) {
         AcademicModule modulo = academicModuleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Módulo não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("metadata.academic-module.not-found"));
 
         modulo.setName(dto.getNome());
         AcademicModule salvo = academicModuleRepository.save(modulo);
@@ -55,7 +55,7 @@ public class AcademicModuleService {
     @CacheEvict(value = "modulos", allEntries = true)
     public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
         if (!academicModuleRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Módulo não encontrado.");
+            throw ResourceNotFoundException.ofKey("metadata.academic-module.not-found");
         }
         academicModuleRepository.deleteById(id);
 

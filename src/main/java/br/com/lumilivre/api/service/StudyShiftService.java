@@ -32,7 +32,7 @@ public class StudyShiftService {
     @CacheEvict(value = "turnos", allEntries = true)
     public ResponseEntity<TurnoResponse> cadastrar(TurnoRequest dto) {
         if (studyShiftRepository.existsByNameIgnoreCase(dto.getNome())) {
-            throw new BusinessRuleException("Já existe um turno com este nome.");
+            throw BusinessRuleException.ofKey("metadata.study-shift.name.already-exists");
         }
         StudyShift turno = new StudyShift();
         turno.setName(dto.getNome());
@@ -44,7 +44,7 @@ public class StudyShiftService {
     @CacheEvict(value = "turnos", allEntries = true)
     public ResponseEntity<TurnoResponse> atualizar(Integer id, TurnoRequest dto) {
         StudyShift turno = studyShiftRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Turno não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("metadata.study-shift.not-found"));
 
         turno.setName(dto.getNome());
         StudyShift salvo = studyShiftRepository.save(turno);
@@ -55,7 +55,7 @@ public class StudyShiftService {
     @CacheEvict(value = "turnos", allEntries = true)
     public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
         if (!studyShiftRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Turno não encontrado.");
+            throw ResourceNotFoundException.ofKey("metadata.study-shift.not-found");
         }
         studyShiftRepository.deleteById(id);
 

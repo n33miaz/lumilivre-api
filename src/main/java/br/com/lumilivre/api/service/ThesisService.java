@@ -8,6 +8,7 @@ import br.com.lumilivre.api.model.Thesis;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.ThesisRepository;
 import br.com.lumilivre.api.service.infra.SupabaseStorageService;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
@@ -187,7 +188,7 @@ public class ThesisService {
         try {
             return Integer.valueOf(year.trim());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Ano de conclusão inválido.");
+            throw BusinessRuleException.ofKey("thesis.completion-year.invalid");
         }
     }
 }

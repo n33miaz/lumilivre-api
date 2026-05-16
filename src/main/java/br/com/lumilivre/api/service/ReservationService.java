@@ -75,10 +75,10 @@ public class ReservationService {
     @Transactional
     public void cancelarReserva(UUID reservaId, String matriculaCaller) {
         Reservation reservation = reservationRepository.findById(reservaId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reserva não encontrada."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("reservation.not-found"));
 
         if (!reservation.getStudent().getRegistrationNumber().equals(matriculaCaller)) {
-            throw new ResourceNotFoundException("Reserva não encontrada.");
+            throw ResourceNotFoundException.ofKey("reservation.not-found");
         }
 
         reservation.setStatus(ReservationStatus.CANCELLED);
