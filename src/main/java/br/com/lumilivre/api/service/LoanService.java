@@ -69,14 +69,14 @@ public class LoanService {
     }, allEntries = true)
     public EmprestimoResponse cadastrar(EmprestimoRequest dto) {
         if (dto.getData_emprestimo() == null || dto.getData_devolucao() == null) {
-            throw new BusinessRuleException("Datas de empréstimo e devolução são obrigatórias.");
+            throw BusinessRuleException.ofKey("loan.dates.required");
         }
         if (dto.getData_devolucao().isBefore(dto.getData_emprestimo())) {
-            throw new BusinessRuleException("A data de devolução não pode ser anterior à data de empréstimo.");
+            throw BusinessRuleException.ofKey("loan.return-date.before-borrow-date");
         }
 
         Student student = studentRepository.findByRegistrationNumber(dto.getAluno_matricula())
-                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
 
         OffsetDateTime now = OffsetDateTime.now();
         if (student.getPenaltyExpiresAt() != null && student.getPenaltyExpiresAt().isBefore(now)) {
@@ -93,7 +93,7 @@ public class LoanService {
         LoanPolicy.validateNewLoan(activeLoans, student.getPenaltyExpiresAt());
 
         BookCopy bookCopy = bookCopyRepository.findByCopyCode(dto.getExemplar_tombo())
-                .orElseThrow(() -> new ResourceNotFoundException("Exemplar não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("book.copy.not-found"));
 
         BookAvailabilityPolicy.validateAvailable(bookCopy.getStatus());
 
@@ -136,7 +136,7 @@ public class LoanService {
         return loanRepository.findByStudent_RegistrationNumber(request.getStudentRegistrationNumber()).stream()
                 .filter(loan -> loan.getBookCopy() != null && loan.getBookCopy().getCopyCode().equals(request.getCopyCode()))
                 .max(java.util.Comparator.comparing(Loan::getCreatedAt))
-                .orElseThrow(() -> new ResourceNotFoundException("EmprÃ©stimo nÃ£o encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
     }
 
     @Transactional
@@ -147,10 +147,10 @@ public class LoanService {
     }, allEntries = true)
     public EmprestimoResponse atualizar(EmprestimoRequest dto) {
         Loan loan = loanRepository.findById(dto.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Empréstimo não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
 
         if (loan.getStatus() == LoanStatus.COMPLETED) {
-            throw new BusinessRuleException("Este empréstimo já foi concluído e não pode ser alterado.");
+            throw BusinessRuleException.ofKey("loan.already-completed-cannot-update");
         }
 
         loan.setBorrowedAt(dto.getData_emprestimo());
@@ -177,7 +177,7 @@ public class LoanService {
                 .build();
         atualizar(dto);
         return loanRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("EmprÃ©stimo nÃ£o encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
     }
 
     @Auditable(action = "LOAN_RETURNED", targetParam = "#id")
@@ -189,10 +189,10 @@ public class LoanService {
     }, allEntries = true)
     public EmprestimoResponse concluirEmprestimo(UUID id) {
         Loan loan = loanRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Empréstimo não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
 
         if (loan.getStatus() == LoanStatus.COMPLETED) {
-            throw new BusinessRuleException("Este empréstimo já foi concluído.");
+            throw BusinessRuleException.ofKey("loan.already-completed");
         }
 
         OffsetDateTime now = OffsetDateTime.now();
@@ -241,7 +241,7 @@ public class LoanService {
     @Transactional
     public void excluir(UUID id) {
         Loan loan = loanRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Empréstimo não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
 
         if (loan.getStatus() == LoanStatus.ACTIVE || loan.getStatus() == LoanStatus.OVERDUE) {
             BookCopy bookCopy = loan.getBookCopy();
@@ -263,10 +263,10 @@ public class LoanService {
     }, allEntries = true)
     public EmprestimoResponse renovar(UUID id) {
         Loan loan = loanRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Empréstimo não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
 
         if (loan.getStatus() == LoanStatus.COMPLETED) {
-            throw new BusinessRuleException("Empréstimo já concluído não pode ser renovado.");
+            throw BusinessRuleException.ofKey("loan.renew.already-completed");
         }
 
         Student student = loan.getStudent();
@@ -357,7 +357,7 @@ public class LoanService {
 
     public Loan buscarPorId(UUID id) {
         return loanRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("EmprÃ©stimo nÃ£o encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
     }
 
     @Cacheable(value = DASHBOARD_OVERDUE_LIST)
