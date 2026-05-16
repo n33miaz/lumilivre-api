@@ -24,7 +24,6 @@ import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy;
 import br.com.lumilivre.api.domain.policy.LoanPolicy;
 import br.com.lumilivre.api.domain.policy.PenaltyPolicy;
 import br.com.lumilivre.api.domain.policy.ReservationPolicy;
-import br.com.lumilivre.api.dto.v1.aluno.AlunoRankingResponse;
 import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoAtivoResponse;
 import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoDashboardResponse;
 import br.com.lumilivre.api.dto.v1.emprestimo.EmprestimoListagemResponse;
@@ -526,11 +525,6 @@ public class LoanService {
                 dataDevolucao,
                 dueAtStart,
                 pageable);
-    }
-
-    public List<AlunoRankingResponse> gerarRankingAlunos(int top, Integer cursoId, Integer moduloId, Integer turnoId) {
-        return studentRepository.findRankingComFiltros(cursoId, moduloId, turnoId, PageRequest.of(0, top))
-                .getContent();
     }
 
     public List<Loan> buscarTodos() {
