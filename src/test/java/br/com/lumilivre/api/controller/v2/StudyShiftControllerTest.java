@@ -2,6 +2,7 @@ package br.com.lumilivre.api.controller.v2;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -12,7 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.dto.studyshift.StudyShiftResponse;
 import br.com.lumilivre.api.mapper.v2.StudyShiftMapper;
+import br.com.lumilivre.api.model.StudyShift;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.service.StudyShiftService;
@@ -24,7 +27,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -70,7 +72,11 @@ class StudyShiftControllerTest {
 
     @Test
     void createReturns201() throws Exception {
-        when(studyShiftService.cadastrar(any())).thenReturn(ResponseEntity.status(201).body(null));
+        StudyShift entity = new StudyShift();
+        entity.setId(1);
+        entity.setName("Noturno");
+        when(studyShiftService.cadastrar(any())).thenReturn(entity);
+        when(mapper.toResponse(entity)).thenReturn(new StudyShiftResponse(1, "Noturno"));
 
         mockMvc.perform(post("/api/v2/study-shifts").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,7 +86,7 @@ class StudyShiftControllerTest {
 
     @Test
     void deleteReturnsNoContent() throws Exception {
-        when(studyShiftService.excluir(1)).thenReturn(null);
+        doNothing().when(studyShiftService).excluir(1);
 
         mockMvc.perform(delete("/api/v2/study-shifts/1").with(csrf()))
                 .andExpect(status().isNoContent());

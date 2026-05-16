@@ -40,9 +40,7 @@ public class StudyShiftController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable,
             Locale locale) {
-        Page<StudyShiftSummaryResponse> page = studyShiftService
-                .buscarPorTexto(q, pageable)
-                .map(mapper::toSummary);
+        Page<StudyShiftSummaryResponse> page = studyShiftService.buscarPorTexto(q, pageable);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(page);
@@ -53,10 +51,10 @@ public class StudyShiftController {
     public ResponseEntity<StudyShiftResponse> create(
             @Valid @RequestBody StudyShiftRequest request,
             Locale locale) {
-        var v1 = studyShiftService.cadastrar(mapper.toV1Request(request));
-        return ResponseEntity.status(v1.getStatusCode())
+        StudyShiftResponse body = mapper.toResponse(studyShiftService.cadastrar(request));
+        return ResponseEntity.status(201)
                 .header("Content-Language", locale.toLanguageTag())
-                .body(mapper.toResponse(v1.getBody()));
+                .body(body);
     }
 
     @PutMapping("/{id}")
@@ -65,10 +63,10 @@ public class StudyShiftController {
             @PathVariable Integer id,
             @Valid @RequestBody StudyShiftRequest request,
             Locale locale) {
-        var v1 = studyShiftService.atualizar(id, mapper.toV1Request(request));
-        return ResponseEntity.status(v1.getStatusCode())
+        StudyShiftResponse body = mapper.toResponse(studyShiftService.atualizar(id, request));
+        return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(mapper.toResponse(v1.getBody()));
+                .body(body);
     }
 
     @DeleteMapping("/{id}")
@@ -81,12 +79,8 @@ public class StudyShiftController {
     @GetMapping("/loan-statistics")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<ChartItemResponse>> loanStatistics(Locale locale) {
-        List<ChartItemResponse> body = studyShiftService.buscarTotalEmprestimosPorTurno()
-                .stream()
-                .map(item -> new ChartItemResponse(item.nome(), item.total()))
-                .toList();
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(body);
+                .body(studyShiftService.buscarTotalEmprestimosPorTurno());
     }
 }
