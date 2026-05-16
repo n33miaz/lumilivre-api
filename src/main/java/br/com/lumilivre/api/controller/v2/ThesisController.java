@@ -8,6 +8,7 @@ import br.com.lumilivre.api.dto.thesis.ThesisRequest;
 import br.com.lumilivre.api.dto.thesis.ThesisResponse;
 import br.com.lumilivre.api.mapper.v2.ThesisMapper;
 import br.com.lumilivre.api.service.ThesisService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,16 +31,14 @@ public class ThesisController {
 
     private final ThesisService thesisService;
     private final ThesisMapper mapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<List<ThesisResponse>> list(
             @RequestParam(required = false) String q,
             Locale locale) {
-        var v1 = thesisService.listTheses(q);
-        List<ThesisResponse> body = v1.getBody() != null && v1.getBody().getData() != null
-                ? v1.getBody().getData().stream().map(mapper::fromV1).toList()
-                : List.of();
+        List<ThesisResponse> body = thesisService.listTheses(q).stream().map(mapper::toResponse).toList();
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);
@@ -48,15 +47,9 @@ public class ThesisController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<ThesisResponse> getOne(@PathVariable UUID id, Locale locale) {
-        var v1 = thesisService.getThesisById(id);
-        if (!v1.getStatusCode().is2xxSuccessful() || v1.getBody() == null || v1.getBody().getData() == null) {
-            return ResponseEntity.status(v1.getStatusCode())
-                    .header("Content-Language", locale.toLanguageTag())
-                    .build();
-        }
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(mapper.fromV1(v1.getBody().getData()));
+                .body(mapper.toResponse(thesisService.getThesisById(id)));
     }
 
     @GetMapping("/search")
@@ -66,10 +59,8 @@ public class ThesisController {
             @RequestParam(required = false) String semester,
             @RequestParam(required = false) String year,
             Locale locale) {
-        var v1 = thesisService.searchTheses(courseId, semester, year);
-        List<ThesisResponse> body = v1.getBody() != null && v1.getBody().getData() != null
-                ? v1.getBody().getData().stream().map(mapper::fromV1).toList()
-                : List.of();
+        List<ThesisResponse> body = thesisService.searchTheses(courseId, semester, year)
+                .stream().map(mapper::toResponse).toList();
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);
@@ -83,15 +74,9 @@ public class ThesisController {
             @RequestPart(value = "coverFile", required = false) MultipartFile coverFile,
             Locale locale) {
         ThesisRequest req = parseRequest(data);
-        var v1 = thesisService.createThesis(mapper.toV1Json(req), pdfFile, coverFile);
-        if (!v1.getStatusCode().is2xxSuccessful() || v1.getBody() == null || v1.getBody().getData() == null) {
-            return ResponseEntity.status(v1.getStatusCode())
-                    .header("Content-Language", locale.toLanguageTag())
-                    .build();
-        }
         return ResponseEntity.status(201)
                 .header("Content-Language", locale.toLanguageTag())
-                .body(mapper.fromV1(v1.getBody().getData()));
+                .body(mapper.toResponse(thesisService.createThesis(req, pdfFile, coverFile)));
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -103,15 +88,9 @@ public class ThesisController {
             @RequestPart(value = "coverFile", required = false) MultipartFile coverFile,
             Locale locale) {
         ThesisRequest req = parseRequest(data);
-        var v1 = thesisService.updateThesis(id, mapper.toV1Json(req), pdfFile, coverFile);
-        if (!v1.getStatusCode().is2xxSuccessful() || v1.getBody() == null || v1.getBody().getData() == null) {
-            return ResponseEntity.status(v1.getStatusCode())
-                    .header("Content-Language", locale.toLanguageTag())
-                    .build();
-        }
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(mapper.fromV1(v1.getBody().getData()));
+                .body(mapper.toResponse(thesisService.updateThesis(id, req, pdfFile, coverFile)));
     }
 
     @DeleteMapping("/{id}")
@@ -123,8 +102,7 @@ public class ThesisController {
 
     private ThesisRequest parseRequest(String data) {
         try {
-            com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
-            return om.readValue(data, ThesisRequest.class);
+            return objectMapper.readValue(data, ThesisRequest.class);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid thesis data: " + e.getMessage(), e);
         }

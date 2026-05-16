@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
+
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.mapper.v2.ThesisMapper;
@@ -18,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -41,7 +42,7 @@ class ThesisControllerTest {
 
     @Test
     void listReturnsOkWithContentLanguage() throws Exception {
-        when(thesisService.listTheses(isNull())).thenReturn(ResponseEntity.ok(null));
+        when(thesisService.listTheses(isNull())).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v2/theses").header("Accept-Language", "pt-BR"))
                 .andExpect(status().isOk())
@@ -53,7 +54,7 @@ class ThesisControllerTest {
     @Test
     @WithMockUser(roles = "STUDENT")
     void studentCanList() throws Exception {
-        when(thesisService.listTheses(isNull())).thenReturn(ResponseEntity.ok(null));
+        when(thesisService.listTheses(isNull())).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v2/theses"))
                 .andExpect(status().isOk());
@@ -61,8 +62,7 @@ class ThesisControllerTest {
 
     @Test
     void searchReturnsOkWithContentLanguage() throws Exception {
-        when(thesisService.searchTheses(isNull(), isNull(), isNull()))
-                .thenReturn(ResponseEntity.ok(null));
+        when(thesisService.searchTheses(isNull(), isNull(), isNull())).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v2/theses/search").header("Accept-Language", "en-US"))
                 .andExpect(status().isOk())
