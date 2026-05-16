@@ -4,17 +4,15 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.v1.curso.CursoRequest;
-import br.com.lumilivre.api.dto.v1.curso.CursoResponse;
-import br.com.lumilivre.api.dto.v1.curso.CursoResumoResponse;
+import br.com.lumilivre.api.dto.common.ChartItemResponse;
+import br.com.lumilivre.api.dto.course.CourseRequest;
+import br.com.lumilivre.api.dto.course.CourseStatisticsResponse;
+import br.com.lumilivre.api.dto.course.CourseSummaryResponse;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.Course;
-import br.com.lumilivre.api.dto.v1.comum.ApiResponse;
 import br.com.lumilivre.api.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -24,58 +22,39 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
 
-    public Page<CursoResumoResponse> buscarCursoParaListaAdmin(String texto, Pageable pageable) {
-        return courseRepository.findCursoParaListaAdminComFiltro(texto, pageable);
-    }
-
-    public Page<CursoResumoResponse> buscarPorTexto(String texto, Pageable pageable) {
-        String textoFormatado = (texto != null && !texto.isBlank()) ? "%" + texto + "%" : null;
-        return courseRepository.buscarPorTextoComDTO(textoFormatado, pageable);
-    }
-
-    public Page<CursoResumoResponse> buscarAvancado(String nome, Pageable pageable) {
-        String nomeFiltro = (nome != null && !nome.isBlank()) ? "%" + nome + "%" : null;
-        return courseRepository.buscarAvancadoComDTO(nomeFiltro, pageable);
+    public Page<CourseSummaryResponse> buscarCursoParaListaAdmin(String texto, Pageable pageable) {
+        return courseRepository.findSummariesByFilter(texto, pageable);
     }
 
     @Transactional
-    public ResponseEntity<CursoResponse> cadastrar(CursoRequest dto) {
+    public Course cadastrar(CourseRequest request) {
         Course curso = new Course();
-        curso.setName(dto.getNome());
-
-        Course salvo = courseRepository.save(curso);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(new CursoResponse(salvo));
+        curso.setName(request.getName());
+        return courseRepository.save(curso);
     }
 
     @Transactional
-    public ResponseEntity<CursoResponse> atualizar(Integer id, CursoRequest dto) {
+    public Course atualizar(Integer id, CourseRequest request) {
         Course curso = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Curso não encontrado com ID: " + id));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("course.not-found-with-id", id));
 
-        curso.setName(dto.getNome());
-
-        Course salvo = courseRepository.save(curso);
-
-        return ResponseEntity.ok(new CursoResponse(salvo));
+        curso.setName(request.getName());
+        return courseRepository.save(curso);
     }
 
     @Transactional
-    public ResponseEntity<ApiResponse<Void>> excluir(Integer id) {
+    public void excluir(Integer id) {
         if (!courseRepository.existsById(id)) {
             throw ResourceNotFoundException.ofKey("course.not-found-with-id", id);
         }
-
         courseRepository.deleteById(id);
-
-        return ResponseEntity.ok(new ApiResponse<>(true, "O Curso foi removido com sucesso", null));
     }
 
-    public List<br.com.lumilivre.api.dto.v1.curso.CursoEstatisticaResponse> buscarEstatisticas() {
-        return courseRepository.findEstatisticasCursos();
+    public List<CourseStatisticsResponse> buscarEstatisticas() {
+        return courseRepository.findStatistics();
     }
 
-    public List<br.com.lumilivre.api.dto.v1.comum.EstatisticaGraficoResponse> buscarTotalEmprestimosPorCurso() {
+    public List<ChartItemResponse> buscarTotalEmprestimosPorCurso() {
         return courseRepository.findTotalEmprestimosPorCurso();
     }
 }

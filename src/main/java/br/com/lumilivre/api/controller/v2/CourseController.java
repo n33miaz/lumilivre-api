@@ -3,11 +3,11 @@ package br.com.lumilivre.api.controller.v2;
 import java.util.List;
 import java.util.Locale;
 
+import br.com.lumilivre.api.dto.common.ChartItemResponse;
 import br.com.lumilivre.api.dto.course.CourseRequest;
 import br.com.lumilivre.api.dto.course.CourseResponse;
 import br.com.lumilivre.api.dto.course.CourseStatisticsResponse;
 import br.com.lumilivre.api.dto.course.CourseSummaryResponse;
-import br.com.lumilivre.api.dto.common.ChartItemResponse;
 import br.com.lumilivre.api.mapper.v2.CourseMapper;
 import br.com.lumilivre.api.service.CourseService;
 import jakarta.validation.Valid;
@@ -41,9 +41,7 @@ public class CourseController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable,
             Locale locale) {
-        Page<CourseSummaryResponse> page = courseService
-                .buscarCursoParaListaAdmin(q, pageable)
-                .map(mapper::toSummary);
+        Page<CourseSummaryResponse> page = courseService.buscarCursoParaListaAdmin(q, pageable);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(page);
@@ -54,10 +52,10 @@ public class CourseController {
     public ResponseEntity<CourseResponse> create(
             @Valid @RequestBody CourseRequest request,
             Locale locale) {
-        var v1 = courseService.cadastrar(mapper.toV1Request(request));
-        return ResponseEntity.status(v1.getStatusCode())
+        CourseResponse body = mapper.toResponse(courseService.cadastrar(request));
+        return ResponseEntity.status(201)
                 .header("Content-Language", locale.toLanguageTag())
-                .body(mapper.toResponse(v1.getBody()));
+                .body(body);
     }
 
     @PutMapping("/{id}")
@@ -66,10 +64,10 @@ public class CourseController {
             @PathVariable Integer id,
             @Valid @RequestBody CourseRequest request,
             Locale locale) {
-        var v1 = courseService.atualizar(id, mapper.toV1Request(request));
-        return ResponseEntity.status(v1.getStatusCode())
+        CourseResponse body = mapper.toResponse(courseService.atualizar(id, request));
+        return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(mapper.toResponse(v1.getBody()));
+                .body(body);
     }
 
     @DeleteMapping("/{id}")
@@ -82,24 +80,16 @@ public class CourseController {
     @GetMapping("/statistics")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<CourseStatisticsResponse>> statistics(Locale locale) {
-        List<CourseStatisticsResponse> body = courseService.buscarEstatisticas()
-                .stream()
-                .map(mapper::toStatistics)
-                .toList();
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(body);
+                .body(courseService.buscarEstatisticas());
     }
 
     @GetMapping("/loan-statistics")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<ChartItemResponse>> loanStatistics(Locale locale) {
-        List<ChartItemResponse> body = courseService.buscarTotalEmprestimosPorCurso()
-                .stream()
-                .map(item -> new ChartItemResponse(item.nome(), item.total()))
-                .toList();
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(body);
+                .body(courseService.buscarTotalEmprestimosPorCurso());
     }
 }

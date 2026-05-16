@@ -6,7 +6,7 @@ import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.BookRepository;
-import br.com.lumilivre.api.dto.v1.curso.CursoEstatisticaResponse;
+import br.com.lumilivre.api.dto.course.CourseStatisticsResponse;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.enums.PenaltyCode;
@@ -199,7 +199,7 @@ public class ReportService {
             document.open();
             adicionarCabecalhoRelatorio(document, "Relatório Geral de Cursos", null, null);
 
-            List<CursoEstatisticaResponse> estatisticas = courseRepository.findEstatisticasCursos();
+            List<CourseStatisticsResponse> estatisticas = courseRepository.findStatistics();
 
             PdfPTable table = new PdfPTable(4);
             table.setWidthPercentage(100);
@@ -210,11 +210,11 @@ public class ReportService {
             adicionarCelulaHeader(table, "Qtd. Empréstimos");
             adicionarCelulaHeader(table, "Média Empréstimos/Aluno");
 
-            for (CursoEstatisticaResponse dto : estatisticas) {
-                table.addCell(criarCelulaDados(dto.getNomeCurso()));
-                table.addCell(criarCelulaDados(String.valueOf(dto.getQuantidadeAlunos())));
-                table.addCell(criarCelulaDados(String.valueOf(dto.getTotalEmprestimos())));
-                table.addCell(criarCelulaDados(String.format("%.2f", dto.getMediaEmprestimosPorAluno())));
+            for (CourseStatisticsResponse dto : estatisticas) {
+                table.addCell(criarCelulaDados(dto.getCourseName()));
+                table.addCell(criarCelulaDados(String.valueOf(dto.getStudentCount())));
+                table.addCell(criarCelulaDados(String.valueOf(dto.getTotalLoans())));
+                table.addCell(criarCelulaDados(String.format("%.2f", dto.getAvgLoansPerStudent())));
             }
 
             document.add(table);
