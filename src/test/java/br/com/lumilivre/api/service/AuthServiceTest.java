@@ -24,8 +24,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
-import br.com.lumilivre.api.dto.v1.auth.LoginRequest;
+import br.com.lumilivre.api.dto.auth.ResetPasswordTokenRequest;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.AppUser;
@@ -65,12 +64,12 @@ class AuthServiceTest {
         when(passwordEncoder.matches("senha-segura", "hash")).thenReturn(true);
         when(jwtUtil.generateToken(any(UserDetails.class))).thenReturn("jwt-token");
 
-        var response = service.login(new LoginRequest("admin@lumilivre.test", "senha-segura"));
+        var response = service.login("admin@lumilivre.test", "senha-segura");
 
         assertThat(response.getEmail()).isEqualTo("admin@lumilivre.test");
         assertThat(response.getRole()).isEqualTo("ADMIN");
         assertThat(response.getToken()).isEqualTo("jwt-token");
-        assertThat(response.isInitialPassword()).isFalse();
+        assertThat(response.isInitialPasswordChange()).isFalse();
     }
 
     @Test
@@ -83,17 +82,17 @@ class AuthServiceTest {
         when(passwordEncoder.matches("12345", "hash")).thenReturn(true);
         when(jwtUtil.generateToken(any(UserDetails.class))).thenReturn("jwt-token");
 
-        var response = service.login(new LoginRequest("12345", "12345"));
+        var response = service.login("12345", "12345");
 
-        assertThat(response.getMatriculaAluno()).isEqualTo("12345");
-        assertThat(response.isInitialPassword()).isTrue();
+        assertThat(response.getStudentRegistrationNumber()).isEqualTo("12345");
+        assertThat(response.isInitialPasswordChange()).isTrue();
     }
 
     @Test
     void loginDeveFalharQuandoUsuarioNaoExiste() {
         when(usuarioRepository.findByEmailOrRegistrationNumber("ninguemm", "ninguemm")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.login(new LoginRequest("ninguemm", "senha")))
+        assertThatThrownBy(() -> service.login("ninguemm", "senha"))
                 .isInstanceOf(BadCredentialsException.class);
 
         verify(passwordEncoder, never()).matches(any(), any());
@@ -107,7 +106,7 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("errada", "hash")).thenReturn(false);
 
-        assertThatThrownBy(() -> service.login(new LoginRequest("biblioteca@lumilivre.test", "errada")))
+        assertThatThrownBy(() -> service.login("biblioteca@lumilivre.test", "errada"))
                 .isInstanceOf(BadCredentialsException.class);
 
         verify(jwtUtil, never()).generateToken(any());
@@ -158,7 +157,7 @@ class AuthServiceTest {
         when(tokenRepository.findByToken("token-123")).thenReturn(Optional.of(tokenReset));
         when(passwordEncoder.encode("nova-senha")).thenReturn("novo-hash");
 
-        service.mudarSenhaComToken(new MudarSenhaTokenRequest("token-123", "nova-senha"));
+        service.resetPasswordWithToken(new ResetPasswordTokenRequest("token-123", "nova-senha"));
 
         assertThat(tokenReset.getAppUser().getPasswordHash()).isEqualTo("novo-hash");
         verify(usuarioRepository).save(tokenReset.getAppUser());
@@ -170,7 +169,7 @@ class AuthServiceTest {
         PasswordResetToken tokenReset = tokenReset(OffsetDateTime.now().minusMinutes(1));
         when(tokenRepository.findByToken("token-123")).thenReturn(Optional.of(tokenReset));
 
-        assertThatThrownBy(() -> service.mudarSenhaComToken(new MudarSenhaTokenRequest("token-123", "nova-senha")))
+        assertThatThrownBy(() -> service.resetPasswordWithToken(new ResetPasswordTokenRequest("token-123", "nova-senha")))
                 .isInstanceOf(BusinessRuleException.class);
 
         verify(passwordEncoder, never()).encode(any());

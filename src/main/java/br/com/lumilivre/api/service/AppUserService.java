@@ -11,7 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.auth.AlterarSenhaRequest;
+import br.com.lumilivre.api.dto.auth.ChangePasswordRequest;
 import br.com.lumilivre.api.dto.user.UserRequest;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
@@ -119,7 +119,7 @@ public class AppUserService {
     }
 
     @Transactional
-    public void alterarSenha(AlterarSenhaRequest dto) {
+    public void changePassword(ChangePasswordRequest request) {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String usernameLogado = userDetails.getUsername();
 
@@ -128,15 +128,15 @@ public class AppUserService {
 
         if (appUser.getRole() == Role.STUDENT
                 && (appUser.getStudent() == null
-                || !appUser.getStudent().getRegistrationNumber().equals(dto.getMatricula()))) {
-            throw new AccessDeniedException("Você não tem permissão para alterar a senha de outro usuário.");
+                || !appUser.getStudent().getRegistrationNumber().equals(request.getRegistrationNumber()))) {
+            throw new AccessDeniedException("user.change-password.forbidden");
         }
 
-        if (!passwordEncoder.matches(dto.getSenhaAtual(), appUser.getPasswordHash())) {
+        if (!passwordEncoder.matches(request.getCurrentPassword(), appUser.getPasswordHash())) {
             throw BusinessRuleException.ofKey("user.password.incorrect");
         }
 
-        appUser.setPasswordHash(passwordEncoder.encode(dto.getNovaSenha()));
+        appUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         appUserRepository.save(appUser);
     }
 }

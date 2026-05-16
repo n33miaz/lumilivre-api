@@ -3,11 +3,9 @@ package br.com.lumilivre.api.controller.v2;
 import java.util.Locale;
 import java.util.Map;
 
-import br.com.lumilivre.api.dto.auth.AlterarSenhaRequest;
 import br.com.lumilivre.api.dto.auth.ChangePasswordRequest;
 import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.LoginResponse;
-import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
 import br.com.lumilivre.api.dto.auth.ResetPasswordTokenRequest;
 import br.com.lumilivre.api.service.AppUserService;
 import br.com.lumilivre.api.service.AuthService;
@@ -52,15 +50,14 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordTokenRequest req) {
-        authService.mudarSenhaComToken(new MudarSenhaTokenRequest(req.getToken(), req.getNewPassword()));
+        authService.resetPasswordWithToken(req);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/change-password")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest req, Locale locale) {
-        userService.alterarSenha(new AlterarSenhaRequest(
-                req.getRegistrationNumber(), req.getCurrentPassword(), req.getNewPassword()));
+        userService.changePassword(req);
         return ResponseEntity.noContent()
                 .header("Content-Language", locale.toLanguageTag())
                 .build();

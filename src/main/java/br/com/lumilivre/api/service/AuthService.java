@@ -12,8 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.dto.auth.LoginResponse;
-import br.com.lumilivre.api.dto.auth.MudarSenhaTokenRequest;
-import br.com.lumilivre.api.dto.v1.auth.LoginRequest;
+import br.com.lumilivre.api.dto.auth.ResetPasswordTokenRequest;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.PasswordResetToken;
@@ -32,12 +31,6 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
-
-    public br.com.lumilivre.api.dto.v1.auth.LoginResponse login(LoginRequest dto) {
-        AuthenticatedLogin login = authenticate(dto.getUser(), dto.getSenha());
-        return new br.com.lumilivre.api.dto.v1.auth.LoginResponse(
-                login.appUser(), login.token(), login.initialPassword());
-    }
 
     public LoginResponse login(String username, String password) {
         AuthenticatedLogin login = authenticate(username, password);
@@ -105,8 +98,8 @@ public class AuthService {
     }
 
     @Transactional
-    public void mudarSenhaComToken(MudarSenhaTokenRequest dto) {
-        PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(dto.getToken())
+    public void resetPasswordWithToken(ResetPasswordTokenRequest request) {
+        PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(request.getToken())
                 .orElseThrow(() -> BusinessRuleException.ofKey("auth.password-reset.error.token-invalid"));
 
         if (passwordResetToken.isExpired()) {
@@ -114,7 +107,7 @@ public class AuthService {
         }
 
         AppUser appUser = passwordResetToken.getAppUser();
-        appUser.setPasswordHash(passwordEncoder.encode(dto.getNovaSenha()));
+        appUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         appUserRepository.save(appUser);
 
         passwordResetTokenRepository.delete(passwordResetToken);
