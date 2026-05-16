@@ -34,7 +34,7 @@ public class BookCopyController {
     public ResponseEntity<List<BookCopyResponse>> listByBook(@PathVariable UUID bookId, Locale locale) {
         List<BookCopyResponse> copies = bookCopyService.buscarExemplaresPorLivroId(bookId)
                 .stream()
-                .map(v1 -> mapper.fromV1(v1, bookId, locale))
+                .map(copy -> mapper.toResponse(copy, locale))
                 .toList();
         if (copies.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -47,7 +47,7 @@ public class BookCopyController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> create(@Valid @RequestBody BookCopyRequest request) {
-        bookCopyService.cadastrar(mapper.toV1Request(request));
+        bookCopyService.cadastrar(request);
         return ResponseEntity.status(201).build();
     }
 
@@ -55,7 +55,7 @@ public class BookCopyController {
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> update(@PathVariable String copyCode,
                                        @Valid @RequestBody BookCopyRequest request) {
-        bookCopyService.atualizar(copyCode, mapper.toV1Request(request));
+        bookCopyService.atualizar(copyCode, request);
         return ResponseEntity.noContent().build();
     }
 

@@ -13,9 +13,7 @@ import java.util.UUID;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
-import br.com.lumilivre.api.dto.v1.livro.LivroDetalheResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse;
-import br.com.lumilivre.api.enums.BookCopyStatus;
+import br.com.lumilivre.api.dto.book.BookListItemProjection;
 import br.com.lumilivre.api.mapper.v2.BookMapper;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
@@ -54,11 +52,11 @@ class BookControllerTest {
 
     @Test
     void listReturnsPtBRWithEnFieldNames() throws Exception {
-        LivroListagemResponse v1 = new LivroListagemResponse(
-                BookCopyStatus.AVAILABLE, "T001", "978-0-7432-7356-5",
-                "100.1", "Dom Quixote", "Romance", "Cervantes", "Alfaguara", null);
+        BookListItemProjection projection = bookListItem(
+                "AVAILABLE", "T001", "978-0-7432-7356-5", "100.1",
+                "Dom Quixote", "Romance", "Cervantes", "Alfaguara", null);
         when(bookService.buscarParaListaAdmin(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(v1)));
+                .thenReturn(new PageImpl<>(List.of(projection)));
 
         mockMvc.perform(get("/api/v2/books").header("Accept-Language", "pt-BR"))
                 .andExpect(status().isOk())
@@ -71,11 +69,11 @@ class BookControllerTest {
 
     @Test
     void listReturnsEnUSLabels() throws Exception {
-        LivroListagemResponse v1 = new LivroListagemResponse(
-                BookCopyStatus.AVAILABLE, "T001", "978-0-7432-7356-5",
-                "100.1", "Dom Quixote", "Romance", "Cervantes", "Alfaguara", null);
+        BookListItemProjection projection = bookListItem(
+                "AVAILABLE", "T001", "978-0-7432-7356-5", "100.1",
+                "Dom Quixote", "Romance", "Cervantes", "Alfaguara", null);
         when(bookService.buscarParaListaAdmin(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(v1)));
+                .thenReturn(new PageImpl<>(List.of(projection)));
 
         mockMvc.perform(get("/api/v2/books").header("Accept-Language", "en-US"))
                 .andExpect(status().isOk())
@@ -93,5 +91,21 @@ class BookControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(header().string("Content-Language", "en-US"))
                 .andExpect(jsonPath("$.message").value("Book not found."));
+    }
+
+    private BookListItemProjection bookListItem(
+            String status, String copyCode, String isbn, String deweyCode,
+            String title, String genre, String author, String publisher, String physicalLocation) {
+        return new BookListItemProjection() {
+            @Override public String getStatus() { return status; }
+            @Override public String getCopyCode() { return copyCode; }
+            @Override public String getIsbn() { return isbn; }
+            @Override public String getDeweyCode() { return deweyCode; }
+            @Override public String getTitle() { return title; }
+            @Override public String getGenre() { return genre; }
+            @Override public String getAuthor() { return author; }
+            @Override public String getPublisher() { return publisher; }
+            @Override public String getPhysicalLocation() { return physicalLocation; }
+        };
     }
 }

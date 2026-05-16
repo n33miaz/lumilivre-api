@@ -51,7 +51,7 @@ public class BookController {
             Locale locale) {
         Page<BookSummaryResponse> page = bookService
                 .buscarParaListaAdmin(pageable)
-                .map(v1 -> mapper.toSummary(v1, locale));
+                .map(p -> mapper.toSummary(p, locale));
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(page);
@@ -65,7 +65,7 @@ public class BookController {
             Locale locale) {
         Page<BookSummaryResponse> page = bookService
                 .buscarPorTexto(q != null ? q : "", pageable)
-                .map(v1 -> mapper.toSummary(v1, locale));
+                .map(p -> mapper.toSummary(p, locale));
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(page);
@@ -77,9 +77,7 @@ public class BookController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable,
             Locale locale) {
-        Page<BookGroupedResponse> page = bookService
-                .buscarLivrosAgrupados(pageable, q)
-                .map(mapper::toGrouped);
+        Page<BookGroupedResponse> page = bookService.buscarLivrosAgrupados(pageable, q);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(page);
@@ -99,10 +97,9 @@ public class BookController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate publicationDate,
             @PageableDefault(size = 20) Pageable pageable,
             Locale locale) {
-        Page<BookGroupedResponse> page = bookService
-                .buscarAvancado(title, isbn, author, genre, publisher, deweyCode,
-                        ageRating, coverType, publicationDate, pageable)
-                .map(mapper::toGrouped);
+        Page<BookGroupedResponse> page = bookService.buscarAvancado(
+                title, isbn, author, genre, publisher, deweyCode,
+                ageRating, coverType, publicationDate, pageable);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(page);
@@ -113,9 +110,7 @@ public class BookController {
             @RequestParam String q,
             @PageableDefault(size = 20) Pageable pageable,
             Locale locale) {
-        Page<BookCardResponse> page = bookService
-                .buscarMobilePorTexto(q, pageable)
-                .map(mapper::toCard);
+        Page<BookCardResponse> page = bookService.buscarMobilePorTexto(q, pageable);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(page);
@@ -123,10 +118,7 @@ public class BookController {
 
     @GetMapping("/catalog")
     public ResponseEntity<List<BookCatalogResponse>> catalog(Locale locale) {
-        List<BookCatalogResponse> body = bookService.buscarCatalogoParaMobile()
-                .stream()
-                .map(mapper::toCatalog)
-                .toList();
+        List<BookCatalogResponse> body = bookService.buscarCatalogoParaMobile();
         if (body.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
@@ -140,9 +132,7 @@ public class BookController {
             @PathVariable String genreName,
             @PageableDefault(size = 10) Pageable pageable,
             Locale locale) {
-        Page<BookCardResponse> page = bookService
-                .buscarPorGenero(genreName, pageable)
-                .map(mapper::toCard);
+        Page<BookCardResponse> page = bookService.buscarPorGenero(genreName, pageable);
         return page.isEmpty()
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.ok()
@@ -155,19 +145,15 @@ public class BookController {
     public ResponseEntity<List<BookCardResponse>> recommendations(
             @PathVariable String registrationNumber,
             Locale locale) {
-        List<BookCardResponse> body = recommendationService.recommendForStudent(registrationNumber)
-                .stream()
-                .map(mapper::toCard)
-                .toList();
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(body);
+                .body(recommendationService.recommendForStudent(registrationNumber));
     }
 
     @GetMapping("/isbn/{isbn}")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<BookRequest> isbnLookup(@PathVariable String isbn, Locale locale) {
-        BookRequest body = mapper.fromV1IsbnLookup(bookService.pesquisarDadosPorIsbn(isbn));
+        BookRequest body = bookService.pesquisarDadosPorIsbn(isbn);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);
@@ -177,7 +163,7 @@ public class BookController {
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<BookResponse> getOne(@PathVariable UUID id, Locale locale) {
         BookResponse body = bookService.findById(id)
-                .map(v1 -> mapper.fromV1Detail(v1, locale))
+                .map(book -> mapper.toResponse(book, locale))
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found"));
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
@@ -189,8 +175,7 @@ public class BookController {
     public ResponseEntity<BookResponse> create(
             @Valid @RequestBody BookRequest request,
             Locale locale) {
-        BookResponse body = mapper.fromV1Response(
-                bookService.cadastrar(mapper.toV1Request(request), null), locale);
+        BookResponse body = mapper.toResponse(bookService.cadastrar(request, null), locale);
         return ResponseEntity.status(201)
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);
@@ -202,8 +187,7 @@ public class BookController {
             @PathVariable UUID id,
             @Valid @RequestBody BookRequest request,
             Locale locale) {
-        BookResponse body = mapper.fromV1Response(
-                bookService.atualizar(id, mapper.toV1Request(request), null), locale);
+        BookResponse body = mapper.toResponse(bookService.atualizar(id, request, null), locale);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);
@@ -215,7 +199,7 @@ public class BookController {
             @PathVariable UUID id,
             @RequestParam("file") MultipartFile file,
             Locale locale) {
-        BookResponse body = mapper.fromV1Response(bookService.uploadCapa(id, file), locale);
+        BookResponse body = mapper.toResponse(bookService.uploadCapa(id, file), locale);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);

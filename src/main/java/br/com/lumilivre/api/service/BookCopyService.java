@@ -2,22 +2,19 @@ package br.com.lumilivre.api.service;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.lumilivre.api.dto.v1.livro.ExemplarRequest;
-import br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse;
+import br.com.lumilivre.api.dto.book.BookCopyRequest;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.LoanStatus;
-import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.BookCopy;
-import br.com.lumilivre.api.model.Genre;
 import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
@@ -42,7 +39,7 @@ public class BookCopyService {
         return bookCopyRepository.findAll();
     }
 
-    public List<LivroListagemResponse> buscarExemplaresPorLivroId(UUID bookId) {
+    public List<BookCopy> buscarExemplaresPorLivroId(UUID bookId) {
         if (bookId == null) {
             throw BusinessRuleException.ofKey("book.copy.book-id.required");
         }
@@ -50,30 +47,26 @@ public class BookCopyService {
             throw ResourceNotFoundException.ofKey("book.not-found-by-provided-id");
         }
 
-        List<BookCopy> copies = bookCopyRepository.findAllByBookIdWithDetails(bookId);
-
-        return copies.stream()
-                .map(this::converterParaDTO)
-                .collect(Collectors.toList());
+        return bookCopyRepository.findAllByBookIdWithDetails(bookId);
     }
 
     @Transactional
-    public void cadastrar(ExemplarRequest dto) {
-        validarDadosExemplar(dto);
+    public void cadastrar(BookCopyRequest request) {
+        validarDadosExemplar(request);
 
-        if (bookCopyRepository.existsByCopyCode(dto.getTombo())) {
+        if (bookCopyRepository.existsByCopyCode(request.getCopyCode())) {
             throw BusinessRuleException.ofKey("book.copy.code.already-exists");
         }
 
-        Book book = bookRepository.findById(dto.getLivro_id())
+        Book book = bookRepository.findById(request.getBookId())
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found-by-provided-id"));
 
         try {
             BookCopy bookCopy = BookCopy.builder()
-                    .copyCode(dto.getTombo())
-                    .status(parseStatus(dto.getStatus_livro()))
+                    .copyCode(request.getCopyCode())
+                    .status(parseStatus(request.getStatus()))
                     .book(book)
-                    .shelfLocation(dto.getLocalizacao_fisica())
+                    .shelfLocation(request.getPhysicalLocation())
                     .build();
 
             bookCopyRepository.save(bookCopy);
@@ -84,21 +77,21 @@ public class BookCopyService {
     }
 
     @Transactional
-    public void atualizar(String copyCode, ExemplarRequest dto) {
+    public void atualizar(String copyCode, BookCopyRequest request) {
         BookCopy bookCopy = bookCopyRepository.findByCopyCode(copyCode)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.copy.not-found-by-code", copyCode));
 
-        if (dto.getLivro_id() == null) {
+        if (request.getBookId() == null) {
             throw BusinessRuleException.ofKey("book.copy.book-id.required");
         }
 
-        Book newBook = bookRepository.findById(dto.getLivro_id())
+        Book newBook = bookRepository.findById(request.getBookId())
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found-by-provided-id"));
 
         try {
-            bookCopy.setStatus(parseStatus(dto.getStatus_livro()));
+            bookCopy.setStatus(parseStatus(request.getStatus()));
             bookCopy.setBook(newBook);
-            bookCopy.setShelfLocation(dto.getLocalizacao_fisica());
+            bookCopy.setShelfLocation(request.getPhysicalLocation());
 
             bookCopyRepository.save(bookCopy);
         } catch (Exception e) {
@@ -122,11 +115,11 @@ public class BookCopyService {
         bookCopyRepository.delete(bookCopy);
     }
 
-    private void validarDadosExemplar(ExemplarRequest dto) {
-        if (dto.getLivro_id() == null) {
+    private void validarDadosExemplar(BookCopyRequest request) {
+        if (request.getBookId() == null) {
             throw BusinessRuleException.ofKey("book.copy.book-id.required");
         }
-        if (dto.getTombo() == null || dto.getTombo().isBlank()) {
+        if (request.getCopyCode() == null || request.getCopyCode().isBlank()) {
             throw BusinessRuleException.ofKey("book.copy.code.required");
         }
     }
@@ -135,31 +128,7 @@ public class BookCopyService {
         try {
             return BookCopyStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
-            throw new BusinessRuleException(
-                    "Status do exemplar inválido. Valores permitidos: AVAILABLE, BORROWED, UNAVAILABLE, MAINTENANCE.");
+            throw BusinessRuleException.ofKey("book.copy.status.invalid");
         }
-    }
-
-    private LivroListagemResponse converterParaDTO(BookCopy copy) {
-        Book book = copy.getBook();
-        if (book == null) {
-            return new LivroListagemResponse(copy.getStatus(), copy.getCopyCode(), "N/A", "N/A",
-                    "Livro não associado", "N/A", "N/A", "N/A", copy.getShelfLocation());
-        }
-
-        String genres = book.getGenres().stream()
-                .map(Genre::getName)
-                .collect(Collectors.joining(", "));
-
-        return new LivroListagemResponse(
-                copy.getStatus(),
-                copy.getCopyCode(),
-                book.getIsbn(),
-                book.getDeweyClassification() != null ? book.getDeweyClassification().getCode() : "N/A",
-                book.getTitle(),
-                genres,
-                book.getAuthor(),
-                book.getPublisher(),
-                copy.getShelfLocation());
     }
 }

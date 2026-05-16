@@ -12,10 +12,10 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse;
+import br.com.lumilivre.api.dto.book.BookCardResponse;
 import br.com.lumilivre.api.model.Loan;
-import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.repository.BookRepository;
+import br.com.lumilivre.api.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -28,7 +28,7 @@ public class RecommendationService {
     private final BookRepository bookRepository;
 
     @Cacheable(value = MOBILE_RECOMMENDATIONS, key = "#matricula")
-    public List<LivroMobileResponse> recommendForStudent(String matricula) {
+    public List<BookCardResponse> recommendForStudent(String matricula) {
         List<Loan> historico = loanRepository.findByStudent_RegistrationNumber(matricula);
 
         if (historico.isEmpty()) {
@@ -49,7 +49,7 @@ public class RecommendationService {
             return bookRepository.findTopRated(PageRequest.of(0, MAX_RECOMMENDATIONS));
         }
 
-        List<LivroMobileResponse> recomendacoes = bookRepository.findRecomendacoesPorGenero(
+        List<BookCardResponse> recomendacoes = bookRepository.findRecomendacoesPorGenero(
                 List.copyOf(generos),
                 jaLidos.isEmpty() ? List.of(UUID.randomUUID()) : jaLidos,
                 PageRequest.of(0, MAX_RECOMMENDATIONS));

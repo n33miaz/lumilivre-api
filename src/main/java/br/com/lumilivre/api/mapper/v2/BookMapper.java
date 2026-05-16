@@ -5,22 +5,11 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import br.com.lumilivre.api.dto.book.BookRequest;
+import br.com.lumilivre.api.dto.book.BookListItemProjection;
 import br.com.lumilivre.api.dto.book.BookResponse;
-import br.com.lumilivre.api.dto.book.BookCardResponse;
-import br.com.lumilivre.api.dto.book.BookCatalogResponse;
-import br.com.lumilivre.api.dto.book.BookGroupedResponse;
 import br.com.lumilivre.api.dto.book.BookSummaryResponse;
 import br.com.lumilivre.api.dto.common.LocalizedEnum;
-import br.com.lumilivre.api.dto.v1.genero.GeneroCatalogoResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroDetalheResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroAgrupadoResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroRequest;
-import br.com.lumilivre.api.dto.v1.livro.LivroResponse;
-import br.com.lumilivre.api.enums.AgeRating;
-import br.com.lumilivre.api.enums.CoverType;
+import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.Genre;
 import br.com.lumilivre.api.service.EnumLabelResolver;
@@ -66,146 +55,29 @@ public class BookMapper {
                 .build();
     }
 
-    public BookResponse fromV1Detail(LivroDetalheResponse v1, Locale locale) {
-        LocalizedEnum ageRating = resolveRawEnum(AgeRating.class, v1.getClassificacaoEtariaRaw(), locale);
-        LocalizedEnum coverType = resolveRawEnum(CoverType.class, v1.getTipoCapaRaw(), locale);
+    public BookSummaryResponse toSummary(BookListItemProjection projection, Locale locale) {
+        BookCopyStatus statusEnum = null;
+        try {
+            if (projection.getStatus() != null) {
+                statusEnum = BookCopyStatus.valueOf(projection.getStatus());
+            }
+        } catch (IllegalArgumentException ignored) {
+        }
 
-        return BookResponse.builder()
-                .id(v1.getId())
-                .isbn(v1.getIsbn())
-                .title(v1.getNome())
-                .author(v1.getAutor())
-                .publisher(v1.getEditora())
-                .publicationDate(v1.getDataLancamento())
-                .pageCount(v1.getNumeroPaginas())
-                .synopsis(v1.getSinopse())
-                .coverUrl(v1.getImagem())
-                .deweyCode(v1.getCdd())
-                .ageRating(ageRating)
-                .coverType(coverType)
-                .edition(v1.getEdicao())
-                .volume(v1.getVolume())
-                .rating(v1.getAvaliacao())
-                .genres(v1.getGeneros())
-                .build();
-    }
-
-    public BookResponse fromV1Response(LivroResponse v1, Locale locale) {
-        return BookResponse.builder()
-                .id(v1.getId())
-                .isbn(v1.getIsbn())
-                .title(v1.getNome())
-                .author(v1.getAutor())
-                .publisher(v1.getEditora())
-                .publicationDate(v1.getDataLancamento())
-                .pageCount(v1.getNumeroPaginas())
-                .synopsis(v1.getSinopse())
-                .coverUrl(v1.getImagem())
-                .deweyCode(v1.getCdd())
-                .edition(v1.getEdicao())
-                .volume(v1.getVolume())
-                .genres(v1.getGeneros())
-                .build();
-    }
-
-    public BookSummaryResponse toSummary(LivroListagemResponse v1, Locale locale) {
-        LocalizedEnum copyStatus = v1.getStatus() != null
-                ? LocalizedEnum.of(v1.getStatus(), enumLabels.resolve(v1.getStatus(), locale))
+        LocalizedEnum copyStatus = statusEnum != null
+                ? LocalizedEnum.of(statusEnum, enumLabels.resolve(statusEnum, locale))
                 : null;
 
         return BookSummaryResponse.builder()
-                .copyCode(v1.getTomboExemplar())
-                .isbn(v1.getIsbn())
-                .title(v1.getNome())
-                .author(v1.getAutor())
-                .publisher(v1.getEditora())
-                .genre(v1.getGenero())
-                .deweyCode(v1.getCdd())
-                .physicalLocation(v1.getLocalizacao_fisica())
+                .copyCode(projection.getCopyCode())
+                .isbn(projection.getIsbn())
+                .title(projection.getTitle())
+                .author(projection.getAuthor())
+                .publisher(projection.getPublisher())
+                .genre(projection.getGenre())
+                .deweyCode(projection.getDeweyCode())
+                .physicalLocation(projection.getPhysicalLocation())
                 .copyStatus(copyStatus)
                 .build();
-    }
-
-    public BookGroupedResponse toGrouped(LivroAgrupadoResponse v1) {
-        return BookGroupedResponse.builder()
-                .id(v1.getId())
-                .isbn(v1.getIsbn())
-                .title(v1.getNome())
-                .author(v1.getAutor())
-                .publisher(v1.getEditora())
-                .copyCount(v1.getQuantidade())
-                .build();
-    }
-
-    public BookCardResponse toCard(LivroMobileResponse v1) {
-        return BookCardResponse.builder()
-                .id(v1.getId())
-                .title(v1.getTitulo())
-                .author(v1.getAutor())
-                .coverUrl(v1.getImagem())
-                .rating(v1.getAvaliacao())
-                .build();
-    }
-
-    public BookCatalogResponse toCatalog(GeneroCatalogoResponse v1) {
-        return BookCatalogResponse.builder()
-                .genreName(v1.getNome())
-                .books(v1.getLivros().stream().map(this::toCard).toList())
-                .build();
-    }
-
-    public BookRequest fromV1IsbnLookup(LivroRequest v1) {
-        return BookRequest.builder()
-                .isbn(v1.getIsbn())
-                .title(v1.getNome())
-                .author(v1.getAutor())
-                .publisher(v1.getEditora())
-                .publicationDate(v1.getData_lancamento())
-                .pageCount(v1.getNumero_paginas())
-                .chapterCount(v1.getNumero_capitulos())
-                .deweyCode(v1.getCdd())
-                .ageRating(v1.getClassificacao_etaria())
-                .edition(v1.getEdicao())
-                .volume(v1.getVolume())
-                .copyCount(v1.getQuantidade())
-                .synopsis(v1.getSinopse())
-                .coverType(v1.getTipo_capa())
-                .coverUrl(v1.getImagem())
-                .genres(v1.getGeneros())
-                .rating(v1.getAvaliacao())
-                .build();
-    }
-
-    public LivroRequest toV1Request(BookRequest req) {
-        return LivroRequest.builder()
-                .isbn(req.getIsbn())
-                .nome(req.getTitle())
-                .autor(req.getAuthor())
-                .editora(req.getPublisher())
-                .data_lancamento(req.getPublicationDate())
-                .numero_paginas(req.getPageCount())
-                .numero_capitulos(req.getChapterCount())
-                .cdd(req.getDeweyCode())
-                .classificacao_etaria(req.getAgeRating())
-                .edicao(req.getEdition())
-                .volume(req.getVolume())
-                .quantidade(req.getCopyCount())
-                .sinopse(req.getSynopsis())
-                .tipo_capa(req.getCoverType())
-                .imagem(req.getCoverUrl())
-                .generos(req.getGenres())
-                .avaliacao(req.getRating())
-                .build();
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T extends Enum<T>> LocalizedEnum resolveRawEnum(Class<T> enumClass, String rawName, Locale locale) {
-        if (rawName == null) return null;
-        try {
-            T value = Enum.valueOf(enumClass, rawName);
-            return LocalizedEnum.of(value, enumLabels.resolve(value, locale));
-        } catch (IllegalArgumentException e) {
-            return new LocalizedEnum(rawName, rawName);
-        }
     }
 }

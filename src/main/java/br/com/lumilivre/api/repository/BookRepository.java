@@ -14,10 +14,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import br.com.lumilivre.api.dto.v1.livro.LivroAgrupadoResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroListagemProjection;
-import br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse;
+import br.com.lumilivre.api.dto.book.BookCardResponse;
+import br.com.lumilivre.api.dto.book.BookGroupedResponse;
+import br.com.lumilivre.api.dto.book.BookListItemProjection;
 import br.com.lumilivre.api.enums.AgeRating;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
@@ -47,7 +46,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
     Page<Book> findIdsPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroAgrupadoResponse(
+            SELECT new br.com.lumilivre.api.dto.book.BookGroupedResponse(
                 l.id,
                 l.isbn,
                 l.title,
@@ -70,7 +69,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
               AND (:dataLancamento IS NULL OR l.publicationDate = :dataLancamento)
             GROUP BY l.id, l.isbn, l.title, l.author, l.publisher
             """)
-    Page<LivroAgrupadoResponse> buscarAvancado(
+    Page<BookGroupedResponse> buscarAvancado(
             @Param("nome") String nome,
             @Param("isbn") String isbn,
             @Param("autor") String autor,
@@ -82,44 +81,24 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
             @Param("dataLancamento") LocalDate dataLancamento,
             Pageable pageable);
 
-    @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse(
-                null,
-                null,
-                l.isbn,
-                null,
-                l.title,
-                null,
-                l.author,
-                l.publisher,
-                null
-            )
-            FROM Book l
-            WHERE LOWER(l.title) LIKE LOWER(CONCAT('%', :texto, '%'))
-               OR LOWER(l.author) LIKE LOWER(CONCAT('%', :texto, '%'))
-               OR LOWER(l.publisher) LIKE LOWER(CONCAT('%', :texto, '%'))
-            ORDER BY l.title
-            """)
-    Page<LivroListagemResponse> findLivrosParaListaAdminComFiltro(@Param("texto") String texto, Pageable pageable);
-
     @Query(value = """
             SELECT
                 e.status AS status,
-                e.copy_code AS tomboExemplar,
+                e.copy_code AS copyCode,
                 l.isbn AS isbn,
-                l.dewey_code AS cdd,
-                l.title AS nome,
-                COALESCE((SELECT STRING_AGG(g.name, ', ') FROM genre g JOIN book_genre bg ON g.id = bg.genre_id WHERE bg.book_id = l.id), '') AS genero,
-                l.author AS autor,
-                l.publisher AS editora,
-                e.shelf_location AS localizacao_fisica
+                l.dewey_code AS deweyCode,
+                l.title AS title,
+                COALESCE((SELECT STRING_AGG(g.name, ', ') FROM genre g JOIN book_genre bg ON g.id = bg.genre_id WHERE bg.book_id = l.id), '') AS genre,
+                l.author AS author,
+                l.publisher AS publisher,
+                e.shelf_location AS physicalLocation
             FROM book_copy e
             JOIN book l ON e.book_id = l.id
             """, countQuery = "SELECT COUNT(*) FROM book_copy", nativeQuery = true)
-    Page<LivroListagemProjection> findLivrosParaListaAdmin(Pageable pageable);
+    Page<BookListItemProjection> findLivrosParaListaAdmin(Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroAgrupadoResponse(
+            SELECT new br.com.lumilivre.api.dto.book.BookGroupedResponse(
                 l.id,
                 l.isbn,
                 l.title,
@@ -134,7 +113,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
                OR l.isbn LIKE CONCAT('%', :texto, '%'))
             GROUP BY l.id, l.isbn, l.title, l.author, l.publisher
             """)
-    Page<LivroAgrupadoResponse> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
+    Page<BookGroupedResponse> findLivrosAgrupados(Pageable pageable, @Param("texto") String texto);
 
     @Query(value = "SELECT l FROM Book l JOIN l.genres g WHERE LOWER(g.name) = LOWER(:nomeGenero)", countQuery = "SELECT count(l) FROM Book l JOIN l.genres g WHERE LOWER(g.name) = LOWER(:nomeGenero)")
     Page<Book> findIdsByGeneroNomeIgnoreCase(@Param("nomeGenero") String nomeGenero, Pageable pageable);
@@ -149,11 +128,11 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
             WITH RankedLivros AS (
                 SELECT
                     l.id,
-                    l.title AS nome,
-                    l.author AS autor,
-                    l.cover_url AS imagem,
-                    l.rating AS avaliacao,
-                    g.name AS genero_nome,
+                    l.title AS title,
+                    l.author AS author,
+                    l.cover_url AS coverUrl,
+                    l.rating AS rating,
+                    g.name AS genreName,
                     ROW_NUMBER() OVER(PARTITION BY g.name ORDER BY l.publication_date DESC, l.id DESC) as rn
                 FROM book l
                 JOIN book_genre bg ON l.id = bg.book_id
@@ -161,14 +140,14 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
             )
             SELECT
                 id,
-                nome,
-                autor,
-                imagem,
-                avaliacao,
-                genero_nome
+                title,
+                author,
+                coverUrl,
+                rating,
+                genreName
             FROM RankedLivros
             WHERE rn <= 10
-            ORDER BY genero_nome, rn
+            ORDER BY genreName, rn
             """, nativeQuery = true)
     List<Map<String, Object>> findCatalogoMobile();
 
@@ -226,39 +205,39 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
     long countCopiesByStatus(@Param("bookId") UUID bookId, @Param("status") BookCopyStatus status);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse(
+            SELECT new br.com.lumilivre.api.dto.book.BookCardResponse(
                 l.id,
-                l.coverUrl,
                 l.title,
                 l.author,
+                l.coverUrl,
                 l.rating
             )
             FROM Book l
             JOIN l.genres g
             WHERE LOWER(g.name) = LOWER(:nomeGenero)
             """)
-    Page<LivroMobileResponse> findByGeneroAsCatalogoDTO(@Param("nomeGenero") String nomeGenero, Pageable pageable);
+    Page<BookCardResponse> findByGeneroAsCatalogoDTO(@Param("nomeGenero") String nomeGenero, Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse(
+            SELECT new br.com.lumilivre.api.dto.book.BookCardResponse(
                 l.id,
-                COALESCE(l.coverUrl, ''),
-                l.title,
+                COALESCE(l.title, ''),
                 COALESCE(l.author, 'Unknown Author'),
+                COALESCE(l.coverUrl, ''),
                 COALESCE(l.rating, 0.0)
             )
             FROM Book l
             WHERE LOWER(l.title) LIKE LOWER(CONCAT('%', :texto, '%'))
                OR LOWER(l.author) LIKE LOWER(CONCAT('%', :texto, '%'))
             """)
-    Page<LivroMobileResponse> buscarMobilePorTexto(@Param("texto") String texto, Pageable pageable);
+    Page<BookCardResponse> buscarMobilePorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse(
+            SELECT new br.com.lumilivre.api.dto.book.BookCardResponse(
                 l.id,
-                COALESCE(l.coverUrl, ''),
-                l.title,
+                COALESCE(l.title, ''),
                 COALESCE(l.author, 'Unknown Author'),
+                COALESCE(l.coverUrl, ''),
                 COALESCE(l.rating, 0.0)
             )
             FROM Book l JOIN l.genres g
@@ -266,21 +245,21 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
               AND l.id NOT IN :jaLidos
             ORDER BY l.rating DESC NULLS LAST
             """)
-    List<LivroMobileResponse> findRecomendacoesPorGenero(
+    List<BookCardResponse> findRecomendacoesPorGenero(
             @Param("generos") List<String> generos,
             @Param("jaLidos") List<UUID> jaLidos,
             Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse(
+            SELECT new br.com.lumilivre.api.dto.book.BookCardResponse(
                 l.id,
-                COALESCE(l.coverUrl, ''),
-                l.title,
+                COALESCE(l.title, ''),
                 COALESCE(l.author, 'Unknown Author'),
+                COALESCE(l.coverUrl, ''),
                 COALESCE(l.rating, 0.0)
             )
             FROM Book l
             ORDER BY l.rating DESC NULLS LAST
             """)
-    List<LivroMobileResponse> findTopRated(Pageable pageable);
+    List<BookCardResponse> findTopRated(Pageable pageable);
 }

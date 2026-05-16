@@ -12,13 +12,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
-import br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.mapper.v2.BookCopyMapper;
+import br.com.lumilivre.api.model.Book;
+import br.com.lumilivre.api.model.BookCopy;
+import br.com.lumilivre.api.model.Genre;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.service.BookCopyService;
@@ -53,10 +56,8 @@ class BookCopyControllerTest {
 
     @Test
     void listByBookReturnsPtBRWithContentLanguage() throws Exception {
-        LivroListagemResponse v1 = new LivroListagemResponse(
-                BookCopyStatus.AVAILABLE, "T001", "978-0-7432-7356-5",
-                "100.1", "Dom Quixote", "Romance", "Cervantes", "Alfaguara", "Estante A1");
-        when(bookCopyService.buscarExemplaresPorLivroId(BOOK_ID)).thenReturn(List.of(v1));
+        BookCopy copy = bookCopy(BookCopyStatus.AVAILABLE);
+        when(bookCopyService.buscarExemplaresPorLivroId(BOOK_ID)).thenReturn(List.of(copy));
 
         mockMvc.perform(get("/api/v2/book-copies/by-book/{bookId}", BOOK_ID)
                         .header("Accept-Language", "pt-BR"))
@@ -71,10 +72,9 @@ class BookCopyControllerTest {
 
     @Test
     void listByBookReturnsEnUSLabels() throws Exception {
-        LivroListagemResponse v1 = new LivroListagemResponse(
-                BookCopyStatus.BORROWED, "T002", "978-0-7432-7356-5",
-                "100.1", "Dom Quixote", "Romance", "Cervantes", "Alfaguara", "Estante A1");
-        when(bookCopyService.buscarExemplaresPorLivroId(BOOK_ID)).thenReturn(List.of(v1));
+        BookCopy copy = bookCopy(BookCopyStatus.BORROWED);
+        copy.setCopyCode("T002");
+        when(bookCopyService.buscarExemplaresPorLivroId(BOOK_ID)).thenReturn(List.of(copy));
 
         mockMvc.perform(get("/api/v2/book-copies/by-book/{bookId}", BOOK_ID)
                         .header("Accept-Language", "en-US"))
@@ -111,5 +111,25 @@ class BookCopyControllerTest {
 
         mockMvc.perform(delete("/api/v2/book-copies/T001").with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+    private BookCopy bookCopy(BookCopyStatus status) {
+        Genre genre = new Genre();
+        genre.setName("Romance");
+
+        Book book = new Book();
+        book.setId(BOOK_ID);
+        book.setIsbn("978-0-7432-7356-5");
+        book.setTitle("Dom Quixote");
+        book.setAuthor("Cervantes");
+        book.setPublisher("Alfaguara");
+        book.setGenres(Set.of(genre));
+
+        BookCopy copy = new BookCopy();
+        copy.setCopyCode("T001");
+        copy.setStatus(status);
+        copy.setBook(book);
+        copy.setShelfLocation("Estante A1");
+        return copy;
     }
 }

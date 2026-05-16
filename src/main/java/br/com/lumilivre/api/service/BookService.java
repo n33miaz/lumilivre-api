@@ -21,25 +21,20 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import br.com.lumilivre.api.dto.v1.genero.GeneroCatalogoResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroAgrupadoResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroDetalheResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroListagemProjection;
-import br.com.lumilivre.api.dto.v1.livro.LivroListagemResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroMobileResponse;
-import br.com.lumilivre.api.dto.v1.livro.LivroRequest;
-import br.com.lumilivre.api.dto.v1.livro.LivroResponse;
+import br.com.lumilivre.api.dto.book.BookCardResponse;
+import br.com.lumilivre.api.dto.book.BookCatalogResponse;
+import br.com.lumilivre.api.dto.book.BookGroupedResponse;
+import br.com.lumilivre.api.dto.book.BookListItemProjection;
+import br.com.lumilivre.api.dto.book.BookRequest;
 import br.com.lumilivre.api.enums.AgeRating;
-import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
-import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.DeweyClassification;
 import br.com.lumilivre.api.model.Genre;
@@ -80,17 +75,11 @@ public class BookService {
         this.brasilApiService = brasilApiService;
     }
 
-    public List<LivroListagemResponse> buscarTodos() {
-        return bookRepository.findAllCompleto().stream()
-                .map(this::converterParaListaDTO)
-                .collect(Collectors.toList());
-    }
-
-    public Page<LivroMobileResponse> buscarMobilePorTexto(String texto, Pageable pageable) {
+    public Page<BookCardResponse> buscarMobilePorTexto(String texto, Pageable pageable) {
         return bookRepository.buscarMobilePorTexto(texto, pageable);
     }
 
-    public Page<LivroAgrupadoResponse> buscarAvancado(
+    public Page<BookGroupedResponse> buscarAvancado(
             String nome, String isbn, String autor, String genero, String editora,
             String cdd, String classificacaoEtariaStr, String tipoCapaStr, LocalDate dataLancamento,
             Pageable pageable) {
@@ -117,69 +106,61 @@ public class BookService {
                 tratarString(cdd), classificacao, tipoCapa, dataLancamento, pageable);
     }
 
-    public Page<LivroListagemResponse> buscarParaListaAdmin(Pageable pageable) {
-        Page<LivroListagemProjection> projecoes = bookRepository.findLivrosParaListaAdmin(pageable);
-        return projecoes.map(p -> new LivroListagemResponse(
-                BookCopyStatus.valueOf(p.getStatus()),
-                p.getTomboExemplar(),
-                p.getIsbn(),
-                p.getCdd(),
-                p.getNome(),
-                p.getGenero(),
-                p.getAutor(),
-                p.getEditora(),
-                p.getLocalizacao_fisica()));
+    public Page<BookListItemProjection> buscarParaListaAdmin(Pageable pageable) {
+        return bookRepository.findLivrosParaListaAdmin(pageable);
     }
 
-    public Page<LivroAgrupadoResponse> buscarLivrosAgrupados(Pageable pageable, String texto) {
+    public Page<BookGroupedResponse> buscarLivrosAgrupados(Pageable pageable, String texto) {
         return bookRepository.findLivrosAgrupados(pageable, texto);
     }
 
     @Cacheable(value = BOOK_DETAIL, key = "#id")
-    public Optional<LivroDetalheResponse> findById(UUID id) {
+    public Optional<Book> findById(UUID id) {
         log.info("Buscando livro ID {} no banco de dados (sem cache)...", id);
-        return bookRepository.findByIdWithDetails(id).map(book -> {
-            long disponiveis = bookCopyRepository.countByBookIdAndStatus(id, BookCopyStatus.AVAILABLE);
-            long total = bookCopyRepository.countByBook_Id(id);
-            return new LivroDetalheResponse(book, disponiveis, total);
-        });
+        return bookRepository.findByIdWithDetails(id);
+    }
+
+    public long countAvailableCopies(UUID bookId) {
+        return bookCopyRepository.countByBookIdAndStatus(bookId,
+                br.com.lumilivre.api.enums.BookCopyStatus.AVAILABLE);
+    }
+
+    public long countTotalCopies(UUID bookId) {
+        return bookCopyRepository.countByBook_Id(bookId);
     }
 
     @Cacheable(MOBILE_CATALOG)
-    public List<GeneroCatalogoResponse> buscarCatalogoParaMobile() {
+    public List<BookCatalogResponse> buscarCatalogoParaMobile() {
         log.info("Buscando catálogo mobile no banco de dados (sem cache)...");
         List<Map<String, Object>> results = bookRepository.findCatalogoMobile();
 
-        Map<String, List<LivroMobileResponse>> livrosPorGenero = results.stream()
+        Map<String, List<BookCardResponse>> livrosPorGenero = results.stream()
                 .collect(Collectors.groupingBy(
-                        row -> (String) row.get("genero_nome"),
-                        Collectors.mapping(row -> new LivroMobileResponse(
-                                UUID.fromString(row.get("id").toString()),
-                                (String) row.get("imagem"),
-                                (String) row.get("nome"),
-                                (String) row.get("autor"),
-                                row.get("avaliacao") != null ? ((Number) row.get("avaliacao")).doubleValue() : 4.6),
+                        row -> (String) row.get("genrename"),
+                        Collectors.mapping(row -> BookCardResponse.builder()
+                                .id(UUID.fromString(row.get("id").toString()))
+                                .title((String) row.get("title"))
+                                .author((String) row.get("author"))
+                                .coverUrl((String) row.get("coverurl"))
+                                .rating(row.get("rating") != null ? ((Number) row.get("rating")).doubleValue() : 4.6)
+                                .build(),
                                 Collectors.toList())));
 
         return livrosPorGenero.entrySet().stream()
-                .map(entry -> new GeneroCatalogoResponse(entry.getKey(), entry.getValue()))
-                .sorted(Comparator.comparing(GeneroCatalogoResponse::getNome))
+                .map(entry -> BookCatalogResponse.builder()
+                        .genreName(entry.getKey())
+                        .books(entry.getValue())
+                        .build())
+                .sorted(Comparator.comparing(BookCatalogResponse::getGenreName))
                 .collect(Collectors.toList());
     }
 
-    public Page<LivroMobileResponse> buscarPorGenero(String nomeGenero, Pageable pageable) {
+    public Page<BookCardResponse> buscarPorGenero(String nomeGenero, Pageable pageable) {
         return bookRepository.findByGeneroAsCatalogoDTO(nomeGenero, pageable);
     }
 
-    public Page<LivroListagemResponse> buscarPorTexto(String texto, Pageable pageable) {
-        Page<Book> paginaDeLivros = bookRepository.findIdsPorTexto(texto, pageable);
-        List<Book> livrosComGeneros = bookRepository.findWithGeneros(paginaDeLivros.getContent());
-
-        List<LivroListagemResponse> dtos = livrosComGeneros.stream()
-                .map(this::converterParaListaDTO)
-                .collect(Collectors.toList());
-
-        return new PageImpl<>(dtos, pageable, paginaDeLivros.getTotalElements());
+    public Page<BookListItemProjection> buscarPorTexto(String texto, Pageable pageable) {
+        return bookRepository.findLivrosParaListaAdmin(pageable);
     }
 
     @Cacheable(value = BOOK_COUNT)
@@ -192,7 +173,7 @@ public class BookService {
             @CacheEvict(value = MOBILE_CATALOG, allEntries = true),
             @CacheEvict(value = BOOK_DETAIL, key = "#id")
     })
-    public LivroResponse uploadCapa(UUID id, MultipartFile file) {
+    public Book uploadCapa(UUID id, MultipartFile file) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found-for-id", id));
 
@@ -205,7 +186,7 @@ public class BookService {
             }
         }
 
-        return new LivroResponse(bookRepository.save(book));
+        return bookRepository.save(book);
     }
 
     @Transactional
@@ -213,26 +194,20 @@ public class BookService {
             @CacheEvict(value = MOBILE_CATALOG, allEntries = true),
             @CacheEvict(value = BOOK_COUNT, allEntries = true)
     })
-    public LivroResponse cadastrar(LivroRequest dto, MultipartFile file) {
-        if (isNaoVazio(dto.getIsbn()) && bookRepository.findByIsbn(dto.getIsbn()).isPresent()) {
+    public Book cadastrar(BookRequest request, MultipartFile file) {
+        if (isNaoVazio(request.getIsbn()) && bookRepository.findByIsbn(request.getIsbn()).isPresent()) {
             throw BusinessRuleException.ofKey("book.isbn.already-exists");
         }
 
-        if (isNaoVazio(dto.getIsbn())) {
-            preencherDadosExternos(dto);
+        if (isNaoVazio(request.getIsbn())) {
+            preencherDadosExternos(request);
         }
 
-        validarCampos(dto);
+        validarCampos(request);
 
-        return salvarLivroNoBanco(dto, file);
-    }
-
-    @Transactional
-    protected LivroResponse salvarLivroNoBanco(LivroRequest dto, MultipartFile file) {
         try {
-            Book book = montarLivro(new Book(), dto, file);
-            Book savedBook = bookRepository.save(book);
-            return new LivroResponse(savedBook);
+            Book book = montarLivro(new Book(), request, file);
+            return bookRepository.save(book);
         } catch (Exception e) {
             log.error("Erro ao montar ou salvar o livro: {}", e.getMessage(), e);
             throw new RuntimeException("Erro interno ao cadastrar o livro: " + e.getMessage());
@@ -243,29 +218,28 @@ public class BookService {
     @Caching(evict = {
             @CacheEvict(value = MOBILE_CATALOG, allEntries = true),
     })
-    public LivroResponse atualizar(UUID id, LivroRequest dto, MultipartFile file) {
+    public Book atualizar(UUID id, BookRequest request, MultipartFile file) {
         Book bookToUpdate = bookRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found-for-id", id));
 
-        if (isNaoVazio(dto.getIsbn())) {
-            Optional<Book> livroComMesmoIsbn = bookRepository.findByIsbn(dto.getIsbn());
+        if (isNaoVazio(request.getIsbn())) {
+            Optional<Book> livroComMesmoIsbn = bookRepository.findByIsbn(request.getIsbn());
             if (livroComMesmoIsbn.isPresent() && !livroComMesmoIsbn.get().getId().equals(id)) {
                 throw BusinessRuleException.ofKey("book.isbn.belongs-to-other");
             }
         } else {
-            dto.setIsbn(bookToUpdate.getIsbn());
+            request.setIsbn(bookToUpdate.getIsbn());
         }
 
-        if (isNaoVazio(dto.getIsbn())) {
-            preencherDadosExternos(dto);
+        if (isNaoVazio(request.getIsbn())) {
+            preencherDadosExternos(request);
         }
 
-        validarCampos(dto);
+        validarCampos(request);
 
         try {
-            Book updatedBook = montarLivro(bookToUpdate, dto, file);
-            Book savedBook = bookRepository.save(updatedBook);
-            return new LivroResponse(savedBook);
+            Book updatedBook = montarLivro(bookToUpdate, request, file);
+            return bookRepository.save(updatedBook);
         } catch (IllegalArgumentException e) {
             throw new BusinessRuleException(e.getMessage());
         } catch (Exception e) {
@@ -286,124 +260,110 @@ public class BookService {
         bookRepository.deleteById(id);
     }
 
-    private LivroListagemResponse converterParaListaDTO(Book book) {
-        String genres = book.getGenres().stream().map(Genre::getName).collect(Collectors.joining(", "));
-        return new LivroListagemResponse(
-                BookCopyStatus.AVAILABLE,
-                "N/A",
-                book.getIsbn(),
-                book.getDeweyClassification() != null ? book.getDeweyClassification().getCode() : "",
-                book.getTitle(),
-                genres,
-                book.getAuthor(),
-                book.getPublisher(),
-                "Ver Exemplares");
-    }
-
-    private void preencherDadosExternos(LivroRequest dto) {
+    private void preencherDadosExternos(BookRequest request) {
         boolean googleEncontrou = false;
-        boolean temCapa = isNaoVazio(dto.getImagem());
+        boolean temCapa = isNaoVazio(request.getCoverUrl());
 
         try {
-            var googleOpt = googleBooksService.findBestBookMatch(dto.getIsbn(), dto.getNome(), dto.getAutor());
+            var googleOpt = googleBooksService.findBestBookMatch(request.getIsbn(), request.getTitle(), request.getAuthor());
 
             if (googleOpt.isPresent()) {
                 googleEncontrou = true;
                 var livroGoogle = googleOpt.get().livro();
                 var googleData = googleOpt.get();
 
-                if (isVazio(dto.getNome())) dto.setNome(livroGoogle.getTitle());
-                if (isVazio(dto.getEditora())) dto.setEditora(livroGoogle.getPublisher());
-                if (dto.getNumero_paginas() == null || dto.getNumero_paginas() == 0)
-                    dto.setNumero_paginas(livroGoogle.getPageCount());
-                if (dto.getData_lancamento() == null) dto.setData_lancamento(livroGoogle.getPublicationDate());
-                if (isVazio(dto.getSinopse())) dto.setSinopse(livroGoogle.getSynopsis());
-                if (isVazio(dto.getAutor()) && isNaoVazio(livroGoogle.getAuthor()))
-                    dto.setAutor(livroGoogle.getAuthor());
+                if (isVazio(request.getTitle())) request.setTitle(livroGoogle.getTitle());
+                if (isVazio(request.getPublisher())) request.setPublisher(livroGoogle.getPublisher());
+                if (request.getPageCount() == null || request.getPageCount() == 0)
+                    request.setPageCount(livroGoogle.getPageCount());
+                if (request.getPublicationDate() == null) request.setPublicationDate(livroGoogle.getPublicationDate());
+                if (isVazio(request.getSynopsis())) request.setSynopsis(livroGoogle.getSynopsis());
+                if (isVazio(request.getAuthor()) && isNaoVazio(livroGoogle.getAuthor()))
+                    request.setAuthor(livroGoogle.getAuthor());
 
                 if (!temCapa && isNaoVazio(livroGoogle.getCoverUrl())) {
-                    dto.setImagem(livroGoogle.getCoverUrl());
+                    request.setCoverUrl(livroGoogle.getCoverUrl());
                     temCapa = true;
                 }
 
                 if (googleData.averageRating() != null) {
-                    dto.setAvaliacao(googleData.averageRating());
-                } else if (dto.getAvaliacao() == null) {
-                    dto.setAvaliacao(4.6);
+                    request.setRating(googleData.averageRating());
+                } else if (request.getRating() == null) {
+                    request.setRating(4.6);
                 }
             }
         } catch (Exception e) {
             log.warn("Falha na busca Google Books: {}", e.getMessage());
         }
 
-        if ((!googleEncontrou || !temCapa) && isNaoVazio(dto.getIsbn())) {
+        if ((!googleEncontrou || !temCapa) && isNaoVazio(request.getIsbn())) {
             try {
-                var brasilOpt = brasilApiService.buscarPorIsbn(dto.getIsbn());
+                var brasilOpt = brasilApiService.buscarPorIsbn(request.getIsbn());
 
                 if (brasilOpt.isPresent()) {
                     var brData = brasilOpt.get();
-                    if (isVazio(dto.getNome())) dto.setNome(brData.title());
-                    if (isVazio(dto.getEditora())) dto.setEditora(brData.publisher());
-                    if (isVazio(dto.getSinopse())) dto.setSinopse(brData.synopsis());
-                    if (dto.getNumero_paginas() == null || dto.getNumero_paginas() == 0)
-                        dto.setNumero_paginas(brData.pageCount());
-                    if (dto.getData_lancamento() == null && brData.year() != null)
-                        dto.setData_lancamento(LocalDate.of(brData.year(), 1, 1));
-                    if (isVazio(dto.getAutor()) && brData.authors() != null && !brData.authors().isEmpty())
-                        dto.setAutor(String.join(", ", brData.authors()));
+                    if (isVazio(request.getTitle())) request.setTitle(brData.title());
+                    if (isVazio(request.getPublisher())) request.setPublisher(brData.publisher());
+                    if (isVazio(request.getSynopsis())) request.setSynopsis(brData.synopsis());
+                    if (request.getPageCount() == null || request.getPageCount() == 0)
+                        request.setPageCount(brData.pageCount());
+                    if (request.getPublicationDate() == null && brData.year() != null)
+                        request.setPublicationDate(LocalDate.of(brData.year(), 1, 1));
+                    if (isVazio(request.getAuthor()) && brData.authors() != null && !brData.authors().isEmpty())
+                        request.setAuthor(String.join(", ", brData.authors()));
                     if (!temCapa && isNaoVazio(brData.coverUrl()))
-                        dto.setImagem(brData.coverUrl());
+                        request.setCoverUrl(brData.coverUrl());
                 }
             } catch (Exception e) {
                 log.warn("Falha no fallback BrasilAPI: {}", e.getMessage());
             }
         }
 
-        if (dto.getAvaliacao() == null) dto.setAvaliacao(4.6);
+        if (request.getRating() == null) request.setRating(4.6);
     }
 
-    private void validarCampos(LivroRequest dto) {
-        if (isVazio(dto.getNome())) throw BusinessRuleException.ofKey("book.form.title.required");
-        if (dto.getData_lancamento() != null && dto.getData_lancamento().isAfter(LocalDate.now()))
+    private void validarCampos(BookRequest request) {
+        if (isVazio(request.getTitle())) throw BusinessRuleException.ofKey("book.form.title.required");
+        if (request.getPublicationDate() != null && request.getPublicationDate().isAfter(LocalDate.now()))
             throw BusinessRuleException.ofKey("book.form.publication-date.future-not-allowed");
-        if (isVazio(dto.getEditora())) throw BusinessRuleException.ofKey("book.form.publisher.required");
-        if (isVazio(dto.getAutor())) throw BusinessRuleException.ofKey("book.form.author.required");
+        if (isVazio(request.getPublisher())) throw BusinessRuleException.ofKey("book.form.publisher.required");
+        if (isVazio(request.getAuthor())) throw BusinessRuleException.ofKey("book.form.author.required");
     }
 
-    private Book montarLivro(Book book, LivroRequest dto, MultipartFile file) {
-        book.setIsbn(dto.getIsbn());
-        book.setTitle(dto.getNome());
-        book.setPublicationDate(dto.getData_lancamento());
-        book.setPageCount(dto.getNumero_paginas());
-        book.setPublisher(dto.getEditora());
-        book.setEdition(dto.getEdicao());
-        book.setVolume(dto.getVolume());
-        book.setSynopsis(dto.getSinopse());
-        book.setAuthor(dto.getAutor());
-        book.setRating(dto.getAvaliacao() != null ? dto.getAvaliacao() : 4.6);
+    private Book montarLivro(Book book, BookRequest request, MultipartFile file) {
+        book.setIsbn(request.getIsbn());
+        book.setTitle(request.getTitle());
+        book.setPublicationDate(request.getPublicationDate());
+        book.setPageCount(request.getPageCount());
+        book.setPublisher(request.getPublisher());
+        book.setEdition(request.getEdition());
+        book.setVolume(request.getVolume());
+        book.setSynopsis(request.getSynopsis());
+        book.setAuthor(request.getAuthor());
+        book.setRating(request.getRating() != null ? request.getRating() : 4.6);
 
-        if (isNaoVazio(dto.getCdd())) {
-            DeweyClassification cdd = deweyClassificationRepository.findById(dto.getCdd())
-                    .orElseThrow(() -> BusinessRuleException.ofKey("book.dewey-code.invalid", dto.getCdd()));
+        if (isNaoVazio(request.getDeweyCode())) {
+            DeweyClassification cdd = deweyClassificationRepository.findById(request.getDeweyCode())
+                    .orElseThrow(() -> BusinessRuleException.ofKey("book.dewey-code.invalid", request.getDeweyCode()));
             book.setDeweyClassification(cdd);
         } else {
             book.setDeweyClassification(null);
         }
 
         Set<Genre> genres = new HashSet<>();
-        if (dto.getGeneros() != null && !dto.getGeneros().isEmpty()) {
-            genres = genreRepository.findByNameIn(dto.getGeneros()).stream()
+        if (request.getGenres() != null && !request.getGenres().isEmpty()) {
+            genres = genreRepository.findByNameIn(request.getGenres()).stream()
                     .limit(3)
                     .collect(Collectors.toSet());
         }
         book.setGenres(genres);
 
         try {
-            if (isNaoVazio(dto.getClassificacao_etaria())) {
-                book.setAgeRating(AgeRating.valueOf(dto.getClassificacao_etaria().toUpperCase()));
+            if (isNaoVazio(request.getAgeRating())) {
+                book.setAgeRating(AgeRating.valueOf(request.getAgeRating().toUpperCase()));
             }
-            book.setCoverType(isNaoVazio(dto.getTipo_capa())
-                    ? CoverType.valueOf(dto.getTipo_capa().toUpperCase())
+            book.setCoverType(isNaoVazio(request.getCoverType())
+                    ? CoverType.valueOf(request.getCoverType().toUpperCase())
                     : null);
         } catch (IllegalArgumentException e) {
             throw BusinessRuleException.ofKey("book.enum.age-rating-or-cover-type.invalid");
@@ -415,21 +375,21 @@ public class BookService {
             } catch (Exception e) {
                 throw new RuntimeException("Erro ao enviar a capa: " + e.getMessage(), e);
             }
-        } else if (isNaoVazio(dto.getImagem())) {
-            book.setCoverUrl(dto.getImagem());
+        } else if (isNaoVazio(request.getCoverUrl())) {
+            book.setCoverUrl(request.getCoverUrl());
         }
 
         return book;
     }
 
-    public LivroRequest pesquisarDadosPorIsbn(String isbn) {
-        LivroRequest dto = new LivroRequest();
-        dto.setIsbn(isbn);
-        preencherDadosExternos(dto);
-        if (isVazio(dto.getNome())) {
+    public BookRequest pesquisarDadosPorIsbn(String isbn) {
+        BookRequest request = new BookRequest();
+        request.setIsbn(isbn);
+        preencherDadosExternos(request);
+        if (isVazio(request.getTitle())) {
             throw ResourceNotFoundException.ofKey("book.external.not-found-for-isbn", isbn);
         }
-        return dto;
+        return request;
     }
 
     private boolean isVazio(String valor) {
