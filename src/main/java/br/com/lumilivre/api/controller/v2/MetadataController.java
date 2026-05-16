@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import br.com.lumilivre.api.dto.common.AddressLookupResponse;
 import br.com.lumilivre.api.dto.common.LocalizedEnum;
 import br.com.lumilivre.api.dto.metadata.AuthorSummaryResponse;
 import br.com.lumilivre.api.dto.metadata.PostalCodeResponse;
-import br.com.lumilivre.api.dto.v1.aluno.AlunoRequest;
 import br.com.lumilivre.api.enums.AgeRating;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
@@ -94,7 +94,7 @@ public class MetadataController {
         if (normalized.length() != 8) {
             throw BusinessRuleException.ofKey("metadata.postal-code.invalid");
         }
-        AlunoRequest address = cepService.buscarEnderecoPorCep(normalized);
+        AddressLookupResponse address = cepService.buscarEnderecoPorCep(normalized);
         if (address == null || isBlank(address.getLogradouro()) || isBlank(address.getLocalidade())) {
             throw ResourceNotFoundException.ofKey("metadata.postal-code.not-found", normalized);
         }

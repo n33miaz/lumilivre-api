@@ -11,7 +11,7 @@ import java.util.Map;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
-import br.com.lumilivre.api.dto.v1.aluno.AlunoRequest;
+import br.com.lumilivre.api.dto.common.AddressLookupResponse;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
@@ -73,7 +73,7 @@ class MetadataControllerTest {
 
     @Test
     void postalCodeMapsExternalAddress() throws Exception {
-        AlunoRequest address = new AlunoRequest();
+        AddressLookupResponse address = new AddressLookupResponse();
         address.setLogradouro("Praca da Se");
         address.setBairro("Se");
         address.setLocalidade("Sao Paulo");

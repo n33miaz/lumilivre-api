@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import br.com.lumilivre.api.dto.common.AddressLookupResponse;
 import br.com.lumilivre.api.dto.v1.aluno.AlunoRequest;
 import br.com.lumilivre.api.dto.v1.aluno.AlunoResumoResponse;
 import br.com.lumilivre.api.dto.student.StudentListItem;
@@ -332,7 +333,7 @@ public class StudentService {
             }
 
             try {
-                AlunoRequest enderecoDTO = cepService.buscarEnderecoPorCep(cepLimpo);
+                AddressLookupResponse enderecoDTO = cepService.buscarEnderecoPorCep(cepLimpo);
                 if (enderecoDTO != null && enderecoDTO.getLogradouro() != null) {
                     student.setPostalCode(cepLimpo);
                     student.setStreet(enderecoDTO.getLogradouro());

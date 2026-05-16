@@ -3,14 +3,14 @@ package br.com.lumilivre.api.service.infra;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import br.com.lumilivre.api.dto.v1.aluno.AlunoRequest;
+import br.com.lumilivre.api.dto.common.AddressLookupResponse;
 
 @Service
 public class CepService {
 
-    public AlunoRequest buscarEnderecoPorCep(String cep) {
+    public AddressLookupResponse buscarEnderecoPorCep(String cep) {
         String url = "https://viacep.com.br/ws/" + cep + "/json/";
         RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.getForObject(url, AlunoRequest.class);
+        return restTemplate.getForObject(url, AddressLookupResponse.class);
     }
 }
