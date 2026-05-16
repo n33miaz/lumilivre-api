@@ -44,10 +44,10 @@ public class BookCopyService {
 
     public List<LivroListagemResponse> buscarExemplaresPorLivroId(UUID bookId) {
         if (bookId == null) {
-            throw new BusinessRuleException("O ID do livro é obrigatório.");
+            throw BusinessRuleException.ofKey("book.copy.book-id.required");
         }
         if (!bookRepository.existsById(bookId)) {
-            throw new ResourceNotFoundException("Nenhum livro encontrado com o ID fornecido.");
+            throw ResourceNotFoundException.ofKey("book.not-found-by-provided-id");
         }
 
         List<BookCopy> copies = bookCopyRepository.findAllByBookIdWithDetails(bookId);
@@ -62,11 +62,11 @@ public class BookCopyService {
         validarDadosExemplar(dto);
 
         if (bookCopyRepository.existsByCopyCode(dto.getTombo())) {
-            throw new BusinessRuleException("Já existe um exemplar com este tombo.");
+            throw BusinessRuleException.ofKey("book.copy.code.already-exists");
         }
 
         Book book = bookRepository.findById(dto.getLivro_id())
-                .orElseThrow(() -> new ResourceNotFoundException("Nenhum livro encontrado com o ID fornecido."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found-by-provided-id"));
 
         try {
             BookCopy bookCopy = BookCopy.builder()
@@ -86,15 +86,14 @@ public class BookCopyService {
     @Transactional
     public void atualizar(String copyCode, ExemplarRequest dto) {
         BookCopy bookCopy = bookCopyRepository.findByCopyCode(copyCode)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Exemplar com o tombo '" + copyCode + "' não foi encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("book.copy.not-found-by-code", copyCode));
 
         if (dto.getLivro_id() == null) {
-            throw new BusinessRuleException("O ID do livro é obrigatório.");
+            throw BusinessRuleException.ofKey("book.copy.book-id.required");
         }
 
         Book newBook = bookRepository.findById(dto.getLivro_id())
-                .orElseThrow(() -> new ResourceNotFoundException("Nenhum livro encontrado com o ID fornecido."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found-by-provided-id"));
 
         try {
             bookCopy.setStatus(parseStatus(dto.getStatus_livro()));
@@ -111,15 +110,13 @@ public class BookCopyService {
     @Transactional
     public void excluir(String copyCode) {
         BookCopy bookCopy = bookCopyRepository.findByCopyCode(copyCode)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Exemplar com o tombo '" + copyCode + "' não foi encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("book.copy.not-found-by-code", copyCode));
 
         boolean isOnActiveLoan = loanRepository.existsByBookCopy_CopyCodeAndStatusIn(copyCode,
                 List.of(LoanStatus.ACTIVE, LoanStatus.OVERDUE));
 
         if (isOnActiveLoan) {
-            throw new BusinessRuleException(
-                    "Não é possível excluir este exemplar, pois ele está associado a um empréstimo ativo ou atrasado.");
+            throw BusinessRuleException.ofKey("book.copy.cannot-delete-active-loan");
         }
 
         bookCopyRepository.delete(bookCopy);
@@ -127,10 +124,10 @@ public class BookCopyService {
 
     private void validarDadosExemplar(ExemplarRequest dto) {
         if (dto.getLivro_id() == null) {
-            throw new BusinessRuleException("O ID do livro é obrigatório.");
+            throw BusinessRuleException.ofKey("book.copy.book-id.required");
         }
         if (dto.getTombo() == null || dto.getTombo().isBlank()) {
-            throw new BusinessRuleException("O tombo do exemplar é obrigatório.");
+            throw BusinessRuleException.ofKey("book.copy.code.required");
         }
     }
 

@@ -194,7 +194,7 @@ public class BookService {
     })
     public LivroResponse uploadCapa(UUID id, MultipartFile file) {
         Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Livro não encontrado para o ID: " + id));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found-for-id", id));
 
         if (file != null && !file.isEmpty()) {
             try {
@@ -215,7 +215,7 @@ public class BookService {
     })
     public LivroResponse cadastrar(LivroRequest dto, MultipartFile file) {
         if (isNaoVazio(dto.getIsbn()) && bookRepository.findByIsbn(dto.getIsbn()).isPresent()) {
-            throw new BusinessRuleException("Esse ISBN já está cadastrado em outro livro.");
+            throw BusinessRuleException.ofKey("book.isbn.already-exists");
         }
 
         if (isNaoVazio(dto.getIsbn())) {
@@ -245,12 +245,12 @@ public class BookService {
     })
     public LivroResponse atualizar(UUID id, LivroRequest dto, MultipartFile file) {
         Book bookToUpdate = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Livro não encontrado para o ID: " + id));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found-for-id", id));
 
         if (isNaoVazio(dto.getIsbn())) {
             Optional<Book> livroComMesmoIsbn = bookRepository.findByIsbn(dto.getIsbn());
             if (livroComMesmoIsbn.isPresent() && !livroComMesmoIsbn.get().getId().equals(id)) {
-                throw new BusinessRuleException("O ISBN informado já pertence a outro livro.");
+                throw BusinessRuleException.ofKey("book.isbn.belongs-to-other");
             }
         } else {
             dto.setIsbn(bookToUpdate.getIsbn());
@@ -280,7 +280,7 @@ public class BookService {
     })
     public void excluirLivroComExemplares(UUID id) {
         if (!bookRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Livro não encontrado.");
+            throw ResourceNotFoundException.ofKey("book.not-found");
         }
         bookCopyRepository.deleteAllByBook_Id(id);
         bookRepository.deleteById(id);
@@ -363,11 +363,11 @@ public class BookService {
     }
 
     private void validarCampos(LivroRequest dto) {
-        if (isVazio(dto.getNome())) throw new BusinessRuleException("O título é obrigatório.");
+        if (isVazio(dto.getNome())) throw BusinessRuleException.ofKey("book.form.title.required");
         if (dto.getData_lancamento() != null && dto.getData_lancamento().isAfter(LocalDate.now()))
-            throw new BusinessRuleException("A data de lançamento não pode ser no futuro.");
-        if (isVazio(dto.getEditora())) throw new BusinessRuleException("A editora é obrigatória.");
-        if (isVazio(dto.getAutor())) throw new BusinessRuleException("O autor é obrigatório.");
+            throw BusinessRuleException.ofKey("book.form.publication-date.future-not-allowed");
+        if (isVazio(dto.getEditora())) throw BusinessRuleException.ofKey("book.form.publisher.required");
+        if (isVazio(dto.getAutor())) throw BusinessRuleException.ofKey("book.form.author.required");
     }
 
     private Book montarLivro(Book book, LivroRequest dto, MultipartFile file) {
@@ -384,7 +384,7 @@ public class BookService {
 
         if (isNaoVazio(dto.getCdd())) {
             DeweyClassification cdd = deweyClassificationRepository.findById(dto.getCdd())
-                    .orElseThrow(() -> new BusinessRuleException("Código CDD inválido: " + dto.getCdd()));
+                    .orElseThrow(() -> BusinessRuleException.ofKey("book.dewey-code.invalid", dto.getCdd()));
             book.setDeweyClassification(cdd);
         } else {
             book.setDeweyClassification(null);
@@ -406,8 +406,7 @@ public class BookService {
                     ? CoverType.valueOf(dto.getTipo_capa().toUpperCase())
                     : null);
         } catch (IllegalArgumentException e) {
-            throw new BusinessRuleException(
-                    "Classificação etária ou Tipo de capa inválido: Verifique os valores enviados.");
+            throw BusinessRuleException.ofKey("book.enum.age-rating-or-cover-type.invalid");
         }
 
         if (file != null && !file.isEmpty()) {
@@ -428,7 +427,7 @@ public class BookService {
         dto.setIsbn(isbn);
         preencherDadosExternos(dto);
         if (isVazio(dto.getNome())) {
-            throw new ResourceNotFoundException("Livro não encontrado nas bases externas para o ISBN: " + isbn);
+            throw ResourceNotFoundException.ofKey("book.external.not-found-for-isbn", isbn);
         }
         return dto;
     }
