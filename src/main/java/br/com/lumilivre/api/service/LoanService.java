@@ -246,7 +246,7 @@ public class LoanService {
         return loanRepository.findLoanListItems(tratarOrdenacao(pageable));
     }
 
-    public Page<LoanListItem> buscarPorTextoV2(String texto, Pageable pageable) {
+    public Page<LoanListItem> buscarPorTexto(String texto, Pageable pageable) {
         Pageable pageableNativo = pageable;
         Sort.Order statusOrder = pageable.getSort().getOrderFor("status");
         if (statusOrder != null) {

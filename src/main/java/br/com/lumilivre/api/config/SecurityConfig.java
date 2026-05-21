@@ -47,8 +47,8 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:8080}")
     private String[] allowedOrigins;
 
-    @Value("${app.api.v2.enabled:true}")
-    private boolean v2ApiEnabled;
+    @Value("${app.api.enabled:true}")
+    private boolean apiEnabled;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           AuthRateLimitFilter authRateLimitFilter,
@@ -150,139 +150,73 @@ public class SecurityConfig {
                         }))
 
                 .authorizeHttpRequests(auth -> {
-                    if (!v2ApiEnabled) {
-                        auth.requestMatchers("/api/v2/**").denyAll();
+                    if (!apiEnabled) {
+                        auth.requestMatchers("/api/**").denyAll();
                     }
                     auth
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Endpoints públicos
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/v2/auth/**").permitAll()
+                        // Public endpoints
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
 
-                        // Endpoints mobile de catálogo (GET público para leitura)
+                        // Public catalogue reads
                         .requestMatchers(HttpMethod.GET,
-                                "/api/v2/books/catalog",
-                                "/api/v2/books/public/search",
-                                "/api/v2/books/genres/**")
+                                "/api/books/catalog",
+                                "/api/books/public/search",
+                                "/api/books/genres/**")
                                 .permitAll()
 
+                        // Mixed access by role
                         .requestMatchers(HttpMethod.GET,
-                                "/livros/catalogo-mobile",
-                                "/livros/mobile/buscar",
-                                "/livros/genero/**").permitAll()
-
-                        // Recursos autenticados com acesso a alunos/empréstimos/solicitações por role
-                        .requestMatchers(HttpMethod.GET,
-                                "/emprestimos/ranking",
-                                "/cursos/home",
-                                "/modulos/home",
-                                "/turnos/home")
+                                "/api/students/ranking",
+                                "/api/loans/student/**",
+                                "/api/students/{registrationNumber}",
+                                "/api/books/recommendations/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
-                        .requestMatchers(HttpMethod.GET, "/livros/mobile/recomendacoes/**")
+                        .requestMatchers(HttpMethod.GET, "/api/books/{id}")
                                 .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
-                        .requestMatchers(HttpMethod.GET, "/livros/{id}")
+                        .requestMatchers(HttpMethod.PUT, "/api/loans/*/renew")
                                 .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
-                        .requestMatchers(HttpMethod.GET, "/emprestimos/aluno/**")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
-
-                        .requestMatchers(HttpMethod.GET, "/solicitacoes/aluno/**")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
-
-                        .requestMatchers(HttpMethod.GET, "/alunos/{matricula}")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
-
-                        .requestMatchers(HttpMethod.POST,
-                                "/solicitacoes/solicitar",
-                                "/solicitacoes/solicitar-mobile")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
-
-                        .requestMatchers(HttpMethod.POST, "/reservas")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
-
-                        .requestMatchers(HttpMethod.DELETE, "/reservas/*/cancelar")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
-
-                        .requestMatchers(HttpMethod.PUT, "/emprestimos/renovar/**")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
-
-                        .requestMatchers(HttpMethod.PUT, "/usuarios/alterar-senha")
-                                .authenticated()
-
-                        // Admin exclusivo
-                        .requestMatchers("/usuarios/**").hasRole("ADMIN")
-
-                        // v2 — acesso misto por role (lógica idêntica à v1)
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/v2/students/ranking",
-                                "/api/v2/loans/student/**",
-                                "/api/v2/students/{registrationNumber}",
-                                "/api/v2/books/recommendations/**")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
-
-                        .requestMatchers(HttpMethod.GET, "/api/v2/books/{id}")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
-
-                        .requestMatchers(HttpMethod.PUT, "/api/v2/loans/*/renew")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
-
-                        .requestMatchers("/api/v2/students/**", "/api/v2/books/**", "/api/v2/loans/**",
-                                "/api/v2/book-copies/**")
+                        .requestMatchers("/api/students/**", "/api/books/**", "/api/loans/**",
+                                "/api/book-copies/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN")
 
-                        // v2 — Acesso estudante: reservas, solicitações, referência
-                        .requestMatchers("/api/v2/reservations/**", "/api/v2/loan-requests/**")
+                        // Student-accessible operational resources
+                        .requestMatchers("/api/reservations/**", "/api/loan-requests/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
-                        // v2 — Dados de referência (leitura liberada para autenticados)
+                        // Reference data reads
                         .requestMatchers(HttpMethod.GET,
-                                "/api/v2/courses/**",
-                                "/api/v2/genres/**",
-                                "/api/v2/metadata/**",
-                                "/api/v2/dewey-classifications/**",
-                                "/api/v2/academic-modules/**",
-                                "/api/v2/study-shifts/**",
-                                "/api/v2/theses/**")
+                                "/api/courses/**",
+                                "/api/genres/**",
+                                "/api/metadata/**",
+                                "/api/dewey-classifications/**",
+                                "/api/academic-modules/**",
+                                "/api/study-shifts/**",
+                                "/api/theses/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
 
-                        // v2 — Escrita de referência requer ADMIN/LIBRARIAN
-                        .requestMatchers("/api/v2/courses/**",
-                                "/api/v2/genres/**",
-                                "/api/v2/dewey-classifications/**",
-                                "/api/v2/academic-modules/**",
-                                "/api/v2/study-shifts/**",
-                                "/api/v2/theses/**")
+                        // Reference data writes
+                        .requestMatchers("/api/courses/**",
+                                "/api/genres/**",
+                                "/api/dewey-classifications/**",
+                                "/api/academic-modules/**",
+                                "/api/study-shifts/**",
+                                "/api/theses/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN")
 
-                        .requestMatchers("/api/v2/dashboard/**", "/api/v2/reports/**")
+                        .requestMatchers("/api/dashboard/**", "/api/reports/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN")
 
-                        // v2 — Admin exclusivo
-                        .requestMatchers("/api/v2/imports/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v2/users/**").hasRole("ADMIN")
-
-                        // Admin ou Bibliotecário
-                        .requestMatchers(
-                                "/livros/**",
-                                "/tcc/**",
-                                "/generos/**",
-                                "/cdds/**",
-                                "/cursos/**",
-                                "/modulos/**",
-                                "/turnos/**",
-                                "/exemplares/**",
-                                "/emprestimos/**",
-                                "/solicitacoes/**",
-                                "/alunos/**",
-                                "/relatorios/**",
-                                "/importacao/**")
-                                .hasAnyRole("ADMIN", "LIBRARIAN")
+                        // Admin only
+                        .requestMatchers("/api/imports/**").hasRole("ADMIN")
+                        .requestMatchers("/api/users/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated();
                 })

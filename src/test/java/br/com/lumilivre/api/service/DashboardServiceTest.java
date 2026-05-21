@@ -48,12 +48,12 @@ class DashboardServiceTest {
 
         var stats = service.getStats();
 
-        assertThat(stats.emprestimosAtivos()).isEqualTo(4);
-        assertThat(stats.emprestimosAtrasados()).isEqualTo(2);
-        assertThat(stats.emprestimosConcluidos()).isEqualTo(10);
-        assertThat(stats.mediaDiasDevolucao()).isEqualTo(7.5);
-        assertThat(stats.solicitacoesPendentes()).isEqualTo(3);
-        assertThat(stats.reservasAguardando()).isEqualTo(1);
+        assertThat(stats.activeLoans()).isEqualTo(4);
+        assertThat(stats.overdueLoans()).isEqualTo(2);
+        assertThat(stats.completedLoans()).isEqualTo(10);
+        assertThat(stats.avgReturnDays()).isEqualTo(7.5);
+        assertThat(stats.pendingRequests()).isEqualTo(3);
+        assertThat(stats.waitingReservations()).isEqualTo(1);
     }
 
     @Test

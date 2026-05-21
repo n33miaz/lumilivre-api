@@ -20,8 +20,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.dto.dashboard.DashboardStatsResponse;
-import br.com.lumilivre.api.dto.dashboard.EmprestimosPorMesResponse;
-import br.com.lumilivre.api.dto.dashboard.TopLivroResponse;
+import br.com.lumilivre.api.dto.dashboard.LoansByMonthResponse;
+import br.com.lumilivre.api.dto.dashboard.TopBookResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,10 +46,10 @@ public class DashboardService {
     }
 
     @Cacheable(DASHBOARD_TOP_BOOKS)
-    public List<TopLivroResponse> getTopLivros() {
+    public List<TopBookResponse> getTopBooks() {
         return jdbc.query(
                 "SELECT book_id, title, author, cover_url, total_loans, rating FROM mv_top_books",
-                (rs, i) -> new TopLivroResponse(
+                (rs, i) -> new TopBookResponse(
                         rs.getObject("book_id", UUID.class),
                         rs.getString("title"),
                         rs.getString("author"),
@@ -59,10 +59,10 @@ public class DashboardService {
     }
 
     @Cacheable(DASHBOARD_LOANS_BY_MONTH)
-    public List<EmprestimosPorMesResponse> getEmprestimosPorMes() {
+    public List<LoansByMonthResponse> getLoansByMonth() {
         return jdbc.query(
                 "SELECT month, total FROM mv_loans_by_month ORDER BY month",
-                (rs, i) -> new EmprestimosPorMesResponse(
+                (rs, i) -> new LoansByMonthResponse(
                         toLocalDate(rs.getObject("month")),
                         rs.getLong("total")));
     }

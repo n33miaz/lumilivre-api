@@ -3,8 +3,24 @@
 -- -----------------------------------------------------------------------------
 --  Dados de referencia do dominio (PT-BR por natureza do negocio).
 --  Idempotente via ON CONFLICT. Nao contem dados de negocio (emprestimos,
---  alunos, livros) - esses ficam em V6__seed_demo_data (PR 6).
+--  alunos, livros) - esses ficam no seed demo opt-in em db/seed.
 -- =============================================================================
+
+DO $$
+DECLARE
+    seed_table text;
+BEGIN
+    FOREACH seed_table IN ARRAY ARRAY[
+        'course',
+        'academic_module',
+        'study_shift',
+        'genre',
+        'dewey_classification'
+    ]
+    LOOP
+        EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY', seed_table);
+    END LOOP;
+END $$;
 
 -- ----------------------------------------------------------------------------
 -- course
@@ -92,3 +108,20 @@ INSERT INTO dewey_classification (code, description) VALUES
     ('660', 'Engenharia quimica e tecnologias relacionadas'),
     ('869', 'Literaturas portuguesa e brasileira')
 ON CONFLICT (code) DO NOTHING;
+
+DO $$
+DECLARE
+    seed_table text;
+BEGIN
+    FOREACH seed_table IN ARRAY ARRAY[
+        'course',
+        'academic_module',
+        'study_shift',
+        'genre',
+        'dewey_classification'
+    ]
+    LOOP
+        EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', seed_table);
+        EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', seed_table);
+    END LOOP;
+END $$;

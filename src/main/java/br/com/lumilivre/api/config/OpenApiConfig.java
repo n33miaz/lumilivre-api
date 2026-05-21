@@ -30,31 +30,31 @@ public class OpenApiConfig {
     private final MessageSource messageSource;
 
     @Bean
-    public GroupedOpenApi v2PtBrGroup() {
+    public GroupedOpenApi apiPtBrGroup() {
         return GroupedOpenApi.builder()
-                .group("v2-pt-br")
-                .displayName("API v2 — PT-BR")
-                .pathsToMatch("/api/v2/**")
+                .group("api-pt-br")
+                .displayName("API - PT-BR")
+                .pathsToMatch("/api/**")
                 .addOperationCustomizer(new SwaggerOperationCustomizer(messageSource, Locale.forLanguageTag("pt-BR")))
                 .build();
     }
 
     @Bean
-    public GroupedOpenApi v2EnUsGroup() {
+    public GroupedOpenApi apiEnUsGroup() {
         return GroupedOpenApi.builder()
-                .group("v2-en-us")
-                .displayName("API v2 — EN-US")
-                .pathsToMatch("/api/v2/**")
+                .group("api-en-us")
+                .displayName("API - EN-US")
+                .pathsToMatch("/api/**")
                 .addOperationCustomizer(new SwaggerOperationCustomizer(messageSource, Locale.forLanguageTag("en-US")))
                 .build();
     }
 
     @Bean
-    public GroupedOpenApi v1LegacyGroup() {
+    public GroupedOpenApi systemGroup() {
         return GroupedOpenApi.builder()
-                .group("v1-legacy")
-                .displayName("API v1 — Legacy (PT-BR)")
-                .pathsToExclude("/api/v2/**", "/actuator/**")
+                .group("system")
+                .displayName("System")
+                .pathsToMatch("/", "/actuator/**")
                 .build();
     }
 
@@ -73,7 +73,7 @@ public class OpenApiConfig {
         String enDesc = messageSource.getMessage("swagger.api.description", null, "", Locale.forLanguageTag("en-US"));
         return new Info()
                 .title("LumiLivre API")
-                .version("v2.0")
+                .version("1.0.0")
                 .description(ptDesc + "\n\n---\n\n" + enDesc)
                 .contact(new Contact()
                         .name("LumiLivre")
@@ -124,7 +124,7 @@ public class OpenApiConfig {
                         .scheme("bearer")
                         .bearerFormat("JWT")
                         .in(SecurityScheme.In.HEADER)
-                        .description("JWT token returned by POST /api/v2/auth/login. Insert only the value (without 'Bearer ')."))
+                        .description("JWT token returned by POST /api/auth/login. Insert only the value (without 'Bearer ')."))
                 .addRequestBodies("LoginRequest", buildLoginRequestBody());
     }
 

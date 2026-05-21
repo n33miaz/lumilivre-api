@@ -209,6 +209,12 @@ $env:LUMILIVRE_SUPABASE_URL = "https://<project-ref>.supabase.co"
 $env:LUMILIVRE_SUPABASE_KEY = "<supabase-key>"
 $env:LUMILIVRE_CORS_ORIGINS = "http://localhost:5173,http://localhost:8080"
 
+# Opcional para banco dev vazio: Flyway cria o schema antes do Hibernate validar.
+$env:LUMILIVRE_FLYWAY_ENABLED = "true"
+
+# Opcional para popular dados demo sinteticos.
+$env:LUMILIVRE_FLYWAY_LOCATIONS = "classpath:db/migration,classpath:db/seed,classpath:db/vendor/postgresql"
+
 # 2. Execute
 .\mvnw.cmd clean install
 .\mvnw.cmd spring-boot:run
@@ -226,6 +232,7 @@ As mensagens `Spring Data Redis - Could not safely identify store assignment` po
 ### Banco de dados e migrations
 
 Toda alteração de schema passa por **Flyway** em `src/main/resources/db/migration/V<seq>__<desc>.sql`.
+O `ddl-auto` deve permanecer em `validate`: para criar tabelas em banco vazio, habilite Flyway com `LUMILIVRE_FLYWAY_ENABLED=true`. Dados demo ficam fora do caminho padrão e só entram quando `classpath:db/seed` for incluído em `LUMILIVRE_FLYWAY_LOCATIONS`.
 
 <br/>
 

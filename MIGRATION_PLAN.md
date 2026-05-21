@@ -41,10 +41,10 @@ Estado validado na arvore local:
 - PR3 - schema novo em ingles: largamente concluido. As migrations `V1..V5` existem no formato alvo.
 - PR4 - testes de banco real: parcial. Existem testes Flyway/schema com Testcontainers, mas o conjunto completo ainda nao esta consolidado em PostgreSQL real.
 - PR5 - refatoracao interna do backend: em andamento avancado. Entidades, repositories, storage, dashboard v2 e contratos usados pelos clientes ja foram estabilizados, mas ainda ha residuos v1, DTOs legados, mensagens PT-BR e adapters temporarios.
-- PR6 - seed demo e validacao ponta a ponta: nao iniciado. O `V6` atual foi usado para `preferred_locale`, nao para seed demo.
+- PR6 - seed demo e validacao ponta a ponta: iniciado. O `V6` atual foi usado para `preferred_locale`; o seed demo sintetico fica opt-in em `src/main/resources/db/seed/R__seed_demo_data.sql`.
 - PR7 - consolidacao documental: parcial. Ha ADRs e runbooks, mas ainda falta fechar documentacao final depois da estabilizacao de contrato.
 
-Conclusao operacional: a proxima frente deve fechar os residuos arquiteturais de PR5 e completar o que falta de PR4 antes de criar seed demo/e2e.
+Conclusao operacional: a proxima frente deve fechar mensagens hardcoded/relatorios restantes e completar o que falta de PR4 com Docker/Testcontainers antes de promover seed/e2e para gate obrigatorio.
 
 ## 2. Fase zero obrigatoria - discovery e freeze do desenho
 
@@ -472,7 +472,7 @@ Sequencia atual encontrada no repositorio:
 Decisao atualizada:
 
 - manter `V6__add_user_preferred_locale.sql`, pois ele pertence ao plano de i18n
-- criar o seed demo como uma migration posterior, por exemplo `V7__seed_demo_data.sql`
+- manter o seed demo fora do caminho padrao, em `db/seed/R__seed_demo_data.sql`, aplicado apenas quando `classpath:db/seed` for incluido em `LUMILIVRE_FLYWAY_LOCATIONS`
 - se houver migracao de dados reais, criar scripts ETL separados e nao esconder essa complexidade dentro do baseline
 
 ## 6. Fase 3 - Refatoracao do backend
@@ -578,7 +578,7 @@ Recomendacao de menor risco:
 
 Depois disso, avaliar:
 
-- expor uma API v2 em ingles
+- expor uma API em ingles
 - ou manter PT-BR externamente e ingles apenas internamente
 
 ### 6.6 Testes obrigatorios desta fase
@@ -643,7 +643,9 @@ Seed 2 - demo:
 
 Preferencia:
 
-- seed em SQL versionado pelo Flyway
+- seed em SQL pelo Flyway
+- dados de referencia no caminho padrao `db/migration`
+- dados demo sinteticos no caminho opt-in `db/seed`
 
 Alternativas aceitas:
 
@@ -788,17 +790,17 @@ Pendencia atual:
 - remover residuos de DTOs v1 nos fluxos v2
 - eliminar mensagens PT-BR hardcoded em services
 - concluir a substituicao de adapters temporarios v1 em fluxos v2
-- fechar OpenAPI v2 como contrato oficial
+- fechar OpenAPI como contrato oficial
 
 ### PR 6 - seed demo e validacao ponta a ponta
 
-Status: nao iniciado.
+Status: iniciado.
 
-- dados demo
+- dados demo sinteticos em `src/main/resources/db/seed/R__seed_demo_data.sql`
 - importacao
-- testes de dashboard
+- teste Testcontainers para seed demo adicionado, mas executa apenas quando Docker esta disponivel
 
-Nota: o numero `V6` ja foi ocupado por `V6__add_user_preferred_locale.sql`; o seed demo deve entrar em uma migration posterior.
+Nota: o numero `V6` ja foi ocupado por `V6__add_user_preferred_locale.sql`; seed demo nao fica no caminho padrao de migrations para evitar popular ambiente remoto sem flag explicita.
 
 ### PR 7 - consolidacao documental
 
@@ -814,7 +816,7 @@ Status: parcial.
 - [ ] `mvn test` cobre a nova camada de persistencia com PostgreSQL real de ponta a ponta.
 - [ ] API v1 continua funcional para web e mobile enquanto a v2 e estabilizada.
 - [ ] Todos os nomes estruturais relevantes do banco estao em ingles.
-- [ ] Dados de seed demo de negocio permanecem em portugues.
+- [x] Dados de seed demo de negocio permanecem em portugues.
 - [ ] Views materializadas e queries nativas foram renomeadas e validadas.
 - [x] Storage diferencia capas, TCCs e avatars corretamente.
 - [ ] RLS e estrategia de acesso ao Supabase foram documentadas e revisadas.
