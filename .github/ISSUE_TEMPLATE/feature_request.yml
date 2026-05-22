@@ -1,0 +1,59 @@
+name: Feature request
+description: Propose an enhancement to the LumiLivre API.
+title: "[feature] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening: please skim `FINISH.md` and `ROADMAP.md` in the
+        meta-repo — your idea might already be planned (and you may want
+        to comment on the existing thread instead of opening a duplicate).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you solving?
+      description: |
+        Describe the use case from the library's perspective: who is
+        affected, how often, and what is the workaround today.
+      placeholder: "Librarians at multi-campus institutions cannot filter loans by campus."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How would the API behave after this feature lands? Include endpoint signatures or payload examples when possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you weighed and why you rejected them.
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Estimated scope
+      description: Rough effort.
+      options:
+        - "S — single endpoint or config flag"
+        - "M — multiple endpoints or new bounded context"
+        - "L — schema change or cross-stack impact"
+        - "XL — touches API + Web + App"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I have searched existing issues and roadmap items.
+          required: true
+        - label: My proposal preserves API backwards compatibility, or I have flagged it as a breaking change.
+          required: false

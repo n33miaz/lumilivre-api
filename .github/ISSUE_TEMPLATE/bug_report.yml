@@ -1,0 +1,93 @@
+name: Bug report
+description: Report a defect in the LumiLivre API.
+title: "[bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please complete every
+        section below — partial reports usually cannot be acted on.
+
+        For security-sensitive issues, **do not open a public issue**;
+        report privately via the channel listed in `SECURITY.md`.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One sentence describing the defect.
+      placeholder: "POST /api/loans returns 500 when due_at equals borrowed_at."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps with the minimal data needed to reproduce.
+      placeholder: |
+        1. Authenticate as an admin.
+        2. POST /api/loans with body `{ ... }`.
+        3. Observe the response.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: |
+        What happened instead? Include HTTP status code, response body
+        and any relevant stack trace from the server logs.
+    validations:
+      required: true
+
+  - type: input
+    id: api-version
+    attributes:
+      label: API version / commit
+      description: Output of `git rev-parse HEAD` or the deployed tag (e.g. `0.1.0`).
+      placeholder: "0.1.0 or git SHA"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - "Local (docker-compose)"
+        - "Local (mvn spring-boot:run)"
+        - "Render / Supabase deploy"
+        - "Self-hosted Postgres"
+        - "Other (describe below)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: |
+        Paste the relevant log slice with the `correlationId` if available.
+        Use code fences. Strip any secrets before pasting.
+      render: shell
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I have searched existing issues and confirmed this is not a duplicate.
+          required: true
+        - label: I have stripped any secrets (`LUMILIVRE_*`, JWTs, email addresses) from the logs above.
+          required: true
