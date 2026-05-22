@@ -57,7 +57,7 @@ public class Student {
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
-    @Column(name = "email", length = 255)
+    @Column(name = "email", length = 255, columnDefinition = "citext")
     private String email;
 
     @ManyToOne
@@ -93,7 +93,7 @@ public class Student {
     @Column(name = "city", length = 55)
     private String city;
 
-    @Column(name = "state_code", length = 2)
+    @Column(name = "state_code", length = 2, columnDefinition = "bpchar")
     private String stateCode;
 
     @Column(name = "street_number")

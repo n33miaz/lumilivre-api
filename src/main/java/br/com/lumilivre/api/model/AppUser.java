@@ -38,7 +38,7 @@ public class AppUser {
     private UUID id;
 
     @NotNull
-    @Column(name = "email", nullable = false, length = 255, unique = true)
+    @Column(name = "email", nullable = false, length = 255, unique = true, columnDefinition = "citext")
     private String email;
 
     @Column(name = "password_hash", length = 255)

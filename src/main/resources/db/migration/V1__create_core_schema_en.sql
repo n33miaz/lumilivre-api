@@ -6,18 +6,18 @@
 -- =============================================================================
 
 -- ----------------------------------------------------------------------------
--- 1. Extensoes
+-- 1. Extensoes (Forçadas no schema public para evitar conflito de search_path)
 -- ----------------------------------------------------------------------------
-CREATE EXTENSION IF NOT EXISTS pgcrypto;       -- gen_random_uuid()
-CREATE EXTENSION IF NOT EXISTS citext;         -- emails case-insensitive
-CREATE EXTENSION IF NOT EXISTS pg_trgm;        -- ILIKE com GIN
-CREATE EXTENSION IF NOT EXISTS unaccent;       -- normalizacao de acentos
--- CREATE EXTENSION IF NOT EXISTS btree_gin;   -- habilitar apenas se medicao justificar
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;       -- gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;         -- emails case-insensitive
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;        -- ILIKE com GIN
+CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public;       -- normalizacao de acentos
+-- CREATE EXTENSION IF NOT EXISTS btree_gin WITH SCHEMA public;   -- habilitar apenas se medicao justificar
 
--- Wrapper IMMUTABLE para permitir unaccent em indice expressao.
+-- Wrapper IMMUTABLE com caminho absoluto (public.unaccent)
 CREATE OR REPLACE FUNCTION immutable_unaccent(text) RETURNS text
     LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT AS
-$$ SELECT unaccent('unaccent', $1) $$;
+$$ SELECT public.unaccent('public.unaccent'::regdictionary, $1) $$;
 
 -- Trigger helper: toca updated_at em cada UPDATE.
 CREATE OR REPLACE FUNCTION touch_updated_at() RETURNS trigger
@@ -125,7 +125,8 @@ CREATE TABLE app_user (
     CONSTRAINT uq_app_user_email      UNIQUE (email),
     CONSTRAINT uq_app_user_student_id UNIQUE (student_id),
     CONSTRAINT fk_app_user_student    FOREIGN KEY (student_id) REFERENCES student (id) ON DELETE RESTRICT,
-    CONSTRAINT ck_app_user_role       CHECK (role IN ('ADMIN', 'LIBRARIAN', 'STUDENT'))
+    CONSTRAINT ck_app_user_role       CHECK (role IN ('ADMIN', 'LIBRARIAN', 'STUDENT')),
+    preferred_locale VARCHAR(10) NOT NULL DEFAULT 'pt-BR'
 );
 
 CREATE TRIGGER trg_app_user_touch BEFORE UPDATE ON app_user
