@@ -4,10 +4,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.book.BookCopyRequest;
 import br.com.lumilivre.api.dto.book.BookCopyResponse;
 import br.com.lumilivre.api.mapper.BookCopyMapper;
 import br.com.lumilivre.api.service.BookCopyService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,12 +27,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/book-copies")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.BOOK_COPIES)
 public class BookCopyController {
 
     private final BookCopyService bookCopyService;
     private final BookCopyMapper mapper;
 
     @GetMapping("/by-book/{bookId}")
+    @Operation(operationId = "book-copies.byBook")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<BookCopyResponse>> listByBook(@PathVariable UUID bookId, Locale locale) {
         List<BookCopyResponse> copies = bookCopyService.buscarExemplaresPorLivroId(bookId)
@@ -45,6 +50,7 @@ public class BookCopyController {
     }
 
     @PostMapping
+    @Operation(operationId = "book-copies.create")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> create(@Valid @RequestBody BookCopyRequest request) {
         bookCopyService.cadastrar(request);
@@ -52,6 +58,7 @@ public class BookCopyController {
     }
 
     @PutMapping("/{copyCode}")
+    @Operation(operationId = "book-copies.update")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> update(@PathVariable String copyCode,
                                        @Valid @RequestBody BookCopyRequest request) {
@@ -60,6 +67,7 @@ public class BookCopyController {
     }
 
     @DeleteMapping("/{copyCode}")
+    @Operation(operationId = "book-copies.delete")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> delete(@PathVariable String copyCode) {
         bookCopyService.excluir(copyCode);

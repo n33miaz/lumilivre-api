@@ -18,6 +18,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-42.7-336791?style=flat-square&logo=postgresql)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker)
 ![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue?style=flat-square&logo=githubactions)
+[![API Docs](https://img.shields.io/badge/docs-Swagger-purple?style=flat-square)](https://lumilivre-api.onrender.com/docs)
 
 </div>
 
@@ -31,7 +32,7 @@ A **LumiLivre API** é o núcleo de processamento e inteligência de todo o ecos
 
 Atualmente hospedada no **Render** via Docker, a API utiliza **PostgreSQL** (hospedado no Supabase) como banco de dados relacional, garantindo robustez e integridade para as operações da biblioteca.
 
-A documentação interativa está disponível em: [api-lumilivre.com.br/swagger-ui](https://lumilivre-api.onrender.com/swagger-ui/index.html#/).
+A documentação interativa está disponível em: [lumilivre-api.onrender.com/docs](https://lumilivre-api.onrender.com/docs).
 
 <br/>
 

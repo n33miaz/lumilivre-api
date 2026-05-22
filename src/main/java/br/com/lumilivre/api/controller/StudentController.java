@@ -3,6 +3,7 @@ package br.com.lumilivre.api.controller;
 import java.util.List;
 import java.util.Locale;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.student.StudentRankingResponse;
 import br.com.lumilivre.api.dto.student.StudentRequest;
 import br.com.lumilivre.api.dto.student.StudentResponse;
@@ -10,6 +11,8 @@ import br.com.lumilivre.api.dto.student.StudentSummaryResponse;
 import br.com.lumilivre.api.mapper.StudentMapper;
 import br.com.lumilivre.api.security.CanAccessStudent;
 import br.com.lumilivre.api.service.StudentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,12 +37,14 @@ import org.springframework.http.MediaType;
 @RestController
 @RequestMapping("/api/students")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.STUDENTS)
 public class StudentController {
 
     private final StudentService studentService;
     private final StudentMapper mapper;
 
     @GetMapping
+    @Operation(operationId = "students.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Page<StudentSummaryResponse>> list(
             @RequestParam(required = false) String q,
@@ -54,6 +59,7 @@ public class StudentController {
     }
 
     @GetMapping("/search")
+    @Operation(operationId = "students.search")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Page<StudentSummaryResponse>> search(
             @RequestParam(required = false) String penalty,
@@ -74,6 +80,7 @@ public class StudentController {
     }
 
     @GetMapping("/{registrationNumber}")
+    @Operation(operationId = "students.get")
     @CanAccessStudent
     public ResponseEntity<StudentResponse> getOne(
             @PathVariable String registrationNumber,
@@ -86,6 +93,7 @@ public class StudentController {
     }
 
     @PostMapping
+    @Operation(operationId = "students.create")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<StudentResponse> create(
             @Valid @RequestBody StudentRequest request,
@@ -98,6 +106,7 @@ public class StudentController {
     }
 
     @PutMapping("/{registrationNumber}")
+    @Operation(operationId = "students.update")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<StudentResponse> update(
             @PathVariable String registrationNumber,
@@ -111,6 +120,7 @@ public class StudentController {
     }
 
     @DeleteMapping("/{registrationNumber}")
+    @Operation(operationId = "students.delete")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> delete(@PathVariable String registrationNumber) {
         studentService.excluir(registrationNumber);
@@ -118,6 +128,7 @@ public class StudentController {
     }
 
     @PatchMapping("/{registrationNumber}/reset-password")
+    @Operation(operationId = "students.resetPassword")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> resetPassword(@PathVariable String registrationNumber) {
         studentService.resetarSenha(registrationNumber);
@@ -125,6 +136,7 @@ public class StudentController {
     }
 
     @PostMapping(value = "/{registrationNumber}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(operationId = "students.uploadAvatar")
     @CanAccessStudent
     public ResponseEntity<Void> uploadAvatar(
             @PathVariable String registrationNumber,
@@ -137,6 +149,7 @@ public class StudentController {
     }
 
     @GetMapping("/ranking")
+    @Operation(operationId = "students.ranking")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<List<StudentRankingResponse>> ranking(
             @RequestParam(defaultValue = "10") int top,

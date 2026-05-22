@@ -4,11 +4,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.dto.loanrequest.LoanRequestResponse;
 import br.com.lumilivre.api.mapper.LoanRequestMapper;
 import br.com.lumilivre.api.security.CanAccessStudent;
 import br.com.lumilivre.api.service.LoanRequestService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/loan-requests")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.LOAN_REQUESTS)
 public class LoanRequestController {
 
     private final LoanRequestService loanRequestService;
@@ -29,6 +33,7 @@ public class LoanRequestController {
     private final MessageResolver messages;
 
     @GetMapping
+    @Operation(operationId = "loan-requests.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<LoanRequestResponse>> listAll(Locale locale) {
         List<LoanRequestResponse> body = loanRequestService.listAll()
@@ -41,6 +46,7 @@ public class LoanRequestController {
     }
 
     @GetMapping("/pending")
+    @Operation(operationId = "loan-requests.pending")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<LoanRequestResponse>> listPending(Locale locale) {
         List<LoanRequestResponse> body = loanRequestService.listPending()
@@ -53,6 +59,7 @@ public class LoanRequestController {
     }
 
     @GetMapping("/student/{registrationNumber}")
+    @Operation(operationId = "loan-requests.byStudent")
     @CanAccessStudent
     public ResponseEntity<List<LoanRequestResponse>> listByStudent(
             @PathVariable String registrationNumber,
@@ -67,6 +74,7 @@ public class LoanRequestController {
     }
 
     @PostMapping
+    @Operation(operationId = "loan-requests.create")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<String> create(
             @RequestParam String studentRegistrationNumber,
@@ -79,6 +87,7 @@ public class LoanRequestController {
     }
 
     @PostMapping("/by-book")
+    @Operation(operationId = "loan-requests.createByBook")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<String> createByBook(
             @RequestParam String studentRegistrationNumber,
@@ -91,6 +100,7 @@ public class LoanRequestController {
     }
 
     @PostMapping("/{id}/process")
+    @Operation(operationId = "loan-requests.process")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<String> process(
             @PathVariable UUID id,

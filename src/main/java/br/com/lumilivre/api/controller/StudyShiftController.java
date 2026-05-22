@@ -3,12 +3,15 @@ package br.com.lumilivre.api.controller;
 import java.util.Locale;
 import java.util.List;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.common.ChartItemResponse;
 import br.com.lumilivre.api.dto.studyshift.StudyShiftRequest;
 import br.com.lumilivre.api.dto.studyshift.StudyShiftResponse;
 import br.com.lumilivre.api.dto.studyshift.StudyShiftSummaryResponse;
 import br.com.lumilivre.api.mapper.StudyShiftMapper;
 import br.com.lumilivre.api.service.StudyShiftService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,12 +32,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/study-shifts")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.STUDY_SHIFTS)
 public class StudyShiftController {
 
     private final StudyShiftService studyShiftService;
     private final StudyShiftMapper mapper;
 
     @GetMapping
+    @Operation(operationId = "study-shifts.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<Page<StudyShiftSummaryResponse>> list(
             @RequestParam(required = false) String q,
@@ -47,6 +52,7 @@ public class StudyShiftController {
     }
 
     @PostMapping
+    @Operation(operationId = "study-shifts.create")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<StudyShiftResponse> create(
             @Valid @RequestBody StudyShiftRequest request,
@@ -58,6 +64,7 @@ public class StudyShiftController {
     }
 
     @PutMapping("/{id}")
+    @Operation(operationId = "study-shifts.update")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<StudyShiftResponse> update(
             @PathVariable Integer id,
@@ -70,6 +77,7 @@ public class StudyShiftController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(operationId = "study-shifts.delete")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         studyShiftService.excluir(id);
@@ -77,6 +85,7 @@ public class StudyShiftController {
     }
 
     @GetMapping("/loan-statistics")
+    @Operation(operationId = "study-shifts.loanStatistics")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<ChartItemResponse>> loanStatistics(Locale locale) {
         return ResponseEntity.ok()

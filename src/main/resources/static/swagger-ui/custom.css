@@ -1,0 +1,33 @@
+.swagger-ui .topbar {
+  background: #762075;
+  border-bottom: 4px solid #14b8a6;
+}
+
+.swagger-ui .topbar-wrapper img {
+  content: url("/swagger-ui/logo.svg");
+  height: 36px;
+  width: auto;
+}
+
+.swagger-ui .topbar-wrapper span {
+  color: #ffffff;
+}
+
+.swagger-ui .info .title {
+  color: #762075;
+}
+
+.swagger-ui .opblock-tag {
+  border-bottom-color: #e2e8f0;
+}
+
+.swagger-ui .btn.authorize,
+.swagger-ui .btn.execute {
+  border-color: #762075;
+  color: #762075;
+}
+
+.swagger-ui .btn.execute {
+  background-color: #762075;
+  color: #ffffff;
+}

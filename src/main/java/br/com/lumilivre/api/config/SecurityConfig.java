@@ -159,7 +159,7 @@ public class SecurityConfig {
 
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs", "/docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
 
                         // Public catalogue reads

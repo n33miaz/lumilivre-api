@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.List;
 import java.util.UUID;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.book.BookRequest;
 import br.com.lumilivre.api.dto.book.BookResponse;
 import br.com.lumilivre.api.dto.book.BookCardResponse;
@@ -15,6 +16,8 @@ import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.mapper.BookMapper;
 import br.com.lumilivre.api.service.BookService;
 import br.com.lumilivre.api.service.RecommendationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,6 +41,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/books")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.BOOKS)
 public class BookController {
 
     private final BookService bookService;
@@ -45,6 +49,7 @@ public class BookController {
     private final RecommendationService recommendationService;
 
     @GetMapping
+    @Operation(operationId = "books.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Page<BookSummaryResponse>> list(
             @PageableDefault(size = 20) Pageable pageable,
@@ -58,6 +63,7 @@ public class BookController {
     }
 
     @GetMapping("/search")
+    @Operation(operationId = "books.search")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Page<BookSummaryResponse>> search(
             @RequestParam(required = false) String q,
@@ -72,6 +78,7 @@ public class BookController {
     }
 
     @GetMapping("/grouped")
+    @Operation(operationId = "books.grouped")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Page<BookGroupedResponse>> grouped(
             @RequestParam(required = false) String q,
@@ -84,6 +91,7 @@ public class BookController {
     }
 
     @GetMapping("/advanced")
+    @Operation(operationId = "books.advanced")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Page<BookGroupedResponse>> advanced(
             @RequestParam(required = false) String title,
@@ -106,6 +114,7 @@ public class BookController {
     }
 
     @GetMapping("/public/search")
+    @Operation(operationId = "books.publicSearch")
     public ResponseEntity<Page<BookCardResponse>> publicSearch(
             @RequestParam String q,
             @PageableDefault(size = 20) Pageable pageable,
@@ -117,6 +126,7 @@ public class BookController {
     }
 
     @GetMapping("/catalog")
+    @Operation(operationId = "books.catalog")
     public ResponseEntity<List<BookCatalogResponse>> catalog(Locale locale) {
         List<BookCatalogResponse> body = bookService.buscarCatalogoParaMobile();
         if (body.isEmpty()) {
@@ -128,6 +138,7 @@ public class BookController {
     }
 
     @GetMapping("/genres/{genreName}")
+    @Operation(operationId = "books.byGenre")
     public ResponseEntity<Page<BookCardResponse>> byGenre(
             @PathVariable String genreName,
             @PageableDefault(size = 10) Pageable pageable,
@@ -141,6 +152,7 @@ public class BookController {
     }
 
     @GetMapping("/recommendations/{registrationNumber}")
+    @Operation(operationId = "books.recommendations")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<List<BookCardResponse>> recommendations(
             @PathVariable String registrationNumber,
@@ -151,6 +163,7 @@ public class BookController {
     }
 
     @GetMapping("/isbn/{isbn}")
+    @Operation(operationId = "books.isbnLookup")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<BookRequest> isbnLookup(@PathVariable String isbn, Locale locale) {
         BookRequest body = bookService.pesquisarDadosPorIsbn(isbn);
@@ -160,6 +173,7 @@ public class BookController {
     }
 
     @GetMapping("/{id}")
+    @Operation(operationId = "books.get")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<BookResponse> getOne(@PathVariable UUID id, Locale locale) {
         BookResponse body = bookService.findById(id)
@@ -171,6 +185,7 @@ public class BookController {
     }
 
     @PostMapping
+    @Operation(operationId = "books.create")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<BookResponse> create(
             @Valid @RequestBody BookRequest request,
@@ -182,6 +197,7 @@ public class BookController {
     }
 
     @PutMapping("/{id}")
+    @Operation(operationId = "books.update")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<BookResponse> update(
             @PathVariable UUID id,
@@ -194,6 +210,7 @@ public class BookController {
     }
 
     @PostMapping(value = "/{id}/cover", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(operationId = "books.uploadCover")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<BookResponse> uploadCover(
             @PathVariable UUID id,
@@ -206,6 +223,7 @@ public class BookController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(operationId = "books.delete")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         bookService.excluirLivroComExemplares(id);

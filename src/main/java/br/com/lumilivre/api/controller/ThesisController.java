@@ -4,11 +4,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.thesis.ThesisRequest;
 import br.com.lumilivre.api.dto.thesis.ThesisResponse;
 import br.com.lumilivre.api.mapper.ThesisMapper;
 import br.com.lumilivre.api.service.ThesisService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/theses")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.THESES)
 public class ThesisController {
 
     private final ThesisService thesisService;
@@ -34,6 +38,7 @@ public class ThesisController {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping
+    @Operation(operationId = "theses.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<List<ThesisResponse>> list(
             @RequestParam(required = false) String q,
@@ -45,6 +50,7 @@ public class ThesisController {
     }
 
     @GetMapping("/{id}")
+    @Operation(operationId = "theses.get")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<ThesisResponse> getOne(@PathVariable UUID id, Locale locale) {
         return ResponseEntity.ok()
@@ -53,6 +59,7 @@ public class ThesisController {
     }
 
     @GetMapping("/search")
+    @Operation(operationId = "theses.search")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<List<ThesisResponse>> search(
             @RequestParam(required = false) Integer courseId,
@@ -67,6 +74,7 @@ public class ThesisController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(operationId = "theses.create")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<ThesisResponse> create(
             @RequestPart("data") String data,
@@ -80,6 +88,7 @@ public class ThesisController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(operationId = "theses.update")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<ThesisResponse> update(
             @PathVariable UUID id,
@@ -94,6 +103,7 @@ public class ThesisController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(operationId = "theses.delete")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         thesisService.deleteThesis(id);

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.loan.ActiveLoanResponse;
 import br.com.lumilivre.api.dto.loan.LoanRequest;
 import br.com.lumilivre.api.dto.loan.LoanResponse;
@@ -12,6 +13,8 @@ import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.security.CanAccessLoan;
 import br.com.lumilivre.api.security.CanAccessStudent;
 import br.com.lumilivre.api.service.LoanService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,12 +35,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/loans")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.LOANS)
 public class LoanController {
 
     private final LoanService loanService;
     private final LoanMapper mapper;
 
     @GetMapping
+    @Operation(operationId = "loans.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Page<LoanResponse>> list(
             @RequestParam(required = false) String q,
@@ -53,6 +58,7 @@ public class LoanController {
     }
 
     @GetMapping("/advanced")
+    @Operation(operationId = "loans.advanced")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Page<LoanResponse>> advanced(
             @RequestParam(required = false) LoanStatus status,
@@ -81,6 +87,7 @@ public class LoanController {
     }
 
     @GetMapping("/active-and-overdue")
+    @Operation(operationId = "loans.activeAndOverdue")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<ActiveLoanResponse>> activeAndOverdue(Locale locale) {
         return ResponseEntity.ok()
@@ -91,6 +98,7 @@ public class LoanController {
     }
 
     @GetMapping("/overdue")
+    @Operation(operationId = "loans.overdue")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<ActiveLoanResponse>> overdueOnly(Locale locale) {
         return ResponseEntity.ok()
@@ -101,6 +109,7 @@ public class LoanController {
     }
 
     @GetMapping("/active-and-overdue/count")
+    @Operation(operationId = "loans.activeAndOverdueCount")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Long> activeAndOverdueCount(Locale locale) {
         return ResponseEntity.ok()
@@ -109,6 +118,7 @@ public class LoanController {
     }
 
     @GetMapping("/student/{registrationNumber}")
+    @Operation(operationId = "loans.byStudent")
     @CanAccessStudent
     public ResponseEntity<List<LoanResponse>> listByStudent(
             @PathVariable String registrationNumber,
@@ -124,6 +134,7 @@ public class LoanController {
     }
 
     @GetMapping("/student/{registrationNumber}/history")
+    @Operation(operationId = "loans.history")
     @CanAccessStudent
     public ResponseEntity<List<LoanResponse>> history(
             @PathVariable String registrationNumber,
@@ -139,6 +150,7 @@ public class LoanController {
     }
 
     @PostMapping
+    @Operation(operationId = "loans.create")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<LoanResponse> create(
             @Valid @RequestBody LoanRequest request,
@@ -150,6 +162,7 @@ public class LoanController {
     }
 
     @PutMapping("/{id}")
+    @Operation(operationId = "loans.update")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<LoanResponse> update(
             @PathVariable UUID id,
@@ -163,6 +176,7 @@ public class LoanController {
     }
 
     @PutMapping("/{id}/close")
+    @Operation(operationId = "loans.close")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<LoanResponse> close(@PathVariable UUID id, Locale locale) {
         loanService.concluirEmprestimo(id);
@@ -173,6 +187,7 @@ public class LoanController {
     }
 
     @PutMapping("/{id}/renew")
+    @Operation(operationId = "loans.renew")
     @CanAccessLoan
     public ResponseEntity<LoanResponse> renew(@PathVariable UUID id, Locale locale) {
         loanService.renovar(id);
@@ -183,6 +198,7 @@ public class LoanController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(operationId = "loans.delete")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         loanService.excluir(id);

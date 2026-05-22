@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="40" viewBox="0 0 180 40" role="img" aria-labelledby="title">
+  <title id="title">LumiLivre API</title>
+  <rect width="180" height="40" rx="6" fill="#762075"/>
+  <path d="M18 10h16a4 4 0 0 1 4 4v17H22a4 4 0 0 0-4 4V10Z" fill="#ffffff"/>
+  <path d="M22 14h10M22 19h12M22 24h9" stroke="#762075" stroke-width="2" stroke-linecap="round"/>
+  <text x="50" y="25" fill="#ffffff" font-family="Arial, sans-serif" font-size="18" font-weight="700">LumiLivre API</text>
+</svg>

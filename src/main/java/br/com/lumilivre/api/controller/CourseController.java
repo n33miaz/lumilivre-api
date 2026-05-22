@@ -3,6 +3,7 @@ package br.com.lumilivre.api.controller;
 import java.util.List;
 import java.util.Locale;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.common.ChartItemResponse;
 import br.com.lumilivre.api.dto.course.CourseRequest;
 import br.com.lumilivre.api.dto.course.CourseResponse;
@@ -10,6 +11,8 @@ import br.com.lumilivre.api.dto.course.CourseStatisticsResponse;
 import br.com.lumilivre.api.dto.course.CourseSummaryResponse;
 import br.com.lumilivre.api.mapper.CourseMapper;
 import br.com.lumilivre.api.service.CourseService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,12 +33,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/courses")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.COURSES)
 public class CourseController {
 
     private final CourseService courseService;
     private final CourseMapper mapper;
 
     @GetMapping
+    @Operation(operationId = "courses.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<Page<CourseSummaryResponse>> list(
             @RequestParam(required = false) String q,
@@ -48,6 +53,7 @@ public class CourseController {
     }
 
     @PostMapping
+    @Operation(operationId = "courses.create")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<CourseResponse> create(
             @Valid @RequestBody CourseRequest request,
@@ -59,6 +65,7 @@ public class CourseController {
     }
 
     @PutMapping("/{id}")
+    @Operation(operationId = "courses.update")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<CourseResponse> update(
             @PathVariable Integer id,
@@ -71,6 +78,7 @@ public class CourseController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(operationId = "courses.delete")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         courseService.excluir(id);
@@ -78,6 +86,7 @@ public class CourseController {
     }
 
     @GetMapping("/statistics")
+    @Operation(operationId = "courses.statistics")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<CourseStatisticsResponse>> statistics(Locale locale) {
         return ResponseEntity.ok()
@@ -86,6 +95,7 @@ public class CourseController {
     }
 
     @GetMapping("/loan-statistics")
+    @Operation(operationId = "courses.loanStatistics")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<ChartItemResponse>> loanStatistics(Locale locale) {
         return ResponseEntity.ok()

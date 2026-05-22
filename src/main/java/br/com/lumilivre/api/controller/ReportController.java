@@ -2,10 +2,13 @@ package br.com.lumilivre.api.controller;
 
 import java.time.LocalDate;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.enums.PenaltyCode;
 import br.com.lumilivre.api.service.ReportService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -18,11 +21,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/reports")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.REPORTS)
 public class ReportController {
 
     private final ReportService reportService;
 
     @GetMapping("/loans")
+    @Operation(operationId = "reports.loans")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public void loans(
             HttpServletResponse response,
@@ -41,6 +46,7 @@ public class ReportController {
     }
 
     @GetMapping("/students")
+    @Operation(operationId = "reports.students")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public void students(
             HttpServletResponse response,
@@ -58,6 +64,7 @@ public class ReportController {
     }
 
     @GetMapping("/books")
+    @Operation(operationId = "reports.books")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public void books(
             HttpServletResponse response,
@@ -76,6 +83,7 @@ public class ReportController {
     }
 
     @GetMapping("/books/statistics")
+    @Operation(operationId = "reports.bookStatistics")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public void booksStatistics(HttpServletResponse response) throws Exception {
         response.setContentType("application/pdf");
@@ -84,6 +92,7 @@ public class ReportController {
     }
 
     @GetMapping("/copies")
+    @Operation(operationId = "reports.copies")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public void copies(
             HttpServletResponse response,
@@ -98,6 +107,7 @@ public class ReportController {
     }
 
     @GetMapping("/courses")
+    @Operation(operationId = "reports.courses")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public void courses(HttpServletResponse response) throws Exception {
         response.setContentType("application/pdf");

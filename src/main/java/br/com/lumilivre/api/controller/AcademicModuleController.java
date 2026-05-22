@@ -3,12 +3,15 @@ package br.com.lumilivre.api.controller;
 import java.util.Locale;
 import java.util.List;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.academicmodule.AcademicModuleRequest;
 import br.com.lumilivre.api.dto.academicmodule.AcademicModuleResponse;
 import br.com.lumilivre.api.dto.academicmodule.AcademicModuleSummaryResponse;
 import br.com.lumilivre.api.dto.common.ChartItemResponse;
 import br.com.lumilivre.api.mapper.AcademicModuleMapper;
 import br.com.lumilivre.api.service.AcademicModuleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,12 +32,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/academic-modules")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.ACADEMIC_MODULES)
 public class AcademicModuleController {
 
     private final AcademicModuleService academicModuleService;
     private final AcademicModuleMapper mapper;
 
     @GetMapping
+    @Operation(operationId = "academic-modules.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<Page<AcademicModuleSummaryResponse>> list(
             @RequestParam(required = false) String q,
@@ -47,6 +52,7 @@ public class AcademicModuleController {
     }
 
     @PostMapping
+    @Operation(operationId = "academic-modules.create")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<AcademicModuleResponse> create(
             @Valid @RequestBody AcademicModuleRequest request,
@@ -58,6 +64,7 @@ public class AcademicModuleController {
     }
 
     @PutMapping("/{id}")
+    @Operation(operationId = "academic-modules.update")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<AcademicModuleResponse> update(
             @PathVariable Integer id,
@@ -70,6 +77,7 @@ public class AcademicModuleController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(operationId = "academic-modules.delete")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         academicModuleService.excluir(id);
@@ -77,6 +85,7 @@ public class AcademicModuleController {
     }
 
     @GetMapping("/loan-statistics")
+    @Operation(operationId = "academic-modules.loanStatistics")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<List<ChartItemResponse>> loanStatistics(Locale locale) {
         return ResponseEntity.ok()

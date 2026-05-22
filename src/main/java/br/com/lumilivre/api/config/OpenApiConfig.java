@@ -3,17 +3,18 @@ package br.com.lumilivre.api.config;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.examples.Example;
+import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.parameters.RequestBody;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.HeaderParameter;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
-import io.swagger.v3.oas.models.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.MessageSource;
@@ -31,22 +32,12 @@ public class OpenApiConfig {
 
     @Bean
     public GroupedOpenApi apiPtBrGroup() {
-        return GroupedOpenApi.builder()
-                .group("api-pt-br")
-                .displayName("API - PT-BR")
-                .pathsToMatch("/api/**")
-                .addOperationCustomizer(new SwaggerOperationCustomizer(messageSource, Locale.forLanguageTag("pt-BR")))
-                .build();
+        return localizedGroup("api-pt-br", "API - Portugues (Brasil)", Locale.forLanguageTag("pt-BR"));
     }
 
     @Bean
     public GroupedOpenApi apiEnUsGroup() {
-        return GroupedOpenApi.builder()
-                .group("api-en-us")
-                .displayName("API - EN-US")
-                .pathsToMatch("/api/**")
-                .addOperationCustomizer(new SwaggerOperationCustomizer(messageSource, Locale.forLanguageTag("en-US")))
-                .build();
+        return localizedGroup("api-en-us", "API - English (US)", Locale.forLanguageTag("en-US"));
     }
 
     @Bean
@@ -55,6 +46,10 @@ public class OpenApiConfig {
                 .group("system")
                 .displayName("System")
                 .pathsToMatch("/", "/actuator/**")
+                .addOpenApiCustomizer(new LocalizedInfoCustomizer(messageSource, Locale.forLanguageTag("en-US")))
+                .addOpenApiCustomizer(new LocalizedTagsCustomizer(messageSource, Locale.forLanguageTag("en-US")))
+                .addOpenApiCustomizer(new LocalizedSchemaCustomizer(messageSource, Locale.forLanguageTag("en-US")))
+                .addOperationCustomizer(new LocalizedOperationCustomizer(messageSource, Locale.forLanguageTag("en-US")))
                 .build();
     }
 
@@ -62,51 +57,31 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(buildInfo())
-                .tags(buildTags())
                 .servers(buildServers())
-                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(buildComponents());
     }
 
+    private GroupedOpenApi localizedGroup(String groupId, String displayName, Locale locale) {
+        return GroupedOpenApi.builder()
+                .group(groupId)
+                .displayName(displayName)
+                .pathsToMatch("/api/**")
+                .addOpenApiCustomizer(new LocalizedInfoCustomizer(messageSource, locale))
+                .addOpenApiCustomizer(new LocalizedTagsCustomizer(messageSource, locale))
+                .addOpenApiCustomizer(new LocalizedSchemaCustomizer(messageSource, locale))
+                .addOperationCustomizer(new LocalizedOperationCustomizer(messageSource, locale))
+                .build();
+    }
+
     private Info buildInfo() {
-        String ptDesc = messageSource.getMessage("swagger.api.description", null, "", Locale.forLanguageTag("pt-BR"));
-        String enDesc = messageSource.getMessage("swagger.api.description", null, "", Locale.forLanguageTag("en-US"));
         return new Info()
-                .title("LumiLivre API")
-                .version("1.0.0")
-                .description(ptDesc + "\n\n---\n\n" + enDesc)
+                .title(messageSource.getMessage("swagger.api.title", null, "LumiLivre API", Locale.forLanguageTag("pt-BR")))
+                .version(messageSource.getMessage("swagger.api.version", null, "0.1.0", Locale.forLanguageTag("pt-BR")))
+                .description(messageSource.getMessage("swagger.api.description", null, "", Locale.forLanguageTag("pt-BR")))
                 .contact(new Contact()
                         .name("LumiLivre")
                         .email("contato.lumilivre@gmail.com"))
-                .license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0"));
-    }
-
-    private List<Tag> buildTags() {
-        Locale pt = Locale.forLanguageTag("pt-BR");
-        return List.of(
-                tag("auth", pt),
-                tag("students", pt),
-                tag("books", pt),
-                tag("loans", pt),
-                tag("loan-requests", pt),
-                tag("reservations", pt),
-                tag("courses", pt),
-                tag("study-shifts", pt),
-                tag("academic-modules", pt),
-                tag("genres", pt),
-                tag("dewey-classifications", pt),
-                tag("theses", pt),
-                tag("dashboard", pt),
-                tag("reports", pt),
-                tag("imports", pt),
-                tag("users", pt)
-        );
-    }
-
-    private Tag tag(String key, Locale locale) {
-        String name = messageSource.getMessage("swagger.tag." + key + ".name", null, key, locale);
-        String desc = messageSource.getMessage("swagger.tag." + key + ".description", null, "", locale);
-        return new Tag().name(name).description(desc);
+                .license(new License().name("MIT").url("https://opensource.org/licenses/MIT"));
     }
 
     private List<Server> buildServers() {
@@ -125,21 +100,38 @@ public class OpenApiConfig {
                         .bearerFormat("JWT")
                         .in(SecurityScheme.In.HEADER)
                         .description("JWT token returned by POST /api/auth/login. Insert only the value (without 'Bearer ')."))
-                .addRequestBodies("LoginRequest", buildLoginRequestBody());
+                .addResponses("BadRequest", response("swagger.response.common.400.description"))
+                .addResponses("Unauthorized", response("swagger.response.common.401.description"))
+                .addResponses("Forbidden", response("swagger.response.common.403.description"))
+                .addResponses("NotFound", response("swagger.response.common.404.description"))
+                .addResponses("Conflict", response("swagger.response.common.409.description"))
+                .addResponses("BusinessRuleViolation", response("swagger.response.common.422.description"))
+                .addResponses("RateLimited", response("swagger.response.common.429.description"))
+                .addResponses("ServerError", response("swagger.response.common.500.description"))
+                .addHeaders("Content-Language", new Header()
+                        .description("swagger.header.content-language.description")
+                        .schema(new StringSchema().example("pt-BR")))
+                .addHeaders("X-Correlation-Id", new Header()
+                        .description("swagger.header.x-correlation-id.description")
+                        .schema(new StringSchema().example("a1b2c3d4-e5f6-7890")))
+                .addParameters("AcceptLanguage", new HeaderParameter()
+                        .name("Accept-Language")
+                        .required(false)
+                        .description("swagger.parameter.common.locale.description")
+                        .schema(new StringSchema()._enum(List.of("pt-BR", "en-US")).example("pt-BR")));
     }
 
-    private RequestBody buildLoginRequestBody() {
-        return new RequestBody()
-                .description("Login credentials / Credenciais de login")
-                .required(true)
+    private ApiResponse response(String descriptionKey) {
+        return new ApiResponse()
+                .description(descriptionKey)
+                .addHeaderObject("Content-Language", new Header().$ref("#/components/headers/Content-Language"))
+                .addHeaderObject("X-Correlation-Id", new Header().$ref("#/components/headers/X-Correlation-Id"))
                 .content(new Content().addMediaType("application/json",
                         new MediaType()
-                                .schema(new Schema<>().$ref("#/components/schemas/LoginRequest"))
-                                .addExamples("admin-en", new Example()
-                                        .summary("Admin/Librarian (EN)")
-                                        .value("{\"username\":\"admin@lumilivre.com.br\",\"password\":\"senha123\"}"))
-                                .addExamples("student-en", new Example()
-                                        .summary("Student (EN)")
-                                        .value("{\"username\":\"2024001\",\"password\":\"2024001\"}"))));
+                                .schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))
+                                .addExamples("default", new Example()
+                                        .value("{\"timestamp\":\"2026-05-22T10:00:00\",\"status\":400,"
+                                                + "\"error\":\"Bad Request\",\"message\":\"Invalid request\","
+                                                + "\"path\":\"/api/books\",\"correlationId\":\"a1b2c3d4\"}"))));
     }
 }

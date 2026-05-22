@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.common.AddressLookupResponse;
 import br.com.lumilivre.api.dto.common.LocalizedEnum;
 import br.com.lumilivre.api.dto.metadata.AuthorSummaryResponse;
@@ -22,6 +23,8 @@ import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.service.EnumLabelResolver;
 import br.com.lumilivre.api.service.infra.CepService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -38,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/metadata")
 @RequiredArgsConstructor
+@Tag(name = SwaggerTags.METADATA)
 public class MetadataController {
 
     private final EnumLabelResolver enumLabelResolver;
@@ -45,6 +49,7 @@ public class MetadataController {
     private final CepService cepService;
 
     @GetMapping("/enums/{type}")
+    @Operation(operationId = "metadata.enums")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<List<LocalizedEnum>> enums(@PathVariable String type, Locale locale) {
         List<LocalizedEnum> body = switch (normalizeType(type)) {
@@ -64,6 +69,7 @@ public class MetadataController {
     }
 
     @GetMapping("/authors")
+    @Operation(operationId = "metadata.authors")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<Page<AuthorSummaryResponse>> authors(
             @RequestParam(required = false) String q,
@@ -86,6 +92,7 @@ public class MetadataController {
     }
 
     @GetMapping("/postal-codes/{postalCode}")
+    @Operation(operationId = "metadata.postalCode")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<PostalCodeResponse> postalCode(
             @PathVariable String postalCode,
