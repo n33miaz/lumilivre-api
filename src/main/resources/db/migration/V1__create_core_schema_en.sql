@@ -118,6 +118,7 @@ CREATE TABLE app_user (
     password_hash  VARCHAR(255),
     role           VARCHAR(30) NOT NULL,
     student_id     UUID,
+    preferred_locale VARCHAR(10) NOT NULL DEFAULT 'pt-BR',
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at     TIMESTAMPTZ,
@@ -125,8 +126,7 @@ CREATE TABLE app_user (
     CONSTRAINT uq_app_user_email      UNIQUE (email),
     CONSTRAINT uq_app_user_student_id UNIQUE (student_id),
     CONSTRAINT fk_app_user_student    FOREIGN KEY (student_id) REFERENCES student (id) ON DELETE RESTRICT,
-    CONSTRAINT ck_app_user_role       CHECK (role IN ('ADMIN', 'LIBRARIAN', 'STUDENT')),
-    preferred_locale VARCHAR(10) NOT NULL DEFAULT 'pt-BR'
+    CONSTRAINT ck_app_user_role       CHECK (role IN ('ADMIN', 'LIBRARIAN', 'STUDENT'))
 );
 
 CREATE TRIGGER trg_app_user_touch BEFORE UPDATE ON app_user

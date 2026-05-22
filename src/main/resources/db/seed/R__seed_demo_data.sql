@@ -32,9 +32,9 @@ END $$;
 WITH refs AS (
     SELECT
         (SELECT id FROM course WHERE name = 'Desenvolvimento de Sistemas') AS systems_course_id,
-        (SELECT id FROM course WHERE name = 'Administracao') AS admin_course_id,
-        (SELECT id FROM academic_module WHERE name = 'Modulo 2') AS module_2_id,
-        (SELECT id FROM academic_module WHERE name = 'Modulo 3') AS module_3_id,
+        (SELECT id FROM course WHERE name = 'Administração') AS admin_course_id,
+        (SELECT id FROM academic_module WHERE name = 'Módulo 2') AS module_2_id,
+        (SELECT id FROM academic_module WHERE name = 'Módulo 3') AS module_3_id,
         (SELECT id FROM study_shift WHERE name = 'Matutino') AS morning_shift_id,
         (SELECT id FROM study_shift WHERE name = 'Noturno') AS evening_shift_id
 )
@@ -268,12 +268,12 @@ INSERT INTO book_genre (book_id, genre_id)
 SELECT links.book_id, g.id
 FROM (
     VALUES
-        ('00000000-0000-4000-8000-000000003001'::uuid, 'Classicos'),
+        ('00000000-0000-4000-8000-000000003001'::uuid, 'Clássicos'),
         ('00000000-0000-4000-8000-000000003001'::uuid, 'Romance'),
-        ('00000000-0000-4000-8000-000000003002'::uuid, 'Classicos'),
+        ('00000000-0000-4000-8000-000000003002'::uuid, 'Clássicos'),
         ('00000000-0000-4000-8000-000000003002'::uuid, 'Romance'),
         ('00000000-0000-4000-8000-000000003003'::uuid, 'Tecnologia'),
-        ('00000000-0000-4000-8000-000000003003'::uuid, 'Didatico')
+        ('00000000-0000-4000-8000-000000003003'::uuid, 'Didático')
 ) AS links(book_id, genre_name)
 JOIN genre g ON g.name = links.genre_name
 ON CONFLICT (book_id, genre_id) DO NOTHING;

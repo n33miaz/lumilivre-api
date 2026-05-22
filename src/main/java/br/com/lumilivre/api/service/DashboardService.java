@@ -76,7 +76,7 @@ public class DashboardService {
         }
 
         try {
-            jdbc.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_stats");
+            jdbc.execute("REFRESH MATERIALIZED VIEW mv_dashboard_stats");
             jdbc.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_top_books");
             jdbc.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_loans_by_month");
             log.info("DashboardService: materialized views refreshed.");

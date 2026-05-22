@@ -40,10 +40,10 @@ ON CONFLICT (name) DO NOTHING;
 -- academic_module
 -- ----------------------------------------------------------------------------
 INSERT INTO academic_module (name) VALUES
-    ('Modulo 1'),
-    ('Modulo 2'),
-    ('Modulo 3'),
-    ('Modulo 4'),
+    ('Módulo 1'),
+    ('Módulo 2'),
+    ('Módulo 3'),
+    ('Módulo 4'),
     ('Básico'),
     ('Egresso')
 ON CONFLICT (name) DO NOTHING;
@@ -77,7 +77,7 @@ INSERT INTO genre (name) VALUES
     ('Poesia'),
     ('Quadrinhos'),
     ('Autoajuda'),
-    ('Classicos')
+    ('Clássicos')
 ON CONFLICT (name) DO NOTHING;
 
 -- ----------------------------------------------------------------------------
