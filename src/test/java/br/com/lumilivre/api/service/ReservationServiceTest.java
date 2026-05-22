@@ -84,7 +84,7 @@ class ReservationServiceTest {
 
         assertThatThrownBy(() -> service.criarReserva("12345", BOOK_ID))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("active reservation");
+                .hasMessage("reservation.policy.already-active");
 
         verify(reservationRepository, never()).save(any());
         verify(outboxPublisher, never()).publish(any(), any(), any(), any());

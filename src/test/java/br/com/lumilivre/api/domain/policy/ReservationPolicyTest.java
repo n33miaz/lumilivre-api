@@ -32,14 +32,14 @@ class ReservationPolicyTest {
 
         assertThatThrownBy(() -> ReservationPolicy.validateNewReservation(expiry, 0, false))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("active penalty");
+                .hasMessage("reservation.policy.active-penalty");
     }
 
     @Test
     void validateNewReservationRejectsDuplicateReservationForSameBook() {
         assertThatThrownBy(() -> ReservationPolicy.validateNewReservation(null, 0, true))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("active reservation for this book");
+                .hasMessage("reservation.policy.already-active");
     }
 
     @Test
@@ -47,7 +47,7 @@ class ReservationPolicyTest {
         assertThatThrownBy(() -> ReservationPolicy.validateNewReservation(
                 null, ReservationPolicy.MAX_ACTIVE_RESERVATIONS, false))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("Limit");
+                .hasMessage("reservation.policy.limit-reached");
     }
 
     @Test
@@ -55,7 +55,7 @@ class ReservationPolicyTest {
         assertThatThrownBy(() -> ReservationPolicy.validateNewReservation(
                 null, ReservationPolicy.MAX_ACTIVE_RESERVATIONS + 1, false))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("Limit");
+                .hasMessage("reservation.policy.limit-reached");
     }
 
     @Test

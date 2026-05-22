@@ -28,21 +28,21 @@ class LoanPolicyTest {
     void validateNewLoanRejectsActivePenalty() {
         assertThatThrownBy(() -> LoanPolicy.validateNewLoan(0, OffsetDateTime.now().plusMinutes(1)))
                 .isInstanceOf(LoanPolicyViolationException.class)
-                .hasMessageContaining("active penalty");
+                .hasMessage("loan.policy-violation.active-penalty");
     }
 
     @Test
     void validateNewLoanRejectsLimitBoundary() {
         assertThatThrownBy(() -> LoanPolicy.validateNewLoan(LoanPolicy.MAX_ACTIVE_LOANS, null))
                 .isInstanceOf(LoanPolicyViolationException.class)
-                .hasMessageContaining("limit");
+                .hasMessage("loan.policy-violation.max-active-loans-reached");
     }
 
     @Test
     void validateNewLoanRejectsAboveLimit() {
         assertThatThrownBy(() -> LoanPolicy.validateNewLoan(LoanPolicy.MAX_ACTIVE_LOANS + 1, null))
                 .isInstanceOf(LoanPolicyViolationException.class)
-                .hasMessageContaining("limit");
+                .hasMessage("loan.policy-violation.max-active-loans-reached");
     }
 
     @Test
@@ -61,13 +61,13 @@ class LoanPolicyTest {
     void validateRenewalRejectsUsedLimit() {
         assertThatThrownBy(() -> LoanPolicy.validateRenewal(LoanPolicy.MAX_RENEWALS, false, null))
                 .isInstanceOf(LoanPolicyViolationException.class)
-                .hasMessageContaining("limit");
+                .hasMessage("loan.renewal.limit-reached");
     }
 
     @Test
     void validateRenewalRejectsQueuedReservationFromOtherStudent() {
         assertThatThrownBy(() -> LoanPolicy.validateRenewal(0, true, null))
                 .isInstanceOf(LoanPolicyViolationException.class)
-                .hasMessageContaining("reservation queue");
+                .hasMessage("loan.renewal.queued-reservation");
     }
 }

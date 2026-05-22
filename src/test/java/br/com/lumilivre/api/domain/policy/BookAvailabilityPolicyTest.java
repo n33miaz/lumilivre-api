@@ -23,7 +23,7 @@ class BookAvailabilityPolicyTest {
     void validateAvailableRejectsUnavailableStatuses(BookCopyStatus status) {
         assertThatThrownBy(() -> BookAvailabilityPolicy.validateAvailable(status))
                 .isInstanceOf(BookAvailabilityViolationException.class)
-                .hasMessageContaining("not available");
+                .hasMessage("book.copy.not-available");
     }
 
     @Test

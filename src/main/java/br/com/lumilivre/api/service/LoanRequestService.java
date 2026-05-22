@@ -10,11 +10,12 @@ import java.util.UUID;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy;
 import br.com.lumilivre.api.enums.LoanRequestStatus;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.LoanRequest;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
@@ -30,6 +31,10 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class LoanRequestService {
+
+    private static final String REQUEST_CREATED_KEY = "request.created";
+    private static final String REQUEST_PROCESSED_KEY = "request.processed";
+    private static final String MOBILE_REQUEST_NOTE = "Requested via mobile";
 
     private final StudentRepository studentRepository;
     private final BookCopyRepository bookCopyRepository;
@@ -52,12 +57,12 @@ public class LoanRequestService {
 
     @Transactional
     @CacheEvict(value = DASHBOARD_LOAN_REQUESTS, allEntries = true)
-    public ResponseEntity<String> solicitarEmprestimo(String matriculaAluno, String copyCode) {
-        Student student = studentRepository.findByRegistrationNumber(matriculaAluno).orElse(null);
-        if (student == null) return ResponseEntity.badRequest().body("Aluno não encontrado.");
+    public String solicitarEmprestimo(String matriculaAluno, String copyCode) {
+        Student student = studentRepository.findByRegistrationNumber(matriculaAluno)
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
 
-        BookCopy bookCopy = bookCopyRepository.findByCopyCode(copyCode).orElse(null);
-        if (bookCopy == null) return ResponseEntity.badRequest().body("Exemplar não encontrado.");
+        BookCopy bookCopy = bookCopyRepository.findByCopyCode(copyCode)
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("book.copy.not-found"));
 
         long ativos = contarEmprestimosAtivos(matriculaAluno);
         RequestApprovalPolicy.validateRequest(student.getPenaltyExpiresAt(), ativos, bookCopy.getStatus());
@@ -71,18 +76,17 @@ public class LoanRequestService {
         outboxPublisher.publish(EventType.REQUEST_ACCEPTED, student.getEmail(), "Solicitação recebida",
                 "Sua solicitação do livro '" + bookCopy.getBook().getTitle() + "' foi registrada.");
 
-        return ResponseEntity.ok("Solicitação registrada com sucesso.");
+        return REQUEST_CREATED_KEY;
     }
 
     @Transactional
     @CacheEvict(value = DASHBOARD_LOAN_REQUESTS, allEntries = true)
-    public ResponseEntity<String> solicitarEmprestimoPorLivro(String matriculaAluno, UUID bookId) {
-        Student student = studentRepository.findByRegistrationNumber(matriculaAluno).orElse(null);
-        if (student == null) return ResponseEntity.badRequest().body("Aluno não encontrado.");
+    public String solicitarEmprestimoPorLivro(String matriculaAluno, UUID bookId) {
+        Student student = studentRepository.findByRegistrationNumber(matriculaAluno)
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
 
-        BookCopy bookCopy = bookCopyRepository.findFirstAvailable(bookId).orElse(null);
-        if (bookCopy == null)
-            return ResponseEntity.badRequest().body("Não há exemplares disponíveis para este livro no momento.");
+        BookCopy bookCopy = bookCopyRepository.findFirstAvailable(bookId)
+                .orElseThrow(() -> BusinessRuleException.ofKey("request.no-available-copy"));
 
         long ativos = contarEmprestimosAtivos(matriculaAluno);
         RequestApprovalPolicy.validateRequest(student.getPenaltyExpiresAt(), ativos, bookCopy.getStatus());
@@ -90,14 +94,14 @@ public class LoanRequestService {
         LoanRequest request = LoanRequest.builder()
                 .student(student)
                 .bookCopy(bookCopy)
-                .note("Solicitado via Mobile")
+                .note(MOBILE_REQUEST_NOTE)
                 .build();
         loanRequestRepository.save(request);
 
         outboxPublisher.publish(EventType.REQUEST_ACCEPTED, student.getEmail(), "Solicitação recebida",
                 "Sua solicitação do livro '" + bookCopy.getBook().getTitle() + "' foi registrada.");
 
-        return ResponseEntity.ok("Solicitação registrada com sucesso.");
+        return REQUEST_CREATED_KEY;
     }
 
     @Auditable(action = "REQUEST_PROCESSED", targetParam = "#id")
@@ -107,9 +111,9 @@ public class LoanRequestService {
             @CacheEvict(value = DASHBOARD_STATS, allEntries = true),
             @CacheEvict(value = DASHBOARD_OVERDUE_LIST, allEntries = true)
     })
-    public ResponseEntity<String> processarSolicitacao(UUID id, boolean aceitar) {
-        LoanRequest request = loanRequestRepository.findById(id).orElse(null);
-        if (request == null) return ResponseEntity.badRequest().body("Solicitação não encontrada.");
+    public String processarSolicitacao(UUID id, boolean aceitar) {
+        LoanRequest request = loanRequestRepository.findById(id)
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("request.not-found"));
 
         Student student = request.getStudent();
         BookCopy bookCopy = request.getBookCopy();
@@ -138,7 +142,7 @@ public class LoanRequestService {
                     "Sua solicitação do livro '" + bookCopy.getBook().getTitle() + "' foi rejeitada.");
         }
 
-        return ResponseEntity.ok("Solicitação processada com sucesso.");
+        return REQUEST_PROCESSED_KEY;
     }
 
     private long contarEmprestimosAtivos(String matricula) {

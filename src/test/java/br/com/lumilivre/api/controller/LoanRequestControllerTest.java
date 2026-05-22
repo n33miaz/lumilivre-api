@@ -1,12 +1,16 @@
 package br.com.lumilivre.api.controller;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.UUID;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
@@ -61,5 +65,33 @@ class LoanRequestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Language", "en-US"))
                 .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void createResolvesSuccessMessageInPtBr() throws Exception {
+        when(loanRequestService.solicitarEmprestimo("12345", "T001"))
+                .thenReturn("request.created");
+
+        mockMvc.perform(post("/api/loan-requests").with(csrf())
+                        .param("studentRegistrationNumber", "12345")
+                        .param("copyCode", "T001")
+                        .header("Accept-Language", "pt-BR"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Language", "pt-BR"))
+                .andExpect(content().string("Solicitação registrada com sucesso."));
+    }
+
+    @Test
+    void processResolvesSuccessMessageInEnUs() throws Exception {
+        String requestId = "00000000-0000-0000-0000-000000000007";
+        when(loanRequestService.processarSolicitacao(UUID.fromString(requestId), true))
+                .thenReturn("request.processed");
+
+        mockMvc.perform(post("/api/loan-requests/{id}/process", requestId).with(csrf())
+                        .param("accept", "true")
+                        .header("Accept-Language", "en-US"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Language", "en-US"))
+                .andExpect(content().string("Loan request processed successfully."));
     }
 }

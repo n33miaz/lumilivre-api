@@ -6,6 +6,7 @@ import br.com.lumilivre.api.domain.policy.LoanPolicy.LoanPolicyViolationExceptio
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy.RequestApprovalViolationException;
 import br.com.lumilivre.api.dto.common.ErrorResponse;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
+import br.com.lumilivre.api.exception.custom.MessageKeyedException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
@@ -85,8 +86,11 @@ public class GlobalExceptionHandler {
     })
     public ResponseEntity<ErrorResponse> handlePolicyViolation(
             RuntimeException ex, Locale locale, WebRequest request) {
+        String msg = ex instanceof MessageKeyedException keyed && keyed.hasI18nKey()
+            ? messages.resolve(keyed.getMessageKey(), locale, keyed.getMessageArgs())
+            : ex.getMessage();
         return errorResponse(HttpStatus.UNPROCESSABLE_ENTITY,
-            messages.resolve("error.policy-violation.title", locale), ex.getMessage(), locale, request);
+            messages.resolve("error.policy-violation.title", locale), msg, locale, request);
     }
 
     @ExceptionHandler(AuthenticationException.class)

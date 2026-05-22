@@ -17,13 +17,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 
 import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilityViolationException;
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy.RequestApprovalViolationException;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.LoanRequestStatus;
 import br.com.lumilivre.api.enums.LoanStatus;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.LoanRequest;
@@ -65,10 +65,10 @@ class LoanRequestServiceTest {
     void solicitarEmprestimoReturnsBadRequestWhenStudentDoesNotExist() {
         when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.empty());
 
-        var response = service.solicitarEmprestimo("12345", "T001");
+        assertThatThrownBy(() -> service.solicitarEmprestimo("12345", "T001"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("student.not-found");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).contains("Aluno");
         verify(loanRequestRepository, never()).save(any());
         verify(outboxPublisher, never()).publish(any(), any(), any(), any());
     }
@@ -78,10 +78,10 @@ class LoanRequestServiceTest {
         when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student()));
         when(bookCopyRepository.findByCopyCode("T001")).thenReturn(Optional.empty());
 
-        var response = service.solicitarEmprestimo("12345", "T001");
+        assertThatThrownBy(() -> service.solicitarEmprestimo("12345", "T001"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("book.copy.not-found");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).contains("Exemplar");
         verify(loanRequestRepository, never()).save(any());
         verify(outboxPublisher, never()).publish(any(), any(), any(), any());
     }
@@ -95,9 +95,9 @@ class LoanRequestServiceTest {
         when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE))
                 .thenReturn(0L);
 
-        var response = service.solicitarEmprestimo("12345", "T001");
+        var result = service.solicitarEmprestimo("12345", "T001");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result).isEqualTo("request.created");
 
         ArgumentCaptor<LoanRequest> captor = ArgumentCaptor.forClass(LoanRequest.class);
         verify(loanRequestRepository).save(captor.capture());
@@ -122,13 +122,13 @@ class LoanRequestServiceTest {
         when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE))
                 .thenReturn(0L);
 
-        var response = service.solicitarEmprestimoPorLivro("12345", BOOK_ID);
+        var result = service.solicitarEmprestimoPorLivro("12345", BOOK_ID);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result).isEqualTo("request.created");
 
         ArgumentCaptor<LoanRequest> captor = ArgumentCaptor.forClass(LoanRequest.class);
         verify(loanRequestRepository).save(captor.capture());
-        assertThat(captor.getValue().getNote()).isEqualTo("Solicitado via Mobile");
+        assertThat(captor.getValue().getNote()).isEqualTo("Requested via mobile");
         assertThat(captor.getValue().getBookCopy().getCopyCode()).isEqualTo("T001");
     }
 
@@ -142,7 +142,8 @@ class LoanRequestServiceTest {
                 .thenReturn(0L);
 
         assertThatThrownBy(() -> service.solicitarEmprestimo("12345", "T001"))
-                .isInstanceOf(BookAvailabilityViolationException.class);
+                .isInstanceOf(BookAvailabilityViolationException.class)
+                .hasMessage("book.copy.not-available");
 
         verify(loanRequestRepository, never()).save(any());
         verify(outboxPublisher, never()).publish(any(), any(), any(), any());
@@ -153,9 +154,9 @@ class LoanRequestServiceTest {
         LoanRequest request = loanRequest(LoanRequestStatus.PENDING);
         when(loanRequestRepository.findById(REQUEST_ID)).thenReturn(Optional.of(request));
 
-        var response = service.processarSolicitacao(REQUEST_ID, true);
+        var result = service.processarSolicitacao(REQUEST_ID, true);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result).isEqualTo("request.processed");
         assertThat(request.getStatus()).isEqualTo(LoanRequestStatus.ACCEPTED);
 
         ArgumentCaptor<br.com.lumilivre.api.dto.loan.LoanRequest> requestCaptor =
@@ -178,9 +179,9 @@ class LoanRequestServiceTest {
         LoanRequest request = loanRequest(LoanRequestStatus.PENDING);
         when(loanRequestRepository.findById(REQUEST_ID)).thenReturn(Optional.of(request));
 
-        var response = service.processarSolicitacao(REQUEST_ID, false);
+        var result = service.processarSolicitacao(REQUEST_ID, false);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result).isEqualTo("request.processed");
         assertThat(request.getStatus()).isEqualTo(LoanRequestStatus.REJECTED);
         verify(loanService, never()).cadastrar(any(br.com.lumilivre.api.dto.loan.LoanRequest.class));
         verify(loanRequestRepository).save(request);
@@ -195,9 +196,10 @@ class LoanRequestServiceTest {
     void processarSolicitacaoReturnsBadRequestWhenRequestDoesNotExist() {
         when(loanRequestRepository.findById(REQUEST_ID)).thenReturn(Optional.empty());
 
-        var response = service.processarSolicitacao(REQUEST_ID, true);
+        assertThatThrownBy(() -> service.processarSolicitacao(REQUEST_ID, true))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("request.not-found");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         verify(loanService, never()).cadastrar(any(br.com.lumilivre.api.dto.loan.LoanRequest.class));
         verify(loanRequestRepository, never()).save(any());
         verify(outboxPublisher, never()).publish(any(), any(), any(), any());
@@ -210,7 +212,7 @@ class LoanRequestServiceTest {
 
         assertThatThrownBy(() -> service.processarSolicitacao(REQUEST_ID, false))
                 .isInstanceOf(RequestApprovalViolationException.class)
-                .hasMessageContaining("not pending");
+                .hasMessage("request.not-pending");
 
         verify(loanService, never()).cadastrar(any(br.com.lumilivre.api.dto.loan.LoanRequest.class));
         verify(loanRequestRepository, never()).save(any());

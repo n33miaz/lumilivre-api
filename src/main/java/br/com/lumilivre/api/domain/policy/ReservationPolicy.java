@@ -22,16 +22,13 @@ public final class ReservationPolicy {
             boolean alreadyReserved) {
 
         if (penaltyExpiry != null && penaltyExpiry.isAfter(OffsetDateTime.now())) {
-            throw new BusinessRuleException(
-                    "Student has an active penalty until " + penaltyExpiry.toLocalDate() +
-                    ". Reservations are blocked.");
+            throw BusinessRuleException.ofKey("reservation.policy.active-penalty", penaltyExpiry.toLocalDate());
         }
         if (alreadyReserved) {
-            throw new BusinessRuleException("Student already has an active reservation for this book.");
+            throw BusinessRuleException.ofKey("reservation.policy.already-active");
         }
         if (activeReservations >= MAX_ACTIVE_RESERVATIONS) {
-            throw new BusinessRuleException(
-                    "Limit of " + MAX_ACTIVE_RESERVATIONS + " simultaneous reservations reached.");
+            throw BusinessRuleException.ofKey("reservation.policy.limit-reached", MAX_ACTIVE_RESERVATIONS);
         }
     }
 

@@ -2,6 +2,8 @@ package br.com.lumilivre.api.domain.policy;
 
 import java.time.OffsetDateTime;
 
+import br.com.lumilivre.api.exception.custom.MessageKeyedException;
+
 public final class LoanPolicy {
 
     public static final int MAX_ACTIVE_LOANS = 3;
@@ -13,12 +15,12 @@ public final class LoanPolicy {
     public static void validateNewLoan(long activeLoans, OffsetDateTime penaltyExpiry) {
         if (penaltyExpiry != null && penaltyExpiry.isAfter(OffsetDateTime.now())) {
             throw new LoanPolicyViolationException(
-                    "Student has an active penalty until " + penaltyExpiry);
+                    "loan.policy-violation.active-penalty", penaltyExpiry.toLocalDate());
         }
 
         if (activeLoans >= MAX_ACTIVE_LOANS) {
             throw new LoanPolicyViolationException(
-                    "Student has reached the limit of " + MAX_ACTIVE_LOANS + " active loans.");
+                    "loan.policy-violation.max-active-loans-reached", MAX_ACTIVE_LOANS);
         }
     }
 
@@ -26,21 +28,39 @@ public final class LoanPolicy {
                                        OffsetDateTime penaltyExpiry) {
         if (penaltyExpiry != null && penaltyExpiry.isAfter(OffsetDateTime.now())) {
             throw new LoanPolicyViolationException(
-                    "Student has an active penalty. Renewal blocked.");
+                    "loan.renewal.active-penalty", penaltyExpiry.toLocalDate());
         }
         if (hasQueuedReservation) {
-            throw new LoanPolicyViolationException(
-                    "Cannot renew: another student is waiting for this book in the reservation queue.");
+            throw new LoanPolicyViolationException("loan.renewal.queued-reservation");
         }
         if (currentRenewals >= MAX_RENEWALS) {
-            throw new LoanPolicyViolationException(
-                    "Renewal limit of " + MAX_RENEWALS + " reached for this loan.");
+            throw new LoanPolicyViolationException("loan.renewal.limit-reached", MAX_RENEWALS);
         }
     }
 
-    public static class LoanPolicyViolationException extends RuntimeException {
-        public LoanPolicyViolationException(String message) {
-            super(message);
+    public static class LoanPolicyViolationException extends RuntimeException implements MessageKeyedException {
+        private final String messageKey;
+        private final Object[] messageArgs;
+
+        public LoanPolicyViolationException(String key, Object... args) {
+            super(key);
+            this.messageKey = key;
+            this.messageArgs = args;
+        }
+
+        @Override
+        public boolean hasI18nKey() {
+            return true;
+        }
+
+        @Override
+        public String getMessageKey() {
+            return messageKey;
+        }
+
+        @Override
+        public Object[] getMessageArgs() {
+            return messageArgs;
         }
     }
 }

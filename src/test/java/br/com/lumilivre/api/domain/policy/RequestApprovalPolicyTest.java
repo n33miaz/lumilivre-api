@@ -41,7 +41,7 @@ class RequestApprovalPolicyTest {
                 0,
                 BookCopyStatus.AVAILABLE))
                 .isInstanceOf(RequestApprovalViolationException.class)
-                .hasMessageContaining("active penalty");
+                .hasMessage("request.policy.active-penalty");
     }
 
     @Test
@@ -51,7 +51,7 @@ class RequestApprovalPolicyTest {
                 LoanPolicy.MAX_ACTIVE_LOANS,
                 BookCopyStatus.AVAILABLE))
                 .isInstanceOf(RequestApprovalViolationException.class)
-                .hasMessageContaining("active loan limit");
+                .hasMessage("request.policy.active-loan-limit");
     }
 
     @Test
@@ -74,7 +74,7 @@ class RequestApprovalPolicyTest {
     void validateProcessableRejectsAlreadyProcessedRequests(LoanRequestStatus status) {
         assertThatThrownBy(() -> RequestApprovalPolicy.validateProcessable(status))
                 .isInstanceOf(RequestApprovalViolationException.class)
-                .hasMessageContaining("not pending");
+                .hasMessage("request.not-pending");
     }
 
     @Test

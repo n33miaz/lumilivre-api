@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.dto.loanrequest.LoanRequestResponse;
 import br.com.lumilivre.api.mapper.LoanRequestMapper;
 import br.com.lumilivre.api.security.CanAccessStudent;
@@ -25,6 +26,7 @@ public class LoanRequestController {
 
     private final LoanRequestService loanRequestService;
     private final LoanRequestMapper mapper;
+    private final MessageResolver messages;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
@@ -70,10 +72,10 @@ public class LoanRequestController {
             @RequestParam String studentRegistrationNumber,
             @RequestParam String copyCode,
             Locale locale) {
-        ResponseEntity<String> result = loanRequestService.solicitarEmprestimo(studentRegistrationNumber, copyCode);
-        return ResponseEntity.status(result.getStatusCode())
+        String messageKey = loanRequestService.solicitarEmprestimo(studentRegistrationNumber, copyCode);
+        return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(result.getBody());
+                .body(messages.resolve(messageKey, locale));
     }
 
     @PostMapping("/by-book")
@@ -82,10 +84,10 @@ public class LoanRequestController {
             @RequestParam String studentRegistrationNumber,
             @RequestParam UUID bookId,
             Locale locale) {
-        ResponseEntity<String> result = loanRequestService.solicitarEmprestimoPorLivro(studentRegistrationNumber, bookId);
-        return ResponseEntity.status(result.getStatusCode())
+        String messageKey = loanRequestService.solicitarEmprestimoPorLivro(studentRegistrationNumber, bookId);
+        return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(result.getBody());
+                .body(messages.resolve(messageKey, locale));
     }
 
     @PostMapping("/{id}/process")
@@ -94,9 +96,9 @@ public class LoanRequestController {
             @PathVariable UUID id,
             @RequestParam boolean accept,
             Locale locale) {
-        ResponseEntity<String> result = loanRequestService.processarSolicitacao(id, accept);
-        return ResponseEntity.status(result.getStatusCode())
+        String messageKey = loanRequestService.processarSolicitacao(id, accept);
+        return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(result.getBody());
+                .body(messages.resolve(messageKey, locale));
     }
 }
