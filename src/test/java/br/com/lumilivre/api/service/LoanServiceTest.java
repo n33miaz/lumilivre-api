@@ -17,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilityViolationException;
 import br.com.lumilivre.api.domain.policy.LoanPolicy.LoanPolicyViolationException;
 import br.com.lumilivre.api.dto.loan.LoanRequest;
@@ -49,6 +50,9 @@ class LoanServiceTest {
 
     @Mock
     private OutboxPublisherService outboxPublisher;
+
+    @Mock
+    private MessageResolver messages;
 
     @InjectMocks
     private LoanService service;

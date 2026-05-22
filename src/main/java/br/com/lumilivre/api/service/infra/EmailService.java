@@ -3,6 +3,7 @@ package br.com.lumilivre.api.service.infra;
 import java.util.Locale;
 
 import br.com.lumilivre.api.config.MessageResolver;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,11 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final MessageResolver messages;
 
-    private static final String FROM = "contato.lumlivre@gmail.com.br";
-    private static final String SITE = "https://www.lumilivre.com.br";
+    @Value("${app.email.from:contato.lumilivre@gmail.com}")
+    private String from;
+
+    @Value("${app.public-url:https://www.lumilivre.com.br}")
+    private String site;
 
     // =========================
     // MÉTODO BASE (PADRÃO HTML)
@@ -31,7 +35,7 @@ public class EmailService {
 
             helper.setTo(destino);
             helper.setSubject(assunto);
-            helper.setFrom(FROM);
+            helper.setFrom(from);
 
             String htmlMsg = "<html>" +
                     "<body style='font-family: Arial, sans-serif; color: #333;'>" +
@@ -66,7 +70,7 @@ public class EmailService {
                 "  <p><strong>Senha Inicial:</strong> " + senha + "</p>" +
                 "</div>" +
                 "<p>Recomendamos que altere sua senha no primeiro acesso.</p>" +
-                "<p><strong>Link:</strong> <a href='" + SITE + "'>" + SITE + "</a></p>";
+                "<p><strong>Link:</strong> <a href='" + site + "'>" + site + "</a></p>";
 
         enviarEmailHtml(destino, "Acesso ao Portal LumiLivre", conteudo);
     }
@@ -82,7 +86,7 @@ public class EmailService {
                 "<div style='background-color: #f9f9f9; padding: 15px; border-radius: 5px;'>" +
                 "  <p><strong>Login:</strong> " + destino + "</p>" +
                 "  <p><strong>Senha Inicial:</strong> " + senha + "</p>" +
-                "  <p><strong>Link:</strong> <a href='" + SITE + "'>" + SITE + "</a></p>" +
+                "  <p><strong>Link:</strong> <a href='" + site + "'>" + site + "</a></p>" +
                 "</div>";
 
         enviarEmailHtml(destino, "Bem-vindo à Equipe LumiLivre", conteudo);

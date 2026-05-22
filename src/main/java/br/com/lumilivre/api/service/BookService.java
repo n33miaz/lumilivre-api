@@ -208,9 +208,11 @@ public class BookService {
         try {
             Book book = montarLivro(new Book(), request, file);
             return bookRepository.save(book);
+        } catch (BusinessRuleException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Erro ao montar ou salvar o livro: {}", e.getMessage(), e);
-            throw new RuntimeException("Erro interno ao cadastrar o livro: " + e.getMessage());
+            throw BusinessRuleException.ofKey("book.create.failed");
         }
     }
 
@@ -240,11 +242,13 @@ public class BookService {
         try {
             Book updatedBook = montarLivro(bookToUpdate, request, file);
             return bookRepository.save(updatedBook);
+        } catch (BusinessRuleException e) {
+            throw e;
         } catch (IllegalArgumentException e) {
             throw new BusinessRuleException(e.getMessage());
         } catch (Exception e) {
             log.error("Erro ao montar ou atualizar o livro ID {}: {}", id, e.getMessage(), e);
-            throw new RuntimeException("Erro interno ao atualizar o livro: " + e.getMessage());
+            throw BusinessRuleException.ofKey("book.update.failed");
         }
     }
 
@@ -373,7 +377,8 @@ public class BookService {
             try {
                 book.setCoverUrl(storageService.uploadFile(file, "covers"));
             } catch (Exception e) {
-                throw new RuntimeException("Erro ao enviar a capa: " + e.getMessage(), e);
+                log.error("Erro ao enviar a capa: {}", e.getMessage(), e);
+                throw BusinessRuleException.ofKey("book.cover.upload-failed");
             }
         } else if (isNaoVazio(request.getCoverUrl())) {
             book.setCoverUrl(request.getCoverUrl());

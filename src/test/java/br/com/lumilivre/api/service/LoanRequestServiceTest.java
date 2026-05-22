@@ -3,21 +3,27 @@ package br.com.lumilivre.api.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilityViolationException;
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy.RequestApprovalViolationException;
 import br.com.lumilivre.api.enums.BookCopyStatus;
@@ -58,8 +64,39 @@ class LoanRequestServiceTest {
     @Mock
     private OutboxPublisherService outboxPublisher;
 
+    @Mock
+    private MessageResolver messages;
+
     @InjectMocks
     private LoanRequestService service;
+
+    @BeforeEach
+    void stubMessageResolver() {
+        lenient().when(messages.resolve(anyString(), any(Locale.class)))
+                .thenAnswer(this::resolveMessage);
+        lenient().when(messages.resolve(anyString(), any(Locale.class), any()))
+                .thenAnswer(this::resolveMessage);
+    }
+
+    private String resolveMessage(InvocationOnMock invocation) {
+        String key = invocation.getArgument(0);
+        boolean isSubject = key.endsWith(".subject");
+        Object[] args = invocation.getArguments();
+        String title = args.length >= 3 && args[2] != null ? String.valueOf(args[2]) : "";
+        if (key.contains("received")) {
+            return isSubject ? "Solicitação recebida"
+                    : "Sua solicitação do livro '" + title + "' foi recebida.";
+        }
+        if (key.contains("accepted")) {
+            return isSubject ? "Solicitação aceita"
+                    : "Sua solicitação do livro '" + title + "' foi aceita.";
+        }
+        if (key.contains("rejected")) {
+            return isSubject ? "Solicitação rejeitada"
+                    : "Sua solicitação do livro '" + title + "' foi rejeitada.";
+        }
+        return key;
+    }
 
     @Test
     void solicitarEmprestimoReturnsBadRequestWhenStudentDoesNotExist() {

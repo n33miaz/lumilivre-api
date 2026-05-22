@@ -71,7 +71,7 @@ class DashboardServiceTest {
 
         service.refreshViews();
 
-        verify(jdbc).execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_stats");
+        verify(jdbc).execute("REFRESH MATERIALIZED VIEW mv_dashboard_stats");
         verify(jdbc).execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_top_books");
         verify(jdbc).execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_loans_by_month");
     }

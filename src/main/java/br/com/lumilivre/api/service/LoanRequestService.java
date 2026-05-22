@@ -6,12 +6,14 @@ import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_STATS;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy;
 import br.com.lumilivre.api.enums.LoanRequestStatus;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
@@ -42,6 +44,7 @@ public class LoanRequestService {
     private final LoanService loanService;
     private final LoanRepository loanRepository;
     private final OutboxPublisherService outboxPublisher;
+    private final MessageResolver messages;
 
     public List<LoanRequest> listAll() {
         return loanRequestRepository.findAllByOrderByRequestedAtDesc();
@@ -73,8 +76,7 @@ public class LoanRequestService {
                 .build();
         loanRequestRepository.save(request);
 
-        outboxPublisher.publish(EventType.REQUEST_ACCEPTED, student.getEmail(), "Solicitação recebida",
-                "Sua solicitação do livro '" + bookCopy.getBook().getTitle() + "' foi registrada.");
+        publicarEmailSolicitacao(student, bookCopy, "request.email.received");
 
         return REQUEST_CREATED_KEY;
     }
@@ -98,8 +100,7 @@ public class LoanRequestService {
                 .build();
         loanRequestRepository.save(request);
 
-        outboxPublisher.publish(EventType.REQUEST_ACCEPTED, student.getEmail(), "Solicitação recebida",
-                "Sua solicitação do livro '" + bookCopy.getBook().getTitle() + "' foi registrada.");
+        publicarEmailSolicitacao(student, bookCopy, "request.email.received");
 
         return REQUEST_CREATED_KEY;
     }
@@ -131,18 +132,35 @@ public class LoanRequestService {
             request.setStatus(LoanRequestStatus.ACCEPTED);
             loanRequestRepository.save(request);
 
-            outboxPublisher.publish(EventType.REQUEST_ACCEPTED, student.getEmail(), "Solicitação aceita",
-                    "Sua solicitação do livro '" + bookCopy.getBook().getTitle()
-                            + "' foi aceita e o empréstimo registrado.");
+            publicarEmailSolicitacao(student, bookCopy, "request.email.accepted");
         } else {
             request.setStatus(LoanRequestStatus.REJECTED);
             loanRequestRepository.save(request);
 
-            outboxPublisher.publish(EventType.REQUEST_REJECTED, student.getEmail(), "Solicitação rejeitada",
-                    "Sua solicitação do livro '" + bookCopy.getBook().getTitle() + "' foi rejeitada.");
+            publicarEmailSolicitacao(student, bookCopy, "request.email.rejected", EventType.REQUEST_REJECTED);
         }
 
         return REQUEST_PROCESSED_KEY;
+    }
+
+    private void publicarEmailSolicitacao(Student student, BookCopy bookCopy, String baseKey) {
+        publicarEmailSolicitacao(student, bookCopy, baseKey, EventType.REQUEST_ACCEPTED);
+    }
+
+    private void publicarEmailSolicitacao(Student student, BookCopy bookCopy, String baseKey, EventType eventType) {
+        Locale locale = localeFor(student);
+        String subject = messages.resolve(baseKey + ".subject", locale);
+        String body = messages.resolve(baseKey + ".body", locale, bookCopy.getBook().getTitle());
+        outboxPublisher.publish(eventType, student.getEmail(), subject, body);
+    }
+
+    private Locale localeFor(Student student) {
+        if (student != null && student.getAppUser() != null
+                && student.getAppUser().getPreferredLocale() != null
+                && !student.getAppUser().getPreferredLocale().isBlank()) {
+            return Locale.forLanguageTag(student.getAppUser().getPreferredLocale());
+        }
+        return Locale.forLanguageTag("pt-BR");
     }
 
     private long contarEmprestimosAtivos(String matricula) {

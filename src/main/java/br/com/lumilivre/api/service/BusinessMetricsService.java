@@ -25,17 +25,17 @@ public class BusinessMetricsService {
     void registerGauges() {
         Gauge.builder("loans.active", loanRepository,
                         r -> r.countByStatusIn(List.of(LoanStatus.ACTIVE)))
-                .description("Número de empréstimos ativos")
+                .description("Number of active loans")
                 .register(registry);
 
         Gauge.builder("loans.overdue", loanRepository,
                         r -> r.countByStatusIn(List.of(LoanStatus.OVERDUE)))
-                .description("Número de empréstimos atrasados")
+                .description("Number of overdue loans")
                 .register(registry);
 
         Gauge.builder("requests.pending", loanRequestRepository,
                         r -> r.countByStatus(LoanRequestStatus.PENDING))
-                .description("Número de solicitações pendentes")
+                .description("Number of pending loan requests")
                 .register(registry);
 
         Gauge.builder("returns.avg_days", loanRepository,
@@ -43,7 +43,7 @@ public class BusinessMetricsService {
                             Double avg = r.avgReturnDays();
                             return avg != null ? avg : 0.0;
                         })
-                .description("Média de dias entre empréstimo e devolução (concluídos)")
+                .description("Average days between borrow and return for completed loans")
                 .register(registry);
     }
 }

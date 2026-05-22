@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import org.springframework.cache.annotation.CacheEvict;
@@ -20,6 +21,7 @@ import org.springframework.data.jpa.domain.JpaSort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy;
 import br.com.lumilivre.api.domain.policy.LoanPolicy;
 import br.com.lumilivre.api.domain.policy.PenaltyPolicy;
@@ -53,6 +55,7 @@ public class LoanService {
     private final LoanRepository loanRepository;
     private final ReservationRepository reservationRepository;
     private final OutboxPublisherService outboxPublisher;
+    private final MessageResolver messages;
 
     @Auditable(action = "LOAN_CREATED", targetParam = "#request.studentRegistrationNumber")
     @Transactional
@@ -177,11 +180,13 @@ public class LoanService {
                     next.setNotifiedAt(now);
                     next.setExpiresAt(now.plusDays(ReservationPolicy.PICKUP_DEADLINE_DAYS));
                     reservationRepository.save(next);
+                    Locale recipientLocale = localeFor(next.getStudent());
                     outboxPublisher.publish(EventType.REQUEST_ACCEPTED,
                             next.getStudent().getEmail(),
-                            "Livro disponível para retirada",
-                            "O livro '" + bookCopy.getBook().getTitle() +
-                            "' está disponível. Retire até " + next.getExpiresAt().toLocalDate() + ".");
+                            messages.resolve("email.reservation-ready.subject", recipientLocale),
+                            messages.resolve("email.reservation-ready.body", recipientLocale,
+                                    bookCopy.getBook().getTitle(),
+                                    next.getExpiresAt().toLocalDate()));
                 });
 
         return saved;
@@ -234,10 +239,12 @@ public class LoanService {
 
         Loan saved = loanRepository.save(loan);
 
+        Locale recipientLocale = localeFor(student);
         outboxPublisher.publish(EventType.REQUEST_ACCEPTED, student.getEmail(),
-                "Empréstimo renovado",
-                "Seu empréstimo do livro '" + loan.getBookCopy().getBook().getTitle() +
-                "' foi renovado. Nova data de devolução: " + saved.getDueAt().toLocalDate() + ".");
+                messages.resolve("email.loan-renewed.subject", recipientLocale),
+                messages.resolve("email.loan-renewed.body", recipientLocale,
+                        loan.getBookCopy().getBook().getTitle(),
+                        saved.getDueAt().toLocalDate()));
 
         return saved;
     }
@@ -370,24 +377,36 @@ public class LoanService {
     }
 
     private void enviarEmailEmprestimo(Student student, BookCopy bookCopy, LoanRequest request) {
-        String body = String.format(
-                "Olá %s,\n\nSeu empréstimo do livro '%s' foi registrado com sucesso.\n" +
-                "Data de empréstimo: %s\nData de devolução: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
+        Locale locale = localeFor(student);
+        String subject = messages.resolve("email.loan-created.subject", locale);
+        String body = messages.resolve("email.loan-created.body", locale,
                 student.getFullName(),
                 bookCopy.getBook().getTitle(),
                 request.getBorrowedAt(),
                 request.getDueAt());
-        outboxPublisher.publish(EventType.LOAN_CREATED, student.getEmail(), "Empréstimo registrado", body);
+        outboxPublisher.publish(EventType.LOAN_CREATED, student.getEmail(), subject, body);
     }
 
     private void enviarEmailConclusao(Student student, BookCopy bookCopy, Loan loan) {
-        String body = String.format(
-                "Olá %s,\n\nSeu empréstimo do livro '%s' foi concluído.\n" +
-                "Status da penalidade: %s\n\nAtenciosamente,\nBiblioteca LumiLivre",
+        Locale locale = localeFor(student);
+        String penaltyStatus = loan.getPenaltyCode() != null
+                ? loan.getPenaltyCode().getStatus()
+                : messages.resolve("email.penalty.none", locale);
+        String subject = messages.resolve("email.loan-completed.subject", locale);
+        String body = messages.resolve("email.loan-completed.body", locale,
                 student.getFullName(),
                 bookCopy.getBook().getTitle(),
-                loan.getPenaltyCode() != null ? loan.getPenaltyCode().getStatus() : "Nenhuma");
-        outboxPublisher.publish(EventType.LOAN_RETURNED, student.getEmail(), "Empréstimo concluído", body);
+                penaltyStatus);
+        outboxPublisher.publish(EventType.LOAN_RETURNED, student.getEmail(), subject, body);
+    }
+
+    private Locale localeFor(Student student) {
+        if (student != null && student.getAppUser() != null
+                && student.getAppUser().getPreferredLocale() != null
+                && !student.getAppUser().getPreferredLocale().isBlank()) {
+            return Locale.forLanguageTag(student.getAppUser().getPreferredLocale());
+        }
+        return Locale.forLanguageTag("pt-BR");
     }
 
     private Pageable tratarOrdenacao(Pageable pageable) {

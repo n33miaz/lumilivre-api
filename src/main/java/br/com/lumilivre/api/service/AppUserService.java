@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.service;
 
+import java.util.Locale;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.dto.auth.ChangePasswordRequest;
 import br.com.lumilivre.api.dto.user.UserRequest;
 import br.com.lumilivre.api.enums.Role;
@@ -28,6 +30,7 @@ public class AppUserService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final AppUserRepository appUserRepository;
+    private final MessageResolver messages;
 
     public Page<AppUser> listForAdmin(Pageable pageable) {
         return appUserRepository.findAll(pageable);
@@ -76,13 +79,22 @@ public class AppUserService {
         AppUser savedAppUser = appUserRepository.save(appUser);
 
         try {
-            String roleName = savedAppUser.getRole() == Role.ADMIN ? "Administrador" : "Bibliotecário";
+            Locale locale = localeFor(savedAppUser);
+            String roleKey = savedAppUser.getRole() == Role.ADMIN ? "user.role.admin" : "user.role.librarian";
+            String roleName = messages.resolve(roleKey, locale);
             emailService.enviarSenhaInicialAdmin(savedAppUser.getEmail(), roleName, rawPassword);
         } catch (Exception e) {
             System.err.println("Erro ao enviar email: " + e.getMessage());
         }
 
         return savedAppUser;
+    }
+
+    private Locale localeFor(AppUser appUser) {
+        if (appUser != null && appUser.getPreferredLocale() != null && !appUser.getPreferredLocale().isBlank()) {
+            return Locale.forLanguageTag(appUser.getPreferredLocale());
+        }
+        return Locale.forLanguageTag("pt-BR");
     }
 
     private AppUser updateUser(UUID id, String email, String rawPassword) {
