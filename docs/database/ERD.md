@@ -224,4 +224,3 @@ estiver em PostgreSQL (caso contrário, no-op — útil para suíte H2 de testes
 - Migração legado→LumiLivre: [`migration_from_legacy.md`](./migration_from_legacy.md)
 - Portabilidade para outros bancos: [`portability_notes.md`](./portability_notes.md)
 - ADRs relevantes: ADR-001 (chaves), ADR-004 (Supabase pooler), ADR-005 (RLS),
-  [ADR-013 (PostgreSQL como dependência forte)](./ADR-013-postgresql-strong-dependency.md).

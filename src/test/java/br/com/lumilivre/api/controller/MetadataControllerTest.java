@@ -1,5 +1,7 @@
 package br.com.lumilivre.api.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -7,18 +9,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
-import br.com.lumilivre.api.repository.BookRepository;
+import br.com.lumilivre.api.dto.metadata.AuthorSummaryResponse;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.service.EnumLabelResolver;
+import br.com.lumilivre.api.service.MetadataService;
 import br.com.lumilivre.api.service.infra.postalcode.PostalAddress;
 import br.com.lumilivre.api.service.infra.postalcode.PostalCodeRouter;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -35,7 +40,7 @@ class MetadataControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private BookRepository bookRepository;
+    private MetadataService metadataService;
 
     @MockBean
     private PostalCodeRouter postalCodeRouter;
@@ -58,9 +63,11 @@ class MetadataControllerTest {
 
     @Test
     void authorsReturnsPagedSummaries() throws Exception {
-        when(bookRepository.countByAutor()).thenReturn(List.of(
-                Map.of("autor", "Machado de Assis", "total", 3L),
-                Map.of("autor", "Clarice Lispector", "total", 2L)));
+        when(metadataService.authors(eq("machado"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(
+                        List.of(new AuthorSummaryResponse("Machado de Assis", 3)),
+                        PageRequest.of(0, 1),
+                        1));
 
         mockMvc.perform(get("/api/metadata/authors")
                         .param("q", "machado")

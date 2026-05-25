@@ -10,10 +10,10 @@ import java.util.List;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
-import br.com.lumilivre.api.model.Genre;
-import br.com.lumilivre.api.repository.GenreRepository;
+import br.com.lumilivre.api.dto.genre.GenreResponse;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
+import br.com.lumilivre.api.service.GenreService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -31,7 +31,7 @@ class GenreControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private GenreRepository genreRepository;
+    private GenreService genreService;
 
     @MockBean
     private JwtUtil jwtUtil;
@@ -41,10 +41,7 @@ class GenreControllerTest {
 
     @Test
     void listReturnsOkWithContentLanguage() throws Exception {
-        Genre genre = new Genre();
-        genre.setId(1);
-        genre.setName("Romance");
-        when(genreRepository.findAll()).thenReturn(List.of(genre));
+        when(genreService.list()).thenReturn(List.of(new GenreResponse(1, "Romance")));
 
         mockMvc.perform(get("/api/genres").header("Accept-Language", "pt-BR"))
                 .andExpect(status().isOk())
@@ -56,7 +53,7 @@ class GenreControllerTest {
     @Test
     @WithMockUser(roles = "STUDENT")
     void studentCanList() throws Exception {
-        when(genreRepository.findAll()).thenReturn(List.of());
+        when(genreService.list()).thenReturn(List.of());
 
         mockMvc.perform(get("/api/genres"))
                 .andExpect(status().isOk());

@@ -43,8 +43,7 @@ jobs:
         run: bash scripts/check-openapi-annotations.sh
 
       - name: Verify (test + coverage gate)
-        # Flip to -Djacoco.enforce=true once phase-2 integration tests land.
-        run: ./mvnw verify -Djacoco.enforce=false --no-transfer-progress
+        run: ./mvnw verify -Djacoco.enforce=true --no-transfer-progress
 
       - name: Package
         run: ./mvnw package -DskipTests --no-transfer-progress

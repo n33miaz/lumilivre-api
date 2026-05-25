@@ -58,6 +58,27 @@ class LoanPolicyTest {
     }
 
     @Test
+    void validateRenewalAllowsExpiredPenalty() {
+        assertThatCode(() -> LoanPolicy.validateRenewal(0, false, OffsetDateTime.now().minusMinutes(1)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void validateRenewalRejectsActivePenalty() {
+        OffsetDateTime penaltyExpiry = OffsetDateTime.now().plusDays(2);
+
+        assertThatThrownBy(() -> LoanPolicy.validateRenewal(0, false, penaltyExpiry))
+                .isInstanceOf(LoanPolicyViolationException.class)
+                .hasMessage("loan.renewal.active-penalty")
+                .satisfies(error -> {
+                    LoanPolicyViolationException violation = (LoanPolicyViolationException) error;
+                    assertThat(violation.hasI18nKey()).isTrue();
+                    assertThat(violation.getMessageKey()).isEqualTo("loan.renewal.active-penalty");
+                    assertThat(violation.getMessageArgs()).containsExactly(penaltyExpiry.toLocalDate());
+                });
+    }
+
+    @Test
     void validateRenewalRejectsUsedLimit() {
         assertThatThrownBy(() -> LoanPolicy.validateRenewal(LoanPolicy.MAX_RENEWALS, false, null))
                 .isInstanceOf(LoanPolicyViolationException.class)

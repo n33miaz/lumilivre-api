@@ -9,9 +9,6 @@ SQL Server é viável, mas você perde busca textual eficiente (`pg_trgm`),
 materialized views nativas e tipos como `CITEXT`. O custo é refazer ~25 %
 do schema + ~5 % do código de repositórios.
 
-Veja [ADR-013](./ADR-013-postgresql-strong-dependency.md) para o
-racional formal.
-
 ---
 
 ## 1. O que muda em cada banco
@@ -122,8 +119,6 @@ flowchart LR
 ---
 
 ## 6. Por que escolhemos PostgreSQL como dependência forte
-
-Detalhado em [ADR-013](./ADR-013-postgresql-strong-dependency.md). Resumo:
 
 - **Custo de troca alto não é arbitrário** — vem de aproveitar o melhor
   do Postgres (trigram, materialized views, citext, RLS).

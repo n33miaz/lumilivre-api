@@ -61,14 +61,15 @@ public class BookCopyService {
         Book book = bookRepository.findById(request.getBookId())
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found-by-provided-id"));
 
+        BookCopyStatus status = parseStatus(request.getStatus());
+
         try {
             BookCopy bookCopy = BookCopy.builder()
                     .copyCode(request.getCopyCode())
-                    .status(parseStatus(request.getStatus()))
+                    .status(status)
                     .book(book)
                     .shelfLocation(request.getPhysicalLocation())
                     .build();
-
             bookCopyRepository.save(bookCopy);
         } catch (Exception e) {
             log.error("Erro ao cadastrar exemplar: {}", e.getMessage(), e);
@@ -88,8 +89,10 @@ public class BookCopyService {
         Book newBook = bookRepository.findById(request.getBookId())
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found-by-provided-id"));
 
+        BookCopyStatus status = parseStatus(request.getStatus());
+
         try {
-            bookCopy.setStatus(parseStatus(request.getStatus()));
+            bookCopy.setStatus(status);
             bookCopy.setBook(newBook);
             bookCopy.setShelfLocation(request.getPhysicalLocation());
 

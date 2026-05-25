@@ -5,7 +5,7 @@ import java.util.Locale;
 
 import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.dewey.DeweyClassificationResponse;
-import br.com.lumilivre.api.repository.DeweyClassificationRepository;
+import br.com.lumilivre.api.service.DeweyClassificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -21,18 +21,14 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = SwaggerTags.DEWEY_CLASSIFICATIONS)
 public class DeweyClassificationController {
 
-    private final DeweyClassificationRepository deweyClassificationRepository;
+    private final DeweyClassificationService deweyClassificationService;
 
     @GetMapping
     @Operation(operationId = "dewey-classifications.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<List<DeweyClassificationResponse>> list(Locale locale) {
-        List<DeweyClassificationResponse> body = deweyClassificationRepository.findAll()
-                .stream()
-                .map(d -> new DeweyClassificationResponse(d.getCode(), d.getDescription()))
-                .toList();
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(body);
+                .body(deweyClassificationService.list());
     }
 }

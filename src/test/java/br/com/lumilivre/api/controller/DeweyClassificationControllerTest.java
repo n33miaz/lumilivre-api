@@ -10,10 +10,10 @@ import java.util.List;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
-import br.com.lumilivre.api.model.DeweyClassification;
-import br.com.lumilivre.api.repository.DeweyClassificationRepository;
+import br.com.lumilivre.api.dto.dewey.DeweyClassificationResponse;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
+import br.com.lumilivre.api.service.DeweyClassificationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -31,7 +31,7 @@ class DeweyClassificationControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private DeweyClassificationRepository deweyClassificationRepository;
+    private DeweyClassificationService deweyClassificationService;
 
     @MockBean
     private JwtUtil jwtUtil;
@@ -41,10 +41,8 @@ class DeweyClassificationControllerTest {
 
     @Test
     void listReturnsOkWithContentLanguage() throws Exception {
-        DeweyClassification cdd = new DeweyClassification();
-        cdd.setCode("100");
-        cdd.setDescription("Philosophy");
-        when(deweyClassificationRepository.findAll()).thenReturn(List.of(cdd));
+        when(deweyClassificationService.list()).thenReturn(List.of(
+                new DeweyClassificationResponse("100", "Philosophy")));
 
         mockMvc.perform(get("/api/dewey-classifications").header("Accept-Language", "en-US"))
                 .andExpect(status().isOk())
@@ -56,7 +54,7 @@ class DeweyClassificationControllerTest {
     @Test
     @WithMockUser(roles = "STUDENT")
     void studentCanList() throws Exception {
-        when(deweyClassificationRepository.findAll()).thenReturn(List.of());
+        when(deweyClassificationService.list()).thenReturn(List.of());
 
         mockMvc.perform(get("/api/dewey-classifications"))
                 .andExpect(status().isOk());

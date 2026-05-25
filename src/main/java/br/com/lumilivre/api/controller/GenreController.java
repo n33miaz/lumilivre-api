@@ -5,7 +5,7 @@ import java.util.Locale;
 
 import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.genre.GenreResponse;
-import br.com.lumilivre.api.repository.GenreRepository;
+import br.com.lumilivre.api.service.GenreService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -21,18 +21,14 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = SwaggerTags.GENRES)
 public class GenreController {
 
-    private final GenreRepository genreRepository;
+    private final GenreService genreService;
 
     @GetMapping
     @Operation(operationId = "genres.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<List<GenreResponse>> list(Locale locale) {
-        List<GenreResponse> body = genreRepository.findAll()
-                .stream()
-                .map(g -> new GenreResponse(g.getId(), g.getName()))
-                .toList();
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(body);
+                .body(genreService.list());
     }
 }

@@ -67,7 +67,8 @@ public class SupabaseStorageProvider implements StorageProvider {
         String bucketName = bucketName(bucket);
         String folderName = bucket.folder();
         String originalFileName = file.getOriginalFilename() == null ? "upload" : file.getOriginalFilename();
-        String objectName = UUID.randomUUID() + "_" + originalFileName;
+        String safeFileName = originalFileName.replaceAll("[^A-Za-z0-9._-]", "_");
+        String objectName = UUID.randomUUID() + "_" + safeFileName;
         String objectPath = folderName + "/" + objectName;
 
         try {

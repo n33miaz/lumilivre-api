@@ -8,8 +8,8 @@ if ! docker info > /dev/null 2>&1; then
   exit 1
 fi
 
-# inicia o container do redis
-echo "[DEV] Verifying redis container..."
+# inicia o containers
+echo "[DEV] Starting docker containers..."
 docker compose up -d
 
 # lê o arquivo .env e injeta as variáveis de ambiente 
@@ -32,6 +32,6 @@ while IFS='=' read -r key value; do
   fi
 done < .env
 
-# inicia o projeto
+# inicia o projeto (ambiente dev: -Dspring-boot.run.profiles=local)
 echo "[DEV] Starting Spring Boot..."
-./mvnw spring-boot:run
+./mvnw spring-boot:run 

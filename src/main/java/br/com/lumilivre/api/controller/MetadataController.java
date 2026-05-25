@@ -3,7 +3,6 @@ package br.com.lumilivre.api.controller;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.common.LocalizedEnum;
@@ -19,15 +18,14 @@ import br.com.lumilivre.api.enums.ReservationStatus;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
-import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.service.EnumLabelResolver;
+import br.com.lumilivre.api.service.MetadataService;
 import br.com.lumilivre.api.service.infra.postalcode.PostalAddress;
 import br.com.lumilivre.api.service.infra.postalcode.PostalCodeRouter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -45,7 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MetadataController {
 
     private final EnumLabelResolver enumLabelResolver;
-    private final BookRepository bookRepository;
+    private final MetadataService metadataService;
     private final PostalCodeRouter postalCodeRouter;
 
     @GetMapping("/enums/{type}")
@@ -75,20 +73,9 @@ public class MetadataController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable,
             Locale locale) {
-        List<AuthorSummaryResponse> authors = bookRepository.countByAutor()
-                .stream()
-                .map(this::toAuthorSummary)
-                .filter(author -> matchesQuery(author.name(), q))
-                .toList();
-        int start = Math.min((int) pageable.getOffset(), authors.size());
-        int end = Math.min(start + pageable.getPageSize(), authors.size());
-        Page<AuthorSummaryResponse> page = new PageImpl<>(
-                authors.subList(start, end),
-                pageable,
-                authors.size());
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(page);
+                .body(metadataService.authors(q, pageable));
     }
 
     @GetMapping("/postal-codes/{postalCode}")
@@ -135,22 +122,4 @@ public class MetadataController {
                         .toUpperCase(Locale.ROOT);
     }
 
-    private AuthorSummaryResponse toAuthorSummary(Map<String, Object> row) {
-        Object total = row.get("total");
-        return new AuthorSummaryResponse(
-                String.valueOf(row.get("autor")),
-                total instanceof Number number ? number.longValue() : 0L);
-    }
-
-    private boolean matchesQuery(String value, String query) {
-        if (isBlank(query)) {
-            return true;
-        }
-        return value != null && value.toLowerCase(Locale.ROOT)
-                .contains(query.trim().toLowerCase(Locale.ROOT));
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
-    }
 }
