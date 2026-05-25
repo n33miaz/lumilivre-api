@@ -12,15 +12,17 @@ public class LocalizedTagsCustomizer implements OpenApiCustomizer {
 
     private final MessageSource messages;
     private final Locale locale;
+    private final List<String> tagKeys;
 
-    public LocalizedTagsCustomizer(MessageSource messages, Locale locale) {
+    public LocalizedTagsCustomizer(MessageSource messages, Locale locale, List<String> tagKeys) {
         this.messages = messages;
         this.locale = locale;
+        this.tagKeys = tagKeys;
     }
 
     @Override
     public void customise(OpenAPI openApi) {
-        List<Tag> tags = SwaggerTags.ORDERED.stream()
+        List<Tag> tags = tagKeys.stream()
                 .map(this::tag)
                 .toList();
         openApi.setTags(tags);

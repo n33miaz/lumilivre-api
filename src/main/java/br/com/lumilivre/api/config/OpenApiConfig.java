@@ -47,7 +47,7 @@ public class OpenApiConfig {
                 .displayName("System")
                 .pathsToMatch("/", "/actuator/**")
                 .addOpenApiCustomizer(new LocalizedInfoCustomizer(messageSource, Locale.forLanguageTag("en-US")))
-                .addOpenApiCustomizer(new LocalizedTagsCustomizer(messageSource, Locale.forLanguageTag("en-US")))
+                .addOpenApiCustomizer(new LocalizedTagsCustomizer(messageSource, Locale.forLanguageTag("en-US"), SwaggerTags.SYSTEM_TAGS))
                 .addOpenApiCustomizer(new LocalizedSchemaCustomizer(messageSource, Locale.forLanguageTag("en-US")))
                 .addOperationCustomizer(new LocalizedOperationCustomizer(messageSource, Locale.forLanguageTag("en-US")))
                 .build();
@@ -67,7 +67,7 @@ public class OpenApiConfig {
                 .displayName(displayName)
                 .pathsToMatch("/api/**")
                 .addOpenApiCustomizer(new LocalizedInfoCustomizer(messageSource, locale))
-                .addOpenApiCustomizer(new LocalizedTagsCustomizer(messageSource, locale))
+                .addOpenApiCustomizer(new LocalizedTagsCustomizer(messageSource, locale, SwaggerTags.API_TAGS))
                 .addOpenApiCustomizer(new LocalizedSchemaCustomizer(messageSource, locale))
                 .addOperationCustomizer(new LocalizedOperationCustomizer(messageSource, locale))
                 .build();
@@ -76,11 +76,11 @@ public class OpenApiConfig {
     private Info buildInfo() {
         return new Info()
                 .title(messageSource.getMessage("swagger.api.title", null, "LumiLivre API", Locale.forLanguageTag("pt-BR")))
-                .version(messageSource.getMessage("swagger.api.version", null, "0.1.0", Locale.forLanguageTag("pt-BR")))
+                .version(messageSource.getMessage("swagger.api.version", null, "1.0.0", Locale.forLanguageTag("pt-BR")))
                 .description(messageSource.getMessage("swagger.api.description", null, "", Locale.forLanguageTag("pt-BR")))
                 .contact(new Contact()
                         .name("LumiLivre")
-                        .email("contato.lumilivre@gmail.com"))
+                        .email("ncormino@gmail.com"))
                 .license(new License().name("MIT").url("https://opensource.org/licenses/MIT"));
     }
 

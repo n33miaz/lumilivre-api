@@ -24,7 +24,7 @@ public final class SwaggerTags {
     public static final String DEWEY_CLASSIFICATIONS = "dewey-classifications";
     public static final String SYSTEM = "system";
 
-    public static final List<String> ORDERED = List.of(
+    public static final List<String> API_TAGS = List.of(
             AUTH,
             USERS,
             STUDENTS,
@@ -42,9 +42,10 @@ public final class SwaggerTags {
             STUDY_SHIFTS,
             ACADEMIC_MODULES,
             GENRES,
-            DEWEY_CLASSIFICATIONS,
-            SYSTEM
+            DEWEY_CLASSIFICATIONS
     );
+
+    public static final List<String> SYSTEM_TAGS = List.of(SYSTEM);
 
     private SwaggerTags() {
     }
