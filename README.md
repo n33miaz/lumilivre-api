@@ -159,7 +159,44 @@ As **policies puras** em `api/domain/policy/` (LoanPolicy, PenaltyPolicy, BookAv
 <br/>
 
 <div align="center">
-  <h1>Como rodar localmente</h1>
+  <h1>Sem Supabase, em 60 segundos</h1>
+</div>
+
+Para contribuidor que clonou o repo e quer ver a API rodando sem criar conta em nenhum SaaS:
+
+```bash
+# 1. Sobe Postgres 16 + Redis + Mailhog em containers locais
+docker compose up -d
+
+# 2. Aplica migrations + seed demo (cria tabelas e popula dados sintéticos)
+just setup        # ou: docker compose up -d && ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+
+# 3. Roda a API no profile `local` (sem exigir nenhum LUMILIVRE_* secret)
+just api
+
+# 4. Acesso:
+#    API           → http://localhost:8080
+#    Swagger       → http://localhost:8080/docs
+#    Mailhog UI    → http://localhost:8025
+#    Health        → http://localhost:8080/actuator/health
+```
+
+Contas demo seedadas pelo `R__seed_demo_data.sql`:
+
+| Perfil           | Login                        | Senha                        |
+|------------------|------------------------------|------------------------------|
+| Admin            | `admin@lumilivre.test`       | `admin@lumilivre.test`       |
+| Bibliotecário    | `librarian@lumilivre.test`   | `librarian@lumilivre.test`   |
+| Aluno (matrícula)| `2025001`                    | `2025001`                    |
+
+> Pré-requisitos: Docker Desktop / Docker Engine, Java 17, [just](https://just.systems) (`scoop install just` no Windows, `brew install just` no macOS). Sem `just`? Os comandos equivalentes estão no `justfile` — basta copiar a linha.
+
+A stack local usa o profile `local` (em `application-local.properties`), que aponta para containers em `localhost`, com Mailhog capturando emails e Flyway aplicando migrations + seed automaticamente. Não há dependência de Supabase, Gmail SMTP ou ViaCEP nessa configuração.
+
+<br/>
+
+<div align="center">
+  <h1>Como rodar localmente (produção / Supabase)</h1>
 </div>
 
 O `application.properties` usa variáveis de ambiente (`${LUMILIVRE_*}`) para manter segredos fora do repositório. Se alguma variável obrigatória faltar, o Spring falha na inicialização antes de subir a API.

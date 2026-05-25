@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.service;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.model.*;
 import br.com.lumilivre.api.repository.StudentRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
@@ -41,31 +42,39 @@ public class ReportService {
     private final BookRepository livroRepository;
     private final CourseRepository courseRepository;
     private final BookCopyRepository exemplarRepository;
+    private final MessageResolver messages;
 
     private static final Font FONT_TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
     private static final Font FONT_CABECALHO_TABELA = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.WHITE);
     private static final Font FONT_CORPO_TABELA = FontFactory.getFont(FontFactory.HELVETICA, 10);
     private static final Color COR_CABECALHO_TABELA = new Color(118, 32, 117);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final Locale DEFAULT_LOCALE = Locale.forLanguageTag("pt-BR");
 
     public ReportService(LoanRepository loanRepository, StudentRepository alunoRepository,
-            BookRepository livroRepository, CourseRepository courseRepository, BookCopyRepository exemplarRepository) {
+            BookRepository livroRepository, CourseRepository courseRepository,
+            BookCopyRepository exemplarRepository, MessageResolver messages) {
         this.loanRepository = loanRepository;
         this.alunoRepository = alunoRepository;
         this.livroRepository = livroRepository;
         this.courseRepository = courseRepository;
         this.exemplarRepository = exemplarRepository;
+        this.messages = messages;
     }
 
     // ================= RELATÓRIOS DE EMPRÉSTIMOS =================
 
     public void gerarRelatorioEmprestimosPorFiltros(OutputStream out, LocalDate inicio, LocalDate fim,
             LoanStatus status, String matriculaAluno, Integer idCurso,
-            String isbnOuTombo, Integer idModulo) throws IOException {
+            String isbnOuTombo, Integer idModulo, Locale locale) throws IOException {
+        Locale loc = effective(locale);
+        String dashFallback = messages.resolve("report.common.fallback.dash", loc);
+        String naFallback = messages.resolve("report.common.fallback.na", loc);
+
         try (Document document = new Document(PageSize.A4.rotate())) {
             PdfWriter.getInstance(document, out);
             document.open();
-            adicionarCabecalhoRelatorio(document, "Relatório de Empréstimos", inicio, fim);
+            adicionarCabecalhoRelatorio(document, messages.resolve("report.loans.title", loc), inicio, fim, loc);
 
             ZoneOffset offset = OffsetDateTime.now().getOffset();
             OffsetDateTime inicioDT = (inicio != null) ? inicio.atStartOfDay().atOffset(offset) : null;
@@ -84,13 +93,18 @@ public class ReportService {
             table.setWidthPercentage(100);
             table.setWidths(new float[] { 1.2f, 3.5f, 3f, 2.5f, 4f, 2.5f, 2f });
 
-            adicionarCelulaHeader(table, "ID");
-            adicionarCelulaHeader(table, "Aluno");
-            adicionarCelulaHeader(table, "Curso");
-            adicionarCelulaHeader(table, "Módulo");
-            adicionarCelulaHeader(table, "Livro / Tombo");
-            adicionarCelulaHeader(table, "Data Empréstimo");
-            adicionarCelulaHeader(table, "Status");
+            adicionarCelulaHeader(table, messages.resolve("report.loans.col.id", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.loans.col.student", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.loans.col.course", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.loans.col.module", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.loans.col.book-copy", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.loans.col.borrowed-at", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.loans.col.status", loc));
+
+            String unknownStudent = messages.resolve("report.loans.fallback.student-unknown", loc);
+            String bookNA = messages.resolve("report.loans.fallback.book-na", loc);
+            String copyNA = messages.resolve("report.loans.fallback.copy-na", loc);
+            String errorLabel = messages.resolve("report.loans.error.row", loc);
 
             for (Loan e : emprestimos) {
                 try {
@@ -98,60 +112,67 @@ public class ReportService {
 
                     String nomeAluno = Optional.ofNullable(e.getStudent())
                             .map(Student::getFullName)
-                            .orElse("Aluno Desconhecido");
+                            .orElse(unknownStudent);
                     table.addCell(criarCelulaDados(nomeAluno));
 
                     String nomeCurso = Optional.ofNullable(e.getStudent())
                             .map(Student::getCourse)
                             .map(Course::getName)
-                            .orElse("N/A");
+                            .orElse(naFallback);
                     table.addCell(criarCelulaDados(nomeCurso));
 
                     String nomeModulo = Optional.ofNullable(e.getStudent())
                             .map(Student::getAcademicModule)
                             .map(AcademicModule::getName)
-                            .orElse("-");
+                            .orElse(dashFallback);
                     table.addCell(criarCelulaDados(nomeModulo));
 
                     String livroTombo = Optional.ofNullable(e.getBookCopy())
                             .map(ex -> {
                                 String nomeLivro = Optional.ofNullable(ex.getBook())
                                         .map(Book::getTitle)
-                                        .orElse("Livro N/A");
+                                        .orElse(bookNA);
                                 return nomeLivro + " (" + ex.getCopyCode() + ")";
                             })
-                            .orElse("Exemplar N/A");
+                            .orElse(copyNA);
                     table.addCell(criarCelulaDados(livroTombo));
 
-                    table.addCell(criarCelulaDados(formatarData(e.getBorrowedAt())));
+                    table.addCell(criarCelulaDados(formatarData(e.getBorrowedAt(), loc)));
 
                     String statusStr = Optional.ofNullable(e.getStatus())
                             .map(Enum::name)
-                            .orElse("-");
+                            .orElse(dashFallback);
                     table.addCell(criarCelulaDados(statusStr));
 
                 } catch (Exception ex) {
                     log.error("Erro ao processar linha do empréstimo ID {}: {}", e.getId(), ex.getMessage());
-                    for (int i = 0; i < 7; i++) table.addCell(criarCelulaDados(i == 0 ? "ERRO" : "-"));
+                    for (int i = 0; i < 7; i++)
+                        table.addCell(criarCelulaDados(i == 0 ? errorLabel : dashFallback));
                 }
             }
 
             document.add(table);
-            adicionarRodapeRelatorio(document, "Total de empréstimos filtrados: " + emprestimos.size());
+            adicionarRodapeRelatorio(document, messages.resolve("report.loans.footer.total", loc, emprestimos.size()));
         } catch (Exception ex) {
             log.error("Erro fatal ao gerar relatório de empréstimos", ex);
-            throw new IOException("Erro ao gerar PDF", ex);
+            throw new IOException(messages.resolve("report.common.error.generate", loc), ex);
         }
     }
 
     // ================= RELATÓRIOS DE ALUNOS =================
 
     public void gerarRelatorioAlunosPorFiltros(OutputStream out, Integer idModulo, Integer idCurso,
-            Integer idTurno, PenaltyCode penalidade, LocalDate dataInicio, LocalDate dataFim) throws IOException {
+            Integer idTurno, PenaltyCode penalidade, LocalDate dataInicio, LocalDate dataFim, Locale locale)
+            throws IOException {
+        Locale loc = effective(locale);
+        String dashFallback = messages.resolve("report.common.fallback.dash", loc);
+        String naFallback = messages.resolve("report.common.fallback.na", loc);
+
         try (Document document = new Document(PageSize.A4.rotate())) {
             PdfWriter.getInstance(document, out);
             document.open();
-            adicionarCabecalhoRelatorio(document, "Relatório de Alunos", dataInicio, dataFim);
+            adicionarCabecalhoRelatorio(document, messages.resolve("report.students.title", loc),
+                    dataInicio, dataFim, loc);
 
             ZoneOffset offset = OffsetDateTime.now().getOffset();
             OffsetDateTime inicio = (dataInicio != null) ? dataInicio.atStartOfDay().atOffset(offset) : null;
@@ -163,41 +184,49 @@ public class ReportService {
             table.setWidthPercentage(100);
             table.setWidths(new float[] { 2f, 5f, 3f, 2f, 2f, 2f });
 
-            adicionarCelulaHeader(table, "Matrícula");
-            adicionarCelulaHeader(table, "Nome");
-            adicionarCelulaHeader(table, "Curso");
-            adicionarCelulaHeader(table, "Módulo");
-            adicionarCelulaHeader(table, "Penalidade");
-            adicionarCelulaHeader(table, "Qtd. Empréstimos");
+            adicionarCelulaHeader(table, messages.resolve("report.students.col.registration", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.students.col.name", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.students.col.course", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.students.col.module", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.students.col.penalty", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.students.col.loan-count", loc));
 
             for (Student a : alunos) {
-                long totalLoans = loanRepository.countByStudent_RegistrationNumberAndStatus(a.getRegistrationNumber(), LoanStatus.ACTIVE)
-                        + loanRepository.countByStudent_RegistrationNumberAndStatus(a.getRegistrationNumber(), LoanStatus.COMPLETED)
-                        + loanRepository.countByStudent_RegistrationNumberAndStatus(a.getRegistrationNumber(), LoanStatus.OVERDUE);
+                long totalLoans = loanRepository.countByStudent_RegistrationNumberAndStatus(
+                        a.getRegistrationNumber(), LoanStatus.ACTIVE)
+                        + loanRepository.countByStudent_RegistrationNumberAndStatus(
+                                a.getRegistrationNumber(), LoanStatus.COMPLETED)
+                        + loanRepository.countByStudent_RegistrationNumberAndStatus(
+                                a.getRegistrationNumber(), LoanStatus.OVERDUE);
 
                 table.addCell(criarCelulaDados(a.getRegistrationNumber()));
                 table.addCell(criarCelulaDados(a.getFullName()));
-                table.addCell(criarCelulaDados(Optional.ofNullable(a.getCourse()).map(Course::getName).orElse("N/A")));
-                table.addCell(criarCelulaDados(Optional.ofNullable(a.getAcademicModule()).map(AcademicModule::getName).orElse("-")));
-                table.addCell(criarCelulaDados(Optional.ofNullable(a.getPenaltyCode()).map(Enum::name).orElse("-")));
+                table.addCell(criarCelulaDados(
+                        Optional.ofNullable(a.getCourse()).map(Course::getName).orElse(naFallback)));
+                table.addCell(criarCelulaDados(
+                        Optional.ofNullable(a.getAcademicModule()).map(AcademicModule::getName).orElse(dashFallback)));
+                table.addCell(criarCelulaDados(
+                        Optional.ofNullable(a.getPenaltyCode()).map(Enum::name).orElse(dashFallback)));
                 table.addCell(criarCelulaDados(String.valueOf(totalLoans)));
             }
 
             document.add(table);
-            adicionarRodapeRelatorio(document, "Total de alunos: " + alunos.size());
+            adicionarRodapeRelatorio(document, messages.resolve("report.students.footer.total", loc, alunos.size()));
         } catch (Exception ex) {
             log.error("Erro ao gerar relatório de alunos filtrados", ex);
-            throw new IOException("Erro ao gerar relatório de alunos filtrados", ex);
+            throw new IOException(messages.resolve("report.common.error.generate", loc), ex);
         }
     }
 
     // ================= RELATÓRIOS DE CURSOS =================
 
-    public void gerarRelatorioCursosGeral(OutputStream out) throws IOException {
+    public void gerarRelatorioCursosGeral(OutputStream out, Locale locale) throws IOException {
+        Locale loc = effective(locale);
+
         try (Document document = new Document(PageSize.A4.rotate())) {
             PdfWriter.getInstance(document, out);
             document.open();
-            adicionarCabecalhoRelatorio(document, "Relatório Geral de Cursos", null, null);
+            adicionarCabecalhoRelatorio(document, messages.resolve("report.courses.title", loc), null, null, loc);
 
             List<CourseStatisticsResponse> estatisticas = courseRepository.findStatistics();
 
@@ -205,10 +234,10 @@ public class ReportService {
             table.setWidthPercentage(100);
             table.setWidths(new float[] { 3f, 2f, 2f, 2f });
 
-            adicionarCelulaHeader(table, "Curso");
-            adicionarCelulaHeader(table, "Qtd. Alunos");
-            adicionarCelulaHeader(table, "Qtd. Empréstimos");
-            adicionarCelulaHeader(table, "Média Empréstimos/Aluno");
+            adicionarCelulaHeader(table, messages.resolve("report.courses.col.course", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.courses.col.student-count", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.courses.col.loan-count", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.courses.col.avg-loans", loc));
 
             for (CourseStatisticsResponse dto : estatisticas) {
                 table.addCell(criarCelulaDados(dto.getCourseName()));
@@ -218,22 +247,26 @@ public class ReportService {
             }
 
             document.add(table);
-            adicionarRodapeRelatorio(document, "Total de cursos: " + estatisticas.size());
+            adicionarRodapeRelatorio(document,
+                    messages.resolve("report.courses.footer.total", loc, estatisticas.size()));
         } catch (Exception ex) {
             log.error("Erro ao gerar relatório geral de cursos", ex);
-            throw new IOException("Erro ao gerar relatório geral de cursos", ex);
+            throw new IOException(messages.resolve("report.common.error.generate", loc), ex);
         }
     }
 
     // ================= RELATÓRIOS DE LIVROS E EXEMPLARES =================
 
     public void gerarRelatorioLivrosFiltrados(OutputStream out, String genero, String autor,
-            String editora, String cdd, String classificacaoEtaria, String tipoCapa, LocalDate dataInicio, LocalDate dataFim)
-            throws IOException {
+            String editora, String cdd, String classificacaoEtaria, String tipoCapa,
+            LocalDate dataInicio, LocalDate dataFim, Locale locale) throws IOException {
+        Locale loc = effective(locale);
+        String dashFallback = messages.resolve("report.common.fallback.dash", loc);
+
         try (Document document = new Document(PageSize.A4.rotate())) {
             PdfWriter.getInstance(document, out);
             document.open();
-            adicionarCabecalhoRelatorio(document, "Relatório de Livros", dataInicio, dataFim);
+            adicionarCabecalhoRelatorio(document, messages.resolve("report.books.title", loc), dataInicio, dataFim, loc);
 
             ZoneOffset offset = OffsetDateTime.now().getOffset();
             OffsetDateTime inicio = (dataInicio != null) ? dataInicio.atStartOfDay().atOffset(offset) : null;
@@ -253,12 +286,12 @@ public class ReportService {
             table.setWidthPercentage(100);
             table.setWidths(new float[] { 1.2f, 4f, 3f, 3f, 2f, 2f });
 
-            adicionarCelulaHeader(table, "ID");
-            adicionarCelulaHeader(table, "Título");
-            adicionarCelulaHeader(table, "Autor");
-            adicionarCelulaHeader(table, "Gêneros");
-            adicionarCelulaHeader(table, "CDD");
-            adicionarCelulaHeader(table, "Qtd. Exemplares");
+            adicionarCelulaHeader(table, messages.resolve("report.books.col.id", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.books.col.title", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.books.col.author", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.books.col.genres", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.books.col.dewey", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.books.col.copy-count", loc));
 
             for (Book l : livros) {
                 long qtdExemplares = exemplarRepository.countByBook_Id(l.getId());
@@ -266,24 +299,29 @@ public class ReportService {
                 table.addCell(criarCelulaDados(l.getTitle()));
                 table.addCell(criarCelulaDados(l.getAuthor()));
                 String generos = l.getGenres().stream().map(Genre::getName).collect(Collectors.joining(", "));
-                table.addCell(criarCelulaDados(generos.isEmpty() ? "-" : generos));
-                table.addCell(criarCelulaDados(Optional.ofNullable(l.getDeweyClassification()).map(DeweyClassification::getCode).orElse("-")));
+                table.addCell(criarCelulaDados(generos.isEmpty() ? dashFallback : generos));
+                table.addCell(criarCelulaDados(
+                        Optional.ofNullable(l.getDeweyClassification()).map(DeweyClassification::getCode)
+                                .orElse(dashFallback)));
                 table.addCell(criarCelulaDados(String.valueOf(qtdExemplares)));
             }
 
             document.add(table);
-            adicionarRodapeRelatorio(document, "Total de títulos: " + livros.size());
+            adicionarRodapeRelatorio(document, messages.resolve("report.books.footer.total", loc, livros.size()));
         } catch (Exception ex) {
             log.error("Erro ao gerar relatório de livros filtrados", ex);
-            throw new IOException("Erro ao gerar relatório de livros filtrados", ex);
+            throw new IOException(messages.resolve("report.common.error.generate", loc), ex);
         }
     }
 
-    public void gerarRelatorioEstatisticasLivros(OutputStream out) throws IOException {
+    public void gerarRelatorioEstatisticasLivros(OutputStream out, Locale locale) throws IOException {
+        Locale loc = effective(locale);
+
         try (Document document = new Document(PageSize.A4)) {
             PdfWriter.getInstance(document, out);
             document.open();
-            adicionarCabecalhoRelatorio(document, "Estatísticas de Livros", null, null);
+            adicionarCabecalhoRelatorio(document, messages.resolve("report.books-statistics.title", loc),
+                    null, null, loc);
 
             long totalTitulos = livroRepository.count();
             List<Map<String, Object>> porAutor = livroRepository.countByAutor();
@@ -291,20 +329,20 @@ public class ReportService {
 
             PdfPTable tableResumo = new PdfPTable(2);
             tableResumo.setWidthPercentage(50);
-            adicionarCelulaHeader(tableResumo, "Métrica");
-            adicionarCelulaHeader(tableResumo, "Valor");
-            tableResumo.addCell(criarCelulaDados("Total de Títulos Distintos"));
+            adicionarCelulaHeader(tableResumo, messages.resolve("report.books-statistics.col.metric", loc));
+            adicionarCelulaHeader(tableResumo, messages.resolve("report.books-statistics.col.value", loc));
+            tableResumo.addCell(criarCelulaDados(messages.resolve("report.books-statistics.metric.total-titles", loc)));
             tableResumo.addCell(criarCelulaDados(String.valueOf(totalTitulos)));
             document.add(tableResumo);
             document.add(Chunk.NEWLINE);
 
-            document.add(new Paragraph("Top 10 Autores com Mais Títulos",
+            document.add(new Paragraph(messages.resolve("report.books-statistics.section.top-authors", loc),
                     FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14)));
             PdfPTable tAutor = new PdfPTable(2);
             tAutor.setWidthPercentage(80);
             tAutor.setSpacingBefore(10);
-            adicionarCelulaHeader(tAutor, "Autor");
-            adicionarCelulaHeader(tAutor, "Quantidade de Títulos");
+            adicionarCelulaHeader(tAutor, messages.resolve("report.books-statistics.col.author", loc));
+            adicionarCelulaHeader(tAutor, messages.resolve("report.books-statistics.col.title-count", loc));
             porAutor.stream().limit(10).forEach(e -> {
                 tAutor.addCell(criarCelulaDados(String.valueOf(e.get("autor"))));
                 tAutor.addCell(criarCelulaDados(String.valueOf(e.get("total"))));
@@ -312,12 +350,13 @@ public class ReportService {
             document.add(tAutor);
             document.add(Chunk.NEWLINE);
 
-            document.add(new Paragraph("Títulos por Gênero", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14)));
+            document.add(new Paragraph(messages.resolve("report.books-statistics.section.titles-by-genre", loc),
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14)));
             PdfPTable tGenero = new PdfPTable(2);
             tGenero.setWidthPercentage(80);
             tGenero.setSpacingBefore(10);
-            adicionarCelulaHeader(tGenero, "Gênero");
-            adicionarCelulaHeader(tGenero, "Quantidade de Títulos");
+            adicionarCelulaHeader(tGenero, messages.resolve("report.books-statistics.col.genre", loc));
+            adicionarCelulaHeader(tGenero, messages.resolve("report.books-statistics.col.title-count", loc));
             porGenero.forEach(e -> {
                 tGenero.addCell(criarCelulaDados(String.valueOf(e.get("genero"))));
                 tGenero.addCell(criarCelulaDados(String.valueOf(e.get("total"))));
@@ -326,17 +365,21 @@ public class ReportService {
 
         } catch (Exception ex) {
             log.error("Erro ao gerar estatísticas de livros", ex);
-            throw new IOException("Erro ao gerar estatísticas de livros", ex);
+            throw new IOException(messages.resolve("report.common.error.generate", loc), ex);
         }
     }
 
     public void gerarRelatorioExemplaresFiltrados(OutputStream out, BookCopyStatus status, String isbnOuTombo,
-            LocalDate dataInicio, LocalDate dataFim)
-            throws IOException {
+            LocalDate dataInicio, LocalDate dataFim, Locale locale) throws IOException {
+        Locale loc = effective(locale);
+        String dashFallback = messages.resolve("report.common.fallback.dash", loc);
+        String naFallback = messages.resolve("report.common.fallback.na", loc);
+
         try (Document document = new Document(PageSize.A4.rotate())) {
             PdfWriter.getInstance(document, out);
             document.open();
-            adicionarCabecalhoRelatorio(document, "Relatório de Exemplares", dataInicio, dataFim);
+            adicionarCabecalhoRelatorio(document, messages.resolve("report.copies.title", loc), dataInicio, dataFim,
+                    loc);
 
             ZoneOffset offset = OffsetDateTime.now().getOffset();
             OffsetDateTime inicio = (dataInicio != null) ? dataInicio.atStartOfDay().atOffset(offset) : null;
@@ -352,40 +395,45 @@ public class ReportService {
             table.setWidthPercentage(100);
             table.setWidths(new float[] { 2f, 4f, 2.5f, 3f, 3f });
 
-            adicionarCelulaHeader(table, "Tombo");
-            adicionarCelulaHeader(table, "Título do Livro");
-            adicionarCelulaHeader(table, "Status");
-            adicionarCelulaHeader(table, "Localização Física");
-            adicionarCelulaHeader(table, "ISBN");
+            adicionarCelulaHeader(table, messages.resolve("report.copies.col.copy-code", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.copies.col.book-title", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.copies.col.status", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.copies.col.shelf-location", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.copies.col.isbn", loc));
 
             for (BookCopy ex : exemplares) {
                 table.addCell(criarCelulaDados(ex.getCopyCode()));
-                table.addCell(criarCelulaDados(Optional.ofNullable(ex.getBook()).map(Book::getTitle).orElse("N/A")));
-                table.addCell(criarCelulaDados(Optional.ofNullable(ex.getStatus()).map(Enum::name).orElse("-")));
-                table.addCell(criarCelulaDados(Optional.ofNullable(ex.getShelfLocation()).orElse("-")));
-                table.addCell(criarCelulaDados(Optional.ofNullable(ex.getBook()).map(Book::getIsbn).orElse("-")));
+                table.addCell(criarCelulaDados(
+                        Optional.ofNullable(ex.getBook()).map(Book::getTitle).orElse(naFallback)));
+                table.addCell(criarCelulaDados(
+                        Optional.ofNullable(ex.getStatus()).map(Enum::name).orElse(dashFallback)));
+                table.addCell(criarCelulaDados(Optional.ofNullable(ex.getShelfLocation()).orElse(dashFallback)));
+                table.addCell(criarCelulaDados(
+                        Optional.ofNullable(ex.getBook()).map(Book::getIsbn).orElse(dashFallback)));
             }
 
             document.add(table);
-            adicionarRodapeRelatorio(document, "Total de exemplares encontrados: " + exemplares.size());
+            adicionarRodapeRelatorio(document,
+                    messages.resolve("report.copies.footer.total", loc, exemplares.size()));
         } catch (Exception ex) {
             log.error("Erro ao gerar relatório de exemplares filtrados", ex);
-            throw new IOException("Erro ao gerar relatório de exemplares filtrados", ex);
+            throw new IOException(messages.resolve("report.common.error.generate", loc), ex);
         }
     }
 
     // ================= MÉTODOS AUXILIARES (HELPERS) =================
 
-    private void adicionarCabecalhoRelatorio(Document document, String titulo, LocalDate inicio, LocalDate fim)
-            throws DocumentException {
+    private void adicionarCabecalhoRelatorio(Document document, String titulo, LocalDate inicio, LocalDate fim,
+            Locale locale) throws DocumentException {
         Paragraph pTitulo = new Paragraph(titulo, FONT_TITULO);
         pTitulo.setAlignment(Element.ALIGN_CENTER);
         pTitulo.setSpacingAfter(10);
         document.add(pTitulo);
 
         String periodoStr = (inicio != null && fim != null)
-                ? "Período: " + inicio.format(DATE_FORMATTER) + " a " + fim.format(DATE_FORMATTER)
-                : "Período: Todos os registros";
+                ? messages.resolve("report.period.range", locale,
+                        inicio.format(DATE_FORMATTER), fim.format(DATE_FORMATTER))
+                : messages.resolve("report.period.all", locale);
         Paragraph pPeriodo = new Paragraph(periodoStr, FontFactory.getFont(FontFactory.HELVETICA, 10));
         pPeriodo.setAlignment(Element.ALIGN_CENTER);
         pPeriodo.setSpacingAfter(20);
@@ -418,8 +466,8 @@ public class ReportService {
         return cell;
     }
 
-    private String formatarData(OffsetDateTime data) {
-        return (data != null) ? data.format(DATE_FORMATTER) : "N/A";
+    private String formatarData(OffsetDateTime data, Locale locale) {
+        return (data != null) ? data.format(DATE_FORMATTER) : messages.resolve("report.common.fallback.na", locale);
     }
 
     private String prepararFiltroLike(String valor) {
@@ -427,5 +475,9 @@ public class ReportService {
             return null;
         }
         return "%" + valor.trim() + "%";
+    }
+
+    private Locale effective(Locale locale) {
+        return locale != null ? locale : DEFAULT_LOCALE;
     }
 }

@@ -253,7 +253,7 @@ ON CONFLICT (book_id, genre_id) DO NOTHING;
 
 -- ----------------------------------------------------------------------------
 -- Book copies (15)
--- 4001-4008 AVAILABLE, 4009-4012 BORROWED (loans ativos),
+-- 4001, 4003-4008, 4012 AVAILABLE; 4002, 4009-4011 BORROWED (loans ativos),
 -- 4013 BORROWED OVERDUE, 4014 MAINTENANCE, 4015 UNAVAILABLE
 -- ----------------------------------------------------------------------------
 INSERT INTO book_copy (id, copy_code, status, book_id, shelf_location)
@@ -269,7 +269,7 @@ VALUES
     ('00000000-0000-4000-8000-000000004009'::uuid, 'LUM-0009', 'BORROWED',    '00000000-0000-4000-8000-000000003008'::uuid, 'C1-01'),
     ('00000000-0000-4000-8000-000000004010'::uuid, 'LUM-0010', 'BORROWED',    '00000000-0000-4000-8000-000000003014'::uuid, 'R1-01'),
     ('00000000-0000-4000-8000-000000004011'::uuid, 'LUM-0011', 'BORROWED',    '00000000-0000-4000-8000-000000003020'::uuid, 'F1-03'),
-    ('00000000-0000-4000-8000-000000004012'::uuid, 'LUM-0012', 'BORROWED',    '00000000-0000-4000-8000-000000003021'::uuid, 'H1-01'),
+    ('00000000-0000-4000-8000-000000004012'::uuid, 'LUM-0012', 'AVAILABLE',   '00000000-0000-4000-8000-000000003021'::uuid, 'H1-01'),
     ('00000000-0000-4000-8000-000000004013'::uuid, 'LUM-0013', 'BORROWED',    '00000000-0000-4000-8000-000000003017'::uuid, 'F1-04'),
     ('00000000-0000-4000-8000-000000004014'::uuid, 'LUM-0014', 'MAINTENANCE', '00000000-0000-4000-8000-000000003005'::uuid, 'T1-03'),
     ('00000000-0000-4000-8000-000000004015'::uuid, 'LUM-0015', 'UNAVAILABLE', '00000000-0000-4000-8000-000000003012'::uuid, 'C1-02')
@@ -288,7 +288,7 @@ VALUES
     ('00000000-0000-4000-8000-000000005003'::uuid, now() - INTERVAL '9 days',  now() + INTERVAL '5 days',  NULL, 'ACTIVE',    '00000000-0000-4000-8000-000000002404'::uuid, '00000000-0000-4000-8000-000000004009'::uuid, 0, NULL),
     ('00000000-0000-4000-8000-000000005004'::uuid, now() - INTERVAL '12 days', now() + INTERVAL '2 days',  NULL, 'ACTIVE',    '00000000-0000-4000-8000-000000002405'::uuid, '00000000-0000-4000-8000-000000004010'::uuid, 1, NULL),
     ('00000000-0000-4000-8000-000000005005'::uuid, now() - INTERVAL '15 days', now() - INTERVAL '1 days',  NULL, 'ACTIVE',    '00000000-0000-4000-8000-000000002406'::uuid, '00000000-0000-4000-8000-000000004011'::uuid, 0, NULL),
-    ('00000000-0000-4000-8000-000000005006'::uuid, now() - INTERVAL '7 days',  now() + INTERVAL '7 days',  NULL, 'ACTIVE',    '00000000-0000-4000-8000-000000002403'::uuid, '00000000-0000-4000-8000-000000004012'::uuid, 0, NULL),
+    ('00000000-0000-4000-8000-000000005006'::uuid, now() - INTERVAL '21 days', now() - INTERVAL '7 days',  now() - INTERVAL '5 days', 'COMPLETED', '00000000-0000-4000-8000-000000002403'::uuid, '00000000-0000-4000-8000-000000004012'::uuid, 1, NULL),
     -- OVERDUE: emprestimo com mais de 8 dias de atraso
     ('00000000-0000-4000-8000-000000005007'::uuid, now() - INTERVAL '30 days', now() - INTERVAL '8 days',  NULL, 'OVERDUE',   '00000000-0000-4000-8000-000000002408'::uuid, '00000000-0000-4000-8000-000000004013'::uuid, 0, 'SUSPENSION'),
     -- COMPLETED (5)
@@ -346,10 +346,10 @@ ON CONFLICT (id) DO UPDATE SET
 -- Theses (3)
 -- ----------------------------------------------------------------------------
 INSERT INTO thesis (id, title, authors, advisors, course_id, completion_year, completion_semester, pdf_url, cover_url, external_url, is_active)
-SELECT id, title, authors, advisors, c.id, completion_year, completion_semester, pdf_url, cover_url, external_url, TRUE
+SELECT data.id, data.title, data.authors, data.advisors, c.id, data.completion_year, data.completion_semester, data.pdf_url, data.cover_url, data.external_url, TRUE
 FROM (
     VALUES
-        ('00000000-0000-4000-8000-000000008001'::uuid, 'Sistema de Catalogo Digital para Biblioteca Escolar',     'Ana Beatriz Lima; Mariana Oliveira Santos', 'Prof. Joao Pereira',  'Desenvolvimento de Sistemas', 2025, '2', NULL,                                                                'https://covers.openlibrary.org/b/id/10523338-L.jpg', 'https://example.com/lumilivre/tcc-demo-1'),
+        ('00000000-0000-4000-8000-000000008001'::uuid, 'Sistema de Catalogo Digital para Biblioteca Escolar',     'Ana Beatriz Lima; Mariana Oliveira Santos', 'Prof. Joao Pereira',  'Desenvolvimento de Sistemas', 2025, '2', 'https://www.africau.edu/images/default/sample.pdf',                  'https://covers.openlibrary.org/b/id/10523338-L.jpg', 'https://example.com/lumilivre/tcc-demo-1'),
         ('00000000-0000-4000-8000-000000008002'::uuid, 'Gestao de Estoque para Pequenas Bibliotecas Escolares',   'Carlos Henrique Souza',                     'Profa. Beatriz Nunes','Administração',                2024, '2', 'https://www.africau.edu/images/default/sample.pdf',                  'https://covers.openlibrary.org/b/id/240727-L.jpg',   NULL),
         ('00000000-0000-4000-8000-000000008003'::uuid, 'Automacao de Importacao de Acervos via Planilhas',        'Pedro Henrique Costa; Lucas Pereira Cardoso','Prof. Lucio Almeida','Técnico em Mecatrônica',        2025, '1', 'https://www.africau.edu/images/default/sample.pdf',                  'https://covers.openlibrary.org/b/id/240727-L.jpg',   NULL)
 ) AS data(id, title, authors, advisors, course_name, completion_year, completion_semester, pdf_url, cover_url, external_url)
@@ -369,9 +369,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- ----------------------------------------------------------------------------
 -- Audit log (3) - tabela append-only sem PK natural; idempotencia via DELETE+INSERT
 -- ----------------------------------------------------------------------------
-DELETE FROM audit_log WHERE actor IN ('admin@lumilivre.test', 'librarian@lumilivre.test')
-    AND occurred_at <= now() - INTERVAL '1 day'
-    AND target_id LIKE 'demo-%';
+DELETE FROM audit_log WHERE target_id LIKE 'demo-%';
 
 INSERT INTO audit_log (actor, actor_role, target_id, action, result, error_message, occurred_at)
 VALUES

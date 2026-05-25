@@ -13,6 +13,7 @@ public final class CacheNames {
     public static final String BOOK_DETAIL = "book_detail";
     public static final String BOOK_COUNT = "book_count";
     public static final String STUDENT_COUNT = "student_count";
+    public static final String POSTAL_CODES = "postal_codes";
 
     private CacheNames() {
     }

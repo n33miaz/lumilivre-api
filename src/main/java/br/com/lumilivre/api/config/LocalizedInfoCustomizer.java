@@ -24,7 +24,7 @@ public class LocalizedInfoCustomizer implements OpenApiCustomizer {
         Info current = openApi.getInfo() != null ? openApi.getInfo() : new Info();
         openApi.setInfo(current
                 .title(resolve("swagger.api.title", "LumiLivre API"))
-                .version(resolve("swagger.api.version", "0.1.0"))
+                .version(resolve("swagger.api.version", "1.0.0"))
                 .description(resolve("swagger.api.description", ""))
                 .termsOfService(resolve("swagger.api.terms", null))
                 .contact(new Contact()

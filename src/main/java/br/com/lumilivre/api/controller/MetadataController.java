@@ -6,7 +6,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import br.com.lumilivre.api.config.SwaggerTags;
-import br.com.lumilivre.api.dto.common.AddressLookupResponse;
 import br.com.lumilivre.api.dto.common.LocalizedEnum;
 import br.com.lumilivre.api.dto.metadata.AuthorSummaryResponse;
 import br.com.lumilivre.api.dto.metadata.PostalCodeResponse;
@@ -22,7 +21,8 @@ import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.service.EnumLabelResolver;
-import br.com.lumilivre.api.service.infra.CepService;
+import br.com.lumilivre.api.service.infra.postalcode.PostalAddress;
+import br.com.lumilivre.api.service.infra.postalcode.PostalCodeRouter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +46,7 @@ public class MetadataController {
 
     private final EnumLabelResolver enumLabelResolver;
     private final BookRepository bookRepository;
-    private final CepService cepService;
+    private final PostalCodeRouter postalCodeRouter;
 
     @GetMapping("/enums/{type}")
     @Operation(operationId = "metadata.enums")
@@ -96,22 +96,25 @@ public class MetadataController {
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
     public ResponseEntity<PostalCodeResponse> postalCode(
             @PathVariable String postalCode,
+            @RequestParam(value = "country", required = false, defaultValue = "BR") String countryCode,
             Locale locale) {
-        String normalized = postalCode.replaceAll("\\D", "");
-        if (normalized.length() != 8) {
+        String iso = countryCode == null ? "BR" : countryCode.trim().toUpperCase(Locale.ROOT);
+        String normalized = "BR".equals(iso) ? postalCode.replaceAll("\\D", "") : postalCode.trim();
+        if ("BR".equals(iso) && normalized.length() != 8) {
             throw BusinessRuleException.ofKey("metadata.postal-code.invalid");
         }
-        AddressLookupResponse address = cepService.buscarEnderecoPorCep(normalized);
-        if (address == null || isBlank(address.getLogradouro()) || isBlank(address.getLocalidade())) {
-            throw ResourceNotFoundException.ofKey("metadata.postal-code.not-found", normalized);
+        if (normalized.isBlank()) {
+            throw BusinessRuleException.ofKey("metadata.postal-code.invalid");
         }
+        PostalAddress address = postalCodeRouter.lookup(normalized, iso)
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("metadata.postal-code.not-found", normalized));
         PostalCodeResponse body = new PostalCodeResponse(
-                normalized,
-                address.getLogradouro(),
-                address.getComplemento(),
-                address.getBairro(),
-                address.getLocalidade(),
-                address.getUf());
+                address.postalCode(),
+                address.street(),
+                address.addressComplement(),
+                address.district(),
+                address.city(),
+                address.regionCode());
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);

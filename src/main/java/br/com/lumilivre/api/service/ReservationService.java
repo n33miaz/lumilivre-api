@@ -2,12 +2,14 @@ package br.com.lumilivre.api.service;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.domain.policy.ReservationPolicy;
 import br.com.lumilivre.api.enums.ReservationStatus;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
@@ -31,15 +33,16 @@ public class ReservationService {
     private final StudentRepository studentRepository;
     private final BookRepository bookRepository;
     private final OutboxPublisherService outboxPublisher;
+    private final MessageResolver messages;
 
     @Auditable(action = "RESERVATION_CREATED", targetParam = "#matricula")
     @Transactional
     public Reservation criarReserva(String matricula, UUID bookId) {
         Student student = studentRepository.findByRegistrationNumber(matricula)
-                .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
 
         Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new ResourceNotFoundException("Livro não encontrado."));
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found"));
 
         long activeReservations = reservationRepository
                 .findByStudent_RegistrationNumberOrderByCreatedAtDesc(matricula)
@@ -64,9 +67,11 @@ public class ReservationService {
 
         Reservation saved = reservationRepository.save(reservation);
 
+        Locale locale = localeFor(student);
         outboxPublisher.publish(EventType.REQUEST_ACCEPTED, student.getEmail(),
-                "Reserva registrada",
-                "Sua reserva do livro '" + book.getTitle() + "' foi registrada (posição " + nextPosition + " na fila).");
+                messages.resolve("email.reservation-registered.subject", locale),
+                messages.resolve("email.reservation-registered.body", locale,
+                        book.getTitle(), nextPosition));
 
         return saved;
     }
@@ -96,12 +101,13 @@ public class ReservationService {
                     next.setExpiresAt(ReservationPolicy.calculatePickupDeadline(now));
                     reservationRepository.save(next);
 
+                    Locale locale = localeFor(next.getStudent());
                     outboxPublisher.publish(EventType.REQUEST_ACCEPTED,
                             next.getStudent().getEmail(),
-                            "Livro disponível para retirada",
-                            "O livro '" + next.getBook().getTitle() +
-                            "' está disponível. Retire até " +
-                            next.getExpiresAt().toLocalDate() + ".");
+                            messages.resolve("email.reservation-pickup.subject", locale),
+                            messages.resolve("email.reservation-pickup.body", locale,
+                                    next.getBook().getTitle(),
+                                    next.getExpiresAt().toLocalDate()));
                 });
     }
 
@@ -120,5 +126,14 @@ public class ReservationService {
         }
 
         log.info("ReservationService: {} reservation(s) expired.", expired.size());
+    }
+
+    private Locale localeFor(Student student) {
+        if (student != null && student.getAppUser() != null
+                && student.getAppUser().getPreferredLocale() != null
+                && !student.getAppUser().getPreferredLocale().isBlank()) {
+            return Locale.forLanguageTag(student.getAppUser().getPreferredLocale());
+        }
+        return Locale.forLanguageTag("pt-BR");
     }
 }

@@ -3,22 +3,28 @@ package br.com.lumilivre.api.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.enums.ReservationStatus;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
@@ -48,8 +54,37 @@ class ReservationServiceTest {
     @Mock
     private OutboxPublisherService outboxPublisher;
 
+    @Mock
+    private MessageResolver messages;
+
     @InjectMocks
     private ReservationService service;
+
+    @BeforeEach
+    void stubMessageResolver() {
+        lenient().when(messages.resolve(anyString(), any(Locale.class)))
+                .thenAnswer(this::resolveMessage);
+        lenient().when(messages.resolve(anyString(), any(Locale.class), any()))
+                .thenAnswer(this::resolveMessage);
+        lenient().when(messages.resolve(anyString(), any(Locale.class), any(), any()))
+                .thenAnswer(this::resolveMessage);
+    }
+
+    private String resolveMessage(InvocationOnMock invocation) {
+        String key = invocation.getArgument(0);
+        Object[] args = invocation.getArguments();
+        String first = args.length >= 3 && args[2] != null ? String.valueOf(args[2]) : "";
+        String second = args.length >= 4 && args[3] != null ? String.valueOf(args[3]) : "";
+        return switch (key) {
+            case "email.reservation-registered.subject" -> "Reserva registrada";
+            case "email.reservation-registered.body" ->
+                "Sua reserva do livro '" + first + "' foi registrada (posição " + second + " na fila).";
+            case "email.reservation-pickup.subject" -> "Livro disponível para retirada";
+            case "email.reservation-pickup.body" ->
+                "O livro '" + first + "' está disponível. Retire até " + second + ".";
+            default -> key;
+        };
+    }
 
     @Test
     void criarReservaSavesNextQueuePositionAndPublishesOutbox() {

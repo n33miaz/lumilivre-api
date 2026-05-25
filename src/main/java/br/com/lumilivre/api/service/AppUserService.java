@@ -82,7 +82,7 @@ public class AppUserService {
             Locale locale = localeFor(savedAppUser);
             String roleKey = savedAppUser.getRole() == Role.ADMIN ? "user.role.admin" : "user.role.librarian";
             String roleName = messages.resolve(roleKey, locale);
-            emailService.enviarSenhaInicialAdmin(savedAppUser.getEmail(), roleName, rawPassword);
+            emailService.enviarSenhaInicialAdmin(savedAppUser.getEmail(), roleName, rawPassword, locale);
         } catch (Exception e) {
             System.err.println("Erro ao enviar email: " + e.getMessage());
         }

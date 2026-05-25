@@ -1,9 +1,90 @@
 version: '3.8'
 
+# =============================================================================
+#  LumiLivre API — local stack
+# -----------------------------------------------------------------------------
+#  Sobe Postgres 16 + Redis + Mailhog prontos para a API rodar sem nenhuma
+#  credencial Supabase. Use:
+#      docker compose up -d
+#      LUMILIVRE_FLYWAY_ENABLED=true \
+#      LUMILIVRE_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed,classpath:db/vendor/postgresql \
+#      ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+#
+#  Acesso:
+#      Postgres : localhost:5432 (user=lumilivre, db=lumilivre, pw=lumilivre)
+#      Redis    : localhost:6379
+#      Mailhog  : SMTP localhost:1025  ·  UI http://localhost:8025
+#
+#  Para storage S3-compatible em dev (depende de F2 — StorageProvider), descomente
+#  o serviço `minio` abaixo.
+# =============================================================================
+
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lumilivre-postgres
+    environment:
+      POSTGRES_USER: lumilivre
+      POSTGRES_PASSWORD: lumilivre
+      POSTGRES_DB: lumilivre
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - lumilivre-postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lumilivre -d lumilivre"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: lumilivre-redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: lumilivre-mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8025/api/v2/messages"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # Descomente após F2 (StorageProvider) — substitui Supabase Storage em dev.
+  # minio:
+  #   image: minio/minio:latest
+  #   container_name: lumilivre-minio
+  #   command: server /data --console-address ":9001"
+  #   environment:
+  #     MINIO_ROOT_USER: lumilivre
+  #     MINIO_ROOT_PASSWORD: lumilivre-dev-secret
+  #   ports:
+  #     - "9000:9000"  # S3 API
+  #     - "9001:9001"  # Console UI
+  #   volumes:
+  #     - lumilivre-minio-data:/data
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 5
+  #   restart: unless-stopped
+
+volumes:
+  lumilivre-postgres-data:
+  # lumilivre-minio-data:

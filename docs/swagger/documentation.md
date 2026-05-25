@@ -1,62 +1,62 @@
-# swagger/openapi docs
+# documentação swagger/openapi
 
-## conventions
+## convenções
 
-This document is the source of truth for LumiLivre API documentation.
+Este documento é a fonte de verdade para a documentação da API LumiLivre.
 
-### principles
+### princípios
 
-- Controllers declare stable machine identifiers only: `@Tag(name = SwaggerTags.BOOKS)` and `@Operation(operationId = "books.list")`.
-- Human-facing text lives in `src/main/resources/i18n/swagger/*_{pt_BR,en_US}.properties`.
-- The same operation must render correctly in `api-pt-br` and `api-en-us`.
-- Public endpoints must not show the bearer lock. Protected endpoints must show bearer authentication.
-- New tags must be added to `SwaggerTags.ORDERED` and to both localized bundles.
+- Controllers declaram apenas identificadores estáveis de máquina: `@Tag(name = SwaggerTags.BOOKS)` e `@Operation(operationId = "books.list")`.
+- Textos visíveis para usuários ficam em `src/main/resources/i18n/swagger/*_{pt_BR,en_US}.properties`.
+- A mesma operação deve renderizar corretamente nos grupos `api-pt-br` e `api-en-us`.
+- Endpoints públicos não devem mostrar o cadeado de Bearer token. Endpoints protegidos devem mostrar autenticação Bearer.
+- Novas tags devem ser adicionadas em `SwaggerTags.ORDERED` e nos bundles localizados.
 
-### operation ids
+### ids de operação
 
 Use `{tagKey}.{verb}`:
 
-| HTTP/use case | Suffix examples |
+| caso de uso HTTP | sufixos recomendados |
 |---|---|
-| list/search | `list`, `search`, `advanced`, `byStudent` |
-| read one | `get`, `isbnLookup`, `postalCode` |
-| create/update/delete | `create`, `update`, `delete` |
-| actions | `close`, `renew`, `cancel`, `process` |
-| uploads/imports | `uploadCover`, `uploadAvatar`, `students`, `books`, `copies` |
+| listagem/busca | `list`, `search`, `advanced`, `byStudent` |
+| leitura única | `get`, `isbnLookup`, `postalCode` |
+| criação/atualização/remoção | `create`, `update`, `delete` |
+| ações | `close`, `renew`, `cancel`, `process` |
+| uploads/importações | `uploadCover`, `uploadAvatar`, `students`, `books`, `copies` |
 
-Examples: `auth.login`, `books.catalog`, `loans.close`, `loan-requests.process`.
+Exemplos: `auth.login`, `books.catalog`, `loans.close`, `loan-requests.process`.
 
-### bundle keys
+### chaves dos bundles
 
-Minimum keys per operation:
-
-```properties
-swagger.operation.{operationId}.summary=Short action label
-swagger.operation.{operationId}.description=Business purpose, roles and relevant rules.
-```
-
-Optional keys:
+Chaves mínimas por operação:
 
 ```properties
-swagger.parameter.{operationId}.{paramName}.description=Specific parameter wording.
-swagger.requestBody.{operationId}.description=Request body purpose.
-swagger.response.{operationId}.{status}.description=Specific response wording.
-swagger.schema.{SchemaName}.description=Schema purpose.
-swagger.schema.{SchemaName}.{field}.description=Field purpose.
+swagger.operation.{operationId}.summary=Rótulo curto da ação
+swagger.operation.{operationId}.description=Propósito de negócio, permissões e regras relevantes.
 ```
 
-Shared fallback keys live in `_common_{locale}.properties`.
+Chaves opcionais:
 
-## contributing
+```properties
+swagger.parameter.{operationId}.{paramName}.description=Texto específico do parâmetro.
+swagger.requestBody.{operationId}.description=Propósito do corpo da requisição.
+swagger.response.{operationId}.{status}.description=Texto específico da resposta.
+swagger.schema.{SchemaName}.description=Propósito do schema.
+swagger.schema.{SchemaName}.{field}.description=Propósito do campo.
+```
 
-When adding or changing an endpoint:
+Chaves compartilhadas de fallback ficam em `_common_{locale}.properties`.
 
-1. Add or update `@Tag(name = SwaggerTags.X)` on the controller.
-2. Add `@Operation(operationId = "{tag}.{verb}")` on every mapping method.
-3. Add `swagger.operation.{operationId}.summary` and `.description` in PT-BR.
-4. Add the exact same keys in EN-US.
-5. Add request-body and parameter keys when the generated wording is not enough.
-6. Run:
+## contribuição
+
+Ao adicionar ou alterar um endpoint:
+
+1. Adicione ou atualize `@Tag(name = SwaggerTags.X)` no controller.
+2. Adicione `@Operation(operationId = "{tag}.{verb}")` em todo método com mapping.
+3. Adicione `swagger.operation.{operationId}.summary` e `.description` em PT-BR.
+4. Adicione exatamente as mesmas chaves em EN-US.
+5. Adicione chaves de request body e parâmetros quando o texto gerado não for suficiente.
+6. Rode:
 
 ```bash
 bash scripts/check-i18n-coverage.sh
@@ -64,16 +64,16 @@ bash scripts/check-openapi-annotations.sh
 ./mvnw test
 ```
 
-Do not put user-facing text directly inside annotations. The Java source should remain stable when only wording or translations change.
+Não coloque textos visíveis para usuários diretamente nas annotations. O código Java deve permanecer estável quando apenas textos ou traduções mudarem.
 
-## adding another swagger language
+## adicionando outro idioma no swagger
 
-Example for Spanish (`es-ES`):
+Exemplo para espanhol (`es-ES`):
 
-1. Copy each `src/main/resources/i18n/swagger/*_pt_BR.properties` file to `*_es_ES.properties`.
-2. Translate values only. Keep keys unchanged.
-3. Add the locale to `I18nConfig.localeResolver().setSupportedLocales(...)`.
-4. Add a new group in `OpenApiConfig`:
+1. Copie cada arquivo `src/main/resources/i18n/swagger/*_pt_BR.properties` para `*_es_ES.properties`.
+2. Traduza apenas os valores. Mantenha as chaves inalteradas.
+3. Adicione o locale em `I18nConfig.localeResolver().setSupportedLocales(...)`.
+4. Adicione um novo grupo em `OpenApiConfig`:
 
 ```java
 @Bean
@@ -82,23 +82,23 @@ public GroupedOpenApi apiEsEsGroup() {
 }
 ```
 
-5. Run the coverage script and the tests.
+5. Rode o script de cobertura e os testes.
 
-Adding a language should not require changing controllers or operation IDs.
+Adicionar um idioma não deve exigir mudanças nos controllers nem nos operation IDs.
 
-## glossary
+## glossário
 
-| PT-BR | EN-US | Notes |
+| PT-BR | EN-US | observações |
 |---|---|---|
-| Empréstimo | Loan | Physical checkout of a copy by a student. |
-| Exemplar | Book copy | Physical inventory unit identified by copy code/tombo. |
-| Aluno | Student | Library user with a registration number. |
-| Bibliotecário | Librarian | Operational staff role. |
-| Usuário administrativo | Admin user | ADMIN or LIBRARIAN account. |
-| Solicitação | Loan request | Request that may become a loan when accepted. |
-| Reserva | Reservation | FIFO queue for a book. |
-| TCC | Thesis | Final-year academic work. |
-| CDD | Dewey Classification | Keep `CDD` in Portuguese contexts. |
-| Tombo | Copy code | Inventory identifier of a physical copy. |
-| Matrícula | Registration number | Student identifier. |
-| CEP | Postal code | Keep `CEP` only in PT-BR texts. |
+| Empréstimo | Loan | Saída física de um exemplar para um aluno. |
+| Exemplar | Book copy | Unidade física do acervo identificada por tombo. |
+| Aluno | Student | Usuário da biblioteca com matrícula. |
+| Bibliotecário | Librarian | Perfil operacional da equipe. |
+| Usuário administrativo | Admin user | Conta ADMIN ou LIBRARIAN. |
+| Solicitação | Loan request | Pedido que pode virar empréstimo quando aceito. |
+| Reserva | Reservation | Fila FIFO para um livro. |
+| TCC | Thesis | Trabalho acadêmico de conclusão de curso. |
+| CDD | Dewey Classification | Em textos em português, manter a sigla `CDD`. |
+| Tombo | Copy code | Identificador patrimonial de um exemplar físico. |
+| Matrícula | Registration number | Identificador do aluno. |
+| CEP | Postal code | Manter `CEP` apenas nos textos PT-BR. |

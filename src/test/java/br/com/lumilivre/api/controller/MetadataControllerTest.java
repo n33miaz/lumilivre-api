@@ -8,15 +8,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
-import br.com.lumilivre.api.dto.common.AddressLookupResponse;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.service.EnumLabelResolver;
-import br.com.lumilivre.api.service.infra.CepService;
+import br.com.lumilivre.api.service.infra.postalcode.PostalAddress;
+import br.com.lumilivre.api.service.infra.postalcode.PostalCodeRouter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -37,7 +38,7 @@ class MetadataControllerTest {
     private BookRepository bookRepository;
 
     @MockBean
-    private CepService cepService;
+    private PostalCodeRouter postalCodeRouter;
 
     @MockBean
     private JwtUtil jwtUtil;
@@ -73,12 +74,11 @@ class MetadataControllerTest {
 
     @Test
     void postalCodeMapsExternalAddress() throws Exception {
-        AddressLookupResponse address = new AddressLookupResponse();
-        address.setLogradouro("Praca da Se");
-        address.setBairro("Se");
-        address.setLocalidade("Sao Paulo");
-        address.setUf("SP");
-        when(cepService.buscarEnderecoPorCep("01001000")).thenReturn(address);
+        PostalAddress address = new PostalAddress(
+                "01001000", "BR",
+                "Praca da Se", null, "Se",
+                "Sao Paulo", "SP", "SP");
+        when(postalCodeRouter.lookup("01001000", "BR")).thenReturn(Optional.of(address));
 
         mockMvc.perform(get("/api/metadata/postal-codes/01001-000")
                         .header("Accept-Language", "pt-BR"))
@@ -88,5 +88,20 @@ class MetadataControllerTest {
                 .andExpect(jsonPath("$.street").value("Praca da Se"))
                 .andExpect(jsonPath("$.city").value("Sao Paulo"))
                 .andExpect(jsonPath("$.stateCode").value("SP"));
+    }
+
+    @Test
+    void postalCodeAcceptsCountryQueryParam() throws Exception {
+        PostalAddress address = new PostalAddress(
+                "90210", "US",
+                null, null, null,
+                "Beverly Hills", "CA", "California");
+        when(postalCodeRouter.lookup("90210", "US")).thenReturn(Optional.of(address));
+
+        mockMvc.perform(get("/api/metadata/postal-codes/90210").param("country", "US"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.postalCode").value("90210"))
+                .andExpect(jsonPath("$.city").value("Beverly Hills"))
+                .andExpect(jsonPath("$.stateCode").value("CA"));
     }
 }

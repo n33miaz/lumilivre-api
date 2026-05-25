@@ -14,7 +14,8 @@ import br.com.lumilivre.api.model.Course;
 import br.com.lumilivre.api.model.Thesis;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.ThesisRepository;
-import br.com.lumilivre.api.service.infra.SupabaseStorageService;
+import br.com.lumilivre.api.service.infra.storage.StorageBucket;
+import br.com.lumilivre.api.service.infra.storage.StorageProvider;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -22,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class ThesisService {
 
     private final ThesisRepository thesisRepository;
-    private final SupabaseStorageService storageService;
+    private final StorageProvider storageProvider;
     private final CourseRepository courseRepository;
 
     @Transactional
@@ -45,13 +46,13 @@ public class ThesisService {
 
         try {
             if (pdfFile != null && !pdfFile.isEmpty()) {
-                thesis.setPdfUrl(storageService.uploadFile(pdfFile, "theses"));
+                thesis.setPdfUrl(storageProvider.upload(pdfFile, StorageBucket.THESES));
             }
             if (coverFile != null && !coverFile.isEmpty()) {
-                thesis.setCoverUrl(storageService.uploadFile(coverFile, "covers"));
+                thesis.setCoverUrl(storageProvider.upload(coverFile, StorageBucket.COVERS));
             }
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao enviar arquivos do TCC: " + e.getMessage(), e);
+            throw BusinessRuleException.ofKey("thesis.upload-failed");
         }
 
         return thesisRepository.save(thesis);
@@ -87,13 +88,13 @@ public class ThesisService {
 
         try {
             if (pdfFile != null && !pdfFile.isEmpty()) {
-                thesis.setPdfUrl(storageService.uploadFile(pdfFile, "theses"));
+                thesis.setPdfUrl(storageProvider.upload(pdfFile, StorageBucket.THESES));
             }
             if (coverFile != null && !coverFile.isEmpty()) {
-                thesis.setCoverUrl(storageService.uploadFile(coverFile, "covers"));
+                thesis.setCoverUrl(storageProvider.upload(coverFile, StorageBucket.COVERS));
             }
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao enviar arquivos do TCC: " + e.getMessage(), e);
+            throw BusinessRuleException.ofKey("thesis.upload-failed");
         }
 
         return thesisRepository.save(thesis);

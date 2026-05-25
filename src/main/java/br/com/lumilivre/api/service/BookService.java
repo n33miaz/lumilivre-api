@@ -42,9 +42,10 @@ import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.repository.DeweyClassificationRepository;
 import br.com.lumilivre.api.repository.GenreRepository;
-import br.com.lumilivre.api.service.infra.BrasilApiService;
-import br.com.lumilivre.api.service.infra.GoogleBooksService;
-import br.com.lumilivre.api.service.infra.SupabaseStorageService;
+import br.com.lumilivre.api.service.infra.bookmetadata.BookMetadata;
+import br.com.lumilivre.api.service.infra.bookmetadata.BookMetadataChain;
+import br.com.lumilivre.api.service.infra.storage.StorageBucket;
+import br.com.lumilivre.api.service.infra.storage.StorageProvider;
 
 @Service
 public class BookService {
@@ -53,26 +54,20 @@ public class BookService {
 
     private final BookCopyRepository bookCopyRepository;
     private final BookRepository bookRepository;
-    private final SupabaseStorageService storageService;
-    private final GoogleBooksService googleBooksService;
-    private final BrasilApiService brasilApiService;
+    private final StorageProvider storageProvider;
+    private final BookMetadataChain bookMetadataChain;
     private final GenreRepository genreRepository;
     private final DeweyClassificationRepository deweyClassificationRepository;
 
-    @Value("${supabase.storage.base-url-capas}")
-    private String baseUrlCapas;
-
     public BookService(BookCopyRepository bookCopyRepository, BookRepository bookRepository,
-            SupabaseStorageService storageService, GoogleBooksService googleBooksService,
-            GenreRepository genreRepository, DeweyClassificationRepository deweyClassificationRepository,
-            BrasilApiService brasilApiService) {
+            StorageProvider storageProvider, BookMetadataChain bookMetadataChain,
+            GenreRepository genreRepository, DeweyClassificationRepository deweyClassificationRepository) {
         this.bookCopyRepository = bookCopyRepository;
         this.bookRepository = bookRepository;
-        this.storageService = storageService;
-        this.googleBooksService = googleBooksService;
+        this.storageProvider = storageProvider;
+        this.bookMetadataChain = bookMetadataChain;
         this.genreRepository = genreRepository;
         this.deweyClassificationRepository = deweyClassificationRepository;
-        this.brasilApiService = brasilApiService;
     }
 
     public Page<BookCardResponse> buscarMobilePorTexto(String texto, Pageable pageable) {
@@ -179,10 +174,10 @@ public class BookService {
 
         if (file != null && !file.isEmpty()) {
             try {
-                String url = storageService.uploadFile(file, "covers");
-                book.setCoverUrl(url);
+                book.setCoverUrl(storageProvider.upload(file, StorageBucket.COVERS));
             } catch (Exception e) {
-                throw new RuntimeException("Erro ao enviar a capa: " + e.getMessage(), e);
+                log.error("Erro ao enviar a capa via {}: {}", storageProvider.name(), e.getMessage(), e);
+                throw BusinessRuleException.ofKey("book.cover.upload-failed");
             }
         }
 
@@ -265,63 +260,31 @@ public class BookService {
     }
 
     private void preencherDadosExternos(BookRequest request) {
-        boolean googleEncontrou = false;
-        boolean temCapa = isNaoVazio(request.getCoverUrl());
+        Optional<BookMetadata> result = Optional.empty();
 
-        try {
-            var googleOpt = googleBooksService.findBestBookMatch(request.getIsbn(), request.getTitle(), request.getAuthor());
-
-            if (googleOpt.isPresent()) {
-                googleEncontrou = true;
-                var livroGoogle = googleOpt.get().livro();
-                var googleData = googleOpt.get();
-
-                if (isVazio(request.getTitle())) request.setTitle(livroGoogle.getTitle());
-                if (isVazio(request.getPublisher())) request.setPublisher(livroGoogle.getPublisher());
-                if (request.getPageCount() == null || request.getPageCount() == 0)
-                    request.setPageCount(livroGoogle.getPageCount());
-                if (request.getPublicationDate() == null) request.setPublicationDate(livroGoogle.getPublicationDate());
-                if (isVazio(request.getSynopsis())) request.setSynopsis(livroGoogle.getSynopsis());
-                if (isVazio(request.getAuthor()) && isNaoVazio(livroGoogle.getAuthor()))
-                    request.setAuthor(livroGoogle.getAuthor());
-
-                if (!temCapa && isNaoVazio(livroGoogle.getCoverUrl())) {
-                    request.setCoverUrl(livroGoogle.getCoverUrl());
-                    temCapa = true;
-                }
-
-                if (googleData.averageRating() != null) {
-                    request.setRating(googleData.averageRating());
-                } else if (request.getRating() == null) {
-                    request.setRating(4.6);
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Falha na busca Google Books: {}", e.getMessage());
+        if (isNaoVazio(request.getIsbn())) {
+            result = bookMetadataChain.findByIsbn(request.getIsbn());
+        }
+        if (result.isEmpty() && isNaoVazio(request.getTitle())) {
+            result = bookMetadataChain.findByTitleAndAuthor(request.getTitle(), request.getAuthor());
         }
 
-        if ((!googleEncontrou || !temCapa) && isNaoVazio(request.getIsbn())) {
-            try {
-                var brasilOpt = brasilApiService.buscarPorIsbn(request.getIsbn());
-
-                if (brasilOpt.isPresent()) {
-                    var brData = brasilOpt.get();
-                    if (isVazio(request.getTitle())) request.setTitle(brData.title());
-                    if (isVazio(request.getPublisher())) request.setPublisher(brData.publisher());
-                    if (isVazio(request.getSynopsis())) request.setSynopsis(brData.synopsis());
-                    if (request.getPageCount() == null || request.getPageCount() == 0)
-                        request.setPageCount(brData.pageCount());
-                    if (request.getPublicationDate() == null && brData.year() != null)
-                        request.setPublicationDate(LocalDate.of(brData.year(), 1, 1));
-                    if (isVazio(request.getAuthor()) && brData.authors() != null && !brData.authors().isEmpty())
-                        request.setAuthor(String.join(", ", brData.authors()));
-                    if (!temCapa && isNaoVazio(brData.coverUrl()))
-                        request.setCoverUrl(brData.coverUrl());
-                }
-            } catch (Exception e) {
-                log.warn("Falha no fallback BrasilAPI: {}", e.getMessage());
-            }
-        }
+        result.ifPresent(metadata -> {
+            log.info("Metadados externos resolvidos via providers='{}'", metadata.providerName());
+            if (isVazio(request.getTitle())) request.setTitle(metadata.title());
+            if (isVazio(request.getPublisher())) request.setPublisher(metadata.publisher());
+            if (isVazio(request.getSynopsis())) request.setSynopsis(metadata.synopsis());
+            if (isVazio(request.getAuthor()) && isNaoVazio(metadata.author()))
+                request.setAuthor(metadata.author());
+            if (request.getPageCount() == null || request.getPageCount() == 0)
+                request.setPageCount(metadata.pageCount());
+            if (request.getPublicationDate() == null && metadata.publicationDate() != null)
+                request.setPublicationDate(metadata.publicationDate());
+            if (isVazio(request.getCoverUrl()) && isNaoVazio(metadata.coverUrl()))
+                request.setCoverUrl(metadata.coverUrl());
+            if (request.getRating() == null && metadata.rating() != null)
+                request.setRating(metadata.rating());
+        });
 
         if (request.getRating() == null) request.setRating(4.6);
     }
@@ -375,9 +338,9 @@ public class BookService {
 
         if (file != null && !file.isEmpty()) {
             try {
-                book.setCoverUrl(storageService.uploadFile(file, "covers"));
+                book.setCoverUrl(storageProvider.upload(file, StorageBucket.COVERS));
             } catch (Exception e) {
-                log.error("Erro ao enviar a capa: {}", e.getMessage(), e);
+                log.error("Erro ao enviar a capa via {}: {}", storageProvider.name(), e.getMessage(), e);
                 throw BusinessRuleException.ofKey("book.cover.upload-failed");
             }
         } else if (isNaoVazio(request.getCoverUrl())) {

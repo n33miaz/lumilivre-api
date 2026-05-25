@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.controller;
 
 import java.time.LocalDate;
+import java.util.Locale;
 
 import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.enums.BookCopyStatus;
@@ -37,12 +38,13 @@ public class ReportController {
             @RequestParam(required = false) String studentRegistrationNumber,
             @RequestParam(required = false) Integer courseId,
             @RequestParam(required = false) String isbnOrCopyCode,
-            @RequestParam(required = false) Integer academicModuleId) throws Exception {
+            @RequestParam(required = false) Integer academicModuleId,
+            Locale locale) throws Exception {
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=loans-report.pdf");
         reportService.gerarRelatorioEmprestimosPorFiltros(
                 response.getOutputStream(), startDate, endDate, status,
-                studentRegistrationNumber, courseId, isbnOrCopyCode, academicModuleId);
+                studentRegistrationNumber, courseId, isbnOrCopyCode, academicModuleId, locale);
     }
 
     @GetMapping("/students")
@@ -55,12 +57,13 @@ public class ReportController {
             @RequestParam(required = false) Integer studyShiftId,
             @RequestParam(required = false) PenaltyCode penaltyCode,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) throws Exception {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Locale locale) throws Exception {
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=students-report.pdf");
         reportService.gerarRelatorioAlunosPorFiltros(
                 response.getOutputStream(), academicModuleId, courseId, studyShiftId,
-                penaltyCode, startDate, endDate);
+                penaltyCode, startDate, endDate, locale);
     }
 
     @GetMapping("/books")
@@ -75,20 +78,22 @@ public class ReportController {
             @RequestParam(required = false) String ageRating,
             @RequestParam(required = false) String coverType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) throws Exception {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Locale locale) throws Exception {
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=books-report.pdf");
         reportService.gerarRelatorioLivrosFiltrados(
-                response.getOutputStream(), genre, author, publisher, deweyCode, ageRating, coverType, startDate, endDate);
+                response.getOutputStream(), genre, author, publisher, deweyCode, ageRating, coverType,
+                startDate, endDate, locale);
     }
 
     @GetMapping("/books/statistics")
     @Operation(operationId = "reports.bookStatistics")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
-    public void booksStatistics(HttpServletResponse response) throws Exception {
+    public void booksStatistics(HttpServletResponse response, Locale locale) throws Exception {
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=books-statistics-report.pdf");
-        reportService.gerarRelatorioEstatisticasLivros(response.getOutputStream());
+        reportService.gerarRelatorioEstatisticasLivros(response.getOutputStream(), locale);
     }
 
     @GetMapping("/copies")
@@ -99,19 +104,20 @@ public class ReportController {
             @RequestParam(required = false) BookCopyStatus status,
             @RequestParam(required = false) String isbnOrCopyCode,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) throws Exception {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Locale locale) throws Exception {
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=copies-report.pdf");
         reportService.gerarRelatorioExemplaresFiltrados(
-                response.getOutputStream(), status, isbnOrCopyCode, startDate, endDate);
+                response.getOutputStream(), status, isbnOrCopyCode, startDate, endDate, locale);
     }
 
     @GetMapping("/courses")
     @Operation(operationId = "reports.courses")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
-    public void courses(HttpServletResponse response) throws Exception {
+    public void courses(HttpServletResponse response, Locale locale) throws Exception {
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=courses-report.pdf");
-        reportService.gerarRelatorioCursosGeral(response.getOutputStream());
+        reportService.gerarRelatorioCursosGeral(response.getOutputStream(), locale);
     }
 }

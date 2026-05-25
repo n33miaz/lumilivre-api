@@ -5,8 +5,11 @@ import static br.com.lumilivre.api.config.CacheNames.STUDENT_COUNT;
 import java.time.LocalDate;
 import java.util.List;
 
+import java.util.Locale;
+
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import br.com.lumilivre.api.dto.common.AddressLookupResponse;
 import br.com.lumilivre.api.dto.student.StudentListItem;
 import br.com.lumilivre.api.dto.student.StudentRankingItem;
 import br.com.lumilivre.api.dto.student.StudentRequest;
@@ -32,9 +34,11 @@ import br.com.lumilivre.api.repository.AppUserRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.StudentRepository;
 import br.com.lumilivre.api.repository.StudyShiftRepository;
-import br.com.lumilivre.api.service.infra.CepService;
 import br.com.lumilivre.api.service.infra.EmailService;
-import br.com.lumilivre.api.service.infra.SupabaseStorageService;
+import br.com.lumilivre.api.service.infra.postalcode.PostalAddress;
+import br.com.lumilivre.api.service.infra.postalcode.PostalCodeRouter;
+import br.com.lumilivre.api.service.infra.storage.StorageBucket;
+import br.com.lumilivre.api.service.infra.storage.StorageProvider;
 
 @Service
 public class StudentService {
@@ -46,8 +50,8 @@ public class StudentService {
     private final AcademicModuleRepository academicModuleRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
-    private final CepService cepService;
-    private final SupabaseStorageService storageService;
+    private final PostalCodeRouter postalCodeRouter;
+    private final StorageProvider storageProvider;
 
     private record RelatedEntities(Course course, StudyShift studyShift, AcademicModule academicModule) {
     }
@@ -55,7 +59,7 @@ public class StudentService {
     public StudentService(StudentRepository studentRepository, CourseRepository courseRepository,
             AppUserRepository appUserRepository, StudyShiftRepository studyShiftRepository,
             AcademicModuleRepository academicModuleRepository, EmailService emailService,
-            PasswordEncoder passwordEncoder, CepService cepService, SupabaseStorageService supabaseStorageService) {
+            PasswordEncoder passwordEncoder, PostalCodeRouter postalCodeRouter, StorageProvider storageProvider) {
         this.studentRepository = studentRepository;
         this.courseRepository = courseRepository;
         this.appUserRepository = appUserRepository;
@@ -63,8 +67,8 @@ public class StudentService {
         this.academicModuleRepository = academicModuleRepository;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
-        this.cepService = cepService;
-        this.storageService = supabaseStorageService;
+        this.postalCodeRouter = postalCodeRouter;
+        this.storageProvider = storageProvider;
     }
 
     public Page<StudentListItem> listarParaAdminV2(String texto, Pageable pageable) {
@@ -129,8 +133,9 @@ public class StudentService {
 
         if (student.getEmail() != null && !student.getEmail().isBlank()) {
             try {
+                Locale locale = LocaleContextHolder.getLocale();
                 emailService.enviarSenhaInicial(
-                        student.getEmail(), student.getFullName(), request.getRegistrationNumber());
+                        student.getEmail(), student.getFullName(), request.getRegistrationNumber(), locale);
             } catch (Exception e) {
                 System.err.println("Erro ao enviar email: " + e.getMessage());
             }
@@ -202,11 +207,11 @@ public class StudentService {
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
 
         try {
-            String url = storageService.uploadFile(file, "avatars");
+            String url = storageProvider.upload(file, StorageBucket.AVATARS);
             student.setAvatarUrl(url);
             studentRepository.save(student);
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao enviar foto de perfil: " + e.getMessage());
+            throw BusinessRuleException.ofKey("student.avatar.upload-failed");
         }
     }
 
@@ -253,25 +258,27 @@ public class StudentService {
     }
 
     private void preencherEnderecoPorCep(Student student, String cep) {
-        if (cep != null && !cep.isBlank()) {
-            String cepLimpo = cep.replace("-", "").trim();
-            if (cepLimpo.length() != 8) {
-                return;
-            }
-
-            try {
-                AddressLookupResponse enderecoDTO = cepService.buscarEnderecoPorCep(cepLimpo);
-                if (enderecoDTO != null && enderecoDTO.getLogradouro() != null) {
-                    student.setPostalCode(cepLimpo);
-                    student.setStreet(enderecoDTO.getLogradouro());
-                    student.setCity(enderecoDTO.getLocalidade());
-                    student.setDistrict(enderecoDTO.getBairro());
-                    student.setStateCode(enderecoDTO.getUf());
-                }
-            } catch (Exception e) {
-                // falha silenciosa
-            }
+        if (cep == null || cep.isBlank()) {
+            return;
         }
+        String cepLimpo = cep.replace("-", "").trim();
+        if (cepLimpo.length() != 8) {
+            return;
+        }
+        try {
+            postalCodeRouter.lookup(cepLimpo, "BR").ifPresent(address -> applyAddress(student, address));
+        } catch (Exception e) {
+            // falha silenciosa: o cadastro continua sem autofill
+        }
+    }
+
+    private void applyAddress(Student student, PostalAddress address) {
+        if (address.street() == null) return;
+        student.setPostalCode(address.postalCode());
+        student.setStreet(address.street());
+        student.setCity(address.city());
+        student.setDistrict(address.district());
+        student.setStateCode(address.regionCode());
     }
 
     private AppUser criarUsuarioParaAluno(Student student) {

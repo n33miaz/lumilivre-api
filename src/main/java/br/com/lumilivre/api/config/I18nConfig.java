@@ -32,6 +32,8 @@ public class I18nConfig {
             "classpath:i18n/course/messages",
             "classpath:i18n/user/messages",
             "classpath:i18n/email/messages",
+            "classpath:i18n/import/messages",
+            "classpath:i18n/report/messages",
             "classpath:i18n/swagger/_api",
             "classpath:i18n/swagger/_common",
             "classpath:i18n/swagger/auth",

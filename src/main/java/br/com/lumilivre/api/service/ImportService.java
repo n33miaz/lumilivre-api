@@ -66,18 +66,19 @@ public class ImportService {
 
     public String importar(String tipo, MultipartFile file, Locale locale) throws Exception {
         log.info("Iniciando importação unificada do tipo: {}", tipo);
-        validarArquivo(file);
+        validarArquivo(file, locale);
 
         try {
             return switch (tipo.toLowerCase()) {
                 case "aluno" -> importarAlunos(file, locale);
                 case "livro" -> importarLivros(file, locale);
                 case "exemplar" -> importarExemplares(file, locale);
-                default -> throw new IllegalArgumentException("Tipo de importação inválido: " + tipo);
+                default -> throw new IllegalArgumentException(
+                        messages.resolve("import.error.type.invalid", locale, tipo));
             };
         } catch (Exception e) {
             log.error("Erro crítico durante importação do tipo {}: {}", tipo, e.getMessage(), e);
-            throw new Exception("Falha na importação: " + e.getMessage(), e);
+            throw new Exception(messages.resolve("import.error.failure", locale, e.getMessage()), e);
         }
     }
 
@@ -112,26 +113,31 @@ public class ImportService {
                     String matricula = ExcelUtils.getString(row.getCell(headerMap.get("matricula")));
 
                     if (matricula.isBlank()) {
-                        logErros.add(new ErroImportacao(linhaNum, "Matrícula vazia."));
+                        logErros.add(new ErroImportacao(linhaNum, "import.error.registration.empty"));
                         continue;
                     }
                     if (!matriculasNoExcel.add(matricula)) {
-                        logErros.add(new ErroImportacao(linhaNum, "Matrícula duplicada na planilha: " + matricula));
+                        logErros.add(new ErroImportacao(linhaNum,
+                                "import.error.registration.duplicate-in-sheet", matricula));
                         continue;
                     }
                     if (matriculasExistentes.contains(matricula)) {
-                        logErros.add(new ErroImportacao(linhaNum, "Aluno já cadastrado no sistema: " + matricula));
+                        logErros.add(new ErroImportacao(linhaNum,
+                                "import.error.registration.already-exists", matricula));
                         continue;
                     }
 
-                    Student aluno = criarAlunoFromRow(row, headerMap, coursesMap, studyShiftsMap, academicModulesMap);
+                    Student aluno = criarAlunoFromRow(row, headerMap, coursesMap, studyShiftsMap,
+                            academicModulesMap, locale);
 
                     if (aluno.getCpf() != null && cpfsExistentes.contains(aluno.getCpf())) {
-                        logErros.add(new ErroImportacao(linhaNum, "CPF já existe no sistema: " + aluno.getCpf()));
+                        logErros.add(new ErroImportacao(linhaNum,
+                                "import.error.cpf.already-exists", aluno.getCpf()));
                         continue;
                     }
                     if (usuarioRepository.existsByEmail(aluno.getEmail())) {
-                        logErros.add(new ErroImportacao(linhaNum, "Email já vinculado a um usuário: " + aluno.getEmail()));
+                        logErros.add(new ErroImportacao(linhaNum,
+                                "import.error.email.already-linked", aluno.getEmail()));
                         continue;
                     }
 
@@ -145,18 +151,19 @@ public class ImportService {
                     alunosParaSalvar.add(aluno);
 
                 } catch (Exception e) {
-                    logErros.add(new ErroImportacao(linhaNum, "Erro: " + e.getMessage()));
+                    logErros.add(new ErroImportacao(linhaNum, "import.error.generic", e.getMessage()));
                 }
             }
         }
 
-        return salvarEmLotes(alunosParaSalvar, alunoRepository, "alunos", logErros, locale);
+        return salvarEmLotes(alunosParaSalvar, alunoRepository, "import.entity.students", logErros, locale);
     }
 
     private Student criarAlunoFromRow(Row row, Map<String, Integer> headerMap,
             Map<Integer, Course> courses,
             Map<Integer, StudyShift> studyShifts,
-            Map<Integer, AcademicModule> academicModules) {
+            Map<Integer, AcademicModule> academicModules,
+            Locale locale) {
         Student aluno = new Student();
         aluno.setRegistrationNumber(ExcelUtils.getString(row.getCell(headerMap.get("matricula"))));
         aluno.setFullName(ExcelUtils.getString(row.getCell(headerMap.get("nome_completo"))));
@@ -180,7 +187,8 @@ public class ImportService {
         if (cursoId != null && courses.containsKey(cursoId))
             aluno.setCourse(courses.get(cursoId));
         else
-            throw new IllegalArgumentException("ID do Curso inválido ou não encontrado: " + cursoId);
+            throw new IllegalArgumentException(
+                    messages.resolve("import.error.course.invalid", locale, cursoId));
 
         if (turnoId != null && studyShifts.containsKey(turnoId))
             aluno.setStudyShift(studyShifts.get(turnoId));
@@ -212,27 +220,29 @@ public class ImportService {
 
                     if (isbn != null && !isbn.isBlank()) {
                         if (!isbnsNoExcel.add(isbn)) {
-                            logErros.add(new ErroImportacao(linhaNum, "ISBN duplicado na planilha: " + isbn));
+                            logErros.add(new ErroImportacao(linhaNum,
+                                    "import.error.isbn.duplicate-in-sheet", isbn));
                             continue;
                         }
                         if (livroRepository.existsByIsbn(isbn)) {
-                            logErros.add(new ErroImportacao(linhaNum, "ISBN já cadastrado no sistema: " + isbn));
+                            logErros.add(new ErroImportacao(linhaNum,
+                                    "import.error.isbn.already-exists", isbn));
                             continue;
                         }
                     }
 
-                    Book livro = criarLivroFromRow(row, headerMap);
+                    Book livro = criarLivroFromRow(row, headerMap, locale);
                     livrosParaSalvar.add(livro);
 
                 } catch (Exception e) {
-                    logErros.add(new ErroImportacao(linhaNum, "Erro: " + e.getMessage()));
+                    logErros.add(new ErroImportacao(linhaNum, "import.error.generic", e.getMessage()));
                 }
             }
         }
-        return salvarEmLotes(livrosParaSalvar, livroRepository, "livros", logErros, locale);
+        return salvarEmLotes(livrosParaSalvar, livroRepository, "import.entity.books", logErros, locale);
     }
 
-    private Book criarLivroFromRow(Row row, Map<String, Integer> headerMap) {
+    private Book criarLivroFromRow(Row row, Map<String, Integer> headerMap, Locale locale) {
         Book livro = new Book();
         livro.setIsbn(ExcelUtils.getString(row.getCell(headerMap.get("isbn"))));
         livro.setTitle(ExcelUtils.getString(row.getCell(headerMap.get("nome"))));
@@ -252,10 +262,11 @@ public class ImportService {
 
         String cddCodigo = ExcelUtils.getString(row.getCell(headerMap.get("cdd_codigo")));
         if (cddCodigo == null || cddCodigo.isBlank())
-            throw new IllegalArgumentException("CDD é obrigatório");
+            throw new IllegalArgumentException(messages.resolve("import.error.dewey.required", locale));
 
         DeweyClassification cdd = deweyClassificationRepository.findById(cddCodigo)
-                .orElseThrow(() -> new IllegalArgumentException("CDD não encontrado: " + cddCodigo));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        messages.resolve("import.error.dewey.not-found", locale, cddCodigo)));
         livro.setDeweyClassification(cdd);
 
         livro.setGenres(new HashSet<>());
@@ -283,44 +294,48 @@ public class ImportService {
                 try {
                     String tombo = ExcelUtils.getString(row.getCell(headerMap.get("tombo")));
                     if (tombo.isBlank()) {
-                        logErros.add(new ErroImportacao(linhaNum, "Tombo obrigatório."));
+                        logErros.add(new ErroImportacao(linhaNum, "import.error.copy-code.empty"));
                         continue;
                     }
                     if (!tombosNoExcel.add(tombo)) {
-                        logErros.add(new ErroImportacao(linhaNum, "Tombo duplicado na planilha: " + tombo));
+                        logErros.add(new ErroImportacao(linhaNum,
+                                "import.error.copy-code.duplicate-in-sheet", tombo));
                         continue;
                     }
                     if (exemplarRepository.existsByCopyCode(tombo)) {
-                        logErros.add(new ErroImportacao(linhaNum, "Tombo já existe no sistema: " + tombo));
+                        logErros.add(new ErroImportacao(linhaNum,
+                                "import.error.copy-code.already-exists", tombo));
                         continue;
                     }
 
-                    BookCopy exemplar = criarExemplarFromRow(row, headerMap);
+                    BookCopy exemplar = criarExemplarFromRow(row, headerMap, locale);
                     exemplaresParaSalvar.add(exemplar);
 
                 } catch (Exception e) {
-                    logErros.add(new ErroImportacao(linhaNum, "Erro: " + e.getMessage()));
+                    logErros.add(new ErroImportacao(linhaNum, "import.error.generic", e.getMessage()));
                 }
             }
         }
 
-        return salvarEmLotes(exemplaresParaSalvar, exemplarRepository, "exemplares", logErros, locale);
+        return salvarEmLotes(exemplaresParaSalvar, exemplarRepository, "import.entity.copies", logErros, locale);
     }
 
-    private BookCopy criarExemplarFromRow(Row row, Map<String, Integer> headerMap) {
+    private BookCopy criarExemplarFromRow(Row row, Map<String, Integer> headerMap, Locale locale) {
         String livroIdStr = ExcelUtils.getString(row.getCell(headerMap.get("livro_id")));
         if (livroIdStr == null || livroIdStr.isBlank())
-            throw new IllegalArgumentException("ID do Livro é obrigatório");
+            throw new IllegalArgumentException(messages.resolve("import.error.book-id.required", locale));
 
         UUID livroId;
         try {
             livroId = UUID.fromString(livroIdStr);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("ID do Livro inválido (deve ser UUID): " + livroIdStr);
+            throw new IllegalArgumentException(
+                    messages.resolve("import.error.book-id.invalid-uuid", locale, livroIdStr));
         }
 
         Book livro = livroRepository.findById(livroId)
-                .orElseThrow(() -> new IllegalArgumentException("Livro não encontrado ID: " + livroId));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        messages.resolve("import.error.book.not-found", locale, livroId)));
 
         BookCopy exemplar = new BookCopy();
         exemplar.setCopyCode(ExcelUtils.getString(row.getCell(headerMap.get("tombo"))));
@@ -334,7 +349,7 @@ public class ImportService {
 
     // ===================== UTILITÁRIOS =====================
 
-    private <T> String salvarEmLotes(List<T> lista, JpaRepository<T, ?> repository, String nomeEntidade,
+    private <T> String salvarEmLotes(List<T> lista, JpaRepository<T, ?> repository, String entityKey,
             List<ErroImportacao> erros, Locale locale) {
         int salvos = 0;
         for (int i = 0; i < lista.size(); i += BATCH_SIZE) {
@@ -344,11 +359,12 @@ public class ImportService {
                 repository.saveAll(lote);
                 salvos += lote.size();
             } catch (Exception e) {
-                erros.add(new ErroImportacao(-1, "Erro ao salvar lote " + (i / BATCH_SIZE + 1) + ": " + e.getMessage()));
-                log.error("Erro ao salvar lote de {}", nomeEntidade, e);
+                erros.add(new ErroImportacao(-1, "import.error.batch-save-failed",
+                        i / BATCH_SIZE + 1, e.getMessage()));
+                log.error("Erro ao salvar lote de {}", entityKey, e);
             }
         }
-        return gerarResumo(nomeEntidade, salvos, erros, locale);
+        return gerarResumo(entityKey, salvos, erros, locale);
     }
 
     private Map<String, Integer> mapearCabecalhos(Row headerRow) {
@@ -361,12 +377,12 @@ public class ImportService {
         return map;
     }
 
-    private void validarArquivo(MultipartFile file) {
+    private void validarArquivo(MultipartFile file, Locale locale) {
         if (file == null || file.isEmpty())
-            throw new IllegalArgumentException("Arquivo vazio.");
+            throw new IllegalArgumentException(messages.resolve("import.error.file.empty", locale));
         if (!Objects.equals(file.getContentType(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
-            throw new IllegalArgumentException("Formato inválido. Use .xlsx");
+            throw new IllegalArgumentException(messages.resolve("import.error.file.invalid-format", locale));
         }
     }
 
@@ -374,22 +390,25 @@ public class ImportService {
         return val == null ? null : val.replaceAll("\\D", "");
     }
 
-    private String gerarResumo(String tipo, int salvos, List<ErroImportacao> erros, Locale locale) {
+    private String gerarResumo(String entityKey, int salvos, List<ErroImportacao> erros, Locale locale) {
+        String entityLabel = messages.resolve(entityKey, locale);
         StringBuilder sb = new StringBuilder();
-        sb.append(messages.resolve("email.import.summary", locale, tipo, salvos, erros.size()));
+        sb.append(messages.resolve("email.import.summary", locale, entityLabel, salvos, erros.size()));
         if (!erros.isEmpty()) {
             sb.append(" Detalhes: ")
-                    .append(erros.stream().limit(5).map(ErroImportacao::toString).collect(Collectors.joining("; ")));
+                    .append(erros.stream().limit(5)
+                            .map(e -> e.toLocalizedString(messages, locale))
+                            .collect(Collectors.joining("; ")));
             if (erros.size() > 5)
                 sb.append("...");
         }
         return sb.toString();
     }
 
-    private record ErroImportacao(int linha, String erro) {
-        @Override
-        public String toString() {
-            return (linha > 0 ? "Linha " + linha + ": " : "") + erro;
+    private record ErroImportacao(int linha, String messageKey, Object... args) {
+        String toLocalizedString(MessageResolver resolver, Locale locale) {
+            String body = resolver.resolve(messageKey, locale, args);
+            return linha > 0 ? resolver.resolve("import.error.line", locale, linha, body) : body;
         }
     }
 }
