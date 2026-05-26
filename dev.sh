@@ -4,7 +4,7 @@
 # verifica se o docker está rodando
 echo "[DEV] Verifying dependencies..."
 if ! docker info > /dev/null 2>&1; then
-  echo "[ERROR] Docker is not responding. Please make sure Docker is running and try again."
+  echo "[ERROR] Docker is not responding. Please make sure it is running and try again."
   exit 1
 fi
 

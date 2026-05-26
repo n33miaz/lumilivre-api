@@ -33,7 +33,7 @@ public class DashboardService {
     private final JdbcTemplate jdbc;
     private final DataSource dataSource;
 
-    @Cacheable(DASHBOARD_STATS)
+    @Cacheable(value = DASHBOARD_STATS, key = "'stats'")
     public DashboardStatsResponse getStats() {
         Map<String, Object> row = jdbc.queryForMap("SELECT * FROM mv_dashboard_stats");
         return new DashboardStatsResponse(

@@ -2,6 +2,7 @@ package br.com.lumilivre.api.config;
 
 import static br.com.lumilivre.api.config.CacheNames.BOOK_COUNT;
 import static br.com.lumilivre.api.config.CacheNames.BOOK_DETAIL;
+import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_ACTIVE_OVERDUE_COUNT;
 import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_LOANS_BY_MONTH;
 import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_LOAN_REQUESTS;
 import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_OVERDUE_COUNT;
@@ -16,6 +17,8 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
@@ -38,6 +41,7 @@ public class CacheConfig {
     /** Per-cache TTLs; unlisted caches get DEFAULT_TTL. */
     private static final Map<String, Duration> CACHE_TTLS = Map.of(
             DASHBOARD_STATS, Duration.ofMinutes(5),
+            DASHBOARD_ACTIVE_OVERDUE_COUNT, Duration.ofMinutes(5),
             DASHBOARD_TOP_BOOKS, Duration.ofMinutes(5),
             DASHBOARD_LOANS_BY_MONTH, Duration.ofMinutes(5),
             DASHBOARD_OVERDUE_COUNT, Duration.ofMinutes(5),
@@ -60,7 +64,7 @@ public class CacheConfig {
                 .disableCachingNullValues()
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(
-                                new GenericJackson2JsonRedisSerializer()));
+                                redisValueSerializer()));
 
         Map<String, RedisCacheConfiguration> perCacheConfig = new HashMap<>();
         CACHE_TTLS.forEach((name, ttl) ->
@@ -80,6 +84,7 @@ public class CacheConfig {
     public CacheManager concurrentMapCacheManager() {
         return new ConcurrentMapCacheManager(
                 DASHBOARD_STATS,
+                DASHBOARD_ACTIVE_OVERDUE_COUNT,
                 DASHBOARD_TOP_BOOKS,
                 DASHBOARD_LOANS_BY_MONTH,
                 DASHBOARD_OVERDUE_COUNT,
@@ -94,5 +99,13 @@ public class CacheConfig {
                 MOBILE_CATALOG,
                 MOBILE_RECOMMENDATIONS,
                 BOOK_DETAIL);
+    }
+
+    static GenericJackson2JsonRedisSerializer redisValueSerializer() {
+        return new GenericJackson2JsonRedisSerializer()
+                .configure(mapper -> {
+                    mapper.registerModule(new JavaTimeModule());
+                    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                });
     }
 }

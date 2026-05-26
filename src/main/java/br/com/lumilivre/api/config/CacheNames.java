@@ -3,6 +3,7 @@ package br.com.lumilivre.api.config;
 public final class CacheNames {
 
     public static final String DASHBOARD_STATS = "dashboard_stats";
+    public static final String DASHBOARD_ACTIVE_OVERDUE_COUNT = "dashboard_active_overdue_count";
     public static final String DASHBOARD_OVERDUE_COUNT = "dashboard_overdue_count";
     public static final String DASHBOARD_OVERDUE_LIST = "dashboard_overdue_list";
     public static final String DASHBOARD_LOAN_REQUESTS = "dashboard_loan_requests";

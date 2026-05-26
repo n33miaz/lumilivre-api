@@ -129,7 +129,7 @@ public class BookCopyService {
 
     private BookCopyStatus parseStatus(String status) {
         try {
-            return BookCopyStatus.valueOf(status.toUpperCase());
+            return BookCopyStatus.fromPtBrCode(status);
         } catch (IllegalArgumentException | NullPointerException e) {
             throw BusinessRuleException.ofKey("book.copy.status.invalid");
         }

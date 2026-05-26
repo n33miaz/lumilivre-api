@@ -100,6 +100,19 @@ class BookCopyServiceTest {
     }
 
     @Test
+    void createAcceptsPtBrStatusCode() {
+        UUID bookId = UUID.randomUUID();
+        Book book = Book.builder().id(bookId).title("Clean Code").build();
+        when(bookCopyRepository.existsByCopyCode("T001")).thenReturn(false);
+        when(bookRepository.findById(bookId)).thenReturn(Optional.of(book));
+
+        service().cadastrar(request(bookId, "T001", "DISPONIVEL", "A-01"));
+
+        verify(bookCopyRepository).save(bookCopyCaptor.capture());
+        assertThat(bookCopyCaptor.getValue().getStatus()).isEqualTo(BookCopyStatus.AVAILABLE);
+    }
+
+    @Test
     void createRejectsDuplicateCopyCodeBeforeLookingUpBook() {
         UUID bookId = UUID.randomUUID();
         when(bookCopyRepository.existsByCopyCode("T001")).thenReturn(true);

@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.service;
 
+import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_ACTIVE_OVERDUE_COUNT;
 import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_OVERDUE_COUNT;
 import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_OVERDUE_LIST;
 import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_STATS;
@@ -50,6 +51,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LoanService {
 
+    private static final String STATUS_ORDER_EXPR =
+            "(CASE WHEN e.status = 'COMPLETED' THEN 1 ELSE 0 END)";
+
     private final StudentRepository studentRepository;
     private final BookCopyRepository bookCopyRepository;
     private final LoanRepository loanRepository;
@@ -61,6 +65,7 @@ public class LoanService {
     @Transactional
     @CacheEvict(value = {
             DASHBOARD_STATS,
+            DASHBOARD_ACTIVE_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_LIST
     }, allEntries = true)
@@ -115,6 +120,7 @@ public class LoanService {
     @Transactional
     @CacheEvict(value = {
             DASHBOARD_STATS,
+            DASHBOARD_ACTIVE_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_LIST
     }, allEntries = true)
@@ -136,6 +142,7 @@ public class LoanService {
     @Transactional
     @CacheEvict(value = {
             DASHBOARD_STATS,
+            DASHBOARD_ACTIVE_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_LIST
     }, allEntries = true)
@@ -193,6 +200,12 @@ public class LoanService {
     }
 
     @Transactional
+    @CacheEvict(value = {
+            DASHBOARD_STATS,
+            DASHBOARD_ACTIVE_OVERDUE_COUNT,
+            DASHBOARD_OVERDUE_COUNT,
+            DASHBOARD_OVERDUE_LIST
+    }, allEntries = true)
     public void excluir(UUID id) {
         Loan loan = loanRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("loan.not-found"));
@@ -212,6 +225,7 @@ public class LoanService {
     @Transactional
     @CacheEvict(value = {
             DASHBOARD_STATS,
+            DASHBOARD_ACTIVE_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_COUNT,
             DASHBOARD_OVERDUE_LIST
     }, allEntries = true)
@@ -254,22 +268,11 @@ public class LoanService {
     }
 
     public Page<LoanListItem> buscarPorTexto(String texto, Pageable pageable) {
-        Pageable pageableNativo = pageable;
-        Sort.Order statusOrder = pageable.getSort().getOrderFor("status");
-        if (statusOrder != null) {
-            boolean isAsc = statusOrder.isAscending();
-            pageableNativo = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
-                    isAsc
-                    ? JpaSort.unsafe(Sort.Direction.ASC,
-                            "(CASE WHEN e.status = 'COMPLETED' THEN 1 ELSE 0 END)", "dueAt")
-                    : JpaSort.unsafe(Sort.Direction.ASC,
-                            "(CASE WHEN e.status = 'COMPLETED' THEN 1 ELSE 0 END)")
-                              .and(JpaSort.unsafe(Sort.Direction.DESC, "dueAt")));
-        }
+        Pageable pageableOrdenado = tratarOrdenacao(pageable);
         if (texto == null || texto.isBlank()) {
-            return buscarAvancadoV2(null, null, null, null, null, null, (OffsetDateTime) null, tratarOrdenacao(pageable));
+            return buscarAvancadoV2(null, null, null, null, null, null, (OffsetDateTime) null, pageableOrdenado);
         }
-        return loanRepository.searchListItems(texto, pageableNativo);
+        return loanRepository.searchListItems(texto, pageableOrdenado);
     }
 
     public List<Loan> listarEmprestimosAlunoV2(String matricula) {
@@ -296,7 +299,7 @@ public class LoanService {
                 + loanRepository.findByStatusAndDueAtBefore(LoanStatus.ACTIVE, now).size();
     }
 
-    @Cacheable(value = DASHBOARD_STATS)
+    @Cacheable(value = DASHBOARD_ACTIVE_OVERDUE_COUNT)
     public long getContagemEmprestimosAtivosEAtrasados() {
         return loanRepository.countByStatusIn(List.of(LoanStatus.ACTIVE, LoanStatus.OVERDUE));
     }
@@ -411,13 +414,11 @@ public class LoanService {
 
     private Pageable tratarOrdenacao(Pageable pageable) {
         Sort.Order statusOrder = pageable.getSort().getOrderFor("status");
-        if (statusOrder != null) {
-            boolean isAsc = statusOrder.isAscending();
-            return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
-                    isAsc
-                    ? Sort.by(Sort.Direction.ASC, "ordemStatus", "dueAt")
-                    : Sort.by(Sort.Order.asc("ordemStatus"), Sort.Order.desc("dueAt")));
+        if (statusOrder == null) {
+            return pageable;
         }
-        return pageable;
+        Sort sort = JpaSort.unsafe(Sort.Direction.ASC, STATUS_ORDER_EXPR)
+                .and(JpaSort.unsafe(statusOrder.getDirection(), "dueAt"));
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
     }
 }

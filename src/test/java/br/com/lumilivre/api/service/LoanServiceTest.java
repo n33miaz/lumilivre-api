@@ -300,7 +300,10 @@ class LoanServiceTest {
         verify(loanRepository).searchAdvancedListItems(
                 eq(null), eq(null), eq(null), eq(null), eq(null), eq(null), eq(null), eq(null), any(),
                 captor.capture());
-        assertThat(captor.getValue().getSort().getOrderFor("ordemStatus")).isNotNull();
+        Sort sort = captor.getValue().getSort();
+        assertThat(sort.getOrderFor("status")).isNull();
+        assertThat(sort.getOrderFor("dueAt")).isNotNull();
+        assertThat(sort.toList()).hasSize(2);
     }
 
     @Test
