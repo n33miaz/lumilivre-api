@@ -106,7 +106,8 @@ class ReservationServiceTest {
                 eq(EventType.REQUEST_ACCEPTED),
                 eq("aluno@lumilivre.test"),
                 eq("Reserva registrada"),
-                org.mockito.ArgumentMatchers.contains("3"));
+                org.mockito.ArgumentMatchers.contains("3"),
+                any());
     }
 
     @Test
@@ -122,7 +123,7 @@ class ReservationServiceTest {
                 .hasMessage("reservation.policy.already-active");
 
         verify(reservationRepository, never()).save(any());
-        verify(outboxPublisher, never()).publish(any(), any(), any(), any());
+        verify(outboxPublisher, never()).publish(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -163,7 +164,8 @@ class ReservationServiceTest {
                 eq(EventType.REQUEST_ACCEPTED),
                 eq("aluno@lumilivre.test"),
                 org.mockito.ArgumentMatchers.contains("dispon"),
-                org.mockito.ArgumentMatchers.contains("Livro Teste"));
+                org.mockito.ArgumentMatchers.contains("Livro Teste"),
+                any());
     }
 
     @Test

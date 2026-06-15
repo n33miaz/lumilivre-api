@@ -53,6 +53,15 @@ public class OutboxEvent {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String body;
 
+    /**
+     * BCP-47 language tag (e.g. {@code pt-BR}, {@code en-US}) captured at publish
+     * time so the asynchronous sender renders the email shell in the same locale
+     * as the pre-resolved subject/body. Nullable for backward compatibility;
+     * sender falls back to the default locale when absent.
+     */
+    @Column(length = 10)
+    private String locale;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)

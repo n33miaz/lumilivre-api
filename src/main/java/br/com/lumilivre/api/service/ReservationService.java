@@ -71,7 +71,8 @@ public class ReservationService {
         outboxPublisher.publish(EventType.REQUEST_ACCEPTED, student.getEmail(),
                 messages.resolve("email.reservation-registered.subject", locale),
                 messages.resolve("email.reservation-registered.body", locale,
-                        book.getTitle(), nextPosition));
+                        book.getTitle(), nextPosition),
+                locale);
 
         return saved;
     }
@@ -107,7 +108,8 @@ public class ReservationService {
                             messages.resolve("email.reservation-pickup.subject", locale),
                             messages.resolve("email.reservation-pickup.body", locale,
                                     next.getBook().getTitle(),
-                                    next.getExpiresAt().toLocalDate()));
+                                    next.getExpiresAt().toLocalDate()),
+                            locale);
                 });
     }
 

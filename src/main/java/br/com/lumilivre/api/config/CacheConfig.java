@@ -19,11 +19,16 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -34,7 +39,9 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 
 @Configuration
 @EnableCaching
-public class CacheConfig {
+public class CacheConfig implements CachingConfigurer {
+
+    private static final Logger log = LoggerFactory.getLogger(CacheConfig.class);
 
     private static final Duration DEFAULT_TTL = Duration.ofMinutes(10);
 
@@ -107,5 +114,41 @@ public class CacheConfig {
                     mapper.registerModule(new JavaTimeModule());
                     mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
                 });
+    }
+
+    /**
+     * Degrada o cache graciosamente: se o backend (Redis) estiver indisponível,
+     * o erro é logado e ignorado em vez de propagar. Sem isto, qualquer falha de
+     * conexao com o Redis transforma todo metodo @Cacheable num HTTP 500 — por
+     * exemplo, os cards de "Analise gerencial" do dashboard ficavam vazios porque
+     * /api/dashboard/* respondia 500 quando o Redis caia. Com o handler, a leitura
+     * simplesmente busca na fonte (banco) e a escrita no cache vira no-op.
+     */
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return new LoggingCacheErrorHandler();
+    }
+
+    static class LoggingCacheErrorHandler implements CacheErrorHandler {
+
+        @Override
+        public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
+            log.warn("Cache GET falhou [{}], buscando na fonte: {}", cache.getName(), exception.getMessage());
+        }
+
+        @Override
+        public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
+            log.warn("Cache PUT falhou [{}] (valor nao cacheado): {}", cache.getName(), exception.getMessage());
+        }
+
+        @Override
+        public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
+            log.warn("Cache EVICT falhou [{}]: {}", cache.getName(), exception.getMessage());
+        }
+
+        @Override
+        public void handleCacheClearError(RuntimeException exception, Cache cache) {
+            log.warn("Cache CLEAR falhou [{}]: {}", cache.getName(), exception.getMessage());
+        }
     }
 }

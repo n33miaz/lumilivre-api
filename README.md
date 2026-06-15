@@ -12,7 +12,7 @@
 
 <div align="center">
 
-![License](https://img.shields.io/badge/license-MIT-purple?style=flat-square)
+![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-762075?style=flat-square)
 ![Java](https://img.shields.io/badge/Java-17-red?style=flat-square&logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.5-6DB33F?style=flat-square&logo=springboot)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-42.7-336791?style=flat-square&logo=postgresql)
@@ -288,7 +288,7 @@ O `ddl-auto` deve permanecer em `validate`: para criar tabelas em banco vazio, h
   <h1>Licença</h1>
 </div>
 
-Distribuído sob a licença **MIT**. Veja `LICENSE` para mais detalhes.
+**Proprietário — Todos os direitos reservados.** O código-fonte é público apenas para leitura, estudo e avaliação. Qualquer uso, cópia, modificação ou execução em produção requer licença comercial mediante negociação. Veja [`LICENSE`](LICENSE). Interessados: **ncormino@gmail.com**.
 
 <br/>
 
