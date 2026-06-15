@@ -2,6 +2,7 @@ package br.com.lumilivre.api.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,7 +59,7 @@ class OutboxPublisherServiceTest {
 
         service.processPendingEvents();
 
-        verify(emailService).enviarEmail("aluno@lumilivre.test", "Assunto", "Corpo");
+        verify(emailService).enviarEmail(eq("aluno@lumilivre.test"), eq("Assunto"), eq("Corpo"), any());
         assertThat(event.getStatus()).isEqualTo(EventStatus.SENT);
         assertThat(event.getProcessedAt()).isNotNull();
         assertThat(event.getRetryCount()).isZero();
@@ -71,7 +72,7 @@ class OutboxPublisherServiceTest {
         when(outboxRepository.findByStatusAndRetryCountLessThan(EventStatus.PENDING, 3))
                 .thenReturn(List.of(event));
         doThrow(new RuntimeException("smtp indisponivel"))
-                .when(emailService).enviarEmail(any(), any(), any());
+                .when(emailService).enviarEmail(any(), any(), any(), any());
 
         service.processPendingEvents();
 
@@ -88,7 +89,7 @@ class OutboxPublisherServiceTest {
         when(outboxRepository.findByStatusAndRetryCountLessThan(EventStatus.PENDING, 3))
                 .thenReturn(List.of(event));
         doThrow(new RuntimeException("smtp indisponivel"))
-                .when(emailService).enviarEmail(any(), any(), any());
+                .when(emailService).enviarEmail(any(), any(), any(), any());
 
         service.processPendingEvents();
 

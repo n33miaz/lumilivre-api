@@ -140,7 +140,7 @@ class LoanServiceTest {
         assertThat(saved.getStatus()).isEqualTo(LoanStatus.ACTIVE);
         assertThat(copy.getStatus()).isEqualTo(BookCopyStatus.BORROWED);
         verify(bookCopyRepository).save(copy);
-        verify(outboxPublisher).publish(eq(EventType.LOAN_CREATED), eq("aluno@lumilivre.test"), any(), any());
+        verify(outboxPublisher).publish(eq(EventType.LOAN_CREATED), eq("aluno@lumilivre.test"), any(), any(), any());
     }
 
     @Test
@@ -203,7 +203,7 @@ class LoanServiceTest {
         assertThat(completed.getReturnedAt()).isNotNull();
         assertThat(completed.getBookCopy().getStatus()).isEqualTo(BookCopyStatus.AVAILABLE);
         verify(bookCopyRepository).save(completed.getBookCopy());
-        verify(outboxPublisher).publish(eq(EventType.LOAN_RETURNED), eq("aluno@lumilivre.test"), any(), any());
+        verify(outboxPublisher).publish(eq(EventType.LOAN_RETURNED), eq("aluno@lumilivre.test"), any(), any(), any());
     }
 
     @Test
@@ -231,7 +231,7 @@ class LoanServiceTest {
         assertThat(reservation.getExpiresAt()).isNotNull();
         verify(studentRepository).save(loan.getStudent());
         verify(reservationRepository).save(reservation);
-        verify(outboxPublisher).publish(eq(EventType.REQUEST_ACCEPTED), eq("next@lumilivre.test"), any(), any());
+        verify(outboxPublisher).publish(eq(EventType.REQUEST_ACCEPTED), eq("next@lumilivre.test"), any(), any(), any());
     }
 
     @Test
@@ -264,7 +264,7 @@ class LoanServiceTest {
         assertThat(renewed.getDueAt()).isEqualTo(originalDueAt.plusDays(14));
         assertThat(renewed.getRenewalCount()).isEqualTo(2);
         assertThat(renewed.getStatus()).isEqualTo(LoanStatus.ACTIVE);
-        verify(outboxPublisher).publish(eq(EventType.REQUEST_ACCEPTED), eq("aluno@lumilivre.test"), any(), any());
+        verify(outboxPublisher).publish(eq(EventType.REQUEST_ACCEPTED), eq("aluno@lumilivre.test"), any(), any(), any());
     }
 
     @Test

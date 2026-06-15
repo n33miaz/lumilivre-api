@@ -107,7 +107,7 @@ class LoanRequestServiceTest {
                 .hasMessage("student.not-found");
 
         verify(loanRequestRepository, never()).save(any());
-        verify(outboxPublisher, never()).publish(any(), any(), any(), any());
+        verify(outboxPublisher, never()).publish(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -120,7 +120,7 @@ class LoanRequestServiceTest {
                 .hasMessage("book.copy.not-found");
 
         verify(loanRequestRepository, never()).save(any());
-        verify(outboxPublisher, never()).publish(any(), any(), any(), any());
+        verify(outboxPublisher, never()).publish(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -146,7 +146,8 @@ class LoanRequestServiceTest {
                 eq(EventType.REQUEST_ACCEPTED),
                 eq("aluno@lumilivre.test"),
                 org.mockito.ArgumentMatchers.contains("recebida"),
-                org.mockito.ArgumentMatchers.contains("Livro Teste"));
+                org.mockito.ArgumentMatchers.contains("Livro Teste"),
+                any());
     }
 
     @Test
@@ -183,7 +184,7 @@ class LoanRequestServiceTest {
                 .hasMessage("book.copy.not-available");
 
         verify(loanRequestRepository, never()).save(any());
-        verify(outboxPublisher, never()).publish(any(), any(), any(), any());
+        verify(outboxPublisher, never()).publish(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -208,7 +209,8 @@ class LoanRequestServiceTest {
                 eq(EventType.REQUEST_ACCEPTED),
                 eq("aluno@lumilivre.test"),
                 org.mockito.ArgumentMatchers.contains("aceita"),
-                org.mockito.ArgumentMatchers.contains("aceita"));
+                org.mockito.ArgumentMatchers.contains("aceita"),
+                any());
     }
 
     @Test
@@ -226,7 +228,8 @@ class LoanRequestServiceTest {
                 eq(EventType.REQUEST_REJECTED),
                 eq("aluno@lumilivre.test"),
                 org.mockito.ArgumentMatchers.contains("rejeitada"),
-                org.mockito.ArgumentMatchers.contains("rejeitada"));
+                org.mockito.ArgumentMatchers.contains("rejeitada"),
+                any());
     }
 
     @Test
@@ -239,7 +242,7 @@ class LoanRequestServiceTest {
 
         verify(loanService, never()).cadastrar(any(br.com.lumilivre.api.dto.loan.LoanRequest.class));
         verify(loanRequestRepository, never()).save(any());
-        verify(outboxPublisher, never()).publish(any(), any(), any(), any());
+        verify(outboxPublisher, never()).publish(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -253,7 +256,7 @@ class LoanRequestServiceTest {
 
         verify(loanService, never()).cadastrar(any(br.com.lumilivre.api.dto.loan.LoanRequest.class));
         verify(loanRequestRepository, never()).save(any());
-        verify(outboxPublisher, never()).publish(any(), any(), any(), any());
+        verify(outboxPublisher, never()).publish(any(), any(), any(), any(), any());
     }
 
     private static LoanRequest loanRequest(LoanRequestStatus status) {

@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -8,7 +9,10 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.concurrent.ConcurrentMapCache;
+import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 
 import br.com.lumilivre.api.dto.dashboard.LoansByMonthResponse;
@@ -62,5 +66,23 @@ class CacheConfigTest {
         assertThat(dashboardStats.value()).containsExactly(CacheNames.DASHBOARD_STATS);
         assertThat(dashboardStats.key()).isEqualTo("'stats'");
         assertThat(activeOverdueCount.value()).containsExactly(CacheNames.DASHBOARD_ACTIVE_OVERDUE_COUNT);
+    }
+
+    @Test
+    void cacheErrorHandlerSwallowsBackendFailures() {
+        CacheErrorHandler handler = new CacheConfig().errorHandler();
+        Cache cache = new ConcurrentMapCache(CacheNames.DASHBOARD_STATS);
+        RuntimeException backendDown = new RuntimeException("Unable to connect to Redis");
+
+        // A cache backend outage must degrade to the source (DB), never bubble up
+        // as a 500 from a @Cacheable endpoint such as /api/dashboard/*.
+        assertThatCode(() -> handler.handleCacheGetError(backendDown, cache, "stats"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> handler.handleCachePutError(backendDown, cache, "stats", "value"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> handler.handleCacheEvictError(backendDown, cache, "stats"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> handler.handleCacheClearError(backendDown, cache))
+                .doesNotThrowAnyException();
     }
 }

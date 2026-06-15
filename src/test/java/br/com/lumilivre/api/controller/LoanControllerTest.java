@@ -57,7 +57,7 @@ class LoanControllerTest {
         LoanListItem item = new LoanListItem(
                 id, LoanStatus.OVERDUE, "Dom Quixote", "T001",
                 "Joao Silva", "12345", "Administracao",
-                OffsetDateTime.now().minusDays(30), OffsetDateTime.now().minusDays(1));
+                OffsetDateTime.now().minusDays(30), OffsetDateTime.now().minusDays(1), null);
         when(loanService.buscarEmprestimoParaListaAdminV2(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(item)));
 
@@ -77,7 +77,7 @@ class LoanControllerTest {
         LoanListItem item = new LoanListItem(
                 id, LoanStatus.ACTIVE, "Dom Quixote", "T001",
                 "Joao Silva", "12345", "Administracao",
-                OffsetDateTime.now().minusDays(5), OffsetDateTime.now().plusDays(10));
+                OffsetDateTime.now().minusDays(5), OffsetDateTime.now().plusDays(10), null);
         when(loanService.buscarEmprestimoParaListaAdminV2(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(item)));
 
