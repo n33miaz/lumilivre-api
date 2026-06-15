@@ -55,7 +55,8 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
                 a.registrationNumber,
                 c.name,
                 e.borrowedAt,
-                e.dueAt
+                e.dueAt,
+                e.returnedAt
             )
             FROM Loan e
             JOIN e.student a
@@ -79,7 +80,8 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
                 a.registrationNumber,
                 c.name,
                 e.borrowedAt,
-                e.dueAt
+                e.dueAt,
+                e.returnedAt
             )
             FROM Loan e
             JOIN e.student a
@@ -147,7 +149,8 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
                 a.registrationNumber,
                 a.course.name,
                 e.borrowedAt,
-                e.dueAt
+                e.dueAt,
+                e.returnedAt
             )
             FROM Loan e
             JOIN e.bookCopy ex

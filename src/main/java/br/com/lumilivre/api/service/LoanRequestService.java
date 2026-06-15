@@ -151,7 +151,7 @@ public class LoanRequestService {
         Locale locale = localeFor(student);
         String subject = messages.resolve(baseKey + ".subject", locale);
         String body = messages.resolve(baseKey + ".body", locale, bookCopy.getBook().getTitle());
-        outboxPublisher.publish(eventType, student.getEmail(), subject, body);
+        outboxPublisher.publish(eventType, student.getEmail(), subject, body, locale);
     }
 
     private Locale localeFor(Student student) {

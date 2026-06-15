@@ -193,7 +193,8 @@ public class LoanService {
                             messages.resolve("email.reservation-ready.subject", recipientLocale),
                             messages.resolve("email.reservation-ready.body", recipientLocale,
                                     bookCopy.getBook().getTitle(),
-                                    next.getExpiresAt().toLocalDate()));
+                                    next.getExpiresAt().toLocalDate()),
+                            recipientLocale);
                 });
 
         return saved;
@@ -258,7 +259,8 @@ public class LoanService {
                 messages.resolve("email.loan-renewed.subject", recipientLocale),
                 messages.resolve("email.loan-renewed.body", recipientLocale,
                         loan.getBookCopy().getBook().getTitle(),
-                        saved.getDueAt().toLocalDate()));
+                        saved.getDueAt().toLocalDate()),
+                recipientLocale);
 
         return saved;
     }
@@ -387,7 +389,7 @@ public class LoanService {
                 bookCopy.getBook().getTitle(),
                 request.getBorrowedAt(),
                 request.getDueAt());
-        outboxPublisher.publish(EventType.LOAN_CREATED, student.getEmail(), subject, body);
+        outboxPublisher.publish(EventType.LOAN_CREATED, student.getEmail(), subject, body, locale);
     }
 
     private void enviarEmailConclusao(Student student, BookCopy bookCopy, Loan loan) {
@@ -400,7 +402,7 @@ public class LoanService {
                 student.getFullName(),
                 bookCopy.getBook().getTitle(),
                 penaltyStatus);
-        outboxPublisher.publish(EventType.LOAN_RETURNED, student.getEmail(), subject, body);
+        outboxPublisher.publish(EventType.LOAN_RETURNED, student.getEmail(), subject, body, locale);
     }
 
     private Locale localeFor(Student student) {

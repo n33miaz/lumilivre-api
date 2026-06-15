@@ -14,5 +14,6 @@ public record LoanListItem(
         String studentRegistrationNumber,
         String courseName,
         OffsetDateTime borrowedAt,
-        OffsetDateTime dueAt) {
+        OffsetDateTime dueAt,
+        OffsetDateTime returnedAt) {
 }

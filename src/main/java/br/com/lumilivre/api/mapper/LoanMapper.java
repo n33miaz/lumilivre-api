@@ -60,6 +60,7 @@ public class LoanMapper {
                 .id(item.id())
                 .borrowedAt(item.borrowedAt())
                 .dueAt(item.dueAt())
+                .returnedAt(item.returnedAt())
                 .status(status)
                 .bookTitle(item.bookTitle())
                 .copyCode(item.copyCode())
