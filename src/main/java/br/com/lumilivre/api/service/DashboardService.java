@@ -14,7 +14,10 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -32,6 +35,7 @@ public class DashboardService {
 
     private final JdbcTemplate jdbc;
     private final DataSource dataSource;
+    private final CacheManager cacheManager;
 
     @Cacheable(value = DASHBOARD_STATS, key = "'stats'")
     public DashboardStatsResponse getStats() {
@@ -67,6 +71,18 @@ public class DashboardService {
                         rs.getLong("total")));
     }
 
+    /**
+     * Popula as materialized views assim que a aplicação sobe. Sem isto, as
+     * views criadas pela migration V3 (WITH DATA sobre tabelas ainda vazias)
+     * permanecem vazias até o primeiro disparo agendado (15 min) — e os cards
+     * de "Análise gerencial" aparecem vazios mesmo com dados no banco. Em
+     * produção, onde o seed demo não roda, este é o único refresh garantido.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void refreshViewsOnStartup() {
+        refreshViews();
+    }
+
     /** Refreshes all materialized views. Runs every 15 minutes. */
     @Scheduled(fixedDelay = 900_000)
     public void refreshViews() {
@@ -82,6 +98,40 @@ public class DashboardService {
             log.info("DashboardService: materialized views refreshed.");
         } catch (Exception e) {
             log.error("DashboardService: failed to refresh materialized views: {}", e.getMessage());
+            return;
+        }
+        // Best-effort: limpar o cache nao pode derrubar o refresh. A chamada
+        // programatica a Cache#clear nao passa pelo CacheErrorHandler do Spring,
+        // entao tratamos a indisponibilidade do backend de cache aqui.
+        evictCaches();
+    }
+
+    /**
+     * Invalida os caches do dashboard após o refresh. O @Cacheable serviria
+     * indefinidamente o snapshot anterior (inclusive um vazio) até o TTL
+     * expirar; limpar aqui garante que a próxima leitura reflita as views
+     * recém-materializadas.
+     */
+    private void evictCaches() {
+        try {
+            clearCache(DASHBOARD_STATS);
+            clearCache(DASHBOARD_TOP_BOOKS);
+            clearCache(DASHBOARD_LOANS_BY_MONTH);
+        } catch (RuntimeException e) {
+            // Cache#clear e chamado programaticamente (fora do aspecto do Spring),
+            // entao o CacheErrorHandler nao o cobre. Se o backend de cache (Redis)
+            // estiver fora, apenas registramos: as views ja foram refreshadas e os
+            // TTLs (5 min) expiram as entradas antigas sozinhos. Nunca pode derrubar
+            // o refresh agendado nem a subida da aplicacao (ApplicationReadyEvent).
+            log.warn("DashboardService: could not evict dashboard caches (cache backend unavailable?): {}",
+                    e.getMessage());
+        }
+    }
+
+    private void clearCache(String name) {
+        var cache = cacheManager.getCache(name);
+        if (cache != null) {
+            cache.clear();
         }
     }
 
