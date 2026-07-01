@@ -82,9 +82,9 @@ CREATE TABLE IF NOT EXISTS dewey_classification (
 COMMENT ON TABLE dewey_classification IS 'Classificacao Decimal de Dewey (CDD). Chave natural por compatibilidade com legados.';
 
 -- ----------------------------------------------------------------------------
--- 3. student
+-- 3. reader
 -- ----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS student (
+CREATE TABLE IF NOT EXISTS reader (
     id                     UUID         NOT NULL DEFAULT gen_random_uuid(),
     registration_number    VARCHAR(20)  NOT NULL,
     full_name              VARCHAR(255) NOT NULL,
@@ -93,9 +93,10 @@ CREATE TABLE IF NOT EXISTS student (
     birth_date             DATE,
     phone_number           VARCHAR(20),
     email                  CITEXT,
-    course_id              INTEGER      NOT NULL,
-    academic_module_id     INTEGER      NOT NULL,
-    study_shift_id         INTEGER      NOT NULL,
+    course_id              INTEGER,
+    academic_module_id     INTEGER,
+    study_shift_id         INTEGER,
+    reader_category        VARCHAR(80),
     postal_code            VARCHAR(8),
     street                 VARCHAR(255),
     address_complement     VARCHAR(55),
@@ -108,27 +109,28 @@ CREATE TABLE IF NOT EXISTS student (
     created_at             TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at             TIMESTAMPTZ  NOT NULL DEFAULT now(),
     deleted_at             TIMESTAMPTZ,
-    CONSTRAINT pk_student PRIMARY KEY (id),
-    CONSTRAINT uq_student_registration_number UNIQUE (registration_number),
-    CONSTRAINT fk_student_course             FOREIGN KEY (course_id)            REFERENCES course (id)            ON DELETE RESTRICT,
-    CONSTRAINT fk_student_academic_module    FOREIGN KEY (academic_module_id)   REFERENCES academic_module (id)   ON DELETE RESTRICT,
-    CONSTRAINT fk_student_study_shift        FOREIGN KEY (study_shift_id)       REFERENCES study_shift (id)       ON DELETE RESTRICT,
-    CONSTRAINT ck_student_state_code         CHECK (state_code IS NULL OR state_code ~ '^[A-Z]{2}$'),
-    CONSTRAINT ck_student_cpf                CHECK (cpf IS NULL OR cpf ~ '^[0-9]{11}$')
+    CONSTRAINT pk_reader PRIMARY KEY (id),
+    CONSTRAINT uq_reader_registration_number UNIQUE (registration_number),
+    CONSTRAINT fk_reader_course             FOREIGN KEY (course_id)            REFERENCES course (id)            ON DELETE RESTRICT,
+    CONSTRAINT fk_reader_academic_module    FOREIGN KEY (academic_module_id)   REFERENCES academic_module (id)   ON DELETE RESTRICT,
+    CONSTRAINT fk_reader_study_shift        FOREIGN KEY (study_shift_id)       REFERENCES study_shift (id)       ON DELETE RESTRICT,
+    CONSTRAINT ck_reader_state_code         CHECK (state_code IS NULL OR state_code ~ '^[A-Z]{2}$'),
+    CONSTRAINT ck_reader_cpf                CHECK (cpf IS NULL OR cpf ~ '^[0-9]{11}$')
 );
-COMMENT ON TABLE student IS 'Aluno catalogado na biblioteca. Soft-delete via deleted_at.';
-COMMENT ON COLUMN student.registration_number IS 'Matricula unica. Usada como login e como senha inicial do aluno.';
-COMMENT ON COLUMN student.penalty_code IS 'Valores Java: RECORD / WARNING / SUSPENSION / BLOCK / BAN.';
-COMMENT ON COLUMN student.penalty_expires_at IS 'Quando > now(), o aluno esta bloqueado para emprestimos.';
+COMMENT ON TABLE reader IS 'Leitor catalogado na biblioteca. Soft-delete via deleted_at.';
+COMMENT ON COLUMN reader.registration_number IS 'Matricula unica. Usada como login e como senha inicial do leitor.';
+COMMENT ON COLUMN reader.penalty_code IS 'Valores Java: RECORD / WARNING / SUSPENSION / BLOCK / BAN.';
+COMMENT ON COLUMN reader.penalty_expires_at IS 'Quando > now(), o leitor esta bloqueado para emprestimos.';
+COMMENT ON COLUMN reader.reader_category IS 'Categoria/grupo generico do leitor (modo STANDARD). Curso/modulo/turno sao exigidos pelo servico apenas em modo SCHOOL.';
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_student_cpf
-    ON student (cpf)   WHERE cpf   IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_reader_cpf
+    ON reader (cpf)   WHERE cpf   IS NOT NULL AND deleted_at IS NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_student_email
-    ON student (email) WHERE email IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_reader_email
+    ON reader (email) WHERE email IS NOT NULL AND deleted_at IS NULL;
 
-DROP TRIGGER IF EXISTS trg_student_touch ON student;
-CREATE TRIGGER trg_student_touch BEFORE UPDATE ON student
+DROP TRIGGER IF EXISTS trg_reader_touch ON reader;
+CREATE TRIGGER trg_reader_touch BEFORE UPDATE ON reader
     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
 -- ----------------------------------------------------------------------------
@@ -139,22 +141,40 @@ CREATE TABLE IF NOT EXISTS app_user (
     email            CITEXT       NOT NULL,
     password_hash    VARCHAR(255),
     role             VARCHAR(30)  NOT NULL,
-    student_id       UUID,
+    reader_id       UUID,
     preferred_locale VARCHAR(10)  NOT NULL DEFAULT 'pt-BR',
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at       TIMESTAMPTZ  NOT NULL DEFAULT now(),
     deleted_at       TIMESTAMPTZ,
     CONSTRAINT pk_app_user PRIMARY KEY (id),
     CONSTRAINT uq_app_user_email      UNIQUE (email),
-    CONSTRAINT uq_app_user_student_id UNIQUE (student_id),
-    CONSTRAINT fk_app_user_student    FOREIGN KEY (student_id) REFERENCES student (id) ON DELETE RESTRICT,
-    CONSTRAINT ck_app_user_role       CHECK (role IN ('ADMIN', 'LIBRARIAN', 'STUDENT'))
+    CONSTRAINT uq_app_user_reader_id UNIQUE (reader_id),
+    CONSTRAINT fk_app_user_reader    FOREIGN KEY (reader_id) REFERENCES reader (id) ON DELETE RESTRICT,
+    CONSTRAINT ck_app_user_role       CHECK (role IN ('ADMIN', 'LIBRARIAN', 'READER'))
 );
-COMMENT ON TABLE  app_user IS 'Credenciais e perfil de acesso. 0..1 -> 1 com student quando role = STUDENT.';
+COMMENT ON TABLE  app_user IS 'Credenciais e perfil de acesso. 0..1 -> 1 com reader quando role = READER.';
 COMMENT ON COLUMN app_user.preferred_locale IS 'pt-BR | en-US. Consumido pelo MessageResolver para resolver e-mails.';
 
 DROP TRIGGER IF EXISTS trg_app_user_touch ON app_user;
 CREATE TRIGGER trg_app_user_touch BEFORE UPDATE ON app_user
+    FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+
+CREATE TABLE IF NOT EXISTS library_settings (
+    id           BOOLEAN     NOT NULL DEFAULT TRUE,
+    library_type VARCHAR(20) NOT NULL DEFAULT 'SCHOOL',
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT pk_library_settings PRIMARY KEY (id),
+    CONSTRAINT ck_library_settings_singleton CHECK (id = TRUE),
+    CONSTRAINT ck_library_settings_type CHECK (library_type IN ('SCHOOL', 'STANDARD'))
+);
+COMMENT ON TABLE  library_settings IS 'Configuracao global single-row. Tipo de biblioteca (SCHOOL/STANDARD) como feature flag.';
+
+INSERT INTO library_settings (id, library_type)
+VALUES (TRUE, 'SCHOOL')
+ON CONFLICT (id) DO NOTHING;
+
+DROP TRIGGER IF EXISTS trg_library_settings_touch ON library_settings;
+CREATE TRIGGER trg_library_settings_touch BEFORE UPDATE ON library_settings
     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
 -- ----------------------------------------------------------------------------
@@ -233,13 +253,13 @@ CREATE TABLE IF NOT EXISTS loan (
     returned_at     TIMESTAMPTZ,
     penalty_code    VARCHAR(20),
     status          VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
-    student_id      UUID         NOT NULL,
+    reader_id      UUID         NOT NULL,
     book_copy_id    UUID         NOT NULL,
     renewal_count   INTEGER      NOT NULL DEFAULT 0,
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
     CONSTRAINT pk_loan PRIMARY KEY (id),
-    CONSTRAINT fk_loan_student   FOREIGN KEY (student_id)   REFERENCES student (id)   ON DELETE RESTRICT,
+    CONSTRAINT fk_loan_reader   FOREIGN KEY (reader_id)   REFERENCES reader (id)   ON DELETE RESTRICT,
     CONSTRAINT fk_loan_book_copy FOREIGN KEY (book_copy_id) REFERENCES book_copy (id) ON DELETE RESTRICT,
     CONSTRAINT ck_loan_status             CHECK (status IN ('ACTIVE', 'COMPLETED', 'OVERDUE')),
     CONSTRAINT ck_loan_due_after_borrowed CHECK (due_at >= borrowed_at),
@@ -255,7 +275,7 @@ CREATE TRIGGER trg_loan_touch BEFORE UPDATE ON loan
 
 CREATE TABLE IF NOT EXISTS loan_request (
     id             UUID         NOT NULL DEFAULT gen_random_uuid(),
-    student_id     UUID         NOT NULL,
+    reader_id     UUID         NOT NULL,
     book_copy_id   UUID         NOT NULL,
     requested_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
     status         VARCHAR(20)  NOT NULL DEFAULT 'PENDING',
@@ -263,7 +283,7 @@ CREATE TABLE IF NOT EXISTS loan_request (
     created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
     CONSTRAINT pk_loan_request PRIMARY KEY (id),
-    CONSTRAINT fk_loan_request_student   FOREIGN KEY (student_id)   REFERENCES student (id)   ON DELETE RESTRICT,
+    CONSTRAINT fk_loan_request_reader   FOREIGN KEY (reader_id)   REFERENCES reader (id)   ON DELETE RESTRICT,
     CONSTRAINT fk_loan_request_book_copy FOREIGN KEY (book_copy_id) REFERENCES book_copy (id) ON DELETE RESTRICT,
     CONSTRAINT ck_loan_request_status    CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'))
 );
@@ -274,7 +294,7 @@ CREATE TRIGGER trg_loan_request_touch BEFORE UPDATE ON loan_request
 
 CREATE TABLE IF NOT EXISTS reservation (
     id              UUID         NOT NULL DEFAULT gen_random_uuid(),
-    student_id      UUID         NOT NULL,
+    reader_id      UUID         NOT NULL,
     book_id         UUID         NOT NULL,
     status          VARCHAR(20)  NOT NULL DEFAULT 'WAITING',
     queue_position  INTEGER      NOT NULL,
@@ -283,7 +303,7 @@ CREATE TABLE IF NOT EXISTS reservation (
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
     CONSTRAINT pk_reservation PRIMARY KEY (id),
-    CONSTRAINT fk_reservation_student FOREIGN KEY (student_id) REFERENCES student (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_reservation_reader FOREIGN KEY (reader_id) REFERENCES reader (id) ON DELETE RESTRICT,
     CONSTRAINT fk_reservation_book    FOREIGN KEY (book_id)    REFERENCES book (id)    ON DELETE RESTRICT,
     CONSTRAINT ck_reservation_status  CHECK (status IN ('WAITING', 'READY', 'CANCELLED', 'EXPIRED', 'FULFILLED')),
     CONSTRAINT ck_reservation_queue_position_positive CHECK (queue_position > 0)
@@ -373,7 +393,7 @@ COMMENT ON TABLE audit_log IS 'Trilha de auditoria administrativa. Append-only; 
 -- ALTER TABLE study_shift          ENABLE ROW LEVEL SECURITY; ALTER TABLE study_shift          FORCE ROW LEVEL SECURITY;
 -- ALTER TABLE genre                ENABLE ROW LEVEL SECURITY; ALTER TABLE genre                FORCE ROW LEVEL SECURITY;
 -- ALTER TABLE dewey_classification ENABLE ROW LEVEL SECURITY; ALTER TABLE dewey_classification FORCE ROW LEVEL SECURITY;
--- ALTER TABLE student              ENABLE ROW LEVEL SECURITY; ALTER TABLE student              FORCE ROW LEVEL SECURITY;
+-- ALTER TABLE reader              ENABLE ROW LEVEL SECURITY; ALTER TABLE reader              FORCE ROW LEVEL SECURITY;
 -- ALTER TABLE app_user             ENABLE ROW LEVEL SECURITY; ALTER TABLE app_user             FORCE ROW LEVEL SECURITY;
 -- ALTER TABLE book                 ENABLE ROW LEVEL SECURITY; ALTER TABLE book                 FORCE ROW LEVEL SECURITY;
 -- ALTER TABLE book_genre           ENABLE ROW LEVEL SECURITY; ALTER TABLE book_genre           FORCE ROW LEVEL SECURITY;
@@ -438,12 +458,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS mv_loans_by_month_idx ON mv_loans_by_month (mo
 -- ----------------------------------------------------------------------------
 -- 10. Indices auxiliares (equivalente a V4 — busca + foreign keys)
 -- ----------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS idx_student_full_name_trgm ON student USING GIN (immutable_unaccent(full_name) gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_reader_full_name_trgm ON reader USING GIN (immutable_unaccent(full_name) gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_book_title_trgm        ON book    USING GIN (immutable_unaccent(title)     gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_book_author_trgm       ON book    USING GIN (immutable_unaccent(author)    gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_book_publisher_trgm    ON book    USING GIN (immutable_unaccent(publisher) gin_trgm_ops);
 
-CREATE INDEX IF NOT EXISTS idx_loan_student_status_due ON loan      (student_id, status, due_at);
+CREATE INDEX IF NOT EXISTS idx_loan_reader_status_due ON loan      (reader_id, status, due_at);
 CREATE INDEX IF NOT EXISTS idx_book_copy_book_status   ON book_copy (book_id, status);
 CREATE INDEX IF NOT EXISTS idx_loan_request_status     ON loan_request (status);
 CREATE INDEX IF NOT EXISTS idx_reservation_book_status ON reservation  (book_id, status, queue_position);

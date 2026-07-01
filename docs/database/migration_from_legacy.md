@@ -17,17 +17,17 @@ Este guia cobre **três fluxos práticos** de migração:
 
 ## 1. Via planilhas XLSX (fluxo padrão)
 
-A LumiLivre API expõe `POST /api/import?tipo={aluno|livro|exemplar}`
+A LumiLivre API expõe `POST /api/import?tipo={leitor|livro|exemplar}`
 (multipart `.xlsx`) com validação, deduplicação e processamento em lotes
 de 50. Esse caminho:
 
-- preserva todos os invariantes (`BookService`, `StudentService`),
-- cria automaticamente o `app_user` com `role=STUDENT` para cada aluno,
+- preserva todos os invariantes (`BookService`, `ReaderService`),
+- cria automaticamente o `app_user` com `role=READER` para cada leitor,
 - registra erros linha-a-linha em um relatório retornado pela API,
-- é idempotente — alunos/livros/exemplares já existentes são reportados
+- é idempotente — leitores/livros/exemplares já existentes são reportados
   como duplicidade, sem sobrescrever.
 
-### 1.1 Planilha de **alunos**
+### 1.1 Planilha de **leitores**
 
 Cabeçalhos esperados (case-insensitive, espaços → `_`):
 
@@ -82,7 +82,7 @@ Cabeçalhos esperados (case-insensitive, espaços → `_`):
 
 1. Importe **cursos / módulos / turnos / CDD** manualmente (ou rode
    `V5__seed_reference_data.sql` se o catálogo PT-BR padrão for suficiente).
-2. Importe **alunos**.
+2. Importe **leitores**.
 3. Importe **livros**.
 4. Liste os livros importados (`GET /api/books`) para descobrir os UUIDs
    gerados; preencha a coluna `livro_id` da planilha de **exemplares**.
@@ -102,8 +102,8 @@ Cabeçalhos esperados (case-insensitive, espaços → `_`):
 -- Schema temporário para receber o dump bruto do legado.
 CREATE SCHEMA legacy;
 
--- Exemplo: tabela de alunos legados sem mudar nomes.
-CREATE TABLE legacy.alunos (
+-- Exemplo: tabela de leitores legados sem mudar nomes.
+CREATE TABLE legacy.leitores (
     matricula  VARCHAR(20),
     nome       VARCHAR(255),
     cpf        VARCHAR(14),
@@ -115,13 +115,13 @@ CREATE TABLE legacy.alunos (
 );
 
 -- Carga (pg_dump | psql | COPY FROM CSV).
-\copy legacy.alunos FROM 'alunos_legacy.csv' WITH (FORMAT csv, HEADER true);
+\copy legacy.leitores FROM 'leitores_legacy.csv' WITH (FORMAT csv, HEADER true);
 
 -- Sanitização básica: dígitos do CPF, validação de email.
-UPDATE legacy.alunos SET cpf = REGEXP_REPLACE(cpf, '\D', '', 'g');
+UPDATE legacy.leitores SET cpf = REGEXP_REPLACE(cpf, '\D', '', 'g');
 
 -- Inserção em LumiLivre resolvendo FK por nome.
-INSERT INTO student (
+INSERT INTO reader (
     registration_number, full_name, cpf, email,
     course_id, academic_module_id, study_shift_id
 )
@@ -131,15 +131,15 @@ SELECT
     NULLIF(l.cpf, ''),
     NULLIF(l.email, ''),
     c.id, m.id, s.id
-FROM legacy.alunos l
+FROM legacy.leitores l
 JOIN course           c ON c.name = l.curso_str
 JOIN academic_module  m ON m.name = l.modulo_str
 JOIN study_shift      s ON s.name = l.turno_str
 ON CONFLICT (registration_number) DO NOTHING;
 ```
 
-> Atenção: o caminho SQL **não cria `app_user`** para STUDENT. Se quiser
-> permitir login dos alunos importados, gere os usuários separadamente
+> Atenção: o caminho SQL **não cria `app_user`** para READER. Se quiser
+> permitir login dos leitores importados, gere os usuários separadamente
 > com BCrypt — a senha inicial é a matrícula. Exemplo em Python:
 > `from bcrypt import hashpw, gensalt; hashpw(b"2024001", gensalt(rounds=10))`.
 
@@ -165,8 +165,8 @@ Pergamum usa um schema relacional próprio (`acervo`, `acervo_emprestimo`,
 | `exemplar.tombo`             | `book_copy.copy_code`                  |
 | `exemplar.localizacao`       | `book_copy.shelf_location`             |
 | `exemplar.situacao`          | `book_copy.status` (mapear códigos)    |
-| `usuario` (aluno)            | `student`                              |
-| `usuario.matricula`          | `student.registration_number`          |
+| `usuario` (leitor)            | `reader`                              |
+| `usuario.matricula`          | `reader.registration_number`          |
 | `acervo_emprestimo`          | `loan` (somente concluídos no legado)  |
 
 Estratégia recomendada:
@@ -175,7 +175,7 @@ Estratégia recomendada:
 2. Importar para schema `legacy` no Postgres LumiLivre.
 3. Resolver gêneros mapeando `acervo_assunto` para `genre` (criar gêneros
    ausentes manualmente). Limitar a 3 por livro.
-4. Importar `book`, `book_copy`, `student` na ordem.
+4. Importar `book`, `book_copy`, `reader` na ordem.
 5. Importar `loan` somente se houver interesse de histórico — caso
    contrário, importe só os ativos (`status IN ('Emprestado', 'Atrasado')`).
 
@@ -225,10 +225,10 @@ FROM book b
 LEFT JOIN dewey_classification d ON d.code = b.dewey_code
 WHERE b.dewey_code IS NOT NULL AND d.code IS NULL;
 
--- 4. Alunos sem app_user (login indisponível).
+-- 4. Leitores sem app_user (login indisponível).
 SELECT s.registration_number, s.full_name
-FROM student s
-LEFT JOIN app_user a ON a.student_id = s.id
+FROM reader s
+LEFT JOIN app_user a ON a.reader_id = s.id
 WHERE a.id IS NULL;
 
 -- 5. Empréstimos com inconsistências de estado.

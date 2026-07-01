@@ -71,7 +71,7 @@ deploy.
 
 | Recurso                                               | Impacto se descartado                                      |
 |-------------------------------------------------------|------------------------------------------------------------|
-| Busca trigram em `student.full_name`, `book.title` etc. | Busca `ILIKE` cai para O(n) sem índice. Aceitável < 50k.   |
+| Busca trigram em `reader.full_name`, `book.title` etc. | Busca `ILIKE` cai para O(n) sem índice. Aceitável < 50k.   |
 | `unaccent` para queries `Á → A`                        | Buscas por "Joao" não acham "João" sem collation `_ai`.    |
 | Materialized views `mv_dashboard_stats` etc.           | Dashboard precisa recalcular sob demanda ou agendar refresh manual.       |
 | UNIQUE parcial em `book.isbn WHERE deleted_at IS NULL` | Não conseguirá reutilizar ISBN de livro deletado.          |

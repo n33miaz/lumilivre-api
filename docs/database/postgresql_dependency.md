@@ -15,14 +15,14 @@ A LumiLivre API depende hoje de **vários recursos específicos do
 PostgreSQL** que não existem (ou exigem refactor significativo) em
 outros SGBDs relacionais:
 
-- `pg_trgm` (GIN) para busca por similaridade em livros e alunos.
+- `pg_trgm` (GIN) para busca por similaridade em livros e leitores.
 - `unaccent` + função `IMMUTABLE` para queries com acentos transparentes.
 - `CITEXT` para e-mails case-insensitive sem `LOWER()` espalhado.
 - `MATERIALIZED VIEW` + `REFRESH MATERIALIZED VIEW CONCURRENTLY` para o
   dashboard administrativo.
 - `UNIQUE INDEX ... WHERE deleted_at IS NULL` (índice parcial) para
   permitir soft-delete sem perder a unicidade de chaves de negócio
-  (`book.isbn`, `student.email`, `student.cpf`).
+  (`book.isbn`, `reader.email`, `reader.cpf`).
 - `gen_random_uuid()` via `pgcrypto`.
 - `Row Level Security` (deny-by-default) — central para o caso de uso
   Supabase, onde a Data API expõe o banco diretamente.

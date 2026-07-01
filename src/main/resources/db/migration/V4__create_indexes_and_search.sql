@@ -8,13 +8,13 @@
 -- Indices basicos de FK e filtros frequentes
 -- ----------------------------------------------------------------------------
 
--- student
-CREATE INDEX idx_student_course_module_shift
-    ON student (course_id, academic_module_id, study_shift_id)
+-- reader
+CREATE INDEX idx_reader_course_module_shift
+    ON reader (course_id, academic_module_id, study_shift_id)
     WHERE deleted_at IS NULL;
 
-CREATE INDEX idx_student_registration_number
-    ON student (registration_number)
+CREATE INDEX idx_reader_registration_number
+    ON reader (registration_number)
     WHERE deleted_at IS NULL;
 
 -- book
@@ -32,8 +32,8 @@ CREATE INDEX idx_book_copy_book_id_status
     WHERE deleted_at IS NULL;
 
 -- loan
-CREATE INDEX idx_loan_student_id_status_due_at
-    ON loan (student_id, status, due_at);
+CREATE INDEX idx_loan_reader_id_status_due_at
+    ON loan (reader_id, status, due_at);
 
 CREATE INDEX idx_loan_book_copy_id_status
     ON loan (book_copy_id, status);
@@ -45,8 +45,8 @@ CREATE INDEX idx_loan_borrowed_at
     ON loan (borrowed_at);
 
 -- loan_request
-CREATE INDEX idx_loan_request_student_id_status_requested_at
-    ON loan_request (student_id, status, requested_at);
+CREATE INDEX idx_loan_request_reader_id_status_requested_at
+    ON loan_request (reader_id, status, requested_at);
 
 CREATE INDEX idx_loan_request_status
     ON loan_request (status);
@@ -55,12 +55,12 @@ CREATE INDEX idx_loan_request_status
 CREATE INDEX idx_reservation_book_id_status_queue_position
     ON reservation (book_id, status, queue_position);
 
-CREATE INDEX idx_reservation_student_id
-    ON reservation (student_id);
+CREATE INDEX idx_reservation_reader_id
+    ON reservation (reader_id);
 
--- Regra: um aluno nao pode ter duas reservas ATIVAS do mesmo livro.
-CREATE UNIQUE INDEX uq_reservation_active_student_book
-    ON reservation (student_id, book_id)
+-- Regra: um leitor nao pode ter duas reservas ATIVAS do mesmo livro.
+CREATE UNIQUE INDEX uq_reservation_active_reader_book
+    ON reservation (reader_id, book_id)
     WHERE status IN ('WAITING', 'READY');
 
 -- thesis
@@ -87,8 +87,8 @@ CREATE INDEX idx_audit_log_action
 -- ----------------------------------------------------------------------------
 
 -- Trigram GIN em nomes/titulos/autores (ILIKE com acento tolerante).
-CREATE INDEX idx_student_full_name_trgm
-    ON student USING gin (immutable_unaccent(full_name) gin_trgm_ops)
+CREATE INDEX idx_reader_full_name_trgm
+    ON reader USING gin (immutable_unaccent(full_name) gin_trgm_ops)
     WHERE deleted_at IS NULL;
 
 CREATE INDEX idx_book_title_trgm

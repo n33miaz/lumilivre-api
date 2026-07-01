@@ -3,7 +3,7 @@
 -- -----------------------------------------------------------------------------
 --  Dados de referencia do dominio (PT-BR por natureza do negocio).
 --  Idempotente via ON CONFLICT. Nao contem dados de negocio (emprestimos,
---  alunos, livros) - esses ficam no seed demo opt-in em db/seed.
+--  leitores, livros) - esses ficam no seed demo opt-in em db/seed.
 -- =============================================================================
 
 DO $$

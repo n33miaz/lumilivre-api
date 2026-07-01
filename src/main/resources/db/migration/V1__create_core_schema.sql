@@ -67,9 +67,9 @@ CREATE TABLE dewey_classification (
 );
 
 -- ----------------------------------------------------------------------------
--- 3. student (PK UUID, registration_number vira UNIQUE)
+-- 3. reader (PK UUID, registration_number vira UNIQUE)
 -- ----------------------------------------------------------------------------
-CREATE TABLE student (
+CREATE TABLE reader (
     id                     UUID        NOT NULL DEFAULT gen_random_uuid(),
     registration_number    VARCHAR(20) NOT NULL,
     full_name              VARCHAR(255) NOT NULL,
@@ -78,9 +78,10 @@ CREATE TABLE student (
     birth_date             DATE,
     phone_number           VARCHAR(20),
     email                  CITEXT,
-    course_id              INTEGER     NOT NULL,
-    academic_module_id     INTEGER     NOT NULL,
-    study_shift_id         INTEGER     NOT NULL,
+    course_id              INTEGER,
+    academic_module_id     INTEGER,
+    study_shift_id         INTEGER,
+    reader_category        VARCHAR(80),
     postal_code            VARCHAR(8),
     street                 VARCHAR(255),
     address_complement     VARCHAR(55),
@@ -93,40 +94,40 @@ CREATE TABLE student (
     created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at             TIMESTAMPTZ,
-    CONSTRAINT pk_student PRIMARY KEY (id),
-    CONSTRAINT uq_student_registration_number UNIQUE (registration_number),
-    CONSTRAINT fk_student_course            FOREIGN KEY (course_id)            REFERENCES course (id)            ON DELETE RESTRICT,
-    CONSTRAINT fk_student_academic_module   FOREIGN KEY (academic_module_id)   REFERENCES academic_module (id)   ON DELETE RESTRICT,
-    CONSTRAINT fk_student_study_shift       FOREIGN KEY (study_shift_id)       REFERENCES study_shift (id)       ON DELETE RESTRICT,
-    CONSTRAINT ck_student_state_code CHECK (state_code IS NULL OR state_code ~ '^[A-Z]{2}$'),
-    CONSTRAINT ck_student_cpf        CHECK (cpf IS NULL OR cpf ~ '^[0-9]{11}$')
+    CONSTRAINT pk_reader PRIMARY KEY (id),
+    CONSTRAINT uq_reader_registration_number UNIQUE (registration_number),
+    CONSTRAINT fk_reader_course            FOREIGN KEY (course_id)            REFERENCES course (id)            ON DELETE RESTRICT,
+    CONSTRAINT fk_reader_academic_module   FOREIGN KEY (academic_module_id)   REFERENCES academic_module (id)   ON DELETE RESTRICT,
+    CONSTRAINT fk_reader_study_shift       FOREIGN KEY (study_shift_id)       REFERENCES study_shift (id)       ON DELETE RESTRICT,
+    CONSTRAINT ck_reader_state_code CHECK (state_code IS NULL OR state_code ~ '^[A-Z]{2}$'),
+    CONSTRAINT ck_reader_cpf        CHECK (cpf IS NULL OR cpf ~ '^[0-9]{11}$')
 );
 
 -- Unicidades parciais: so quando o valor existe.
-CREATE UNIQUE INDEX uq_student_cpf   ON student (cpf)   WHERE cpf   IS NOT NULL AND deleted_at IS NULL;
-CREATE UNIQUE INDEX uq_student_email ON student (email) WHERE email IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_reader_cpf   ON reader (cpf)   WHERE cpf   IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_reader_email ON reader (email) WHERE email IS NOT NULL AND deleted_at IS NULL;
 
-CREATE TRIGGER trg_student_touch BEFORE UPDATE ON student
+CREATE TRIGGER trg_reader_touch BEFORE UPDATE ON reader
     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
 -- ----------------------------------------------------------------------------
--- 4. app_user (FK opcional para student - papel STUDENT)
+-- 4. app_user (FK opcional para reader - papel READER)
 -- ----------------------------------------------------------------------------
 CREATE TABLE app_user (
     id             UUID        NOT NULL DEFAULT gen_random_uuid(),
     email          CITEXT      NOT NULL,
     password_hash  VARCHAR(255),
     role           VARCHAR(30) NOT NULL,
-    student_id     UUID,
+    reader_id     UUID,
     preferred_locale VARCHAR(10) NOT NULL DEFAULT 'pt-BR',
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at     TIMESTAMPTZ,
     CONSTRAINT pk_app_user PRIMARY KEY (id),
     CONSTRAINT uq_app_user_email      UNIQUE (email),
-    CONSTRAINT uq_app_user_student_id UNIQUE (student_id),
-    CONSTRAINT fk_app_user_student    FOREIGN KEY (student_id) REFERENCES student (id) ON DELETE RESTRICT,
-    CONSTRAINT ck_app_user_role       CHECK (role IN ('ADMIN', 'LIBRARIAN', 'STUDENT'))
+    CONSTRAINT uq_app_user_reader_id UNIQUE (reader_id),
+    CONSTRAINT fk_app_user_reader    FOREIGN KEY (reader_id) REFERENCES reader (id) ON DELETE RESTRICT,
+    CONSTRAINT ck_app_user_role       CHECK (role IN ('ADMIN', 'LIBRARIAN', 'READER'))
 );
 
 CREATE TRIGGER trg_app_user_touch BEFORE UPDATE ON app_user
@@ -202,13 +203,13 @@ CREATE TABLE loan (
     returned_at     TIMESTAMPTZ,
     penalty_code    VARCHAR(20),
     status          VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    student_id      UUID        NOT NULL,
+    reader_id      UUID        NOT NULL,
     book_copy_id    UUID        NOT NULL,
     renewal_count   INTEGER     NOT NULL DEFAULT 0,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT pk_loan PRIMARY KEY (id),
-    CONSTRAINT fk_loan_student   FOREIGN KEY (student_id)   REFERENCES student (id)   ON DELETE RESTRICT,
+    CONSTRAINT fk_loan_reader   FOREIGN KEY (reader_id)   REFERENCES reader (id)   ON DELETE RESTRICT,
     CONSTRAINT fk_loan_book_copy FOREIGN KEY (book_copy_id) REFERENCES book_copy (id) ON DELETE RESTRICT,
     CONSTRAINT ck_loan_status            CHECK (status IN ('ACTIVE', 'COMPLETED', 'OVERDUE')),
     CONSTRAINT ck_loan_due_after_borrowed CHECK (due_at >= borrowed_at),
@@ -221,7 +222,7 @@ CREATE TRIGGER trg_loan_touch BEFORE UPDATE ON loan
 
 CREATE TABLE loan_request (
     id             UUID        NOT NULL DEFAULT gen_random_uuid(),
-    student_id     UUID        NOT NULL,
+    reader_id     UUID        NOT NULL,
     book_copy_id   UUID        NOT NULL,
     requested_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     status         VARCHAR(20) NOT NULL DEFAULT 'PENDING',
@@ -229,7 +230,7 @@ CREATE TABLE loan_request (
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT pk_loan_request PRIMARY KEY (id),
-    CONSTRAINT fk_loan_request_student   FOREIGN KEY (student_id)   REFERENCES student (id)   ON DELETE RESTRICT,
+    CONSTRAINT fk_loan_request_reader   FOREIGN KEY (reader_id)   REFERENCES reader (id)   ON DELETE RESTRICT,
     CONSTRAINT fk_loan_request_book_copy FOREIGN KEY (book_copy_id) REFERENCES book_copy (id) ON DELETE RESTRICT,
     CONSTRAINT ck_loan_request_status    CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'))
 );
@@ -239,7 +240,7 @@ CREATE TRIGGER trg_loan_request_touch BEFORE UPDATE ON loan_request
 
 CREATE TABLE reservation (
     id              UUID        NOT NULL DEFAULT gen_random_uuid(),
-    student_id      UUID        NOT NULL,
+    reader_id      UUID        NOT NULL,
     book_id         UUID        NOT NULL,
     status          VARCHAR(20) NOT NULL DEFAULT 'WAITING',
     queue_position  INTEGER     NOT NULL,
@@ -248,7 +249,7 @@ CREATE TABLE reservation (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT pk_reservation PRIMARY KEY (id),
-    CONSTRAINT fk_reservation_student FOREIGN KEY (student_id) REFERENCES student (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_reservation_reader FOREIGN KEY (reader_id) REFERENCES reader (id) ON DELETE RESTRICT,
     CONSTRAINT fk_reservation_book    FOREIGN KEY (book_id)    REFERENCES book (id)    ON DELETE RESTRICT,
     CONSTRAINT ck_reservation_status  CHECK (status IN ('WAITING', 'READY', 'CANCELLED', 'EXPIRED', 'FULFILLED')),
     CONSTRAINT ck_reservation_queue_position_positive CHECK (queue_position > 0)
@@ -304,7 +305,7 @@ ALTER TABLE academic_module        ENABLE ROW LEVEL SECURITY; ALTER TABLE academ
 ALTER TABLE study_shift            ENABLE ROW LEVEL SECURITY; ALTER TABLE study_shift            FORCE ROW LEVEL SECURITY;
 ALTER TABLE genre                  ENABLE ROW LEVEL SECURITY; ALTER TABLE genre                  FORCE ROW LEVEL SECURITY;
 ALTER TABLE dewey_classification   ENABLE ROW LEVEL SECURITY; ALTER TABLE dewey_classification   FORCE ROW LEVEL SECURITY;
-ALTER TABLE student                ENABLE ROW LEVEL SECURITY; ALTER TABLE student                FORCE ROW LEVEL SECURITY;
+ALTER TABLE reader                ENABLE ROW LEVEL SECURITY; ALTER TABLE reader                FORCE ROW LEVEL SECURITY;
 ALTER TABLE app_user               ENABLE ROW LEVEL SECURITY; ALTER TABLE app_user               FORCE ROW LEVEL SECURITY;
 ALTER TABLE book                   ENABLE ROW LEVEL SECURITY; ALTER TABLE book                   FORCE ROW LEVEL SECURITY;
 ALTER TABLE book_genre             ENABLE ROW LEVEL SECURITY; ALTER TABLE book_genre             FORCE ROW LEVEL SECURITY;

@@ -66,7 +66,7 @@ com sistemas legados que já operam com a notação `000`-`999`.
 
 ## 2. Pessoas & autenticação
 
-### 2.1 `student`
+### 2.1 `reader`
 
 | Coluna               | Tipo            | Constraints                                   | Descrição                                                     |
 |----------------------|-----------------|-----------------------------------------------|---------------------------------------------------------------|
@@ -78,9 +78,10 @@ com sistemas legados que já operam com a notação `000`-`999`.
 | birth_date           | DATE            | —                                             | Data de nascimento.                                           |
 | phone_number         | VARCHAR(20)     | —                                             | Apenas dígitos quando preenchido.                             |
 | email                | CITEXT          | UNIQUE partial                                | E-mail; comparação case-insensitive.                          |
-| course_id            | INTEGER         | NOT NULL, FK→`course(id)` ON DELETE RESTRICT  | Curso atual.                                                  |
-| academic_module_id   | INTEGER         | NOT NULL, FK→`academic_module(id)`            | Módulo/etapa atual.                                           |
-| study_shift_id       | INTEGER         | NOT NULL, FK→`study_shift(id)`                | Turno atual.                                                  |
+| course_id            | INTEGER         | FK→`course(id)` ON DELETE RESTRICT            | Curso atual. Obrigatório (serviço) apenas em modo `SCHOOL`.   |
+| academic_module_id   | INTEGER         | FK→`academic_module(id)`                      | Módulo/etapa atual. Obrigatório apenas em modo `SCHOOL`.      |
+| study_shift_id       | INTEGER         | FK→`study_shift(id)`                          | Turno atual. Obrigatório apenas em modo `SCHOOL`.             |
+| reader_category      | VARCHAR(80)     | —                                             | Categoria/grupo genérico do leitor (modo `STANDARD`).         |
 | postal_code          | VARCHAR(8)      | —                                             | CEP brasileiro (8 dígitos). Enriquecido via ViaCEP.           |
 | street               | VARCHAR(255)    | —                                             |                                                               |
 | address_complement   | VARCHAR(55)     | —                                             |                                                               |
@@ -89,16 +90,16 @@ com sistemas legados que já operam com a notação `000`-`999`.
 | state_code           | CHAR(2)         | CHECK regex `^[A-Z]{2}$`                      | UF.                                                           |
 | street_number        | INTEGER         | —                                             | Número de porta.                                              |
 | penalty_code         | VARCHAR(20)     | —                                             | Valores Java: `RECORD/WARNING/SUSPENSION/BLOCK/BAN`.          |
-| penalty_expires_at   | TIMESTAMPTZ     | —                                             | Quando `> now()`, aluno está bloqueado para empréstimos.      |
+| penalty_expires_at   | TIMESTAMPTZ     | —                                             | Quando `> now()`, leitor está bloqueado para empréstimos.      |
 | created_at           | TIMESTAMPTZ     | NOT NULL, DEFAULT now()                       | Inserção.                                                     |
 | updated_at           | TIMESTAMPTZ     | NOT NULL, DEFAULT now(), trigger touch        | Última alteração.                                             |
 | deleted_at           | TIMESTAMPTZ     | —                                             | Soft delete.                                                  |
 
 **Invariantes de negócio (camada de serviço):**
 
-- Aluno com `penalty_expires_at > now()` não pode emprestar nem solicitar
+- Leitor com `penalty_expires_at > now()` não pode emprestar nem solicitar
   (`RequestApprovalPolicy.validateRequest`).
-- Limite default: 3 empréstimos `ACTIVE`+`OVERDUE` por aluno
+- Limite default: 3 empréstimos `ACTIVE`+`OVERDUE` por leitor
   (`LoanPolicy.MAX_ACTIVE_LOANS`).
 
 ### 2.2 `app_user`
@@ -108,8 +109,8 @@ com sistemas legados que já operam com a notação `000`-`999`.
 | id               | UUID          | PK, DEFAULT `gen_random_uuid()`                        | Identificador interno.                                        |
 | email            | CITEXT        | NOT NULL, UNIQUE                                       | Login (admin/bibliotecário).                                  |
 | password_hash    | VARCHAR(255)  | —                                                      | BCrypt cost 10. Pode ser NULL durante onboarding.             |
-| role             | VARCHAR(30)   | NOT NULL, CHECK in (`ADMIN`,`LIBRARIAN`,`STUDENT`)     | Perfil de acesso.                                             |
-| student_id       | UUID          | UNIQUE, FK→`student(id)` ON DELETE RESTRICT            | Vinculo 0..1 → 1 com `student` quando `role='STUDENT'`.       |
+| role             | VARCHAR(30)   | NOT NULL, CHECK in (`ADMIN`,`LIBRARIAN`,`READER`)     | Perfil de acesso.                                             |
+| reader_id       | UUID          | UNIQUE, FK→`reader(id)` ON DELETE RESTRICT            | Vinculo 0..1 → 1 com `reader` quando `role='READER'`.       |
 | preferred_locale | VARCHAR(10)   | NOT NULL, DEFAULT `'pt-BR'`                            | `pt-BR` ou `en-US`. Consumido por `MessageResolver`.          |
 | created_at       | TIMESTAMPTZ   | NOT NULL, DEFAULT now()                                |                                                               |
 | updated_at       | TIMESTAMPTZ   | NOT NULL, DEFAULT now(), trigger touch                 |                                                               |
@@ -126,6 +127,18 @@ Token de reset gerado pelo fluxo `/auth/esqueci-senha`. Tempo de vida 30 min.
 | app_user_id  | UUID          | NOT NULL, UNIQUE, FK→`app_user(id)` ON DELETE CASCADE | Apenas 1 token vivo por usuário.   |
 | expires_at   | TIMESTAMPTZ   | NOT NULL                                   | `created_at + 30 min`.             |
 | created_at   | TIMESTAMPTZ   | NOT NULL, DEFAULT now()                    |                                    |
+
+### 2.4 `library_settings`
+
+Configuração global da instalação (single-row). Fonte de verdade do tipo de
+biblioteca, consumida por `GET /api/settings` (features derivadas no backend)
+e editável via `PUT /api/settings` (ADMIN).
+
+| Coluna       | Tipo          | Constraints                                        | Descrição                                        |
+|--------------|---------------|----------------------------------------------------|--------------------------------------------------|
+| id           | BOOLEAN       | PK, DEFAULT TRUE, CHECK (`id = TRUE`)              | Singleton — apenas 1 linha possível.             |
+| library_type | VARCHAR(20)   | NOT NULL, DEFAULT `'SCHOOL'`, CHECK in (`SCHOOL`,`STANDARD`) | Modo da biblioteca (feature flag).     |
+| updated_at   | TIMESTAMPTZ   | NOT NULL, DEFAULT now(), trigger touch             | Última alteração.                                |
 
 ---
 
@@ -201,7 +214,7 @@ Exemplar físico identificado por `copy_code` (tombo).
 | returned_at    | TIMESTAMPTZ   | CHECK `>= borrowed_at`                                     | Preenchido na devolução.                                             |
 | penalty_code   | VARCHAR(20)   | —                                                          | Penalidade aplicada (se houver) na devolução atrasada.               |
 | status         | VARCHAR(20)   | NOT NULL, DEFAULT `'ACTIVE'`, CHECK in (`ACTIVE`,`COMPLETED`,`OVERDUE`) |                                                                      |
-| student_id     | UUID          | NOT NULL, FK→`student(id)` ON DELETE RESTRICT              | Devedor.                                                             |
+| reader_id     | UUID          | NOT NULL, FK→`reader(id)` ON DELETE RESTRICT              | Devedor.                                                             |
 | book_copy_id   | UUID          | NOT NULL, FK→`book_copy(id)` ON DELETE RESTRICT            | Exemplar emprestado.                                                 |
 | renewal_count  | INTEGER       | NOT NULL, DEFAULT 0, CHECK `>= 0`                          | Quantidade de renovações.                                            |
 | created_at     | TIMESTAMPTZ   | NOT NULL, DEFAULT now()                                    |                                                                      |
@@ -209,7 +222,7 @@ Exemplar físico identificado por `copy_code` (tombo).
 
 **Invariantes:**
 
-- `LoanPolicy.validateNewLoan`: 3 empréstimos ativos por aluno, sem penalidade.
+- `LoanPolicy.validateNewLoan`: 3 empréstimos ativos por leitor, sem penalidade.
 - `PenaltyPolicy`: faixas de atraso → severidade
   (`<=1d RECORD / 2-5d WARNING / 6-7d SUSPENSION / 8-90d BLOCK / >90d BAN`).
 - Renovação: `LoanPolicy.RENEWAL_DAYS = 7` e limite de renovações se houver
@@ -217,13 +230,13 @@ Exemplar físico identificado por `copy_code` (tombo).
 
 ### 4.2 `loan_request`
 
-Solicitação de empréstimo enviada pelo aluno via mobile/web; bibliotecário
+Solicitação de empréstimo enviada pelo leitor via mobile/web; bibliotecário
 aprova ou rejeita.
 
 | Coluna         | Tipo          | Constraints                                                | Descrição                                                            |
 |----------------|---------------|------------------------------------------------------------|----------------------------------------------------------------------|
 | id             | UUID          | PK, DEFAULT `gen_random_uuid()`                            |                                                                      |
-| student_id     | UUID          | NOT NULL, FK→`student(id)` ON DELETE RESTRICT              |                                                                      |
+| reader_id     | UUID          | NOT NULL, FK→`reader(id)` ON DELETE RESTRICT              |                                                                      |
 | book_copy_id   | UUID          | NOT NULL, FK→`book_copy(id)` ON DELETE RESTRICT            |                                                                      |
 | requested_at   | TIMESTAMPTZ   | NOT NULL, DEFAULT now()                                    |                                                                      |
 | status         | VARCHAR(20)   | NOT NULL, DEFAULT `'PENDING'`, CHECK in (`PENDING`,`ACCEPTED`,`REJECTED`,`CANCELLED`) |                                                                      |
@@ -238,7 +251,7 @@ Fila FIFO de reservas para livros sem exemplar disponível.
 | Coluna         | Tipo          | Constraints                                                | Descrição                                                             |
 |----------------|---------------|------------------------------------------------------------|-----------------------------------------------------------------------|
 | id             | UUID          | PK                                                         |                                                                       |
-| student_id     | UUID          | NOT NULL, FK→`student(id)`                                 | Posição na fila.                                                      |
+| reader_id     | UUID          | NOT NULL, FK→`reader(id)`                                 | Posição na fila.                                                      |
 | book_id        | UUID          | NOT NULL, FK→`book(id)`                                    | Reserva é do título, não do exemplar.                                 |
 | status         | VARCHAR(20)   | NOT NULL, DEFAULT `'WAITING'`, CHECK in (`WAITING`,`READY`,`CANCELLED`,`EXPIRED`,`FULFILLED`) |                                                                       |
 | queue_position | INTEGER       | NOT NULL, CHECK `> 0`                                      | Posição na fila do livro.                                             |
@@ -297,7 +310,7 @@ Trilha de auditoria das ações administrativas. Preenchida pelo
 |----------------|---------------|------------------------------------------------------|--------------------------------------------------------|
 | id             | BIGINT        | PK, IDENTITY                                         | Append-only.                                           |
 | actor          | VARCHAR(100)  | NOT NULL                                             | Email ou matrícula do ator.                            |
-| actor_role     | VARCHAR(50)   | NOT NULL                                             | `ADMIN/LIBRARIAN/STUDENT`.                             |
+| actor_role     | VARCHAR(50)   | NOT NULL                                             | `ADMIN/LIBRARIAN/READER`.                             |
 | target_id      | VARCHAR(200)  | —                                                    | ID do recurso afetado (UUID/matrícula/tombo).          |
 | action         | VARCHAR(100)  | NOT NULL                                             | Nome do método/operação (`LOAN_CREATED`, etc.).        |
 | result         | VARCHAR(20)   | NOT NULL, CHECK in (`SUCCESS`,`FAILURE`,`DENIED`)    |                                                        |
@@ -351,14 +364,14 @@ Volume mensal nos últimos 12 meses. Refresh **concurrent**.
 
 > Detalhes em `V4__create_indexes_and_search.sql`. Resumo:
 
-- **Trigram (`pg_trgm` GIN)** em `student.full_name`,
+- **Trigram (`pg_trgm` GIN)** em `reader.full_name`,
   `book.title`/`book.author`/`book.publisher` para busca ILIKE rápida.
-- **B-tree compostos** em `loan(student_id, status, due_at)` e
+- **B-tree compostos** em `loan(reader_id, status, due_at)` e
   `book_copy(book_id, status)`.
 - **`UNIQUE INDEX` parcial** em `book.isbn` WHERE `deleted_at IS NULL`
   (permite reusar ISBN de livro deletado).
 - **Índice para FK** em todas as colunas `*_id` que referenciam tabelas
-  grandes (`loan.student_id`, `loan.book_copy_id`, `loan_request.student_id`,
+  grandes (`loan.reader_id`, `loan.book_copy_id`, `loan_request.reader_id`,
   etc.).
 
 ---

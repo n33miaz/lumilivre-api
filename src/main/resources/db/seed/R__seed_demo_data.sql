@@ -6,7 +6,7 @@
 --  ambiente local/dev.
 --
 --  Cobre todos os status de cada entidade para exercitar a UI completa:
---    - student      (8): 6 sem penalidade, 1 BLOCK, 1 WARNING expirando
+--    - reader      (8): 6 sem penalidade, 1 BLOCK, 1 WARNING expirando
 --    - book         (30): distribuidos em 10+ generos, com cover_url publica
 --    - book_copy    (15): AVAILABLE / BORROWED / MAINTENANCE / UNAVAILABLE
 --    - loan         (10): ACTIVE D-10/D-5/D-2/D+1, OVERDUE D+8, 5 COMPLETED
@@ -22,7 +22,8 @@ DECLARE
     seed_table text;
 BEGIN
     FOREACH seed_table IN ARRAY ARRAY[
-        'student',
+        'reader',
+        'library_settings',
         'app_user',
         'book',
         'book_genre',
@@ -40,9 +41,13 @@ BEGIN
 END $$;
 
 -- ----------------------------------------------------------------------------
--- Students (8)
+-- Readers (8)
 -- ----------------------------------------------------------------------------
-INSERT INTO student (
+INSERT INTO library_settings (id, library_type)
+VALUES (TRUE, 'SCHOOL')
+ON CONFLICT (id) DO UPDATE SET library_type = EXCLUDED.library_type;
+
+INSERT INTO reader (
     id, registration_number, full_name, cpf, birth_date, phone_number, email,
     course_id, academic_module_id, study_shift_id,
     postal_code, street, district, city, state_code, street_number,
@@ -110,28 +115,28 @@ ON CONFLICT (registration_number) DO UPDATE SET
 -- ----------------------------------------------------------------------------
 -- Users
 -- Demo credentials (bcrypt hashes correspondem ao texto literal abaixo):
---   admin@lumilivre.test     / admin@lumilivre.test
---   librarian@lumilivre.test / 123456
+--   admin@test     / admin
+--   librarian@test / librarian
 --   2024001..2024008         / matricula igual (senha inicial = matricula)
--- Os hashes foram gerados uma vez para os tres usuarios base; alunos
+-- Os hashes foram gerados uma vez para os tres usuarios base; leitores
 -- novos ainda nao tem conta (cria-se via fluxo normal). Mantemos so as
 -- credenciais demo abaixo para nao explodir esse seed com hashes BCrypt.
 -- ----------------------------------------------------------------------------
-INSERT INTO app_user (id, email, password_hash, role, student_id, preferred_locale)
+INSERT INTO app_user (id, email, password_hash, role, reader_id, preferred_locale)
 VALUES
-    ('00000000-0000-4000-8000-000000001001'::uuid, 'admin@lumilivre.test',
-        '$2a$10$.gPKMreKYQf0en5npUJxau0lmiKjd9iTfQoTW1mN7z.BPkMAXN2Ay',
+    ('00000000-0000-4000-8000-000000001001'::uuid, 'admin@test',
+        '$2b$12$SkU.zh6vrNj8dt0sdgZjSOMGxEFBTfqxCOtsX7wYed9CX0yCBmXrm',
         'ADMIN', NULL, 'pt-BR'),
-    ('00000000-0000-4000-8000-000000001002'::uuid, 'librarian@lumilivre.test',
-        '$2a$10$s0gF584h97IvpZgNzmNz9.ITIq4vhsnT4VZRbz.45XmfHWg3xNJdy',
+    ('00000000-0000-4000-8000-000000001002'::uuid, 'librarian@test',
+        '$2b$12$PGsQqsJvPgZkTgh3cGJ7qu6744vKKJ7PL0QRg12LY5p38be7s5jBe',
         'LIBRARIAN', NULL, 'pt-BR'),
-    ('00000000-0000-4000-8000-000000001003'::uuid, 'ana.lima@example.com',
+    ('00000000-0000-4000-8000-000000001003'::uuid, 'studant@test',
         '$2a$10$fHJ73JQxR0RhvAJVYA8ZtuoNyfup0aE1WML5B82x.VSkQigYppugK',
-        'STUDENT', '00000000-0000-4000-8000-000000002401'::uuid, 'pt-BR')
+        'READER', '00000000-0000-4000-8000-000000002401'::uuid, 'pt-BR')
 ON CONFLICT (email) DO UPDATE SET
     password_hash    = EXCLUDED.password_hash,
     role             = EXCLUDED.role,
-    student_id       = EXCLUDED.student_id,
+    reader_id       = EXCLUDED.reader_id,
     preferred_locale = EXCLUDED.preferred_locale;
 
 -- ----------------------------------------------------------------------------
@@ -281,7 +286,7 @@ ON CONFLICT (copy_code) DO UPDATE SET
 -- ----------------------------------------------------------------------------
 -- Loans (10): cobre todos os estados visiveis na UI
 -- ----------------------------------------------------------------------------
-INSERT INTO loan (id, borrowed_at, due_at, returned_at, status, student_id, book_copy_id, renewal_count, penalty_code)
+INSERT INTO loan (id, borrowed_at, due_at, returned_at, status, reader_id, book_copy_id, renewal_count, penalty_code)
 VALUES
     -- ACTIVE com prazos diversos (D-10, D-5, D-2, D+1)
     ('00000000-0000-4000-8000-000000005001'::uuid, now() - INTERVAL '4 days',  now() + INTERVAL '10 days', NULL, 'ACTIVE',    '00000000-0000-4000-8000-000000002401'::uuid, '00000000-0000-4000-8000-000000004002'::uuid, 0, NULL),
@@ -301,7 +306,7 @@ ON CONFLICT (id) DO UPDATE SET
     due_at        = EXCLUDED.due_at,
     returned_at   = EXCLUDED.returned_at,
     status        = EXCLUDED.status,
-    student_id    = EXCLUDED.student_id,
+    reader_id    = EXCLUDED.reader_id,
     book_copy_id  = EXCLUDED.book_copy_id,
     renewal_count = EXCLUDED.renewal_count,
     penalty_code  = EXCLUDED.penalty_code;
@@ -309,16 +314,16 @@ ON CONFLICT (id) DO UPDATE SET
 -- ----------------------------------------------------------------------------
 -- Loan requests (6)
 -- ----------------------------------------------------------------------------
-INSERT INTO loan_request (id, student_id, book_copy_id, requested_at, status, note)
+INSERT INTO loan_request (id, reader_id, book_copy_id, requested_at, status, note)
 VALUES
     ('00000000-0000-4000-8000-000000006001'::uuid, '00000000-0000-4000-8000-000000002403'::uuid, '00000000-0000-4000-8000-000000004004'::uuid, now() - INTERVAL '1 day',  'PENDING',   'Solicitado via seed demo'),
     ('00000000-0000-4000-8000-000000006002'::uuid, '00000000-0000-4000-8000-000000002405'::uuid, '00000000-0000-4000-8000-000000004006'::uuid, now() - INTERVAL '2 days', 'PENDING',   'Aguardando aprovacao'),
     ('00000000-0000-4000-8000-000000006003'::uuid, '00000000-0000-4000-8000-000000002401'::uuid, '00000000-0000-4000-8000-000000004001'::uuid, now() - INTERVAL '12 days','ACCEPTED',  'Aceito e convertido em emprestimo concluido'),
     ('00000000-0000-4000-8000-000000006004'::uuid, '00000000-0000-4000-8000-000000002404'::uuid, '00000000-0000-4000-8000-000000004005'::uuid, now() - INTERVAL '20 days','ACCEPTED',  'Solicitacao aceita historica'),
     ('00000000-0000-4000-8000-000000006005'::uuid, '00000000-0000-4000-8000-000000002406'::uuid, '00000000-0000-4000-8000-000000004007'::uuid, now() - INTERVAL '3 days', 'REJECTED',  'Justificativa indisponivel no horario'),
-    ('00000000-0000-4000-8000-000000006006'::uuid, '00000000-0000-4000-8000-000000002402'::uuid, '00000000-0000-4000-8000-000000004008'::uuid, now() - INTERVAL '4 days', 'CANCELLED', 'Cancelado pelo aluno')
+    ('00000000-0000-4000-8000-000000006006'::uuid, '00000000-0000-4000-8000-000000002402'::uuid, '00000000-0000-4000-8000-000000004008'::uuid, now() - INTERVAL '4 days', 'CANCELLED', 'Cancelado pelo leitor')
 ON CONFLICT (id) DO UPDATE SET
-    student_id   = EXCLUDED.student_id,
+    reader_id   = EXCLUDED.reader_id,
     book_copy_id = EXCLUDED.book_copy_id,
     requested_at = EXCLUDED.requested_at,
     status       = EXCLUDED.status,
@@ -327,7 +332,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- ----------------------------------------------------------------------------
 -- Reservations (5)
 -- ----------------------------------------------------------------------------
-INSERT INTO reservation (id, student_id, book_id, status, queue_position, expires_at, notified_at)
+INSERT INTO reservation (id, reader_id, book_id, status, queue_position, expires_at, notified_at)
 VALUES
     ('00000000-0000-4000-8000-000000007001'::uuid, '00000000-0000-4000-8000-000000002402'::uuid, '00000000-0000-4000-8000-000000003001'::uuid, 'WAITING',   1, NULL,                          NULL),
     ('00000000-0000-4000-8000-000000007002'::uuid, '00000000-0000-4000-8000-000000002405'::uuid, '00000000-0000-4000-8000-000000003001'::uuid, 'WAITING',   2, NULL,                          NULL),
@@ -335,7 +340,7 @@ VALUES
     ('00000000-0000-4000-8000-000000007004'::uuid, '00000000-0000-4000-8000-000000002401'::uuid, '00000000-0000-4000-8000-000000003019'::uuid, 'FULFILLED', 1, now() - INTERVAL '5 days',     now() - INTERVAL '8 days'),
     ('00000000-0000-4000-8000-000000007005'::uuid, '00000000-0000-4000-8000-000000002404'::uuid, '00000000-0000-4000-8000-000000003017'::uuid, 'EXPIRED',   1, now() - INTERVAL '1 day',      now() - INTERVAL '5 days')
 ON CONFLICT (id) DO UPDATE SET
-    student_id     = EXCLUDED.student_id,
+    reader_id     = EXCLUDED.reader_id,
     book_id        = EXCLUDED.book_id,
     status         = EXCLUDED.status,
     queue_position = EXCLUDED.queue_position,
@@ -374,8 +379,8 @@ DELETE FROM audit_log WHERE target_id LIKE 'demo-%';
 INSERT INTO audit_log (actor, actor_role, target_id, action, result, error_message, occurred_at)
 VALUES
     ('admin@lumilivre.test',     'ADMIN',     'demo-loan-001',    'LOAN_CREATED',   'SUCCESS', NULL,                              now() - INTERVAL '6 hours'),
-    ('librarian@lumilivre.test', 'LIBRARIAN', 'demo-request-002', 'REQUEST_PROCESSED','FAILURE','Aluno bloqueado por penalidade',  now() - INTERVAL '3 hours'),
-    ('ana.lima@example.com',     'STUDENT',   'demo-student-2401','STUDENT_VIEW',   'DENIED',  'Tentativa de acessar outro aluno',now() - INTERVAL '30 minutes');
+    ('librarian@lumilivre.test', 'LIBRARIAN', 'demo-request-002', 'REQUEST_PROCESSED','FAILURE','Leitor bloqueado por penalidade',  now() - INTERVAL '3 hours'),
+    ('ana.lima@example.com',     'READER',   'demo-reader-2401','READER_VIEW',   'DENIED',  'Tentativa de acessar outro leitor',now() - INTERVAL '30 minutes');
 
 -- ----------------------------------------------------------------------------
 -- Outbox events (2) - historico de notificacoes SENT
@@ -401,7 +406,8 @@ DECLARE
     seed_table text;
 BEGIN
     FOREACH seed_table IN ARRAY ARRAY[
-        'student',
+        'reader',
+        'library_settings',
         'app_user',
         'book',
         'book_genre',

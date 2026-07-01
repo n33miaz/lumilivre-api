@@ -10,14 +10,14 @@ CREATE TABLE public.app_user (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   email USER-DEFINED NOT NULL UNIQUE,
   password_hash character varying,
-  role character varying NOT NULL CHECK (role::text = ANY (ARRAY['ADMIN'::character varying, 'LIBRARIAN'::character varying, 'STUDENT'::character varying]::text[])),
-  student_id uuid UNIQUE,
+  role character varying NOT NULL CHECK (role::text = ANY (ARRAY['ADMIN'::character varying, 'LIBRARIAN'::character varying, 'READER'::character varying]::text[])),
+  reader_id uuid UNIQUE,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   deleted_at timestamp with time zone,
   preferred_locale character varying NOT NULL DEFAULT 'pt-BR'::character varying,
   CONSTRAINT app_user_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_app_user_student FOREIGN KEY (student_id) REFERENCES public.student(id)
+  CONSTRAINT fk_app_user_reader FOREIGN KEY (reader_id) REFERENCES public.reader(id)
 );
 CREATE TABLE public.audit_log (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -106,18 +106,18 @@ CREATE TABLE public.loan (
   returned_at timestamp with time zone,
   penalty_code character varying,
   status character varying NOT NULL DEFAULT 'ACTIVE'::character varying CHECK (status::text = ANY (ARRAY['ACTIVE'::character varying, 'COMPLETED'::character varying, 'OVERDUE'::character varying]::text[])),
-  student_id uuid NOT NULL,
+  reader_id uuid NOT NULL,
   book_copy_id uuid NOT NULL,
   renewal_count integer NOT NULL DEFAULT 0 CHECK (renewal_count >= 0),
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT loan_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_loan_student FOREIGN KEY (student_id) REFERENCES public.student(id),
+  CONSTRAINT fk_loan_reader FOREIGN KEY (reader_id) REFERENCES public.reader(id),
   CONSTRAINT fk_loan_book_copy FOREIGN KEY (book_copy_id) REFERENCES public.book_copy(id)
 );
 CREATE TABLE public.loan_request (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  student_id uuid NOT NULL,
+  reader_id uuid NOT NULL,
   book_copy_id uuid NOT NULL,
   requested_at timestamp with time zone NOT NULL DEFAULT now(),
   status character varying NOT NULL DEFAULT 'PENDING'::character varying CHECK (status::text = ANY (ARRAY['PENDING'::character varying, 'ACCEPTED'::character varying, 'REJECTED'::character varying, 'CANCELLED'::character varying]::text[])),
@@ -125,7 +125,7 @@ CREATE TABLE public.loan_request (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT loan_request_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_loan_request_student FOREIGN KEY (student_id) REFERENCES public.student(id),
+  CONSTRAINT fk_loan_request_reader FOREIGN KEY (reader_id) REFERENCES public.reader(id),
   CONSTRAINT fk_loan_request_book_copy FOREIGN KEY (book_copy_id) REFERENCES public.book_copy(id)
 );
 CREATE TABLE public.outbox_event (
@@ -152,7 +152,7 @@ CREATE TABLE public.password_reset_token (
 );
 CREATE TABLE public.reservation (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  student_id uuid NOT NULL,
+  reader_id uuid NOT NULL,
   book_id uuid NOT NULL,
   status character varying NOT NULL DEFAULT 'WAITING'::character varying CHECK (status::text = ANY (ARRAY['WAITING'::character varying, 'READY'::character varying, 'CANCELLED'::character varying, 'EXPIRED'::character varying, 'FULFILLED'::character varying]::text[])),
   queue_position integer NOT NULL CHECK (queue_position > 0),
@@ -161,10 +161,10 @@ CREATE TABLE public.reservation (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT reservation_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_reservation_student FOREIGN KEY (student_id) REFERENCES public.student(id),
+  CONSTRAINT fk_reservation_reader FOREIGN KEY (reader_id) REFERENCES public.reader(id),
   CONSTRAINT fk_reservation_book FOREIGN KEY (book_id) REFERENCES public.book(id)
 );
-CREATE TABLE public.student (
+CREATE TABLE public.reader (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   registration_number character varying NOT NULL UNIQUE,
   full_name character varying NOT NULL,
@@ -188,10 +188,10 @@ CREATE TABLE public.student (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   deleted_at timestamp with time zone,
-  CONSTRAINT student_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_student_course FOREIGN KEY (course_id) REFERENCES public.course(id),
-  CONSTRAINT fk_student_academic_module FOREIGN KEY (academic_module_id) REFERENCES public.academic_module(id),
-  CONSTRAINT fk_student_study_shift FOREIGN KEY (study_shift_id) REFERENCES public.study_shift(id)
+  CONSTRAINT reader_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_reader_course FOREIGN KEY (course_id) REFERENCES public.course(id),
+  CONSTRAINT fk_reader_academic_module FOREIGN KEY (academic_module_id) REFERENCES public.academic_module(id),
+  CONSTRAINT fk_reader_study_shift FOREIGN KEY (study_shift_id) REFERENCES public.study_shift(id)
 );
 CREATE TABLE public.study_shift (
   id integer GENERATED ALWAYS AS IDENTITY NOT NULL,
