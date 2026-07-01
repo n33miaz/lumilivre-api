@@ -16,8 +16,8 @@ import lombok.NoArgsConstructor;
 public class LoanRequestResponse {
 
     private UUID id;
-    private String studentName;
-    private String studentRegistrationNumber;
+    private String readerName;
+    private String readerRegistrationNumber;
     private String copyCode;
     private UUID bookId;
     private String bookTitle;

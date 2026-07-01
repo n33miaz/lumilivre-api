@@ -40,7 +40,7 @@ public class StudyShiftController {
 
     @GetMapping
     @Operation(operationId = "study-shifts.list")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<Page<StudyShiftSummaryResponse>> list(
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable,

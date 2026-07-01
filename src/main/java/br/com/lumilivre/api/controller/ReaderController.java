@@ -4,13 +4,13 @@ import java.util.List;
 import java.util.Locale;
 
 import br.com.lumilivre.api.config.SwaggerTags;
-import br.com.lumilivre.api.dto.student.StudentRankingResponse;
-import br.com.lumilivre.api.dto.student.StudentRequest;
-import br.com.lumilivre.api.dto.student.StudentResponse;
-import br.com.lumilivre.api.dto.student.StudentSummaryResponse;
-import br.com.lumilivre.api.mapper.StudentMapper;
-import br.com.lumilivre.api.security.CanAccessStudent;
-import br.com.lumilivre.api.service.StudentService;
+import br.com.lumilivre.api.dto.reader.ReaderRankingResponse;
+import br.com.lumilivre.api.dto.reader.ReaderRequest;
+import br.com.lumilivre.api.dto.reader.ReaderResponse;
+import br.com.lumilivre.api.dto.reader.ReaderSummaryResponse;
+import br.com.lumilivre.api.mapper.ReaderMapper;
+import br.com.lumilivre.api.security.CanAccessReader;
+import br.com.lumilivre.api.service.ReaderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,22 +35,22 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
 
 @RestController
-@RequestMapping("/api/students")
+@RequestMapping("/api/readers")
 @RequiredArgsConstructor
-@Tag(name = SwaggerTags.STUDENTS)
-public class StudentController {
+@Tag(name = SwaggerTags.READERS)
+public class ReaderController {
 
-    private final StudentService studentService;
-    private final StudentMapper mapper;
+    private final ReaderService readerService;
+    private final ReaderMapper mapper;
 
     @GetMapping
-    @Operation(operationId = "students.list")
+    @Operation(operationId = "readers.list")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
-    public ResponseEntity<Page<StudentSummaryResponse>> list(
+    public ResponseEntity<Page<ReaderSummaryResponse>> list(
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable,
             Locale locale) {
-        Page<StudentSummaryResponse> page = studentService
+        Page<ReaderSummaryResponse> page = readerService
                 .listarParaAdminV2(q, pageable)
                 .map(item -> mapper.toSummary(item, locale));
         return ResponseEntity.ok()
@@ -59,9 +59,9 @@ public class StudentController {
     }
 
     @GetMapping("/search")
-    @Operation(operationId = "students.search")
+    @Operation(operationId = "readers.search")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
-    public ResponseEntity<Page<StudentSummaryResponse>> search(
+    public ResponseEntity<Page<ReaderSummaryResponse>> search(
             @RequestParam(required = false) String penalty,
             @RequestParam(required = false) String registrationNumber,
             @RequestParam(required = false) String name,
@@ -70,7 +70,7 @@ public class StudentController {
             @RequestParam(required = false) Integer academicModuleId,
             @PageableDefault(size = 20) Pageable pageable,
             Locale locale) {
-        Page<StudentSummaryResponse> page = studentService
+        Page<ReaderSummaryResponse> page = readerService
                 .buscarAvancadoV2(penalty, registrationNumber, name, courseName, studyShiftId, academicModuleId,
                         null, null, null, pageable)
                 .map(item -> mapper.toSummary(item, locale));
@@ -80,85 +80,85 @@ public class StudentController {
     }
 
     @GetMapping("/{registrationNumber}")
-    @Operation(operationId = "students.get")
-    @CanAccessStudent
-    public ResponseEntity<StudentResponse> getOne(
+    @Operation(operationId = "readers.get")
+    @CanAccessReader
+    public ResponseEntity<ReaderResponse> getOne(
             @PathVariable String registrationNumber,
             Locale locale) {
-        StudentResponse body = mapper.toResponse(
-                studentService.buscarPorMatricula(registrationNumber), locale);
+        ReaderResponse body = mapper.toResponse(
+                readerService.buscarPorMatricula(registrationNumber), locale);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);
     }
 
     @PostMapping
-    @Operation(operationId = "students.create")
+    @Operation(operationId = "readers.create")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
-    public ResponseEntity<StudentResponse> create(
-            @Valid @RequestBody StudentRequest request,
+    public ResponseEntity<ReaderResponse> create(
+            @Valid @RequestBody ReaderRequest request,
             Locale locale) {
-        StudentResponse body = mapper.toResponse(
-                studentService.cadastrar(request), locale);
+        ReaderResponse body = mapper.toResponse(
+                readerService.cadastrar(request), locale);
         return ResponseEntity.status(201)
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);
     }
 
     @PutMapping("/{registrationNumber}")
-    @Operation(operationId = "students.update")
+    @Operation(operationId = "readers.update")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
-    public ResponseEntity<StudentResponse> update(
+    public ResponseEntity<ReaderResponse> update(
             @PathVariable String registrationNumber,
-            @Valid @RequestBody StudentRequest request,
+            @Valid @RequestBody ReaderRequest request,
             Locale locale) {
-        StudentResponse body = mapper.toResponse(
-                studentService.atualizar(registrationNumber, request), locale);
+        ReaderResponse body = mapper.toResponse(
+                readerService.atualizar(registrationNumber, request), locale);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);
     }
 
     @DeleteMapping("/{registrationNumber}")
-    @Operation(operationId = "students.delete")
+    @Operation(operationId = "readers.delete")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> delete(@PathVariable String registrationNumber) {
-        studentService.excluir(registrationNumber);
+        readerService.excluir(registrationNumber);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{registrationNumber}/reset-password")
-    @Operation(operationId = "students.resetPassword")
+    @Operation(operationId = "readers.resetPassword")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     public ResponseEntity<Void> resetPassword(@PathVariable String registrationNumber) {
-        studentService.resetarSenha(registrationNumber);
+        readerService.resetarSenha(registrationNumber);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping(value = "/{registrationNumber}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(operationId = "students.uploadAvatar")
-    @CanAccessStudent
+    @Operation(operationId = "readers.uploadAvatar")
+    @CanAccessReader
     public ResponseEntity<Void> uploadAvatar(
             @PathVariable String registrationNumber,
             @RequestPart("file") MultipartFile file,
             Locale locale) {
-        studentService.uploadFoto(registrationNumber, file);
+        readerService.uploadFoto(registrationNumber, file);
         return ResponseEntity.noContent()
                 .header("Content-Language", locale.toLanguageTag())
                 .build();
     }
 
     @GetMapping("/ranking")
-    @Operation(operationId = "students.ranking")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
-    public ResponseEntity<List<StudentRankingResponse>> ranking(
+    @Operation(operationId = "readers.ranking")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
+    public ResponseEntity<List<ReaderRankingResponse>> ranking(
             @RequestParam(defaultValue = "10") int top,
             @RequestParam(required = false) Integer courseId,
             @RequestParam(required = false) Integer academicModuleId,
             @RequestParam(required = false) Integer studyShiftId,
             Locale locale) {
-        List<StudentRankingResponse> body = studentService
-                .gerarRankingAlunosV2(top, courseId, academicModuleId, studyShiftId)
+        List<ReaderRankingResponse> body = readerService
+                .gerarRankingLeitoresV2(top, courseId, academicModuleId, studyShiftId)
                 .stream()
                 .map(mapper::toRanking)
                 .toList();

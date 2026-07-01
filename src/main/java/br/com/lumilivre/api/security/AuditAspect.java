@@ -53,8 +53,8 @@ public class AuditAspect {
         if (auth == null || !auth.isAuthenticated()) return "anonymous";
         Object principal = auth.getPrincipal();
         if (principal instanceof CustomUserDetails cud) {
-            var student = cud.getAppUser().getStudent();
-            return student != null ? student.getRegistrationNumber() : cud.getUsername();
+            var reader = cud.getAppUser().getReader();
+            return reader != null ? reader.getRegistrationNumber() : cud.getUsername();
         }
         return auth.getName();
     }

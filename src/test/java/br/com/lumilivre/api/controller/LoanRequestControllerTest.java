@@ -17,7 +17,7 @@ import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.mapper.LoanRequestMapper;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
-import br.com.lumilivre.api.security.StudentAuthorizationService;
+import br.com.lumilivre.api.security.ReaderAuthorizationService;
 import br.com.lumilivre.api.service.EnumLabelResolver;
 import br.com.lumilivre.api.service.LoanRequestService;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ class LoanRequestControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @MockBean
-    private StudentAuthorizationService studentAuthorizationService;
+    private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
     void listAllReturnsPtBRContentLanguage() throws Exception {
@@ -73,7 +73,7 @@ class LoanRequestControllerTest {
                 .thenReturn("request.created");
 
         mockMvc.perform(post("/api/loan-requests").with(csrf())
-                        .param("studentRegistrationNumber", "12345")
+                        .param("readerRegistrationNumber", "12345")
                         .param("copyCode", "T001")
                         .header("Accept-Language", "pt-BR"))
                 .andExpect(status().isOk())

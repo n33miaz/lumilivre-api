@@ -12,13 +12,13 @@ import br.com.lumilivre.api.model.LoanRequest;
 @Repository
 public interface LoanRequestRepository extends JpaRepository<LoanRequest, UUID> {
 
-    List<LoanRequest> findByStudent_RegistrationNumberAndStatus(String registrationNumber, LoanRequestStatus status);
+    List<LoanRequest> findByReader_RegistrationNumberAndStatus(String registrationNumber, LoanRequestStatus status);
 
     List<LoanRequest> findByStatus(LoanRequestStatus status);
 
     List<LoanRequest> findAllByOrderByRequestedAtDesc();
 
-    List<LoanRequest> findByStudent_RegistrationNumberOrderByRequestedAtDesc(String registrationNumber);
+    List<LoanRequest> findByReader_RegistrationNumberOrderByRequestedAtDesc(String registrationNumber);
 
     long countByStatus(LoanRequestStatus status);
 }

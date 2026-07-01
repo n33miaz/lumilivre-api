@@ -36,14 +36,14 @@ class OutboxPublisherServiceTest {
 
     @Test
     void publishDevePersistirEventoPendente() {
-        service.publish(EventType.LOAN_CREATED, "aluno@lumilivre.test", "Emprestimo criado", "Corpo");
+        service.publish(EventType.LOAN_CREATED, "leitor@lumilivre.test", "Emprestimo criado", "Corpo");
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepository).save(captor.capture());
 
         OutboxEvent event = captor.getValue();
         assertThat(event.getEventType()).isEqualTo(EventType.LOAN_CREATED);
-        assertThat(event.getRecipientEmail()).isEqualTo("aluno@lumilivre.test");
+        assertThat(event.getRecipientEmail()).isEqualTo("leitor@lumilivre.test");
         assertThat(event.getSubject()).isEqualTo("Emprestimo criado");
         assertThat(event.getBody()).isEqualTo("Corpo");
         assertThat(event.getStatus()).isEqualTo(EventStatus.PENDING);
@@ -59,7 +59,7 @@ class OutboxPublisherServiceTest {
 
         service.processPendingEvents();
 
-        verify(emailService).enviarEmail(eq("aluno@lumilivre.test"), eq("Assunto"), eq("Corpo"), any());
+        verify(emailService).enviarEmail(eq("leitor@lumilivre.test"), eq("Assunto"), eq("Corpo"), any());
         assertThat(event.getStatus()).isEqualTo(EventStatus.SENT);
         assertThat(event.getProcessedAt()).isNotNull();
         assertThat(event.getRetryCount()).isZero();
@@ -103,7 +103,7 @@ class OutboxPublisherServiceTest {
         return OutboxEvent.builder()
                 .id(10L)
                 .eventType(EventType.LOAN_CREATED)
-                .recipientEmail("aluno@lumilivre.test")
+                .recipientEmail("leitor@lumilivre.test")
                 .subject("Assunto")
                 .body("Corpo")
                 .status(EventStatus.PENDING)

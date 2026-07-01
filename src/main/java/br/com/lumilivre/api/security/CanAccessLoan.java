@@ -8,10 +8,10 @@ import java.lang.annotation.Target;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
- * Autoriza ADMIN/BIBLIOTECARIO ou o aluno dono do emprestimo informado por {id}.
+ * Autoriza ADMIN/BIBLIOTECARIO ou o leitor dono do emprestimo informado por {id}.
  */
 @Target({ ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
-@PreAuthorize("@studentAuthz.canAccessLoan(#id)")
+@PreAuthorize("@readerAuthz.canAccessLoan(#id)")
 public @interface CanAccessLoan {
 }

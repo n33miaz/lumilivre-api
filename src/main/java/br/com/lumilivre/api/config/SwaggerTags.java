@@ -6,7 +6,7 @@ public final class SwaggerTags {
 
     public static final String AUTH = "auth";
     public static final String USERS = "users";
-    public static final String STUDENTS = "students";
+    public static final String READERS = "readers";
     public static final String BOOKS = "books";
     public static final String BOOK_COPIES = "book-copies";
     public static final String LOANS = "loans";
@@ -16,6 +16,7 @@ public final class SwaggerTags {
     public static final String DASHBOARD = "dashboard";
     public static final String REPORTS = "reports";
     public static final String IMPORTS = "imports";
+    public static final String SETTINGS = "settings";
     public static final String METADATA = "metadata";
     public static final String COURSES = "courses";
     public static final String STUDY_SHIFTS = "study-shifts";
@@ -27,7 +28,7 @@ public final class SwaggerTags {
     public static final List<String> API_TAGS = List.of(
             AUTH,
             USERS,
-            STUDENTS,
+            READERS,
             BOOKS,
             BOOK_COPIES,
             LOANS,
@@ -37,6 +38,7 @@ public final class SwaggerTags {
             DASHBOARD,
             REPORTS,
             IMPORTS,
+            SETTINGS,
             METADATA,
             COURSES,
             STUDY_SHIFTS,

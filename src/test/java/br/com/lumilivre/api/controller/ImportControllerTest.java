@@ -39,13 +39,13 @@ class ImportControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @Test
-    void importStudentsReturnsOkForAdmin() throws Exception {
-        when(importService.importar(eq("aluno"), any(), any())).thenReturn("10 alunos importados");
+    void importReadersReturnsOkForAdmin() throws Exception {
+        when(importService.importar(eq("leitor"), any(), any())).thenReturn("10 leitores importados");
 
-        MockMultipartFile file = new MockMultipartFile("file", "students.csv",
+        MockMultipartFile file = new MockMultipartFile("file", "readers.csv",
                 "text/csv", "matricula,nome\n12345,João".getBytes());
 
-        mockMvc.perform(multipart("/api/imports/students").file(file).with(csrf()))
+        mockMvc.perform(multipart("/api/imports/readers").file(file).with(csrf()))
                 .andExpect(status().isOk());
     }
 

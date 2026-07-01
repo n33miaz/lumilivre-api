@@ -17,7 +17,7 @@ import br.com.lumilivre.api.dto.auth.LoginResponse;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
-import br.com.lumilivre.api.security.StudentAuthorizationService;
+import br.com.lumilivre.api.security.ReaderAuthorizationService;
 import br.com.lumilivre.api.service.AppUserService;
 import br.com.lumilivre.api.service.AuthService;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ class AuthControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @MockBean
-    private StudentAuthorizationService studentAuthorizationService;
+    private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
     void loginReturnsTokenAndContentLanguage() throws Exception {

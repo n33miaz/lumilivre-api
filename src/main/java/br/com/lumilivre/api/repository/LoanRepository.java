@@ -27,7 +27,7 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
 
     List<Loan> findByStatusAndDueAtGreaterThanEqual(LoanStatus status, OffsetDateTime now);
 
-    List<Loan> findByStudent_RegistrationNumber(String registrationNumber);
+    List<Loan> findByReader_RegistrationNumber(String registrationNumber);
 
     List<Loan> findByBorrowedAtGreaterThanEqual(OffsetDateTime dataInicio);
 
@@ -41,7 +41,7 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
 
     boolean existsByBookCopy_CopyCodeAndStatusIn(String copyCode, List<LoanStatus> statuses);
 
-    long countByStudent_RegistrationNumberAndStatus(String registrationNumber, LoanStatus status);
+    long countByReader_RegistrationNumberAndStatus(String registrationNumber, LoanStatus status);
 
     List<Loan> findByStatus(LoanStatus status);
 
@@ -59,7 +59,7 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
                 e.returnedAt
             )
             FROM Loan e
-            JOIN e.student a
+            JOIN e.reader a
             JOIN e.bookCopy ex
             JOIN ex.book l
             JOIN a.course c
@@ -84,7 +84,7 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
                 e.returnedAt
             )
             FROM Loan e
-            JOIN e.student a
+            JOIN e.reader a
             JOIN e.bookCopy ex
             JOIN ex.book l
             JOIN a.course c
@@ -97,7 +97,7 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
             )
             AND (:tombo IS NULL OR ex.copyCode ILIKE :tombo)
             AND (:livroNome IS NULL OR l.title ILIKE :livroNome)
-            AND (:alunoNomeCompleto IS NULL OR a.fullName ILIKE :alunoNomeCompleto)
+            AND (:leitorNomeCompleto IS NULL OR a.fullName ILIKE :leitorNomeCompleto)
             AND (cast(:dataEmprestimoInicio as timestamp) IS NULL OR e.borrowedAt >= :dataEmprestimoInicio)
             AND (cast(:dataEmprestimoFim as timestamp) IS NULL OR e.borrowedAt <= :dataEmprestimoFim)
             AND (cast(:dataDevolucaoInicio as timestamp) IS NULL OR e.dueAt >= :dataDevolucaoInicio)
@@ -107,7 +107,7 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
             @Param("statusEmprestimo") String statusEmprestimo,
             @Param("tombo") String tombo,
             @Param("livroNome") String livroNome,
-            @Param("alunoNomeCompleto") String alunoNomeCompleto,
+            @Param("leitorNomeCompleto") String leitorNomeCompleto,
             @Param("dataEmprestimoInicio") OffsetDateTime dataEmprestimoInicio,
             @Param("dataEmprestimoFim") OffsetDateTime dataEmprestimoFim,
             @Param("dataDevolucaoInicio") OffsetDateTime dataDevolucaoInicio,
@@ -120,24 +120,24 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
             FROM Loan e
             JOIN FETCH e.bookCopy ex
             JOIN FETCH ex.book
-            JOIN FETCH e.student a
+            JOIN FETCH e.reader a
             LEFT JOIN FETCH a.course
             WHERE a.registrationNumber = :matricula
               AND e.status = br.com.lumilivre.api.enums.LoanStatus.ACTIVE
             """)
-    List<Loan> findActiveLoansForStudent(@Param("matricula") String matricula);
+    List<Loan> findActiveLoansForReader(@Param("matricula") String matricula);
 
     @Query("""
             SELECT e
             FROM Loan e
             JOIN FETCH e.bookCopy ex
             JOIN FETCH ex.book
-            JOIN FETCH e.student a
+            JOIN FETCH e.reader a
             LEFT JOIN FETCH a.course
             WHERE a.registrationNumber = :matricula
               AND e.status = br.com.lumilivre.api.enums.LoanStatus.COMPLETED
             """)
-    List<Loan> findLoanHistoryForStudent(@Param("matricula") String matricula);
+    List<Loan> findLoanHistoryForReader(@Param("matricula") String matricula);
 
     @Query("""
             SELECT new br.com.lumilivre.api.dto.loan.LoanListItem(
@@ -155,13 +155,13 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
             FROM Loan e
             JOIN e.bookCopy ex
             JOIN ex.book l
-            JOIN e.student a
+            JOIN e.reader a
             """)
     Page<LoanListItem> findLoanListItems(Pageable pageable);
 
     @Query("""
             SELECT DISTINCT e FROM Loan e
-            LEFT JOIN FETCH e.student a
+            LEFT JOIN FETCH e.reader a
             LEFT JOIN FETCH a.course
             LEFT JOIN FETCH a.academicModule
             LEFT JOIN FETCH e.bookCopy ex
@@ -169,7 +169,7 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
             WHERE (cast(:inicio as timestamp) IS NULL OR e.borrowedAt >= :inicio)
               AND (cast(:fim as timestamp) IS NULL OR e.borrowedAt <= :fim)
               AND (:status IS NULL OR e.status = :status)
-              AND (:matriculaAluno IS NULL OR a.registrationNumber ILIKE :matriculaAluno OR a.fullName ILIKE :matriculaAluno)
+              AND (:matriculaLeitor IS NULL OR a.registrationNumber ILIKE :matriculaLeitor OR a.fullName ILIKE :matriculaLeitor)
               AND (cast(:idCurso as integer) IS NULL OR a.course.id = :idCurso)
               AND (cast(:idModulo as integer) IS NULL OR a.academicModule.id = :idModulo)
               AND (
@@ -184,7 +184,7 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
             @Param("inicio") OffsetDateTime inicio,
             @Param("fim") OffsetDateTime fim,
             @Param("status") LoanStatus status,
-            @Param("matriculaAluno") String matriculaAluno,
+            @Param("matriculaLeitor") String matriculaLeitor,
             @Param("idCurso") Integer idCurso,
             @Param("isbnOuTombo") String isbnOuTombo,
             @Param("idModulo") Integer idModulo);
@@ -201,7 +201,7 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
                 e.status
             )
             FROM Loan e
-            JOIN e.student a
+            JOIN e.reader a
             JOIN e.bookCopy ex
             JOIN ex.book l
             WHERE e.status IN (br.com.lumilivre.api.enums.LoanStatus.ACTIVE, br.com.lumilivre.api.enums.LoanStatus.OVERDUE)
@@ -221,7 +221,7 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
                 e.status
             )
             FROM Loan e
-            JOIN e.student a
+            JOIN e.reader a
             JOIN e.bookCopy ex
             JOIN ex.book l
             WHERE e.status = br.com.lumilivre.api.enums.LoanStatus.OVERDUE

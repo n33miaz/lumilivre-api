@@ -52,8 +52,8 @@ class ThesisControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "STUDENT")
-    void studentCanList() throws Exception {
+    @WithMockUser(roles = "READER")
+    void readerCanList() throws Exception {
         when(thesisService.listTheses(isNull())).thenReturn(List.of());
 
         mockMvc.perform(get("/api/theses"))

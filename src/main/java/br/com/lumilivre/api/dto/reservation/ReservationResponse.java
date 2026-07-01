@@ -16,8 +16,8 @@ import lombok.NoArgsConstructor;
 public class ReservationResponse {
 
     private UUID id;
-    private String studentRegistrationNumber;
-    private String studentName;
+    private String readerRegistrationNumber;
+    private String readerName;
     private UUID bookId;
     private String bookTitle;
     private LocalizedEnum status;

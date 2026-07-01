@@ -38,10 +38,10 @@ public class Reservation {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "student_id", nullable = false)
+    @JoinColumn(name = "reader_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Student student;
+    private Reader reader;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "book_id", nullable = false)

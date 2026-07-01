@@ -16,7 +16,7 @@ import br.com.lumilivre.api.mapper.ReservationMapper;
 import br.com.lumilivre.api.model.Reservation;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
-import br.com.lumilivre.api.security.StudentAuthorizationService;
+import br.com.lumilivre.api.security.ReaderAuthorizationService;
 import br.com.lumilivre.api.service.EnumLabelResolver;
 import br.com.lumilivre.api.service.ReservationService;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = ReservationController.class)
 @Import({I18nConfig.class, MessageResolver.class, ReservationMapper.class, EnumLabelResolver.class})
-@WithMockUser(roles = "STUDENT")
+@WithMockUser(roles = "READER")
 class ReservationControllerTest {
 
     @Autowired
@@ -46,7 +46,7 @@ class ReservationControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @MockBean
-    private StudentAuthorizationService studentAuthorizationService;
+    private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
     void createReturnsPtBRContentLanguage() throws Exception {
@@ -55,7 +55,7 @@ class ReservationControllerTest {
 
         mockMvc.perform(post("/api/reservations").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"studentRegistrationNumber\":\"12345\",\"bookId\":\"" + UUID.randomUUID() + "\"}")
+                        .content("{\"readerRegistrationNumber\":\"12345\",\"bookId\":\"" + UUID.randomUUID() + "\"}")
                         .header("Accept-Language", "pt-BR"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Content-Language", "pt-BR"));
@@ -68,7 +68,7 @@ class ReservationControllerTest {
 
         mockMvc.perform(post("/api/reservations").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"studentRegistrationNumber\":\"12345\",\"bookId\":\"" + UUID.randomUUID() + "\"}")
+                        .content("{\"readerRegistrationNumber\":\"12345\",\"bookId\":\"" + UUID.randomUUID() + "\"}")
                         .header("Accept-Language", "en-US"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Content-Language", "en-US"));

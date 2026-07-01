@@ -28,8 +28,8 @@ public class RecommendationService {
     private final BookRepository bookRepository;
 
     @Cacheable(value = MOBILE_RECOMMENDATIONS, key = "#matricula")
-    public List<BookCardResponse> recommendForStudent(String matricula) {
-        List<Loan> historico = loanRepository.findByStudent_RegistrationNumber(matricula);
+    public List<BookCardResponse> recommendForReader(String matricula) {
+        List<Loan> historico = loanRepository.findByReader_RegistrationNumber(matricula);
 
         if (historico.isEmpty()) {
             return bookRepository.findTopRated(PageRequest.of(0, MAX_RECOMMENDATIONS));

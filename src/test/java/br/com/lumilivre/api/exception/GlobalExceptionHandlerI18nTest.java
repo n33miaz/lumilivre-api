@@ -35,13 +35,13 @@ class GlobalExceptionHandlerI18nTest {
 
     @ParameterizedTest(name = "locale={0} => message={1}")
     @CsvSource({
-        "pt-BR, Aluno não encontrado.",
-        "en-US, Student not found."
+        "pt-BR, Leitor não encontrado.",
+        "en-US, Reader not found."
     })
     void resourceNotFoundResolvesPerLocale(String tag, String expectedMessage) {
-        var ex = ResourceNotFoundException.ofKey("student.not-found");
+        var ex = ResourceNotFoundException.ofKey("reader.not-found");
         Locale locale = Locale.forLanguageTag(tag);
-        WebRequest req = webRequest("GET", "/students");
+        WebRequest req = webRequest("GET", "/readers");
 
         ResponseEntity<ErrorResponse> response = handler.handleResourceNotFound(ex, locale, req);
 
@@ -74,7 +74,7 @@ class GlobalExceptionHandlerI18nTest {
     })
     void commonErrorTitlesResolvePerLocale(String tag, String expectedError) {
         Locale locale = Locale.forLanguageTag(tag);
-        WebRequest req = webRequest("POST", "/students");
+        WebRequest req = webRequest("POST", "/readers");
 
         ErrorResponse body = handler.handleResourceNotFound(
             new ResourceNotFoundException("any"), locale, req).getBody();

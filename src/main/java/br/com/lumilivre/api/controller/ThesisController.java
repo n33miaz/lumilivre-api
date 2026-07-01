@@ -39,7 +39,7 @@ public class ThesisController {
 
     @GetMapping
     @Operation(operationId = "theses.list")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<List<ThesisResponse>> list(
             @RequestParam(required = false) String q,
             Locale locale) {
@@ -51,7 +51,7 @@ public class ThesisController {
 
     @GetMapping("/{id}")
     @Operation(operationId = "theses.get")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<ThesisResponse> getOne(@PathVariable UUID id, Locale locale) {
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
@@ -60,7 +60,7 @@ public class ThesisController {
 
     @GetMapping("/search")
     @Operation(operationId = "theses.search")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<List<ThesisResponse>> search(
             @RequestParam(required = false) Integer courseId,
             @RequestParam(required = false) String semester,

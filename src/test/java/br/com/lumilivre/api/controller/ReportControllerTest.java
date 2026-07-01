@@ -43,11 +43,11 @@ class ReportControllerTest {
     }
 
     @Test
-    void studentsReportReturnsPdfContentType() throws Exception {
-        mockMvc.perform(get("/api/reports/students"))
+    void readersReportReturnsPdfContentType() throws Exception {
+        mockMvc.perform(get("/api/reports/readers"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", "application/pdf"))
-                .andExpect(header().string("Content-Disposition", "attachment; filename=students-report.pdf"));
+                .andExpect(header().string("Content-Disposition", "attachment; filename=readers-report.pdf"));
     }
 
     @Test

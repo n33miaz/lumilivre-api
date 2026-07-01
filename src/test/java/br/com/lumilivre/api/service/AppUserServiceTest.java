@@ -79,18 +79,18 @@ class AppUserServiceTest {
     }
 
     @Test
-    void createAdminRejectsStudentRole() {
+    void createAdminRejectsReaderRole() {
         UserRequest request = UserRequest.builder()
-                .email("student@example.test")
+                .email("reader@example.test")
                 .password("initial-pass")
-                .role(Role.STUDENT)
+                .role(Role.READER)
                 .build();
         when(passwordEncoder.encode("initial-pass")).thenReturn("encoded-pass");
 
         assertThatExceptionOfType(BusinessRuleException.class)
                 .isThrownBy(() -> service().createAdmin(request))
                 .satisfies(error -> assertThat(error.getMessageKey())
-                        .isEqualTo("user.cannot-register-student-here"));
+                        .isEqualTo("user.cannot-register-reader-here"));
         verify(appUserRepository, never()).save(any());
         verify(emailService, never()).enviarSenhaInicialAdmin(any(), any(), any(), any());
     }

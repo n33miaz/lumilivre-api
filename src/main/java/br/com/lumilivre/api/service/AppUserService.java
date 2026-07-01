@@ -72,8 +72,8 @@ public class AppUserService {
         appUser.setPasswordHash(passwordEncoder.encode(rawPassword));
         appUser.setRole(appUser.getRole() != null ? appUser.getRole() : Role.LIBRARIAN);
 
-        if (appUser.getRole() == Role.STUDENT) {
-            throw BusinessRuleException.ofKey("user.cannot-register-student-here");
+        if (appUser.getRole() == Role.READER) {
+            throw BusinessRuleException.ofKey("user.cannot-register-reader-here");
         }
 
         AppUser savedAppUser = appUserRepository.save(appUser);
@@ -123,8 +123,8 @@ public class AppUserService {
         AppUser appUser = appUserRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("user.not-found"));
 
-        if (appUser.getRole() == Role.STUDENT && appUser.getStudent() != null) {
-            appUser.getStudent().setAppUser(null);
+        if (appUser.getRole() == Role.READER && appUser.getReader() != null) {
+            appUser.getReader().setAppUser(null);
         }
 
         appUserRepository.delete(appUser);
@@ -138,9 +138,9 @@ public class AppUserService {
         AppUser appUser = appUserRepository.findByEmailOrRegistrationNumber(usernameLogado, usernameLogado)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("user.logged-in-not-found"));
 
-        if (appUser.getRole() == Role.STUDENT
-                && (appUser.getStudent() == null
-                || !appUser.getStudent().getRegistrationNumber().equals(request.getRegistrationNumber()))) {
+        if (appUser.getRole() == Role.READER
+                && (appUser.getReader() == null
+                || !appUser.getReader().getRegistrationNumber().equals(request.getRegistrationNumber()))) {
             throw new AccessDeniedException("user.change-password.forbidden");
         }
 

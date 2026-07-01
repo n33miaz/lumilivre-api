@@ -3,28 +3,28 @@ package br.com.lumilivre.api.mapper;
 import java.util.Locale;
 
 import br.com.lumilivre.api.dto.common.LocalizedEnum;
-import br.com.lumilivre.api.dto.student.StudentListItem;
-import br.com.lumilivre.api.dto.student.StudentRankingItem;
-import br.com.lumilivre.api.dto.student.StudentRankingResponse;
-import br.com.lumilivre.api.dto.student.StudentResponse;
-import br.com.lumilivre.api.dto.student.StudentSummaryResponse;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.dto.reader.ReaderListItem;
+import br.com.lumilivre.api.dto.reader.ReaderRankingItem;
+import br.com.lumilivre.api.dto.reader.ReaderRankingResponse;
+import br.com.lumilivre.api.dto.reader.ReaderResponse;
+import br.com.lumilivre.api.dto.reader.ReaderSummaryResponse;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.service.EnumLabelResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class StudentMapper {
+public class ReaderMapper {
 
     private final EnumLabelResolver enumLabels;
 
-    public StudentResponse toResponse(Student s, Locale locale) {
+    public ReaderResponse toResponse(Reader s, Locale locale) {
         LocalizedEnum penalty = s.getPenaltyCode() != null
                 ? LocalizedEnum.of(s.getPenaltyCode(), enumLabels.resolve(s.getPenaltyCode(), locale))
                 : null;
 
-        return StudentResponse.builder()
+        return ReaderResponse.builder()
                 .registrationNumber(s.getRegistrationNumber())
                 .fullName(s.getFullName())
                 .avatarUrl(s.getAvatarUrl())
@@ -35,6 +35,7 @@ public class StudentMapper {
                 .courseName(s.getCourse() != null ? s.getCourse().getName() : null)
                 .studyShiftName(s.getStudyShift() != null ? s.getStudyShift().getName() : null)
                 .academicModuleName(s.getAcademicModule() != null ? s.getAcademicModule().getName() : null)
+                .readerCategory(s.getReaderCategory())
                 .postalCode(s.getPostalCode())
                 .street(s.getStreet())
                 .district(s.getDistrict())
@@ -48,15 +49,16 @@ public class StudentMapper {
                 .build();
     }
 
-    public StudentSummaryResponse toSummary(StudentListItem item, Locale locale) {
+    public ReaderSummaryResponse toSummary(ReaderListItem item, Locale locale) {
         LocalizedEnum penalty = item.penaltyCode() != null
                 ? LocalizedEnum.of(item.penaltyCode(), enumLabels.resolve(item.penaltyCode(), locale))
                 : null;
 
-        return StudentSummaryResponse.builder()
+        return ReaderSummaryResponse.builder()
                 .registrationNumber(item.registrationNumber())
                 .fullName(item.fullName())
                 .courseName(item.courseName())
+                .readerCategory(item.readerCategory())
                 .birthDate(item.birthDate())
                 .email(item.email())
                 .phoneNumber(item.phoneNumber())
@@ -64,7 +66,7 @@ public class StudentMapper {
                 .build();
     }
 
-    public StudentRankingResponse toRanking(StudentRankingItem item) {
-        return new StudentRankingResponse(item.registrationNumber(), item.fullName(), item.loanCount());
+    public ReaderRankingResponse toRanking(ReaderRankingItem item) {
+        return new ReaderRankingResponse(item.registrationNumber(), item.fullName(), item.loanCount());
     }
 }

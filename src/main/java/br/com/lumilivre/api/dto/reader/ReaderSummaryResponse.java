@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto.student;
+package br.com.lumilivre.api.dto.reader;
 
 import java.time.LocalDate;
 
@@ -12,11 +12,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudentSummaryResponse {
+public class ReaderSummaryResponse {
 
     private String registrationNumber;
     private String fullName;
     private String courseName;
+    private String readerCategory;
     private LocalDate birthDate;
     private String email;
     private String phoneNumber;

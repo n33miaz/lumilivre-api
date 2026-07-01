@@ -35,7 +35,7 @@ public class ReportController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) LoanStatus status,
-            @RequestParam(required = false) String studentRegistrationNumber,
+            @RequestParam(required = false) String readerRegistrationNumber,
             @RequestParam(required = false) Integer courseId,
             @RequestParam(required = false) String isbnOrCopyCode,
             @RequestParam(required = false) Integer academicModuleId,
@@ -44,13 +44,13 @@ public class ReportController {
         response.setHeader("Content-Disposition", "attachment; filename=loans-report.pdf");
         reportService.gerarRelatorioEmprestimosPorFiltros(
                 response.getOutputStream(), startDate, endDate, status,
-                studentRegistrationNumber, courseId, isbnOrCopyCode, academicModuleId, locale);
+                readerRegistrationNumber, courseId, isbnOrCopyCode, academicModuleId, locale);
     }
 
-    @GetMapping("/students")
-    @Operation(operationId = "reports.students")
+    @GetMapping("/readers")
+    @Operation(operationId = "reports.readers")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
-    public void students(
+    public void readers(
             HttpServletResponse response,
             @RequestParam(required = false) Integer academicModuleId,
             @RequestParam(required = false) Integer courseId,
@@ -60,8 +60,8 @@ public class ReportController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             Locale locale) throws Exception {
         response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition", "attachment; filename=students-report.pdf");
-        reportService.gerarRelatorioAlunosPorFiltros(
+        response.setHeader("Content-Disposition", "attachment; filename=readers-report.pdf");
+        reportService.gerarRelatorioLeitoresPorFiltros(
                 response.getOutputStream(), academicModuleId, courseId, studyShiftId,
                 penaltyCode, startDate, endDate, locale);
     }

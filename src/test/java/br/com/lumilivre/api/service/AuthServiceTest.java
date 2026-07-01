@@ -29,7 +29,7 @@ import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.PasswordResetToken;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.AppUserRepository;
 import br.com.lumilivre.api.repository.PasswordResetTokenRepository;
 import br.com.lumilivre.api.security.JwtUtil;
@@ -73,18 +73,18 @@ class AuthServiceTest {
     }
 
     @Test
-    void loginDeveMarcarSenhaInicialQuandoAlunoUsaMatricula() {
-        Student aluno = new Student();
-        aluno.setRegistrationNumber("12345");
+    void loginDeveMarcarSenhaInicialQuandoLeitorUsaMatricula() {
+        Reader leitor = new Reader();
+        leitor.setRegistrationNumber("12345");
 
-        AppUser usuario = usuario(Role.STUDENT, aluno);
+        AppUser usuario = usuario(Role.READER, leitor);
         when(usuarioRepository.findByEmailOrRegistrationNumber("12345", "12345")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("12345", "hash")).thenReturn(true);
         when(jwtUtil.generateToken(any(UserDetails.class))).thenReturn("jwt-token");
 
         var response = service.login("12345", "12345");
 
-        assertThat(response.getStudentRegistrationNumber()).isEqualTo("12345");
+        assertThat(response.getReaderRegistrationNumber()).isEqualTo("12345");
         assertThat(response.isInitialPasswordChange()).isTrue();
     }
 
@@ -186,13 +186,13 @@ class AuthServiceTest {
         return token;
     }
 
-    private static AppUser usuario(Role role, Student aluno) {
+    private static AppUser usuario(Role role, Reader leitor) {
         AppUser usuario = new AppUser();
         usuario.setId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
-        usuario.setEmail(role == Role.STUDENT ? "aluno@lumilivre.test" : role.name().toLowerCase() + "@lumilivre.test");
+        usuario.setEmail(role == Role.READER ? "leitor@lumilivre.test" : role.name().toLowerCase() + "@lumilivre.test");
         usuario.setPasswordHash("hash");
         usuario.setRole(role);
-        usuario.setStudent(aluno);
+        usuario.setReader(leitor);
         return usuario;
     }
 }

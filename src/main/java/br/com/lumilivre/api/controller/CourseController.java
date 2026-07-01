@@ -41,7 +41,7 @@ public class CourseController {
 
     @GetMapping
     @Operation(operationId = "courses.list")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<Page<CourseSummaryResponse>> list(
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable,

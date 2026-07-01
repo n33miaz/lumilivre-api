@@ -48,7 +48,7 @@ public class MetadataController {
 
     @GetMapping("/enums/{type}")
     @Operation(operationId = "metadata.enums")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<List<LocalizedEnum>> enums(@PathVariable String type, Locale locale) {
         List<LocalizedEnum> body = switch (normalizeType(type)) {
             case "STATUS_LIVRO", "BOOK_COPY_STATUS" -> localizedValues(BookCopyStatus.class, locale);
@@ -68,7 +68,7 @@ public class MetadataController {
 
     @GetMapping("/authors")
     @Operation(operationId = "metadata.authors")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<Page<AuthorSummaryResponse>> authors(
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable,
@@ -80,7 +80,7 @@ public class MetadataController {
 
     @GetMapping("/postal-codes/{postalCode}")
     @Operation(operationId = "metadata.postalCode")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<PostalCodeResponse> postalCode(
             @PathVariable String postalCode,
             @RequestParam(value = "country", required = false, defaultValue = "BR") String countryCode,

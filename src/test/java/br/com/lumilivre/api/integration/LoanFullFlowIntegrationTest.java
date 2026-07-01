@@ -29,7 +29,7 @@ import br.com.lumilivre.api.repository.OutboxEventRepository;
 import br.com.lumilivre.api.service.LoanRequestService;
 
 /**
- * E2E focado no ciclo de empréstimo: aluno solicita → admin aprova → loan
+ * E2E focado no ciclo de empréstimo: leitor solicita → admin aprova → loan
  * fica ACTIVE, exemplar BORROWED, outbox e audit persistidos.
  *
  * <p>Reusa a seed demo (R__seed_demo_data.sql) — pega uma solicitação PENDING
@@ -105,13 +105,13 @@ class LoanFullFlowIntegrationTest {
         BookCopy copyAfter = bookCopyRepository.findById(TARGET_COPY_ID).orElseThrow();
         assertThat(copyAfter.getStatus()).isEqualTo(BookCopyStatus.BORROWED);
 
-        List<Loan> loansForStudent = loanRepository.findAll().stream()
-                .filter(l -> l.getStudent().getRegistrationNumber()
-                        .equals(pendingAfter.getStudent().getRegistrationNumber()))
+        List<Loan> loansForReader = loanRepository.findAll().stream()
+                .filter(l -> l.getReader().getRegistrationNumber()
+                        .equals(pendingAfter.getReader().getRegistrationNumber()))
                 .filter(l -> l.getBookCopy().getId().equals(TARGET_COPY_ID))
                 .filter(l -> l.getStatus() == LoanStatus.ACTIVE)
                 .toList();
-        assertThat(loansForStudent).hasSize(1);
+        assertThat(loansForReader).hasSize(1);
 
         List<OutboxEvent> newEvents = outboxRepository.findAll().stream()
                 .skip(outboxBefore)

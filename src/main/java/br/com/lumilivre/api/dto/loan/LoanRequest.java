@@ -31,7 +31,7 @@ public class LoanRequest {
     private String status;
 
     @NotBlank
-    private String studentRegistrationNumber;
+    private String readerRegistrationNumber;
 
     @NotBlank
     private String copyCode;

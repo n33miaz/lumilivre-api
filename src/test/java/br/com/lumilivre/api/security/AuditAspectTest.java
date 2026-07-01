@@ -76,7 +76,7 @@ class AuditAspectTest {
         when(joinPoint.getArgs()).thenReturn(new Object[] { "12345" });
         when(joinPoint.proceed()).thenThrow(new IllegalStateException("falha controlada"));
 
-        assertThatThrownBy(() -> auditAspect.audit(joinPoint, auditable("STUDENT_UPDATED", "#matricula")))
+        assertThatThrownBy(() -> auditAspect.audit(joinPoint, auditable("READER_UPDATED", "#matricula")))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("falha controlada");
 

@@ -11,7 +11,7 @@ import br.com.lumilivre.api.dto.loan.LoanResponse;
 import br.com.lumilivre.api.mapper.LoanMapper;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.security.CanAccessLoan;
-import br.com.lumilivre.api.security.CanAccessStudent;
+import br.com.lumilivre.api.security.CanAccessReader;
 import br.com.lumilivre.api.service.LoanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -64,7 +64,7 @@ public class LoanController {
             @RequestParam(required = false) LoanStatus status,
             @RequestParam(required = false) String copyCode,
             @RequestParam(required = false) String bookTitle,
-            @RequestParam(required = false) String studentName,
+            @RequestParam(required = false) String readerName,
             @RequestParam(required = false) String borrowedAt,
             @RequestParam(required = false) String dueAt,
             @RequestParam(required = false) String dueAtStart,
@@ -75,7 +75,7 @@ public class LoanController {
                         status,
                         copyCode,
                         bookTitle,
-                        studentName,
+                        readerName,
                         borrowedAt,
                         dueAt,
                         dueAtStart,
@@ -117,14 +117,14 @@ public class LoanController {
                 .body(loanService.getContagemEmprestimosAtivosEAtrasados());
     }
 
-    @GetMapping("/student/{registrationNumber}")
-    @Operation(operationId = "loans.byStudent")
-    @CanAccessStudent
-    public ResponseEntity<List<LoanResponse>> listByStudent(
+    @GetMapping("/reader/{registrationNumber}")
+    @Operation(operationId = "loans.byReader")
+    @CanAccessReader
+    public ResponseEntity<List<LoanResponse>> listByReader(
             @PathVariable String registrationNumber,
             Locale locale) {
         List<LoanResponse> body = loanService
-                .listarEmprestimosAlunoV2(registrationNumber)
+                .listarEmprestimosLeitorV2(registrationNumber)
                 .stream()
                 .map(loan -> mapper.toResponse(loan, locale))
                 .toList();
@@ -133,9 +133,9 @@ public class LoanController {
                 .body(body);
     }
 
-    @GetMapping("/student/{registrationNumber}/history")
+    @GetMapping("/reader/{registrationNumber}/history")
     @Operation(operationId = "loans.history")
-    @CanAccessStudent
+    @CanAccessReader
     public ResponseEntity<List<LoanResponse>> history(
             @PathVariable String registrationNumber,
             Locale locale) {

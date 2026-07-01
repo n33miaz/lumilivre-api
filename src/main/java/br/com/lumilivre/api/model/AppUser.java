@@ -50,10 +50,10 @@ public class AppUser {
     private Role role;
 
     @OneToOne
-    @JoinColumn(name = "student_id")
+    @JoinColumn(name = "reader_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Student student;
+    private Reader reader;
 
     @Column(name = "preferred_locale", nullable = false, length = 10)
     @Builder.Default

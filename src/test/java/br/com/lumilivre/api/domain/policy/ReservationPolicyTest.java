@@ -14,7 +14,7 @@ import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 class ReservationPolicyTest {
 
     @Test
-    void validateNewReservationAllowsEligibleStudent() {
+    void validateNewReservationAllowsEligibleReader() {
         assertThatCode(() -> ReservationPolicy.validateNewReservation(null, 0, false))
                 .doesNotThrowAnyException();
     }

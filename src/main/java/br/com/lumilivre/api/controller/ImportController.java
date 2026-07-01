@@ -23,11 +23,11 @@ public class ImportController {
 
     private final ImportService importService;
 
-    @PostMapping("/students")
-    @Operation(operationId = "imports.students")
+    @PostMapping("/readers")
+    @Operation(operationId = "imports.readers")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> importStudents(@RequestParam MultipartFile file, Locale locale) throws Exception {
-        return ResponseEntity.ok(importService.importar("aluno", file, locale));
+    public ResponseEntity<String> importReaders(@RequestParam MultipartFile file, Locale locale) throws Exception {
+        return ResponseEntity.ok(importService.importar("leitor", file, locale));
     }
 
     @PostMapping("/books")

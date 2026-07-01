@@ -22,8 +22,8 @@ public class LoanRequestMapper {
 
         return LoanRequestResponse.builder()
                 .id(request.getId())
-                .studentName(request.getStudent().getFullName())
-                .studentRegistrationNumber(request.getStudent().getRegistrationNumber())
+                .readerName(request.getReader().getFullName())
+                .readerRegistrationNumber(request.getReader().getRegistrationNumber())
                 .copyCode(request.getBookCopy().getCopyCode())
                 .bookId(request.getBookCopy().getBook().getId())
                 .bookTitle(request.getBookCopy().getBook().getTitle())

@@ -28,7 +28,7 @@
   <h1>Sobre o Projeto</h1>
 </div>
 
-A **LumiLivre API** é o núcleo de processamento e inteligência de todo o ecossistema. Desenvolvida em **Java 17** com **Spring Boot 3**, ela centraliza a lógica de negócios, a persistência de dados e a segurança, servindo tanto o painel administrativo (Web) quanto o aplicativo dos alunos (Mobile).
+A **LumiLivre API** é o núcleo de processamento e inteligência de todo o ecossistema. Desenvolvida em **Java 17** com **Spring Boot 3**, ela centraliza a lógica de negócios, a persistência de dados e a segurança, servindo tanto o painel administrativo (Web) quanto o aplicativo dos leitores (Mobile).
 
 Atualmente hospedada no **Render** via Docker, a API utiliza **PostgreSQL** (hospedado no Supabase) como banco de dados relacional, garantindo robustez e integridade para as operações da biblioteca.
 
@@ -65,9 +65,9 @@ A documentação interativa está disponível em: [lumilivre-api.onrender.com/do
 ### 🧠 Regras de Negócio
 - **Gestão de Empréstimos:** controle rigoroso de prazos, penalidades por faixa (0-1, 2-5, 6-7, 8-90, >90 dias) e **job noturno** que sincroniza `ATIVO → ATRASADO`.
 - **Controle de Estoque:** exemplares físicos por tombo com status `DISPONIVEL/EMPRESTADO/INDISPONIVEL/EM_MANUTENCAO`.
-- **Solicitações e Reservas FIFO:** aluno solicita pelo app, bibliotecário aprova no web; livros sem exemplar entram em fila de reserva.
+- **Solicitações e Reservas FIFO:** leitor solicita pelo app, bibliotecário aprova no web; livros sem exemplar entram em fila de reserva.
 - **Recomendações:** top livros por gênero favorito + fallback por avaliação, com cache por matrícula.
-- **Trilha de auditoria admin:** todas as ações sobre alunos, livros, usuários e TCCs gravam `before/after` via aspect `@Auditable`.
+- **Trilha de auditoria admin:** todas as ações sobre leitores, livros, usuários e TCCs gravam `before/after` via aspect `@Auditable`.
 
 ### 🔌 Integrações Externas (resilientes)
 - **Google Books & BrasilAPI** para metadados por ISBN.
@@ -77,12 +77,12 @@ A documentação interativa está disponível em: [lumilivre-api.onrender.com/do
 
 ### 📊 Dashboards e Relatórios
 - Views materializadas `mv_dashboard_stats`, `mv_top_livros`, `mv_emprestimos_por_mes` alimentando dashboard em <500ms.
-- Geração de PDF (OpenPDF) para acervo, alunos, exemplares e empréstimos.
+- Geração de PDF (OpenPDF) para acervo, leitores, exemplares e empréstimos.
 - Endpoints `/actuator/prometheus` com métricas de domínio (`loans.active`, `loans.overdue`, `requests.pending`, `returns.avg_days`).
 
 ### 🔐 Segurança (reforçada)
 - **Allowlist explícita** no Spring Security — todo endpoint fora da lista é autenticado por padrão.
-- **Ownership por aluno** via `@CanAccessStudent` + `StudentAuthorizationService` (mitiga IDOR).
+- **Ownership por leitor** via `@CanAccessReader` + `ReaderAuthorizationService` (mitiga IDOR).
 - **Rate-limit** em `/auth/login` e `/auth/esqueci-senha` com Bucket4j.
 - **CORS por ambiente** via `${LUMILIVRE_CORS_ORIGINS}`.
 - **Segredos fora do repositório**: `application.properties` consome `${ENV}`; `application-example.properties` serve como template.
@@ -104,7 +104,7 @@ flowchart TD
     classDef storage fill:#3ECF8E,stroke:#fff,stroke-width:2px,color:#fff;
     classDef external fill:#ddd,stroke:#333,stroke-width:1px,color:#000,stroke-dasharray: 5 5;
 
-    UserMobile["Application (Aluno)"]:::mobile
+    UserMobile["Application (Leitor)"]:::mobile
     UserWeb["WebSite (Bibliotecário)"]:::web
 
     subgraph Cloud["-"]
@@ -187,7 +187,7 @@ Contas demo seedadas pelo `R__seed_demo_data.sql`:
 |------------------|------------------------------|------------------------------|
 | Admin            | `admin@lumilivre.test`       | `admin@lumilivre.test`       |
 | Bibliotecário    | `librarian@lumilivre.test`   | `librarian@lumilivre.test`   |
-| Aluno (matrícula)| `2025001`                    | `2025001`                    |
+| Leitor (matrícula)| `2025001`                    | `2025001`                    |
 
 > Pré-requisitos: Docker Desktop / Docker Engine, Java 17, [just](https://just.systems) (`scoop install just` no Windows, `brew install just` no macOS). Sem `just`? Os comandos equivalentes estão no `justfile` — basta copiar a linha.
 

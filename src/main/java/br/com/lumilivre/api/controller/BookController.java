@@ -153,13 +153,13 @@ public class BookController {
 
     @GetMapping("/recommendations/{registrationNumber}")
     @Operation(operationId = "books.recommendations")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<List<BookCardResponse>> recommendations(
             @PathVariable String registrationNumber,
             Locale locale) {
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .body(recommendationService.recommendForStudent(registrationNumber));
+                .body(recommendationService.recommendForReader(registrationNumber));
     }
 
     @GetMapping("/isbn/{isbn}")
@@ -174,7 +174,7 @@ public class BookController {
 
     @GetMapping("/{id}")
     @Operation(operationId = "books.get")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<BookResponse> getOne(@PathVariable UUID id, Locale locale) {
         BookResponse body = bookService.findById(id)
                 .map(book -> mapper.toResponse(book, locale))

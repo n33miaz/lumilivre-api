@@ -35,8 +35,8 @@ public class LoanResponse {
     private String bookTitle;
     private String coverUrl;
 
-    private String studentName;
-    private String studentRegistrationNumber;
+    private String readerName;
+    private String readerRegistrationNumber;
     private String courseName;
     private String copyCode;
 }

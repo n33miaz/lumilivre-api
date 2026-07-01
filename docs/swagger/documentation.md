@@ -18,11 +18,11 @@ Use `{tagKey}.{verb}`:
 
 | caso de uso HTTP | sufixos recomendados |
 |---|---|
-| listagem/busca | `list`, `search`, `advanced`, `byStudent` |
+| listagem/busca | `list`, `search`, `advanced`, `byReader` |
 | leitura única | `get`, `isbnLookup`, `postalCode` |
 | criação/atualização/remoção | `create`, `update`, `delete` |
 | ações | `close`, `renew`, `cancel`, `process` |
-| uploads/importações | `uploadCover`, `uploadAvatar`, `students`, `books`, `copies` |
+| uploads/importações | `uploadCover`, `uploadAvatar`, `readers`, `books`, `copies` |
 
 Exemplos: `auth.login`, `books.catalog`, `loans.close`, `loan-requests.process`.
 
@@ -90,9 +90,9 @@ Adicionar um idioma não deve exigir mudanças nos controllers nem nos operation
 
 | PT-BR | EN-US | observações |
 |---|---|---|
-| Empréstimo | Loan | Saída física de um exemplar para um aluno. |
+| Empréstimo | Loan | Saída física de um exemplar para um leitor. |
 | Exemplar | Book copy | Unidade física do acervo identificada por tombo. |
-| Aluno | Student | Usuário da biblioteca com matrícula. |
+| Leitor | Reader | Usuário da biblioteca com matrícula. |
 | Bibliotecário | Librarian | Perfil operacional da equipe. |
 | Usuário administrativo | Admin user | Conta ADMIN ou LIBRARIAN. |
 | Solicitação | Loan request | Pedido que pode virar empréstimo quando aceito. |
@@ -100,5 +100,5 @@ Adicionar um idioma não deve exigir mudanças nos controllers nem nos operation
 | TCC | Thesis | Trabalho acadêmico de conclusão de curso. |
 | CDD | Dewey Classification | Em textos em português, manter a sigla `CDD`. |
 | Tombo | Copy code | Identificador patrimonial de um exemplar físico. |
-| Matrícula | Registration number | Identificador do aluno. |
+| Matrícula | Registration number | Identificador do leitor. |
 | CEP | Postal code | Manter `CEP` apenas nos textos PT-BR. |

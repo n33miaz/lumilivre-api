@@ -31,12 +31,12 @@ import br.com.lumilivre.api.model.Course;
 import br.com.lumilivre.api.model.DeweyClassification;
 import br.com.lumilivre.api.model.Genre;
 import br.com.lumilivre.api.model.Loan;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
-import br.com.lumilivre.api.repository.StudentRepository;
+import br.com.lumilivre.api.repository.ReaderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,7 +50,7 @@ class ReportServiceTest {
     private LoanRepository loanRepository;
 
     @Mock
-    private StudentRepository studentRepository;
+    private ReaderRepository readerRepository;
 
     @Mock
     private BookRepository bookRepository;
@@ -83,7 +83,7 @@ class ReportServiceTest {
                 .id(UUID.randomUUID())
                 .borrowedAt(OffsetDateTime.parse("2026-05-01T10:00:00-03:00"))
                 .status(LoanStatus.ACTIVE)
-                .student(student())
+                .reader(reader())
                 .bookCopy(copy(book()))
                 .build();
         when(loanRepository.findForReport(
@@ -119,21 +119,21 @@ class ReportServiceTest {
     }
 
     @Test
-    void studentReportCountsLoansAcrossRelevantStatusesAndWritesPdf() throws Exception {
-        Student student = student();
-        when(studentRepository.findForReport(
+    void readerReportCountsLoansAcrossRelevantStatusesAndWritesPdf() throws Exception {
+        Reader reader = reader();
+        when(readerRepository.findForReport(
                 eq(3),
                 eq(1),
                 eq(2),
                 eq(PenaltyCode.WARNING),
                 any(),
-                any())).thenReturn(List.of(student));
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("2025001", LoanStatus.ACTIVE)).thenReturn(1L);
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("2025001", LoanStatus.COMPLETED)).thenReturn(2L);
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("2025001", LoanStatus.OVERDUE)).thenReturn(3L);
+                any())).thenReturn(List.of(reader));
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("2025001", LoanStatus.ACTIVE)).thenReturn(1L);
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("2025001", LoanStatus.COMPLETED)).thenReturn(2L);
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("2025001", LoanStatus.OVERDUE)).thenReturn(3L);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        service().gerarRelatorioAlunosPorFiltros(
+        service().gerarRelatorioLeitoresPorFiltros(
                 out,
                 3,
                 1,
@@ -144,9 +144,9 @@ class ReportServiceTest {
                 Locale.US);
 
         assertPdf(out);
-        verify(loanRepository).countByStudent_RegistrationNumberAndStatus("2025001", LoanStatus.ACTIVE);
-        verify(loanRepository).countByStudent_RegistrationNumberAndStatus("2025001", LoanStatus.COMPLETED);
-        verify(loanRepository).countByStudent_RegistrationNumberAndStatus("2025001", LoanStatus.OVERDUE);
+        verify(loanRepository).countByReader_RegistrationNumberAndStatus("2025001", LoanStatus.ACTIVE);
+        verify(loanRepository).countByReader_RegistrationNumberAndStatus("2025001", LoanStatus.COMPLETED);
+        verify(loanRepository).countByReader_RegistrationNumberAndStatus("2025001", LoanStatus.OVERDUE);
     }
 
     @Test
@@ -238,7 +238,7 @@ class ReportServiceTest {
     private ReportService service() {
         return new ReportService(
                 loanRepository,
-                studentRepository,
+                readerRepository,
                 bookRepository,
                 courseRepository,
                 bookCopyRepository,
@@ -250,8 +250,8 @@ class ReportServiceTest {
         assertThat(out.toString(StandardCharsets.ISO_8859_1)).startsWith("%PDF");
     }
 
-    private static Student student() {
-        return Student.builder()
+    private static Reader reader() {
+        return Reader.builder()
                 .registrationNumber("2025001")
                 .fullName("Ada Lovelace")
                 .course(new Course(1, "Computer Science", List.of()))

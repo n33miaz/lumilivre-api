@@ -26,7 +26,7 @@ public interface AcademicModuleRepository extends JpaRepository<AcademicModule, 
     @Query("""
             SELECT new br.com.lumilivre.api.dto.academicmodule.AcademicModuleSummaryResponse(m.id, m.name, COUNT(a))
             FROM AcademicModule m
-            LEFT JOIN m.students a
+            LEFT JOIN m.readers a
             WHERE (:texto IS NULL OR m.name ILIKE %:texto%)
             GROUP BY m.id, m.name
             ORDER BY m.name
@@ -36,8 +36,8 @@ public interface AcademicModuleRepository extends JpaRepository<AcademicModule, 
     @Query("""
             SELECT new br.com.lumilivre.api.dto.common.ChartItemResponse(m.name, COUNT(l))
             FROM AcademicModule m
-            JOIN m.students a
-            JOIN Loan l ON l.student = a
+            JOIN m.readers a
+            JOIN Loan l ON l.reader = a
             GROUP BY m.name
             HAVING COUNT(l) > 0
             """)

@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import br.com.lumilivre.api.enums.AgeRating;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
+import br.com.lumilivre.api.enums.LibraryType;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.*;
 import br.com.lumilivre.api.repository.*;
@@ -26,7 +27,7 @@ public class ImportService {
     private static final Logger log = LoggerFactory.getLogger(ImportService.class);
     private static final int BATCH_SIZE = 50;
 
-    private final StudentRepository alunoRepository;
+    private final ReaderRepository leitorRepository;
     private final AppUserRepository usuarioRepository;
     private final CourseRepository courseRepository;
     private final StudyShiftRepository studyShiftRepository;
@@ -36,9 +37,10 @@ public class ImportService {
     private final DeweyClassificationRepository deweyClassificationRepository;
     private final PasswordEncoder passwordEncoder;
     private final MessageResolver messages;
+    private final SettingsService settingsService;
 
     public ImportService(
-            StudentRepository alunoRepository,
+            ReaderRepository leitorRepository,
             AppUserRepository usuarioRepository,
             CourseRepository courseRepository,
             StudyShiftRepository studyShiftRepository,
@@ -47,8 +49,9 @@ public class ImportService {
             BookCopyRepository exemplarRepository,
             DeweyClassificationRepository deweyClassificationRepository,
             PasswordEncoder passwordEncoder,
-            MessageResolver messages) {
-        this.alunoRepository = alunoRepository;
+            MessageResolver messages,
+            SettingsService settingsService) {
+        this.leitorRepository = leitorRepository;
         this.usuarioRepository = usuarioRepository;
         this.courseRepository = courseRepository;
         this.studyShiftRepository = studyShiftRepository;
@@ -58,6 +61,7 @@ public class ImportService {
         this.deweyClassificationRepository = deweyClassificationRepository;
         this.passwordEncoder = passwordEncoder;
         this.messages = messages;
+        this.settingsService = settingsService;
     }
 
     public String importar(String tipo, MultipartFile file) throws Exception {
@@ -70,7 +74,7 @@ public class ImportService {
 
         try {
             return switch (tipo.toLowerCase()) {
-                case "aluno" -> importarAlunos(file, locale);
+                case "leitor" -> importarLeitores(file, locale);
                 case "livro" -> importarLivros(file, locale);
                 case "exemplar" -> importarExemplares(file, locale);
                 default -> throw new IllegalArgumentException(
@@ -82,16 +86,16 @@ public class ImportService {
         }
     }
 
-    // ==================== IMPORTAÇÃO DE ALUNOS =====================
+    // ==================== IMPORTAÇÃO DE LEITORES ===================
 
     @Transactional
-    protected String importarAlunos(MultipartFile file, Locale locale) throws Exception {
-        List<Student> alunosParaSalvar = new ArrayList<>();
+    protected String importarLeitores(MultipartFile file, Locale locale) throws Exception {
+        List<Reader> leitoresParaSalvar = new ArrayList<>();
         List<ErroImportacao> logErros = new ArrayList<>();
         Set<String> matriculasNoExcel = new HashSet<>();
 
-        Set<String> matriculasExistentes = alunoRepository.findAllMatriculas();
-        Set<String> cpfsExistentes = alunoRepository.findAllCpfs();
+        Set<String> matriculasExistentes = leitorRepository.findAllMatriculas();
+        Set<String> cpfsExistentes = leitorRepository.findAllCpfs();
 
         Map<Integer, Course> coursesMap = courseRepository.findAll().stream()
                 .collect(Collectors.toMap(Course::getId, c -> c));
@@ -99,6 +103,7 @@ public class ImportService {
                 .collect(Collectors.toMap(StudyShift::getId, t -> t));
         Map<Integer, AcademicModule> academicModulesMap = academicModuleRepository.findAll().stream()
                 .collect(Collectors.toMap(AcademicModule::getId, m -> m));
+        LibraryType libraryType = settingsService.getLibraryType();
 
         try (InputStream is = file.getInputStream(); Workbook workbook = WorkbookFactory.create(is)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -127,28 +132,28 @@ public class ImportService {
                         continue;
                     }
 
-                    Student aluno = criarAlunoFromRow(row, headerMap, coursesMap, studyShiftsMap,
-                            academicModulesMap, locale);
+                    Reader leitor = criarLeitorFromRow(row, headerMap, coursesMap, studyShiftsMap,
+                            academicModulesMap, libraryType, locale);
 
-                    if (aluno.getCpf() != null && cpfsExistentes.contains(aluno.getCpf())) {
+                    if (leitor.getCpf() != null && cpfsExistentes.contains(leitor.getCpf())) {
                         logErros.add(new ErroImportacao(linhaNum,
-                                "import.error.cpf.already-exists", aluno.getCpf()));
+                                "import.error.cpf.already-exists", leitor.getCpf()));
                         continue;
                     }
-                    if (usuarioRepository.existsByEmail(aluno.getEmail())) {
+                    if (usuarioRepository.existsByEmail(leitor.getEmail())) {
                         logErros.add(new ErroImportacao(linhaNum,
-                                "import.error.email.already-linked", aluno.getEmail()));
+                                "import.error.email.already-linked", leitor.getEmail()));
                         continue;
                     }
 
                     AppUser usuario = new AppUser();
-                    usuario.setEmail(aluno.getEmail());
-                    usuario.setPasswordHash(passwordEncoder.encode(aluno.getRegistrationNumber()));
-                    usuario.setRole(Role.STUDENT);
-                    usuario.setStudent(aluno);
-                    aluno.setAppUser(usuario);
+                    usuario.setEmail(leitor.getEmail());
+                    usuario.setPasswordHash(passwordEncoder.encode(leitor.getRegistrationNumber()));
+                    usuario.setRole(Role.READER);
+                    usuario.setReader(leitor);
+                    leitor.setAppUser(usuario);
 
-                    alunosParaSalvar.add(aluno);
+                    leitoresParaSalvar.add(leitor);
 
                 } catch (Exception e) {
                     logErros.add(new ErroImportacao(linhaNum, "import.error.generic", e.getMessage()));
@@ -156,46 +161,66 @@ public class ImportService {
             }
         }
 
-        return salvarEmLotes(alunosParaSalvar, alunoRepository, "import.entity.students", logErros, locale);
+        return salvarEmLotes(leitoresParaSalvar, leitorRepository, "import.entity.readers", logErros, locale);
     }
 
-    private Student criarAlunoFromRow(Row row, Map<String, Integer> headerMap,
+    private Reader criarLeitorFromRow(Row row, Map<String, Integer> headerMap,
             Map<Integer, Course> courses,
             Map<Integer, StudyShift> studyShifts,
             Map<Integer, AcademicModule> academicModules,
+            LibraryType libraryType,
             Locale locale) {
-        Student aluno = new Student();
-        aluno.setRegistrationNumber(ExcelUtils.getString(row.getCell(headerMap.get("matricula"))));
-        aluno.setFullName(ExcelUtils.getString(row.getCell(headerMap.get("nome_completo"))));
-        aluno.setCpf(normalizeNumber(ExcelUtils.getString(row.getCell(headerMap.get("cpf")))));
-        aluno.setPhoneNumber(normalizeNumber(ExcelUtils.getString(row.getCell(headerMap.get("celular")))));
-        aluno.setEmail(ExcelUtils.getString(row.getCell(headerMap.get("email"))));
-        aluno.setBirthDate(ExcelUtils.getLocalDate(row.getCell(headerMap.get("data_nascimento"))));
+        Reader leitor = new Reader();
+        leitor.setRegistrationNumber(ExcelUtils.getString(row.getCell(headerMap.get("matricula"))));
+        leitor.setFullName(ExcelUtils.getString(row.getCell(headerMap.get("nome_completo"))));
+        leitor.setCpf(normalizeNumber(ExcelUtils.getString(row.getCell(headerMap.get("cpf")))));
+        leitor.setPhoneNumber(normalizeNumber(ExcelUtils.getString(row.getCell(headerMap.get("celular")))));
+        leitor.setEmail(ExcelUtils.getString(row.getCell(headerMap.get("email"))));
+        leitor.setBirthDate(ExcelUtils.getLocalDate(row.getCell(headerMap.get("data_nascimento"))));
 
-        aluno.setPostalCode(normalizeNumber(ExcelUtils.getString(row.getCell(headerMap.get("cep")))));
-        aluno.setStreet(ExcelUtils.getString(row.getCell(headerMap.get("logradouro"))));
-        aluno.setDistrict(ExcelUtils.getString(row.getCell(headerMap.get("bairro"))));
-        aluno.setCity(ExcelUtils.getString(row.getCell(headerMap.get("localidade"))));
-        aluno.setStateCode(ExcelUtils.getString(row.getCell(headerMap.get("uf"))));
-        aluno.setStreetNumber(ExcelUtils.getInteger(row.getCell(headerMap.get("numero_casa"))));
-        aluno.setAddressComplement(ExcelUtils.getString(row.getCell(headerMap.get("complemento"))));
+        leitor.setPostalCode(normalizeNumber(ExcelUtils.getString(row.getCell(headerMap.get("cep")))));
+        leitor.setStreet(ExcelUtils.getString(row.getCell(headerMap.get("logradouro"))));
+        leitor.setDistrict(ExcelUtils.getString(row.getCell(headerMap.get("bairro"))));
+        leitor.setCity(ExcelUtils.getString(row.getCell(headerMap.get("localidade"))));
+        leitor.setStateCode(ExcelUtils.getString(row.getCell(headerMap.get("uf"))));
+        leitor.setStreetNumber(ExcelUtils.getInteger(row.getCell(headerMap.get("numero_casa"))));
+        leitor.setAddressComplement(ExcelUtils.getString(row.getCell(headerMap.get("complemento"))));
 
         Integer cursoId = ExcelUtils.getInteger(row.getCell(headerMap.get("curso_id")));
         Integer turnoId = ExcelUtils.getInteger(row.getCell(headerMap.get("turno_id")));
         Integer moduloId = ExcelUtils.getInteger(row.getCell(headerMap.get("modulo_id")));
 
+        if (headerMap.containsKey("reader_category")) {
+            leitor.setReaderCategory(ExcelUtils.getString(row.getCell(headerMap.get("reader_category"))));
+        } else if (headerMap.containsKey("categoria")) {
+            leitor.setReaderCategory(ExcelUtils.getString(row.getCell(headerMap.get("categoria"))));
+        }
+
+        if (libraryType == LibraryType.SCHOOL
+                && (cursoId == null || turnoId == null || moduloId == null)) {
+            throw new IllegalArgumentException(
+                    messages.resolve("reader.academic-fields.required", locale));
+        }
+
         if (cursoId != null && courses.containsKey(cursoId))
-            aluno.setCourse(courses.get(cursoId));
-        else
+            leitor.setCourse(courses.get(cursoId));
+        else if (libraryType == LibraryType.SCHOOL)
             throw new IllegalArgumentException(
                     messages.resolve("import.error.course.invalid", locale, cursoId));
 
         if (turnoId != null && studyShifts.containsKey(turnoId))
-            aluno.setStudyShift(studyShifts.get(turnoId));
-        if (moduloId != null && academicModules.containsKey(moduloId))
-            aluno.setAcademicModule(academicModules.get(moduloId));
+            leitor.setStudyShift(studyShifts.get(turnoId));
+        else if (libraryType == LibraryType.SCHOOL)
+            throw new IllegalArgumentException(
+                    messages.resolve("metadata.study-shift.not-found", locale));
 
-        return aluno;
+        if (moduloId != null && academicModules.containsKey(moduloId))
+            leitor.setAcademicModule(academicModules.get(moduloId));
+        else if (libraryType == LibraryType.SCHOOL)
+            throw new IllegalArgumentException(
+                    messages.resolve("metadata.academic-module.not-found", locale));
+
+        return leitor;
     }
 
     // ===================== IMPORTAÇÃO DE LIVROS =====================

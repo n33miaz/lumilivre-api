@@ -22,8 +22,8 @@ public class ReservationMapper {
 
         return ReservationResponse.builder()
                 .id(r.getId())
-                .studentRegistrationNumber(r.getStudent() != null ? r.getStudent().getRegistrationNumber() : null)
-                .studentName(r.getStudent() != null ? r.getStudent().getFullName() : null)
+                .readerRegistrationNumber(r.getReader() != null ? r.getReader().getRegistrationNumber() : null)
+                .readerName(r.getReader() != null ? r.getReader().getFullName() : null)
                 .bookId(r.getBook() != null ? r.getBook().getId() : null)
                 .bookTitle(r.getBook() != null ? r.getBook().getTitle() : null)
                 .status(status)

@@ -18,9 +18,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     Optional<Reservation> findFirstByBook_IdAndStatusOrderByQueuePositionAsc(UUID bookId, ReservationStatus status);
 
-    List<Reservation> findByStudent_RegistrationNumberOrderByCreatedAtDesc(String registrationNumber);
+    List<Reservation> findByReader_RegistrationNumberOrderByCreatedAtDesc(String registrationNumber);
 
-    boolean existsByStudent_RegistrationNumberAndBook_IdAndStatusIn(
+    boolean existsByReader_RegistrationNumberAndBook_IdAndStatusIn(
             String registrationNumber, UUID bookId, List<ReservationStatus> statuses);
 
     @Query("SELECT COALESCE(MAX(r.queuePosition), 0) FROM Reservation r WHERE r.book.id = :bookId AND r.status = 'WAITING'")

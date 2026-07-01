@@ -15,7 +15,7 @@ import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.Loan;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.service.infra.EmailService;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class DueDateNotificationJobTest {
     private DueDateNotificationJob job;
 
     @Test
-    void enviarLembretesSendsThreeDayReminderWithStudentPreferredLocale() {
+    void enviarLembretesSendsThreeDayReminderWithReaderPreferredLocale() {
         Loan dueInThreeDays = loan(LoanStatus.ACTIVE, OffsetDateTime.now().plusDays(3), "en-US");
         when(loanRepository.findByStatusAndDueAtGreaterThanEqual(eq(LoanStatus.ACTIVE), any(OffsetDateTime.class)))
                 .thenReturn(List.of(dueInThreeDays))
@@ -51,7 +51,7 @@ class DueDateNotificationJobTest {
         job.enviarLembretes();
 
         verify(emailService).enviarNotificacaoEmprestimo(
-                "student@example.test",
+                "reader@example.test",
                 "email.loan-due-3days.subject",
                 "email.loan-due-3days.body",
                 "Clean Architecture",
@@ -59,7 +59,7 @@ class DueDateNotificationJobTest {
     }
 
     @Test
-    void enviarLembretesSendsOverdueNotificationWithDefaultLocaleWhenStudentHasNoUser() {
+    void enviarLembretesSendsOverdueNotificationWithDefaultLocaleWhenReaderHasNoUser() {
         Loan overdue = loan(LoanStatus.OVERDUE, OffsetDateTime.now().minusDays(2), null);
         when(loanRepository.findByStatusAndDueAtGreaterThanEqual(eq(LoanStatus.ACTIVE), any(OffsetDateTime.class)))
                 .thenReturn(List.of())
@@ -70,7 +70,7 @@ class DueDateNotificationJobTest {
         job.enviarLembretes();
 
         verify(emailService).enviarNotificacaoEmprestimo(
-                "student@example.test",
+                "reader@example.test",
                 "email.loan-overdue.subject",
                 "email.loan-overdue.body",
                 "Clean Architecture",
@@ -78,12 +78,12 @@ class DueDateNotificationJobTest {
     }
 
     private static Loan loan(LoanStatus status, OffsetDateTime dueAt, String preferredLocale) {
-        Student student = new Student();
-        student.setEmail("student@example.test");
+        Reader reader = new Reader();
+        reader.setEmail("reader@example.test");
         if (preferredLocale != null) {
             AppUser user = new AppUser();
             user.setPreferredLocale(preferredLocale);
-            student.setAppUser(user);
+            reader.setAppUser(user);
         }
 
         Book book = new Book();
@@ -93,7 +93,7 @@ class DueDateNotificationJobTest {
 
         return Loan.builder()
                 .status(status)
-                .student(student)
+                .reader(reader)
                 .bookCopy(copy)
                 .borrowedAt(dueAt.minusDays(14))
                 .dueAt(dueAt)

@@ -21,11 +21,11 @@ import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.LoanRequest;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.repository.LoanRequestRepository;
-import br.com.lumilivre.api.repository.StudentRepository;
+import br.com.lumilivre.api.repository.ReaderRepository;
 import br.com.lumilivre.api.security.Auditable;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,7 @@ public class LoanRequestService {
     private static final String REQUEST_PROCESSED_KEY = "request.processed";
     private static final String MOBILE_REQUEST_NOTE = "Requested via mobile";
 
-    private final StudentRepository studentRepository;
+    private final ReaderRepository readerRepository;
     private final BookCopyRepository bookCopyRepository;
     private final LoanRequestRepository loanRequestRepository;
     private final LoanService loanService;
@@ -54,53 +54,53 @@ public class LoanRequestService {
         return loanRequestRepository.findByStatus(LoanRequestStatus.PENDING);
     }
 
-    public List<LoanRequest> listByStudent(String registrationNumber) {
-        return loanRequestRepository.findByStudent_RegistrationNumberOrderByRequestedAtDesc(registrationNumber);
+    public List<LoanRequest> listByReader(String registrationNumber) {
+        return loanRequestRepository.findByReader_RegistrationNumberOrderByRequestedAtDesc(registrationNumber);
     }
 
     @Transactional
     @CacheEvict(value = DASHBOARD_LOAN_REQUESTS, allEntries = true)
-    public String solicitarEmprestimo(String matriculaAluno, String copyCode) {
-        Student student = studentRepository.findByRegistrationNumber(matriculaAluno)
-                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
+    public String solicitarEmprestimo(String matriculaLeitor, String copyCode) {
+        Reader reader = readerRepository.findByRegistrationNumber(matriculaLeitor)
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("reader.not-found"));
 
         BookCopy bookCopy = bookCopyRepository.findByCopyCode(copyCode)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.copy.not-found"));
 
-        long ativos = contarEmprestimosAtivos(matriculaAluno);
-        RequestApprovalPolicy.validateRequest(student.getPenaltyExpiresAt(), ativos, bookCopy.getStatus());
+        long ativos = contarEmprestimosAtivos(matriculaLeitor);
+        RequestApprovalPolicy.validateRequest(reader.getPenaltyExpiresAt(), ativos, bookCopy.getStatus());
 
         LoanRequest request = LoanRequest.builder()
-                .student(student)
+                .reader(reader)
                 .bookCopy(bookCopy)
                 .build();
         loanRequestRepository.save(request);
 
-        publicarEmailSolicitacao(student, bookCopy, "request.email.received");
+        publicarEmailSolicitacao(reader, bookCopy, "request.email.received");
 
         return REQUEST_CREATED_KEY;
     }
 
     @Transactional
     @CacheEvict(value = DASHBOARD_LOAN_REQUESTS, allEntries = true)
-    public String solicitarEmprestimoPorLivro(String matriculaAluno, UUID bookId) {
-        Student student = studentRepository.findByRegistrationNumber(matriculaAluno)
-                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
+    public String solicitarEmprestimoPorLivro(String matriculaLeitor, UUID bookId) {
+        Reader reader = readerRepository.findByRegistrationNumber(matriculaLeitor)
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("reader.not-found"));
 
         BookCopy bookCopy = bookCopyRepository.findFirstAvailable(bookId)
                 .orElseThrow(() -> BusinessRuleException.ofKey("request.no-available-copy"));
 
-        long ativos = contarEmprestimosAtivos(matriculaAluno);
-        RequestApprovalPolicy.validateRequest(student.getPenaltyExpiresAt(), ativos, bookCopy.getStatus());
+        long ativos = contarEmprestimosAtivos(matriculaLeitor);
+        RequestApprovalPolicy.validateRequest(reader.getPenaltyExpiresAt(), ativos, bookCopy.getStatus());
 
         LoanRequest request = LoanRequest.builder()
-                .student(student)
+                .reader(reader)
                 .bookCopy(bookCopy)
                 .note(MOBILE_REQUEST_NOTE)
                 .build();
         loanRequestRepository.save(request);
 
-        publicarEmailSolicitacao(student, bookCopy, "request.email.received");
+        publicarEmailSolicitacao(reader, bookCopy, "request.email.received");
 
         return REQUEST_CREATED_KEY;
     }
@@ -116,13 +116,13 @@ public class LoanRequestService {
         LoanRequest request = loanRequestRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("request.not-found"));
 
-        Student student = request.getStudent();
+        Reader reader = request.getReader();
         BookCopy bookCopy = request.getBookCopy();
         RequestApprovalPolicy.validateProcessable(request.getStatus());
 
         if (aceitar) {
             br.com.lumilivre.api.dto.loan.LoanRequest loanReq = br.com.lumilivre.api.dto.loan.LoanRequest.builder()
-                    .studentRegistrationNumber(student.getRegistrationNumber())
+                    .readerRegistrationNumber(reader.getRegistrationNumber())
                     .copyCode(bookCopy.getCopyCode())
                     .borrowedAt(OffsetDateTime.now())
                     .dueAt(OffsetDateTime.now().plusDays(14))
@@ -132,39 +132,39 @@ public class LoanRequestService {
             request.setStatus(LoanRequestStatus.ACCEPTED);
             loanRequestRepository.save(request);
 
-            publicarEmailSolicitacao(student, bookCopy, "request.email.accepted");
+            publicarEmailSolicitacao(reader, bookCopy, "request.email.accepted");
         } else {
             request.setStatus(LoanRequestStatus.REJECTED);
             loanRequestRepository.save(request);
 
-            publicarEmailSolicitacao(student, bookCopy, "request.email.rejected", EventType.REQUEST_REJECTED);
+            publicarEmailSolicitacao(reader, bookCopy, "request.email.rejected", EventType.REQUEST_REJECTED);
         }
 
         return REQUEST_PROCESSED_KEY;
     }
 
-    private void publicarEmailSolicitacao(Student student, BookCopy bookCopy, String baseKey) {
-        publicarEmailSolicitacao(student, bookCopy, baseKey, EventType.REQUEST_ACCEPTED);
+    private void publicarEmailSolicitacao(Reader reader, BookCopy bookCopy, String baseKey) {
+        publicarEmailSolicitacao(reader, bookCopy, baseKey, EventType.REQUEST_ACCEPTED);
     }
 
-    private void publicarEmailSolicitacao(Student student, BookCopy bookCopy, String baseKey, EventType eventType) {
-        Locale locale = localeFor(student);
+    private void publicarEmailSolicitacao(Reader reader, BookCopy bookCopy, String baseKey, EventType eventType) {
+        Locale locale = localeFor(reader);
         String subject = messages.resolve(baseKey + ".subject", locale);
         String body = messages.resolve(baseKey + ".body", locale, bookCopy.getBook().getTitle());
-        outboxPublisher.publish(eventType, student.getEmail(), subject, body, locale);
+        outboxPublisher.publish(eventType, reader.getEmail(), subject, body, locale);
     }
 
-    private Locale localeFor(Student student) {
-        if (student != null && student.getAppUser() != null
-                && student.getAppUser().getPreferredLocale() != null
-                && !student.getAppUser().getPreferredLocale().isBlank()) {
-            return Locale.forLanguageTag(student.getAppUser().getPreferredLocale());
+    private Locale localeFor(Reader reader) {
+        if (reader != null && reader.getAppUser() != null
+                && reader.getAppUser().getPreferredLocale() != null
+                && !reader.getAppUser().getPreferredLocale().isBlank()) {
+            return Locale.forLanguageTag(reader.getAppUser().getPreferredLocale());
         }
         return Locale.forLanguageTag("pt-BR");
     }
 
     private long contarEmprestimosAtivos(String matricula) {
-        return loanRepository.countByStudent_RegistrationNumberAndStatus(matricula, br.com.lumilivre.api.enums.LoanStatus.ACTIVE)
-                + loanRepository.countByStudent_RegistrationNumberAndStatus(matricula, br.com.lumilivre.api.enums.LoanStatus.OVERDUE);
+        return loanRepository.countByReader_RegistrationNumberAndStatus(matricula, br.com.lumilivre.api.enums.LoanStatus.ACTIVE)
+                + loanRepository.countByReader_RegistrationNumberAndStatus(matricula, br.com.lumilivre.api.enums.LoanStatus.OVERDUE);
     }
 }

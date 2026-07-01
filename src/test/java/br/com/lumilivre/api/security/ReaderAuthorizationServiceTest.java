@@ -14,7 +14,7 @@ import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.Loan;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.LoanRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
-class StudentAuthorizationServiceTest {
+class ReaderAuthorizationServiceTest {
 
     @Mock
     private LoanRepository loanRepository;
@@ -36,8 +36,8 @@ class StudentAuthorizationServiceTest {
     }
 
     @Test
-    void unauthenticatedUsersCannotAccessStudentsOrLoans() {
-        StudentAuthorizationService service = service();
+    void unauthenticatedUsersCannotAccessReadersOrLoans() {
+        ReaderAuthorizationService service = service();
 
         assertThat(service.canAccess("2025001")).isFalse();
         assertThat(service.canAccessLoan(UUID.randomUUID())).isFalse();
@@ -52,7 +52,7 @@ class StudentAuthorizationServiceTest {
     }
 
     @Test
-    void adminAndLibrarianCanAccessAnyStudentWithoutLoanLookup() {
+    void adminAndLibrarianCanAccessAnyReaderWithoutLoanLookup() {
         authenticate(Role.ADMIN, null);
         assertThat(service().canAccess("2025001")).isTrue();
         assertThat(service().canAccessLoan(UUID.randomUUID())).isTrue();
@@ -65,25 +65,25 @@ class StudentAuthorizationServiceTest {
     }
 
     @Test
-    void studentCanOnlyAccessOwnRegistration() {
-        authenticate(Role.STUDENT, student("2025001"));
+    void readerCanOnlyAccessOwnRegistration() {
+        authenticate(Role.READER, reader("2025001"));
 
         assertThat(service().canAccess("2025001")).isTrue();
         assertThat(service().canAccess("2025999")).isFalse();
     }
 
     @Test
-    void studentWithoutLinkedStudentCannotAccessRegistration() {
-        authenticate(Role.STUDENT, null);
+    void readerWithoutLinkedReaderCannotAccessRegistration() {
+        authenticate(Role.READER, null);
 
         assertThat(service().canAccess("2025001")).isFalse();
     }
 
     @Test
-    void studentCanAccessOwnLoanOnly() {
+    void readerCanAccessOwnLoanOnly() {
         UUID ownLoanId = UUID.randomUUID();
         UUID otherLoanId = UUID.randomUUID();
-        authenticate(Role.STUDENT, student("2025001"));
+        authenticate(Role.READER, reader("2025001"));
         when(loanRepository.findById(ownLoanId)).thenReturn(Optional.of(loanFor("2025001")));
         when(loanRepository.findById(otherLoanId)).thenReturn(Optional.of(loanFor("2025999")));
 
@@ -92,33 +92,33 @@ class StudentAuthorizationServiceTest {
     }
 
     @Test
-    void studentCannotAccessMissingNullOrUnownedLoans() {
+    void readerCannotAccessMissingNullOrUnownedLoans() {
         UUID missingLoanId = UUID.randomUUID();
-        authenticate(Role.STUDENT, student("2025001"));
+        authenticate(Role.READER, reader("2025001"));
         when(loanRepository.findById(missingLoanId)).thenReturn(Optional.empty());
 
         assertThat(service().canAccessLoan(missingLoanId)).isFalse();
         assertThat(service().canAccessLoan(null)).isFalse();
     }
 
-    private StudentAuthorizationService service() {
-        return new StudentAuthorizationService(loanRepository);
+    private ReaderAuthorizationService service() {
+        return new ReaderAuthorizationService(loanRepository);
     }
 
-    private static void authenticate(Role role, Student student) {
+    private static void authenticate(Role role, Reader reader) {
         AppUser appUser = AppUser.builder()
                 .email(role.name().toLowerCase() + "@example.test")
                 .passwordHash("hash")
                 .role(role)
-                .student(student)
+                .reader(reader)
                 .build();
         CustomUserDetails principal = new CustomUserDetails(appUser);
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }
 
-    private static Student student(String registrationNumber) {
-        return Student.builder()
+    private static Reader reader(String registrationNumber) {
+        return Reader.builder()
                 .registrationNumber(registrationNumber)
                 .fullName("Ada Lovelace")
                 .build();
@@ -129,7 +129,7 @@ class StudentAuthorizationServiceTest {
                 .id(UUID.randomUUID())
                 .borrowedAt(OffsetDateTime.now())
                 .dueAt(OffsetDateTime.now().plusDays(7))
-                .student(student(registrationNumber))
+                .reader(reader(registrationNumber))
                 .bookCopy(BookCopy.builder()
                         .copyCode("T001")
                         .book(Book.builder().id(UUID.randomUUID()).title("Clean Code").build())

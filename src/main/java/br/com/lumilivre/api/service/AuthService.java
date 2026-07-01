@@ -38,9 +38,9 @@ public class AuthService {
                 .id(login.appUser().getId())
                 .email(login.appUser().getEmail())
                 .role(login.appUser().getRole().name())
-                .studentRegistrationNumber(
-                        login.appUser().getStudent() != null
-                                ? login.appUser().getStudent().getRegistrationNumber()
+                .readerRegistrationNumber(
+                        login.appUser().getReader() != null
+                                ? login.appUser().getReader().getRegistrationNumber()
                                 : null)
                 .token(login.token())
                 .initialPasswordChange(login.initialPassword())
@@ -56,8 +56,8 @@ public class AuthService {
         }
 
         boolean isInitialPassword = false;
-        if (appUser.getStudent() != null) {
-            String matricula = appUser.getStudent().getRegistrationNumber();
+        if (appUser.getReader() != null) {
+            String matricula = appUser.getReader().getRegistrationNumber();
             if (password.equals(matricula)) {
                 isInitialPassword = true;
             }

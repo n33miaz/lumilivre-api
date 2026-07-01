@@ -13,8 +13,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import br.com.lumilivre.api.dto.student.StudentListItem;
-import br.com.lumilivre.api.dto.student.StudentRequest;
+import br.com.lumilivre.api.dto.reader.ReaderListItem;
+import br.com.lumilivre.api.dto.reader.ReaderRequest;
+import br.com.lumilivre.api.enums.LibraryType;
 import br.com.lumilivre.api.enums.PenaltyCode;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
@@ -22,12 +23,12 @@ import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.AcademicModule;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.Course;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.model.StudyShift;
 import br.com.lumilivre.api.repository.AcademicModuleRepository;
 import br.com.lumilivre.api.repository.AppUserRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
-import br.com.lumilivre.api.repository.StudentRepository;
+import br.com.lumilivre.api.repository.ReaderRepository;
 import br.com.lumilivre.api.repository.StudyShiftRepository;
 import br.com.lumilivre.api.service.infra.EmailService;
 import br.com.lumilivre.api.service.infra.postalcode.PostalAddress;
@@ -48,10 +49,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
-class StudentServiceTest {
+class ReaderServiceTest {
 
     @Mock
-    private StudentRepository studentRepository;
+    private ReaderRepository readerRepository;
 
     @Mock
     private CourseRepository courseRepository;
@@ -78,10 +79,13 @@ class StudentServiceTest {
     private StorageProvider storageProvider;
 
     @Mock
+    private SettingsService settingsService;
+
+    @Mock
     private MultipartFile avatarFile;
 
     @Captor
-    private ArgumentCaptor<Student> studentCaptor;
+    private ArgumentCaptor<Reader> readerCaptor;
 
     @Captor
     private ArgumentCaptor<AppUser> appUserCaptor;
@@ -95,17 +99,17 @@ class StudentServiceTest {
     void listForAdminUsesUnfilteredQueryWhenTextIsBlank() {
         var pageable = PageRequest.of(0, 20);
         var page = new PageImpl<>(List.of(listItem("2025001")));
-        when(studentRepository.findStudentListItems(pageable)).thenReturn(page);
+        when(readerRepository.findReaderListItems(pageable)).thenReturn(page);
 
         assertThat(service().listarParaAdminV2(" ", pageable)).isSameAs(page);
-        verify(studentRepository, never()).findStudentListItemsByText(any(), any());
+        verify(readerRepository, never()).findReaderListItemsByText(any(), any());
     }
 
     @Test
     void listForAdminUsesTextSearchWhenTextIsPresent() {
         var pageable = PageRequest.of(0, 20);
         var page = new PageImpl<>(List.of(listItem("2025001")));
-        when(studentRepository.findStudentListItemsByText("Ada", pageable)).thenReturn(page);
+        when(readerRepository.findReaderListItemsByText("Ada", pageable)).thenReturn(page);
 
         assertThat(service().listarParaAdminV2("Ada", pageable)).isSameAs(page);
     }
@@ -113,7 +117,7 @@ class StudentServiceTest {
     @Test
     void advancedSearchNormalizesEnumAndLikeFilters() {
         var pageable = PageRequest.of(0, 10);
-        when(studentRepository.buscarAvancadoV2(
+        when(readerRepository.buscarAvancadoV2(
                 eq(PenaltyCode.WARNING),
                 eq("2025001"),
                 eq("%Ada%"),
@@ -137,7 +141,7 @@ class StudentServiceTest {
                 "11999990000",
                 pageable);
 
-        verify(studentRepository).buscarAvancadoV2(
+        verify(readerRepository).buscarAvancadoV2(
                 eq(PenaltyCode.WARNING),
                 eq("2025001"),
                 eq("%Ada%"),
@@ -151,10 +155,10 @@ class StudentServiceTest {
     }
 
     @Test
-    void createStudentCreatesLinkedAppUserAutofillsAddressAndSendsEmail() {
+    void createReaderCreatesLinkedAppUserAutofillsAddressAndSendsEmail() {
         Locale locale = Locale.forLanguageTag("en-US");
         LocaleContextHolder.setLocale(locale);
-        StudentRequest request = request()
+        ReaderRequest request = request()
                 .postalCode("01001000")
                 .penaltyCode("warning")
                 .build();
@@ -162,9 +166,9 @@ class StudentServiceTest {
         when(passwordEncoder.encode("2025001")).thenReturn("encoded-registration");
         when(postalCodeRouter.lookup("01001000", "BR")).thenReturn(Optional.of(new PostalAddress(
                 "01001000", "BR", "Praca da Se", null, "Se", "Sao Paulo", "SP", "Sao Paulo")));
-        when(studentRepository.save(any(Student.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(readerRepository.save(any(Reader.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Student result = service().cadastrar(request);
+        Reader result = service().cadastrar(request);
 
         assertThat(result.getRegistrationNumber()).isEqualTo("2025001");
         assertThat(result.getFullName()).isEqualTo("Ada Lovelace");
@@ -176,60 +180,60 @@ class StudentServiceTest {
         assertThat(result.getAppUser()).isNotNull();
         assertThat(result.getAppUser().getEmail()).isEqualTo("ada@example.test");
         assertThat(result.getAppUser().getPasswordHash()).isEqualTo("encoded-registration");
-        assertThat(result.getAppUser().getRole()).isEqualTo(Role.STUDENT);
-        assertThat(result.getAppUser().getStudent()).isSameAs(result);
+        assertThat(result.getAppUser().getRole()).isEqualTo(Role.READER);
+        assertThat(result.getAppUser().getReader()).isSameAs(result);
         verify(emailService).enviarSenhaInicial("ada@example.test", "Ada Lovelace", "2025001", locale);
     }
 
     @Test
-    void createStudentRejectsDuplicateRegistrationBeforeLoadingRelations() {
-        when(studentRepository.existsByRegistrationNumber("2025001")).thenReturn(true);
+    void createReaderRejectsDuplicateRegistrationBeforeLoadingRelations() {
+        when(readerRepository.existsByRegistrationNumber("2025001")).thenReturn(true);
 
         assertThatExceptionOfType(BusinessRuleException.class)
                 .isThrownBy(() -> service().cadastrar(request().build()))
                 .satisfies(error -> assertThat(error.getMessageKey())
-                        .isEqualTo("student.registration.already-registered"));
+                        .isEqualTo("reader.registration.already-registered"));
         verify(courseRepository, never()).findById(any());
-        verify(studentRepository, never()).save(any());
+        verify(readerRepository, never()).save(any());
     }
 
     @Test
-    void createStudentRejectsDuplicateEmailBeforeCreatingAppUser() {
-        StudentRequest request = request().build();
+    void createReaderRejectsDuplicateEmailBeforeCreatingAppUser() {
+        ReaderRequest request = request().build();
         when(appUserRepository.existsByEmail("ada@example.test")).thenReturn(true);
 
         assertThatExceptionOfType(BusinessRuleException.class)
                 .isThrownBy(() -> service().cadastrar(request))
                 .satisfies(error -> assertThat(error.getMessageKey())
-                        .isEqualTo("student.email.already-in-use"));
+                        .isEqualTo("reader.email.already-in-use"));
         verify(passwordEncoder, never()).encode(any());
-        verify(studentRepository, never()).save(any());
+        verify(readerRepository, never()).save(any());
     }
 
     @Test
-    void updateStudentRefreshesCpfPasswordAndLinkedUserEmail() {
-        Student existing = existingStudent();
+    void updateReaderRefreshesCpfPasswordAndLinkedUserEmail() {
+        Reader existing = existingReader();
         existing.setCpf("11111111111");
         existing.setEmail("old@example.test");
         AppUser appUser = AppUser.builder()
                 .email("old@example.test")
                 .passwordHash("old-hash")
-                .role(Role.STUDENT)
-                .student(existing)
+                .role(Role.READER)
+                .reader(existing)
                 .build();
         existing.setAppUser(appUser);
-        StudentRequest request = request()
+        ReaderRequest request = request()
                 .cpf("22222222222")
                 .email("new@example.test")
                 .postalCode("bad")
                 .build();
-        when(studentRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(existing));
-        when(studentRepository.existsByCpf("22222222222")).thenReturn(false);
+        when(readerRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(existing));
+        when(readerRepository.existsByCpf("22222222222")).thenReturn(false);
         stubRelatedEntities();
         when(passwordEncoder.encode("22222222222")).thenReturn("new-cpf-hash");
-        when(studentRepository.save(any(Student.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(readerRepository.save(any(Reader.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Student result = service().atualizar("2025001", request);
+        Reader result = service().atualizar("2025001", request);
 
         assertThat(result.getCpf()).isEqualTo("22222222222");
         assertThat(result.getEmail()).isEqualTo("new@example.test");
@@ -239,43 +243,43 @@ class StudentServiceTest {
     }
 
     @Test
-    void updateStudentRejectsDuplicateChangedCpf() {
-        Student existing = existingStudent();
+    void updateReaderRejectsDuplicateChangedCpf() {
+        Reader existing = existingReader();
         existing.setCpf("11111111111");
-        when(studentRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(existing));
-        when(studentRepository.existsByCpf("22222222222")).thenReturn(true);
+        when(readerRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(existing));
+        when(readerRepository.existsByCpf("22222222222")).thenReturn(true);
 
         assertThatExceptionOfType(BusinessRuleException.class)
                 .isThrownBy(() -> service().atualizar("2025001",
                         request().cpf("22222222222").build()))
                 .satisfies(error -> assertThat(error.getMessageKey())
-                        .isEqualTo("student.cpf.already-in-use-by-other"));
-        verify(studentRepository, never()).save(any());
+                        .isEqualTo("reader.cpf.already-in-use-by-other"));
+        verify(readerRepository, never()).save(any());
     }
 
     @Test
-    void deleteStudentRemovesLinkedAppUserBeforeStudent() {
-        Student student = existingStudent();
-        AppUser appUser = AppUser.builder().email("ada@example.test").role(Role.STUDENT).build();
-        student.setAppUser(appUser);
-        when(studentRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(student));
+    void deleteReaderRemovesLinkedAppUserBeforeReader() {
+        Reader reader = existingReader();
+        AppUser appUser = AppUser.builder().email("ada@example.test").role(Role.READER).build();
+        reader.setAppUser(appUser);
+        when(readerRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(reader));
 
         service().excluir("2025001");
 
         verify(appUserRepository).delete(appUser);
-        verify(studentRepository).delete(student);
+        verify(readerRepository).delete(reader);
     }
 
     @Test
     void resetPasswordUsesRegistrationNumberForLinkedAppUser() {
-        Student student = existingStudent();
+        Reader reader = existingReader();
         AppUser appUser = AppUser.builder()
                 .email("ada@example.test")
                 .passwordHash("old")
-                .role(Role.STUDENT)
+                .role(Role.READER)
                 .build();
-        student.setAppUser(appUser);
-        when(studentRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(student));
+        reader.setAppUser(appUser);
+        when(readerRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(reader));
         when(passwordEncoder.encode("2025001")).thenReturn("encoded-registration");
 
         service().resetarSenha("2025001");
@@ -285,41 +289,41 @@ class StudentServiceTest {
     }
 
     @Test
-    void resetPasswordRejectsStudentWithoutLinkedAppUser() {
-        when(studentRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(existingStudent()));
+    void resetPasswordRejectsReaderWithoutLinkedAppUser() {
+        when(readerRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(existingReader()));
 
         assertThatExceptionOfType(BusinessRuleException.class)
                 .isThrownBy(() -> service().resetarSenha("2025001"))
-                .satisfies(error -> assertThat(error.getMessageKey()).isEqualTo("student.no-app-user-linked"));
+                .satisfies(error -> assertThat(error.getMessageKey()).isEqualTo("reader.no-app-user-linked"));
         verify(appUserRepository, never()).save(any());
     }
 
     @Test
     void uploadAvatarStoresReturnedUrl() {
-        Student student = existingStudent();
-        when(studentRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(student));
+        Reader reader = existingReader();
+        when(readerRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(reader));
         when(storageProvider.upload(avatarFile, StorageBucket.AVATARS)).thenReturn("https://cdn.test/avatar.jpg");
 
         service().uploadFoto("2025001", avatarFile);
 
-        verify(studentRepository).save(studentCaptor.capture());
-        assertThat(studentCaptor.getValue().getAvatarUrl()).isEqualTo("https://cdn.test/avatar.jpg");
+        verify(readerRepository).save(readerCaptor.capture());
+        assertThat(readerCaptor.getValue().getAvatarUrl()).isEqualTo("https://cdn.test/avatar.jpg");
     }
 
     @Test
     void uploadAvatarWrapsStorageFailure() {
-        when(studentRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(existingStudent()));
+        when(readerRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(existingReader()));
         when(storageProvider.upload(avatarFile, StorageBucket.AVATARS)).thenThrow(new RuntimeException("storage down"));
 
         assertThatExceptionOfType(BusinessRuleException.class)
                 .isThrownBy(() -> service().uploadFoto("2025001", avatarFile))
-                .satisfies(error -> assertThat(error.getMessageKey()).isEqualTo("student.avatar.upload-failed"));
-        verify(studentRepository, never()).save(any());
+                .satisfies(error -> assertThat(error.getMessageKey()).isEqualTo("reader.avatar.upload-failed"));
+        verify(readerRepository, never()).save(any());
     }
 
-    private StudentService service() {
-        return new StudentService(
-                studentRepository,
+    private ReaderService service() {
+        return new ReaderService(
+                readerRepository,
                 courseRepository,
                 appUserRepository,
                 studyShiftRepository,
@@ -327,17 +331,19 @@ class StudentServiceTest {
                 emailService,
                 passwordEncoder,
                 postalCodeRouter,
-                storageProvider);
+                storageProvider,
+                settingsService);
     }
 
     private void stubRelatedEntities() {
+        when(settingsService.getLibraryType()).thenReturn(LibraryType.SCHOOL);
         when(courseRepository.findById(1)).thenReturn(Optional.of(course()));
         when(studyShiftRepository.findById(2)).thenReturn(Optional.of(studyShift()));
         when(academicModuleRepository.findById(3)).thenReturn(Optional.of(academicModule()));
     }
 
-    private static StudentRequest.StudentRequestBuilder request() {
-        return StudentRequest.builder()
+    private static ReaderRequest.ReaderRequestBuilder request() {
+        return ReaderRequest.builder()
                 .registrationNumber("2025001")
                 .fullName("Ada Lovelace")
                 .cpf("11111111111")
@@ -351,8 +357,8 @@ class StudentServiceTest {
                 .addressComplement("Room 1");
     }
 
-    private static Student existingStudent() {
-        return Student.builder()
+    private static Reader existingReader() {
+        return Reader.builder()
                 .registrationNumber("2025001")
                 .fullName("Ada Lovelace")
                 .course(course())
@@ -373,11 +379,12 @@ class StudentServiceTest {
         return new AcademicModule(3, "Module 1", List.of());
     }
 
-    private static StudentListItem listItem(String registrationNumber) {
-        return new StudentListItem(
+    private static ReaderListItem listItem(String registrationNumber) {
+        return new ReaderListItem(
                 null,
                 registrationNumber,
                 "Computer Science",
+                null,
                 "Ada Lovelace",
                 LocalDate.of(2001, 1, 5),
                 "ada@example.test",

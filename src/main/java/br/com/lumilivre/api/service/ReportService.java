@@ -2,7 +2,7 @@ package br.com.lumilivre.api.service;
 
 import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.model.*;
-import br.com.lumilivre.api.repository.StudentRepository;
+import br.com.lumilivre.api.repository.ReaderRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.repository.BookCopyRepository;
@@ -49,7 +49,7 @@ public class ReportService {
     private static final Logger log = LoggerFactory.getLogger(ReportService.class);
 
     private final LoanRepository loanRepository;
-    private final StudentRepository alunoRepository;
+    private final ReaderRepository leitorRepository;
     private final BookRepository livroRepository;
     private final CourseRepository courseRepository;
     private final BookCopyRepository exemplarRepository;
@@ -88,11 +88,11 @@ public class ReportService {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final Locale DEFAULT_LOCALE = Locale.forLanguageTag("pt-BR");
 
-    public ReportService(LoanRepository loanRepository, StudentRepository alunoRepository,
+    public ReportService(LoanRepository loanRepository, ReaderRepository leitorRepository,
             BookRepository livroRepository, CourseRepository courseRepository,
             BookCopyRepository exemplarRepository, MessageResolver messages) {
         this.loanRepository = loanRepository;
-        this.alunoRepository = alunoRepository;
+        this.leitorRepository = leitorRepository;
         this.livroRepository = livroRepository;
         this.courseRepository = courseRepository;
         this.exemplarRepository = exemplarRepository;
@@ -102,7 +102,7 @@ public class ReportService {
     // ================= RELATÓRIOS DE EMPRÉSTIMOS =================
 
     public void gerarRelatorioEmprestimosPorFiltros(OutputStream out, LocalDate inicio, LocalDate fim,
-            LoanStatus status, String matriculaAluno, Integer idCurso,
+            LoanStatus status, String matriculaLeitor, Integer idCurso,
             String isbnOuTombo, Integer idModulo, Locale locale) throws IOException {
         Locale loc = effective(locale);
         String dashFallback = messages.resolve("report.common.fallback.dash", loc);
@@ -117,7 +117,7 @@ public class ReportService {
             OffsetDateTime fimDT = (fim != null) ? fim.atTime(LocalTime.MAX).atOffset(offset) : null;
 
             List<Loan> emprestimos = loanRepository.findForReport(
-                    inicioDT, fimDT, status, prepararFiltroLike(matriculaAluno),
+                    inicioDT, fimDT, status, prepararFiltroLike(matriculaLeitor),
                     idCurso, prepararFiltroLike(isbnOuTombo), idModulo);
 
             long ativos = emprestimos.stream().filter(e -> e.getStatus() == LoanStatus.ACTIVE).count();
@@ -131,14 +131,14 @@ public class ReportService {
 
             PdfPTable table = novaTabela(new float[] { 1.2f, 3.5f, 3f, 2.5f, 4f, 2.5f, 2f });
             adicionarCelulaHeader(table, messages.resolve("report.loans.col.id", loc));
-            adicionarCelulaHeader(table, messages.resolve("report.loans.col.student", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.loans.col.reader", loc));
             adicionarCelulaHeader(table, messages.resolve("report.loans.col.course", loc));
             adicionarCelulaHeader(table, messages.resolve("report.loans.col.module", loc));
             adicionarCelulaHeader(table, messages.resolve("report.loans.col.book-copy", loc));
             adicionarCelulaHeader(table, messages.resolve("report.loans.col.borrowed-at", loc));
             adicionarCelulaHeader(table, messages.resolve("report.loans.col.status", loc));
 
-            String unknownStudent = messages.resolve("report.loans.fallback.student-unknown", loc);
+            String unknownReader = messages.resolve("report.loans.fallback.reader-unknown", loc);
             String bookNA = messages.resolve("report.loans.fallback.book-na", loc);
             String copyNA = messages.resolve("report.loans.fallback.copy-na", loc);
             String errorLabel = messages.resolve("report.loans.error.row", loc);
@@ -148,11 +148,11 @@ public class ReportService {
                 boolean zebra = (row++ % 2) == 1;
                 try {
                     table.addCell(celula(e.getId().toString(), zebra));
-                    table.addCell(celula(Optional.ofNullable(e.getStudent()).map(Student::getFullName)
-                            .orElse(unknownStudent), zebra));
-                    table.addCell(celula(Optional.ofNullable(e.getStudent()).map(Student::getCourse)
+                    table.addCell(celula(Optional.ofNullable(e.getReader()).map(Reader::getFullName)
+                            .orElse(unknownReader), zebra));
+                    table.addCell(celula(Optional.ofNullable(e.getReader()).map(Reader::getCourse)
                             .map(Course::getName).orElse(naFallback), zebra));
-                    table.addCell(celula(Optional.ofNullable(e.getStudent()).map(Student::getAcademicModule)
+                    table.addCell(celula(Optional.ofNullable(e.getReader()).map(Reader::getAcademicModule)
                             .map(AcademicModule::getName).orElse(dashFallback), zebra));
                     String livroTombo = Optional.ofNullable(e.getBookCopy())
                             .map(ex -> Optional.ofNullable(ex.getBook()).map(Book::getTitle).orElse(bookNA)
@@ -180,9 +180,9 @@ public class ReportService {
         }
     }
 
-    // ================= RELATÓRIOS DE ALUNOS =================
+    // ================= RELATÓRIOS DE LEITORES =================
 
-    public void gerarRelatorioAlunosPorFiltros(OutputStream out, Integer idModulo, Integer idCurso,
+    public void gerarRelatorioLeitoresPorFiltros(OutputStream out, Integer idModulo, Integer idCurso,
             Integer idTurno, PenaltyCode penalidade, LocalDate dataInicio, LocalDate dataFim, Locale locale)
             throws IOException {
         Locale loc = effective(locale);
@@ -191,37 +191,37 @@ public class ReportService {
 
         try (Document document = new Document(PageSize.A4.rotate(), 36, 36, 28, 54)) {
             abrirDocumento(document, out, loc);
-            secaoCabecalho(document, messages.resolve("report.students.title", loc), dataInicio, dataFim, loc);
+            secaoCabecalho(document, messages.resolve("report.readers.title", loc), dataInicio, dataFim, loc);
 
             ZoneOffset offset = OffsetDateTime.now().getOffset();
             OffsetDateTime inicio = (dataInicio != null) ? dataInicio.atStartOfDay().atOffset(offset) : null;
             OffsetDateTime fim = (dataFim != null) ? dataFim.atTime(23, 59, 59).atOffset(offset) : null;
 
-            List<Student> alunos = alunoRepository.findForReport(idModulo, idCurso, idTurno, penalidade, inicio, fim);
+            List<Reader> leitores = leitorRepository.findForReport(idModulo, idCurso, idTurno, penalidade, inicio, fim);
 
-            long comPenalidade = alunos.stream().filter(a -> a.getPenaltyCode() != null).count();
+            long comPenalidade = leitores.stream().filter(a -> a.getPenaltyCode() != null).count();
             adicionarKpis(document,
-                    new Kpi(messages.resolve("report.students.kpi.total", loc), String.valueOf(alunos.size())),
-                    new Kpi(messages.resolve("report.students.kpi.with-penalty", loc), String.valueOf(comPenalidade)),
-                    new Kpi(messages.resolve("report.students.kpi.without-penalty", loc),
-                            String.valueOf(alunos.size() - comPenalidade)));
+                    new Kpi(messages.resolve("report.readers.kpi.total", loc), String.valueOf(leitores.size())),
+                    new Kpi(messages.resolve("report.readers.kpi.with-penalty", loc), String.valueOf(comPenalidade)),
+                    new Kpi(messages.resolve("report.readers.kpi.without-penalty", loc),
+                            String.valueOf(leitores.size() - comPenalidade)));
 
             PdfPTable table = novaTabela(new float[] { 2f, 5f, 3f, 2f, 2.4f, 2f });
-            adicionarCelulaHeader(table, messages.resolve("report.students.col.registration", loc));
-            adicionarCelulaHeader(table, messages.resolve("report.students.col.name", loc));
-            adicionarCelulaHeader(table, messages.resolve("report.students.col.course", loc));
-            adicionarCelulaHeader(table, messages.resolve("report.students.col.module", loc));
-            adicionarCelulaHeader(table, messages.resolve("report.students.col.penalty", loc));
-            adicionarCelulaHeader(table, messages.resolve("report.students.col.loan-count", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.readers.col.registration", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.readers.col.name", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.readers.col.course", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.readers.col.module", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.readers.col.penalty", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.readers.col.loan-count", loc));
 
             int row = 0;
-            for (Student a : alunos) {
+            for (Reader a : leitores) {
                 boolean zebra = (row++ % 2) == 1;
-                long totalLoans = loanRepository.countByStudent_RegistrationNumberAndStatus(
+                long totalLoans = loanRepository.countByReader_RegistrationNumberAndStatus(
                         a.getRegistrationNumber(), LoanStatus.ACTIVE)
-                        + loanRepository.countByStudent_RegistrationNumberAndStatus(
+                        + loanRepository.countByReader_RegistrationNumberAndStatus(
                                 a.getRegistrationNumber(), LoanStatus.COMPLETED)
-                        + loanRepository.countByStudent_RegistrationNumberAndStatus(
+                        + loanRepository.countByReader_RegistrationNumberAndStatus(
                                 a.getRegistrationNumber(), LoanStatus.OVERDUE);
 
                 table.addCell(celula(a.getRegistrationNumber(), zebra));
@@ -238,9 +238,9 @@ public class ReportService {
             }
 
             document.add(table);
-            adicionarRodapeTotal(document, messages.resolve("report.students.footer.total", loc, alunos.size()));
+            adicionarRodapeTotal(document, messages.resolve("report.readers.footer.total", loc, leitores.size()));
         } catch (Exception ex) {
-            log.error("Erro ao gerar relatório de alunos filtrados", ex);
+            log.error("Erro ao gerar relatório de leitores filtrados", ex);
             throw new IOException(messages.resolve("report.common.error.generate", loc), ex);
         }
     }
@@ -256,16 +256,16 @@ public class ReportService {
 
             List<CourseStatisticsResponse> estatisticas = courseRepository.findStatistics();
 
-            long totalAlunos = estatisticas.stream().mapToLong(CourseStatisticsResponse::getStudentCount).sum();
+            long totalLeitores = estatisticas.stream().mapToLong(CourseStatisticsResponse::getReaderCount).sum();
             long totalEmprestimos = estatisticas.stream().mapToLong(CourseStatisticsResponse::getTotalLoans).sum();
             adicionarKpis(document,
                     new Kpi(messages.resolve("report.courses.kpi.courses", loc), String.valueOf(estatisticas.size())),
-                    new Kpi(messages.resolve("report.courses.kpi.students", loc), String.valueOf(totalAlunos)),
+                    new Kpi(messages.resolve("report.courses.kpi.readers", loc), String.valueOf(totalLeitores)),
                     new Kpi(messages.resolve("report.courses.kpi.loans", loc), String.valueOf(totalEmprestimos)));
 
             PdfPTable table = novaTabela(new float[] { 3f, 2f, 2f, 2f });
             adicionarCelulaHeader(table, messages.resolve("report.courses.col.course", loc));
-            adicionarCelulaHeader(table, messages.resolve("report.courses.col.student-count", loc));
+            adicionarCelulaHeader(table, messages.resolve("report.courses.col.reader-count", loc));
             adicionarCelulaHeader(table, messages.resolve("report.courses.col.loan-count", loc));
             adicionarCelulaHeader(table, messages.resolve("report.courses.col.avg-loans", loc));
 
@@ -273,9 +273,9 @@ public class ReportService {
             for (CourseStatisticsResponse dto : estatisticas) {
                 boolean zebra = (row++ % 2) == 1;
                 table.addCell(celula(dto.getCourseName(), zebra));
-                table.addCell(celula(String.valueOf(dto.getStudentCount()), zebra));
+                table.addCell(celula(String.valueOf(dto.getReaderCount()), zebra));
                 table.addCell(celula(String.valueOf(dto.getTotalLoans()), zebra));
-                table.addCell(celula(String.format(loc, "%.2f", dto.getAvgLoansPerStudent()), zebra));
+                table.addCell(celula(String.format(loc, "%.2f", dto.getAvgLoansPerReader()), zebra));
             }
 
             document.add(table);

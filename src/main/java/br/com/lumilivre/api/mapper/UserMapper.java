@@ -24,8 +24,8 @@ public class UserMapper {
                 .id(user.getId())
                 .email(user.getEmail())
                 .role(role)
-                .studentRegistrationNumber(
-                        user.getStudent() != null ? user.getStudent().getRegistrationNumber() : null)
+                .readerRegistrationNumber(
+                        user.getReader() != null ? user.getReader().getRegistrationNumber() : null)
                 .build();
     }
 

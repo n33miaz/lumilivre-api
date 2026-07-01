@@ -51,9 +51,9 @@ public class DueDateNotificationJob {
 
         for (Loan loan : vencendo) {
             String bookTitle = loan.getBookCopy().getBook().getTitle();
-            Locale locale = resolveStudentLocale(loan);
+            Locale locale = resolveReaderLocale(loan);
             emailService.enviarNotificacaoEmprestimo(
-                    loan.getStudent().getEmail(), subjectKey, bodyKey, bookTitle, locale);
+                    loan.getReader().getEmail(), subjectKey, bodyKey, bookTitle, locale);
         }
 
         if (!vencendo.isEmpty()) {
@@ -66,9 +66,9 @@ public class DueDateNotificationJob {
 
         for (Loan loan : overdue) {
             String bookTitle = loan.getBookCopy().getBook().getTitle();
-            Locale locale = resolveStudentLocale(loan);
+            Locale locale = resolveReaderLocale(loan);
             emailService.enviarNotificacaoEmprestimo(
-                    loan.getStudent().getEmail(),
+                    loan.getReader().getEmail(),
                     "email.loan-overdue.subject",
                     "email.loan-overdue.body",
                     bookTitle, locale);
@@ -79,9 +79,9 @@ public class DueDateNotificationJob {
         }
     }
 
-    private Locale resolveStudentLocale(Loan loan) {
+    private Locale resolveReaderLocale(Loan loan) {
         try {
-            String tag = loan.getStudent().getAppUser().getPreferredLocale();
+            String tag = loan.getReader().getAppUser().getPreferredLocale();
             return tag != null ? Locale.forLanguageTag(tag) : Locale.forLanguageTag("pt-BR");
         } catch (Exception e) {
             return Locale.forLanguageTag("pt-BR");

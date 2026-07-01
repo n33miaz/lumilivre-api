@@ -52,8 +52,8 @@ class DeweyClassificationControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "STUDENT")
-    void studentCanList() throws Exception {
+    @WithMockUser(roles = "READER")
+    void readerCanList() throws Exception {
         when(deweyClassificationService.list()).thenReturn(List.of());
 
         mockMvc.perform(get("/api/dewey-classifications"))

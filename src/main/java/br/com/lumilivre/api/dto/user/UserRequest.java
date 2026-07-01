@@ -21,6 +21,6 @@ public class UserRequest {
     @NotBlank
     private String password;
 
-    private String studentRegistrationNumber;
+    private String readerRegistrationNumber;
     private Role role;
 }

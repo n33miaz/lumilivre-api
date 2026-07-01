@@ -22,13 +22,14 @@ import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.enums.AgeRating;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
+import br.com.lumilivre.api.enums.LibraryType;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AcademicModule;
 import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.Course;
 import br.com.lumilivre.api.model.DeweyClassification;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.model.StudyShift;
 import br.com.lumilivre.api.repository.AcademicModuleRepository;
 import br.com.lumilivre.api.repository.AppUserRepository;
@@ -36,7 +37,7 @@ import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.DeweyClassificationRepository;
-import br.com.lumilivre.api.repository.StudentRepository;
+import br.com.lumilivre.api.repository.ReaderRepository;
 import br.com.lumilivre.api.repository.StudyShiftRepository;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -56,7 +57,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 class ImportServiceTest {
 
     @Mock
-    private StudentRepository studentRepository;
+    private ReaderRepository readerRepository;
 
     @Mock
     private AppUserRepository appUserRepository;
@@ -85,8 +86,11 @@ class ImportServiceTest {
     @Mock
     private MessageResolver messages;
 
+    @Mock
+    private SettingsService settingsService;
+
     @Captor
-    private ArgumentCaptor<List<Student>> studentsCaptor;
+    private ArgumentCaptor<List<Reader>> readersCaptor;
 
     @Captor
     private ArgumentCaptor<List<Book>> booksCaptor;
@@ -105,6 +109,7 @@ class ImportServiceTest {
                             : Arrays.copyOfRange(rawArgs, 2, rawArgs.length);
                     return args.length == 0 ? key : key + " " + Arrays.toString(args);
                 });
+        lenient().when(settingsService.getLibraryType()).thenReturn(LibraryType.SCHOOL);
     }
 
     @Test
@@ -204,16 +209,16 @@ class ImportServiceTest {
     }
 
     @Test
-    void importStudentsCreatesStudentUsersAndNormalizesNumbers() throws Exception {
-        when(studentRepository.findAllMatriculas()).thenReturn(Set.of());
-        when(studentRepository.findAllCpfs()).thenReturn(Set.of());
+    void importReadersCreatesReaderUsersAndNormalizesNumbers() throws Exception {
+        when(readerRepository.findAllMatriculas()).thenReturn(Set.of());
+        when(readerRepository.findAllCpfs()).thenReturn(Set.of());
         when(courseRepository.findAll()).thenReturn(List.of(new Course(1, "Computer Science", List.of())));
         when(studyShiftRepository.findAll()).thenReturn(List.of(new StudyShift(2, "Morning", List.of())));
         when(academicModuleRepository.findAll()).thenReturn(List.of(new AcademicModule(3, "Module 1", List.of())));
         when(passwordEncoder.encode("2025001")).thenReturn("encoded-registration");
-        when(studentRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(readerRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service().importar("aluno", xlsx("students", sheet -> {
+        service().importar("leitor", xlsx("readers", sheet -> {
             header(sheet, "matricula", "nome_completo", "cpf", "celular", "email", "data_nascimento",
                     "cep", "logradouro", "bairro", "localidade", "uf", "numero_casa", "complemento",
                     "curso_id", "turno_id", "modulo_id");
@@ -222,29 +227,29 @@ class ImportServiceTest {
                     "Sao Paulo", "SP", 10, "Room 1", 1, 2, 3);
         }), Locale.US);
 
-        verify(studentRepository).saveAll(studentsCaptor.capture());
-        Student student = studentsCaptor.getValue().get(0);
-        assertThat(student.getRegistrationNumber()).isEqualTo("2025001");
-        assertThat(student.getCpf()).isEqualTo("11111111111");
-        assertThat(student.getPhoneNumber()).isEqualTo("11999990000");
-        assertThat(student.getCourse().getId()).isEqualTo(1);
-        assertThat(student.getStudyShift().getId()).isEqualTo(2);
-        assertThat(student.getAcademicModule().getId()).isEqualTo(3);
-        assertThat(student.getAppUser()).isNotNull();
-        assertThat(student.getAppUser().getRole()).isEqualTo(Role.STUDENT);
-        assertThat(student.getAppUser().getPasswordHash()).isEqualTo("encoded-registration");
+        verify(readerRepository).saveAll(readersCaptor.capture());
+        Reader reader = readersCaptor.getValue().get(0);
+        assertThat(reader.getRegistrationNumber()).isEqualTo("2025001");
+        assertThat(reader.getCpf()).isEqualTo("11111111111");
+        assertThat(reader.getPhoneNumber()).isEqualTo("11999990000");
+        assertThat(reader.getCourse().getId()).isEqualTo(1);
+        assertThat(reader.getStudyShift().getId()).isEqualTo(2);
+        assertThat(reader.getAcademicModule().getId()).isEqualTo(3);
+        assertThat(reader.getAppUser()).isNotNull();
+        assertThat(reader.getAppUser().getRole()).isEqualTo(Role.READER);
+        assertThat(reader.getAppUser().getPasswordHash()).isEqualTo("encoded-registration");
         verify(appUserRepository).existsByEmail("ada@example.test");
     }
 
     @Test
-    void importStudentsReportsInvalidCourseAndDoesNotSave() throws Exception {
-        when(studentRepository.findAllMatriculas()).thenReturn(Set.of());
-        when(studentRepository.findAllCpfs()).thenReturn(Set.of());
+    void importReadersReportsInvalidCourseAndDoesNotSave() throws Exception {
+        when(readerRepository.findAllMatriculas()).thenReturn(Set.of());
+        when(readerRepository.findAllCpfs()).thenReturn(Set.of());
         when(courseRepository.findAll()).thenReturn(List.of());
         when(studyShiftRepository.findAll()).thenReturn(List.of(new StudyShift(2, "Morning", List.of())));
         when(academicModuleRepository.findAll()).thenReturn(List.of(new AcademicModule(3, "Module 1", List.of())));
 
-        String summary = service().importar("aluno", xlsx("students", sheet -> {
+        String summary = service().importar("leitor", xlsx("readers", sheet -> {
             header(sheet, "matricula", "nome_completo", "cpf", "celular", "email", "data_nascimento",
                     "cep", "logradouro", "bairro", "localidade", "uf", "numero_casa", "complemento",
                     "curso_id", "turno_id", "modulo_id");
@@ -253,13 +258,13 @@ class ImportServiceTest {
                     "Sao Paulo", "SP", 10, "Room 1", 999, 2, 3);
         }), Locale.US);
 
-        verify(studentRepository, never()).saveAll(any());
+        verify(readerRepository, never()).saveAll(any());
         assertThat(summary).contains("import.error.course.invalid");
     }
 
     private ImportService service() {
         return new ImportService(
-                studentRepository,
+                readerRepository,
                 appUserRepository,
                 courseRepository,
                 studyShiftRepository,
@@ -268,7 +273,8 @@ class ImportServiceTest {
                 bookCopyRepository,
                 deweyClassificationRepository,
                 passwordEncoder,
-                messages);
+                messages,
+                settingsService);
     }
 
     private static MockMultipartFile xlsx(String name, Consumer<Sheet> writer) throws Exception {

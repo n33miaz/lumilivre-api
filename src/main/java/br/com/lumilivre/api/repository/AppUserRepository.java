@@ -12,22 +12,22 @@ import org.springframework.data.repository.query.Param;
 
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AppUser;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 
 public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
 
     boolean existsByEmail(String email);
 
-    boolean existsByStudent(Student student);
+    boolean existsByReader(Reader reader);
 
     Optional<AppUser> findByEmail(String email);
 
     List<AppUser> findByRole(Role role);
 
-    Optional<AppUser> findByEmailOrStudent_RegistrationNumber(String email, String registrationNumber);
+    Optional<AppUser> findByEmailOrReader_RegistrationNumber(String email, String registrationNumber);
 
     default Optional<AppUser> findByEmailOrRegistrationNumber(String email, String matricula) {
-        return findByEmailOrStudent_RegistrationNumber(email, matricula);
+        return findByEmailOrReader_RegistrationNumber(email, matricula);
     }
 
     @Query("""

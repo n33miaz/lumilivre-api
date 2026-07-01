@@ -171,25 +171,25 @@ public class SecurityConfig {
 
                         // Mixed access by role
                         .requestMatchers(HttpMethod.GET,
-                                "/api/students/ranking",
-                                "/api/loans/student/**",
-                                "/api/students/{registrationNumber}",
+                                "/api/readers/ranking",
+                                "/api/loans/reader/**",
+                                "/api/readers/{registrationNumber}",
                                 "/api/books/recommendations/**")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "READER")
 
                         .requestMatchers(HttpMethod.GET, "/api/books/{id}")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "READER")
 
                         .requestMatchers(HttpMethod.PUT, "/api/loans/*/renew")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "READER")
 
-                        .requestMatchers("/api/students/**", "/api/books/**", "/api/loans/**",
+                        .requestMatchers("/api/readers/**", "/api/books/**", "/api/loans/**",
                                 "/api/book-copies/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN")
 
-                        // Student-accessible operational resources
+                        // Reader-accessible operational resources
                         .requestMatchers("/api/reservations/**", "/api/loan-requests/**")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "READER")
 
                         // Reference data reads
                         .requestMatchers(HttpMethod.GET,
@@ -200,7 +200,7 @@ public class SecurityConfig {
                                 "/api/academic-modules/**",
                                 "/api/study-shifts/**",
                                 "/api/theses/**")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "STUDENT")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "READER")
 
                         // Reference data writes
                         .requestMatchers("/api/courses/**",
@@ -215,6 +215,8 @@ public class SecurityConfig {
                                 .hasAnyRole("ADMIN", "LIBRARIAN")
 
                         // Admin only
+                        .requestMatchers(HttpMethod.GET, "/api/settings").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/settings").hasRole("ADMIN")
                         .requestMatchers("/api/imports/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
 

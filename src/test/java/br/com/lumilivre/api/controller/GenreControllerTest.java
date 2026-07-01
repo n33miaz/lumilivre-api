@@ -51,8 +51,8 @@ class GenreControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "STUDENT")
-    void studentCanList() throws Exception {
+    @WithMockUser(roles = "READER")
+    void readerCanList() throws Exception {
         when(genreService.list()).thenReturn(List.of());
 
         mockMvc.perform(get("/api/genres"))

@@ -13,35 +13,35 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import br.com.lumilivre.api.dto.student.StudentListItem;
-import br.com.lumilivre.api.dto.student.StudentRankingItem;
+import br.com.lumilivre.api.dto.reader.ReaderListItem;
+import br.com.lumilivre.api.dto.reader.ReaderRankingItem;
 import br.com.lumilivre.api.enums.PenaltyCode;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 
-public interface StudentRepository extends JpaRepository<Student, UUID> {
+public interface ReaderRepository extends JpaRepository<Reader, UUID> {
 
     boolean existsByRegistrationNumber(String registrationNumber);
 
     boolean existsByCpf(String cpf);
 
-    Optional<Student> findByRegistrationNumber(String registrationNumber);
+    Optional<Reader> findByRegistrationNumber(String registrationNumber);
 
-    Optional<Student> findByCpf(String cpf);
+    Optional<Reader> findByCpf(String cpf);
 
-    Optional<Student> findByFullNameIgnoreCase(String fullName);
+    Optional<Reader> findByFullNameIgnoreCase(String fullName);
 
     @Query("""
-            SELECT a FROM Student a
+            SELECT a FROM Reader a
             WHERE LOWER(a.fullName) LIKE LOWER(CONCAT('%', :texto, '%'))
                OR a.registrationNumber LIKE CONCAT('%', :texto, '%')
                OR LOWER(a.email) LIKE LOWER(CONCAT('%', :texto, '%'))
                OR a.phoneNumber LIKE CONCAT('%', :texto, '%')
             """)
-    Page<Student> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
+    Page<Reader> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-            SELECT a FROM Student a
-            JOIN FETCH a.course c
+            SELECT a FROM Reader a
+            LEFT JOIN FETCH a.course c
             LEFT JOIN FETCH a.studyShift
             LEFT JOIN FETCH a.academicModule
             WHERE (:penalidadeEnum IS NULL OR a.penaltyCode = :penalidadeEnum)
@@ -54,7 +54,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
               AND (:email IS NULL OR a.email ILIKE :email)
               AND (:celular IS NULL OR a.phoneNumber = :celular)
             """)
-    Page<Student> buscarAvancado(
+    Page<Reader> buscarAvancado(
             @Param("penalidadeEnum") PenaltyCode penalidadeEnum,
             @Param("matricula") String matricula,
             @Param("nomeCompleto") String nomeCompleto,
@@ -67,43 +67,44 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
             Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.student.StudentListItem(
+            SELECT new br.com.lumilivre.api.dto.reader.ReaderListItem(
                 a.penaltyCode,
                 a.registrationNumber,
                 c.name,
+                a.readerCategory,
                 a.fullName,
                 a.birthDate,
                 a.email,
                 a.phoneNumber
             )
-            FROM Student a
-            JOIN a.course c
+            FROM Reader a
+            LEFT JOIN a.course c
             """)
-    Page<StudentListItem> findStudentListItems(Pageable pageable);
+    Page<ReaderListItem> findReaderListItems(Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.student.StudentListItem(
-                a.penaltyCode, a.registrationNumber, c.name, a.fullName, a.birthDate, a.email, a.phoneNumber
+            SELECT new br.com.lumilivre.api.dto.reader.ReaderListItem(
+                a.penaltyCode, a.registrationNumber, c.name, a.readerCategory, a.fullName, a.birthDate, a.email, a.phoneNumber
             )
-            FROM Student a
-            JOIN a.course c
+            FROM Reader a
+            LEFT JOIN a.course c
             WHERE a.fullName ILIKE CONCAT('%', :texto, '%')
                OR a.registrationNumber LIKE CONCAT('%', :texto, '%')
                OR LOWER(c.name) LIKE LOWER(CONCAT('%', :texto, '%'))
                OR a.phoneNumber LIKE CONCAT('%', :texto, '%')
                OR LOWER(a.email) LIKE LOWER(CONCAT('%', :texto, '%'))
             """)
-    Page<StudentListItem> findStudentListItemsByText(@Param("texto") String texto, Pageable pageable);
+    Page<ReaderListItem> findReaderListItemsByText(@Param("texto") String texto, Pageable pageable);
 
-    @Query("SELECT a.registrationNumber FROM Student a")
+    @Query("SELECT a.registrationNumber FROM Reader a")
     Set<String> findAllMatriculas();
 
-    @Query("SELECT a.cpf FROM Student a WHERE a.cpf IS NOT NULL")
+    @Query("SELECT a.cpf FROM Reader a WHERE a.cpf IS NOT NULL")
     Set<String> findAllCpfs();
 
     @Query("""
-            SELECT a FROM Student a
-            JOIN FETCH a.course
+            SELECT a FROM Reader a
+            LEFT JOIN FETCH a.course
             LEFT JOIN FETCH a.studyShift
             LEFT JOIN FETCH a.academicModule
             WHERE (:idModulo IS NULL OR a.academicModule.id = :idModulo)
@@ -113,7 +114,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
               AND (cast(:inicio as timestamp) IS NULL OR a.createdAt >= :inicio)
               AND (cast(:fim as timestamp) IS NULL OR a.createdAt <= :fim)
             """)
-    List<Student> findForReport(
+    List<Reader> findForReport(
             @Param("idModulo") Integer idModulo,
             @Param("idCurso") Integer idCurso,
             @Param("idTurno") Integer idTurno,
@@ -122,17 +123,18 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
             @Param("fim") OffsetDateTime fim);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.student.StudentListItem(
+            SELECT new br.com.lumilivre.api.dto.reader.ReaderListItem(
                 a.penaltyCode,
                 a.registrationNumber,
                 c.name,
+                a.readerCategory,
                 a.fullName,
                 a.birthDate,
                 a.email,
                 a.phoneNumber
             )
-            FROM Student a
-            JOIN a.course c
+            FROM Reader a
+            LEFT JOIN a.course c
             LEFT JOIN a.studyShift t
             LEFT JOIN a.academicModule m
             WHERE (:penalidadeEnum IS NULL OR a.penaltyCode = :penalidadeEnum)
@@ -145,7 +147,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
               AND (:email IS NULL OR a.email ILIKE :email)
               AND (:celular IS NULL OR a.phoneNumber = :celular)
             """)
-    Page<StudentListItem> buscarAvancadoV2(
+    Page<ReaderListItem> buscarAvancadoV2(
             @Param("penalidadeEnum") PenaltyCode penalidadeEnum,
             @Param("matricula") String matricula,
             @Param("nomeCompleto") String nomeCompleto,
@@ -158,16 +160,16 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
             Pageable pageable);
 
     @Query("""
-            SELECT new br.com.lumilivre.api.dto.student.StudentRankingItem(
+            SELECT new br.com.lumilivre.api.dto.reader.ReaderRankingItem(
                 a.registrationNumber,
                 a.fullName,
                 COUNT(l)
             )
-            FROM Student a
+            FROM Reader a
             LEFT JOIN a.course c
             LEFT JOIN a.studyShift t
             LEFT JOIN a.academicModule m
-            LEFT JOIN Loan l ON l.student = a AND l.status IN (
+            LEFT JOIN Loan l ON l.reader = a AND l.status IN (
                 br.com.lumilivre.api.enums.LoanStatus.ACTIVE,
                 br.com.lumilivre.api.enums.LoanStatus.COMPLETED,
                 br.com.lumilivre.api.enums.LoanStatus.OVERDUE
@@ -178,7 +180,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
             GROUP BY a.registrationNumber, a.fullName
             ORDER BY COUNT(l) DESC
             """)
-    Page<StudentRankingItem> findRankingItems(
+    Page<ReaderRankingItem> findRankingItems(
             @Param("cursoId") Integer cursoId,
             @Param("moduloId") Integer moduloId,
             @Param("turnoId") Integer turnoId,

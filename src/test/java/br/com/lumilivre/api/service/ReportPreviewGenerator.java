@@ -31,12 +31,12 @@ import br.com.lumilivre.api.model.Course;
 import br.com.lumilivre.api.model.DeweyClassification;
 import br.com.lumilivre.api.model.Genre;
 import br.com.lumilivre.api.model.Loan;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
-import br.com.lumilivre.api.repository.StudentRepository;
+import br.com.lumilivre.api.repository.ReaderRepository;
 
 /**
  * Manual preview harness (NOT part of the CI suite — its name does not match the
@@ -51,7 +51,7 @@ class ReportPreviewGenerator {
     private static final Locale EN = Locale.forLanguageTag("en-US");
 
     private final LoanRepository loanRepository = mock(LoanRepository.class);
-    private final StudentRepository studentRepository = mock(StudentRepository.class);
+    private final ReaderRepository readerRepository = mock(ReaderRepository.class);
     private final BookRepository bookRepository = mock(BookRepository.class);
     private final CourseRepository courseRepository = mock(CourseRepository.class);
     private final BookCopyRepository bookCopyRepository = mock(BookCopyRepository.class);
@@ -66,7 +66,7 @@ class ReportPreviewGenerator {
         MessageResolver messages = new MessageResolver(source);
 
         stubData();
-        ReportService service = new ReportService(loanRepository, studentRepository, bookRepository,
+        ReportService service = new ReportService(loanRepository, readerRepository, bookRepository,
                 courseRepository, bookCopyRepository, messages);
 
         Path dir = Path.of("target", "report-previews");
@@ -78,8 +78,8 @@ class ReportPreviewGenerator {
         try (OutputStream o = Files.newOutputStream(dir.resolve("02-loans-en.pdf"))) {
             service.gerarRelatorioEmprestimosPorFiltros(o, null, null, null, null, null, null, null, EN);
         }
-        try (OutputStream o = Files.newOutputStream(dir.resolve("03-students-pt.pdf"))) {
-            service.gerarRelatorioAlunosPorFiltros(o, null, null, null, null, null, null, PT);
+        try (OutputStream o = Files.newOutputStream(dir.resolve("03-readers-pt.pdf"))) {
+            service.gerarRelatorioLeitoresPorFiltros(o, null, null, null, null, null, null, PT);
         }
         try (OutputStream o = Files.newOutputStream(dir.resolve("04-copies-pt.pdf"))) {
             service.gerarRelatorioExemplaresFiltrados(o, null, null, null, null, PT);
@@ -100,10 +100,10 @@ class ReportPreviewGenerator {
     private void stubData() {
         lenient().when(loanRepository.findForReport(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(sampleLoans());
-        lenient().when(loanRepository.countByStudent_RegistrationNumberAndStatus(anyString(), any()))
+        lenient().when(loanRepository.countByReader_RegistrationNumberAndStatus(anyString(), any()))
                 .thenReturn(2L);
-        lenient().when(studentRepository.findForReport(any(), any(), any(), any(), any(), any()))
-                .thenReturn(sampleStudents());
+        lenient().when(readerRepository.findForReport(any(), any(), any(), any(), any(), any()))
+                .thenReturn(sampleReaders());
         lenient().when(bookRepository.findForReport(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(sampleBooks());
         lenient().when(bookCopyRepository.countByBook_Id(any())).thenReturn(3L);
@@ -130,28 +130,28 @@ class ReportPreviewGenerator {
 
     private List<Loan> sampleLoans() {
         return List.of(
-                loan("3a1f", LoanStatus.ACTIVE, student("2025001", "Ada Lovelace", "Análise e Desenvolvimento de Sistemas", null),
+                loan("3a1f", LoanStatus.ACTIVE, reader("2025001", "Ada Lovelace", "Análise e Desenvolvimento de Sistemas", null),
                         copy("T-0012", "Clean Code"), 4),
-                loan("7c2e", LoanStatus.OVERDUE, student("2025002", "Alan Turing", "Análise e Desenvolvimento de Sistemas", PenaltyCode.SUSPENSION),
+                loan("7c2e", LoanStatus.OVERDUE, reader("2025002", "Alan Turing", "Análise e Desenvolvimento de Sistemas", PenaltyCode.SUSPENSION),
                         copy("T-0048", "O Senhor dos Anéis"), 20),
-                loan("9b4d", LoanStatus.COMPLETED, student("2025003", "Grace Hopper", "Letras", null),
+                loan("9b4d", LoanStatus.COMPLETED, reader("2025003", "Grace Hopper", "Letras", null),
                         copy("T-0103", "Dom Casmurro"), 9),
-                loan("1e8a", LoanStatus.ACTIVE, student("2025004", "Carlos Drummond", "Letras", null),
+                loan("1e8a", LoanStatus.ACTIVE, reader("2025004", "Carlos Drummond", "Letras", null),
                         copy("T-0210", "A Hora da Estrela"), 2),
-                loan("5d6c", LoanStatus.COMPLETED, student("2025005", "Marie Curie", "Pedagogia", PenaltyCode.WARNING),
+                loan("5d6c", LoanStatus.COMPLETED, reader("2025005", "Marie Curie", "Pedagogia", PenaltyCode.WARNING),
                         copy("T-0077", "Vidas Secas"), 14),
-                loan("2f9b", LoanStatus.OVERDUE, student("2025006", "Nikola Tesla", "Administração", null),
+                loan("2f9b", LoanStatus.OVERDUE, reader("2025006", "Nikola Tesla", "Administração", null),
                         copy("T-0301", "O Cortiço"), 31));
     }
 
-    private List<Student> sampleStudents() {
+    private List<Reader> sampleReaders() {
         return List.of(
-                student("2025001", "Ada Lovelace", "Análise e Desenvolvimento de Sistemas", null),
-                student("2025002", "Alan Turing", "Análise e Desenvolvimento de Sistemas", PenaltyCode.SUSPENSION),
-                student("2025003", "Grace Hopper", "Letras", null),
-                student("2025004", "Carlos Drummond", "Letras", PenaltyCode.WARNING),
-                student("2025005", "Marie Curie", "Pedagogia", null),
-                student("2025006", "Nikola Tesla", "Administração", PenaltyCode.BAN));
+                reader("2025001", "Ada Lovelace", "Análise e Desenvolvimento de Sistemas", null),
+                reader("2025002", "Alan Turing", "Análise e Desenvolvimento de Sistemas", PenaltyCode.SUSPENSION),
+                reader("2025003", "Grace Hopper", "Letras", null),
+                reader("2025004", "Carlos Drummond", "Letras", PenaltyCode.WARNING),
+                reader("2025005", "Marie Curie", "Pedagogia", null),
+                reader("2025006", "Nikola Tesla", "Administração", PenaltyCode.BAN));
     }
 
     private List<Book> sampleBooks() {
@@ -174,19 +174,19 @@ class ReportPreviewGenerator {
                 copyFull("T-0301", "O Cortiço", BookCopyStatus.BORROWED, "D-05", "9788508040962"));
     }
 
-    private Loan loan(String idPrefix, LoanStatus status, Student student, BookCopy copy, int daysAgo) {
+    private Loan loan(String idPrefix, LoanStatus status, Reader reader, BookCopy copy, int daysAgo) {
         return Loan.builder()
                 .id(UUID.nameUUIDFromBytes(("loan-" + idPrefix).getBytes()))
                 .status(status)
-                .student(student)
+                .reader(reader)
                 .bookCopy(copy)
                 .borrowedAt(OffsetDateTime.now().minusDays(daysAgo))
                 .dueAt(OffsetDateTime.now().minusDays(daysAgo).plusDays(14))
                 .build();
     }
 
-    private Student student(String reg, String name, String course, PenaltyCode penalty) {
-        return Student.builder()
+    private Reader reader(String reg, String name, String course, PenaltyCode penalty) {
+        return Reader.builder()
                 .registrationNumber(reg)
                 .fullName(name)
                 .course(new Course(1, course, List.of()))

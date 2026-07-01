@@ -25,7 +25,7 @@ public class GenreController {
 
     @GetMapping
     @Operation(operationId = "genres.list")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<List<GenreResponse>> list(Locale locale) {
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())

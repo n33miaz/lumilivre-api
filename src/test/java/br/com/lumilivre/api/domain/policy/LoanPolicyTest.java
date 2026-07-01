@@ -13,7 +13,7 @@ import br.com.lumilivre.api.domain.policy.LoanPolicy.LoanPolicyViolationExceptio
 class LoanPolicyTest {
 
     @Test
-    void validateNewLoanAllowsStudentWithoutActivePenaltyBelowLimit() {
+    void validateNewLoanAllowsReaderWithoutActivePenaltyBelowLimit() {
         assertThatCode(() -> LoanPolicy.validateNewLoan(LoanPolicy.MAX_ACTIVE_LOANS - 1, null))
                 .doesNotThrowAnyException();
     }
@@ -86,7 +86,7 @@ class LoanPolicyTest {
     }
 
     @Test
-    void validateRenewalRejectsQueuedReservationFromOtherStudent() {
+    void validateRenewalRejectsQueuedReservationFromOtherReader() {
         assertThatThrownBy(() -> LoanPolicy.validateRenewal(0, true, null))
                 .isInstanceOf(LoanPolicyViolationException.class)
                 .hasMessage("loan.renewal.queued-reservation");

@@ -51,7 +51,7 @@ class SchemaStructureTest {
 
         assertThat(tables).contains(
                 "course", "academic_module", "study_shift", "genre", "dewey_classification",
-                "student", "app_user",
+                "reader", "app_user",
                 "book", "book_genre", "book_copy",
                 "loan", "loan_request", "reservation",
                 "thesis", "password_reset_token",
@@ -60,7 +60,7 @@ class SchemaStructureTest {
 
         // Nao deve existir nada em portugues remanescente
         assertThat(tables).doesNotContain(
-                "aluno", "usuario", "curso", "modulo", "turno", "genero",
+                "leitor", "usuario", "curso", "modulo", "turno", "genero",
                 "livro", "exemplar", "emprestimo", "solicitacao_emprestimo",
                 "reserva", "tcc", "token_reset_senha", "cdd_classificacao"
         );
@@ -88,7 +88,7 @@ class SchemaStructureTest {
                 "WHERE table_schema = 'public' AND column_name = 'id' AND data_type = 'uuid'");
 
         assertThat(uuidTables).contains(
-                "student", "app_user", "book", "book_copy",
+                "reader", "app_user", "book", "book_copy",
                 "loan", "loan_request", "reservation", "thesis"
         );
     }
@@ -99,7 +99,7 @@ class SchemaStructureTest {
                 "SELECT indexname FROM pg_indexes WHERE schemaname = 'public'");
 
         assertThat(indexes).contains(
-                "idx_student_full_name_trgm",
+                "idx_reader_full_name_trgm",
                 "idx_book_title_trgm",
                 "idx_book_author_trgm",
                 "idx_book_fts"
@@ -112,7 +112,7 @@ class SchemaStructureTest {
                 "SELECT indexname FROM pg_indexes WHERE schemaname = 'public'");
 
         assertThat(indexes).contains(
-                "idx_loan_student_id_status_due_at",
+                "idx_loan_reader_id_status_due_at",
                 "idx_loan_book_copy_id_status",
                 "idx_loan_status_due_at",
                 "idx_reservation_book_id_status_queue_position"
@@ -125,9 +125,9 @@ class SchemaStructureTest {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(
                      "SELECT indexdef FROM pg_indexes " +
-                     "WHERE schemaname = 'public' AND indexname = 'uq_reservation_active_student_book'")) {
+                     "WHERE schemaname = 'public' AND indexname = 'uq_reservation_active_reader_book'")) {
             assertThat(rs.next())
-                    .as("uq_reservation_active_student_book must exist")
+                    .as("uq_reservation_active_reader_book must exist")
                     .isTrue();
             String def = rs.getString("indexdef");
             assertThat(def).contains("UNIQUE").contains("WHERE").containsAnyOf("WAITING", "READY");

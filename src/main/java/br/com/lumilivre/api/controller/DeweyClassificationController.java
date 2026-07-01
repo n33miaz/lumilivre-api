@@ -25,7 +25,7 @@ public class DeweyClassificationController {
 
     @GetMapping
     @Operation(operationId = "dewey-classifications.list")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<List<DeweyClassificationResponse>> list(Locale locale) {
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())

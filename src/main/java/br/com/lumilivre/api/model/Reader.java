@@ -26,13 +26,13 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-@Entity(name = "Student")
-@Table(name = "student")
+@Entity(name = "Reader")
+@Table(name = "reader")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Student {
+public class Reader {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -61,22 +61,25 @@ public class Student {
     private String email;
 
     @ManyToOne
-    @JoinColumn(name = "course_id", nullable = false)
+    @JoinColumn(name = "course_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Course course;
 
     @ManyToOne
-    @JoinColumn(name = "study_shift_id", nullable = false)
+    @JoinColumn(name = "study_shift_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private StudyShift studyShift;
 
     @ManyToOne
-    @JoinColumn(name = "academic_module_id", nullable = false)
+    @JoinColumn(name = "academic_module_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private AcademicModule academicModule;
+
+    @Column(name = "reader_category", length = 80)
+    private String readerCategory;
 
     @Column(name = "postal_code", length = 8)
     private String postalCode;
@@ -115,7 +118,7 @@ public class Student {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
-    @OneToOne(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "reader", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private AppUser appUser;

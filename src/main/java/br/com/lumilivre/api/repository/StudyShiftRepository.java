@@ -26,7 +26,7 @@ public interface StudyShiftRepository extends JpaRepository<StudyShift, Integer>
     @Query("""
             SELECT new br.com.lumilivre.api.dto.studyshift.StudyShiftSummaryResponse(t.id, t.name, COUNT(a))
             FROM StudyShift t
-            LEFT JOIN t.students a
+            LEFT JOIN t.readers a
             WHERE (:texto IS NULL OR t.name ILIKE %:texto%)
             GROUP BY t.id, t.name
             ORDER BY t.name
@@ -36,8 +36,8 @@ public interface StudyShiftRepository extends JpaRepository<StudyShift, Integer>
     @Query("""
             SELECT new br.com.lumilivre.api.dto.common.ChartItemResponse(t.name, COUNT(l))
             FROM StudyShift t
-            JOIN t.students a
-            JOIN Loan l ON l.student = a
+            JOIN t.readers a
+            JOIN Loan l ON l.reader = a
             GROUP BY t.name
             HAVING COUNT(l) > 0
             """)

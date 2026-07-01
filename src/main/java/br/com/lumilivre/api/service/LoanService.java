@@ -39,11 +39,11 @@ import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.Loan;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.repository.ReservationRepository;
-import br.com.lumilivre.api.repository.StudentRepository;
+import br.com.lumilivre.api.repository.ReaderRepository;
 import br.com.lumilivre.api.security.Auditable;
 import lombok.RequiredArgsConstructor;
 
@@ -54,14 +54,14 @@ public class LoanService {
     private static final String STATUS_ORDER_EXPR =
             "(CASE WHEN e.status = 'COMPLETED' THEN 1 ELSE 0 END)";
 
-    private final StudentRepository studentRepository;
+    private final ReaderRepository readerRepository;
     private final BookCopyRepository bookCopyRepository;
     private final LoanRepository loanRepository;
     private final ReservationRepository reservationRepository;
     private final OutboxPublisherService outboxPublisher;
     private final MessageResolver messages;
 
-    @Auditable(action = "LOAN_CREATED", targetParam = "#request.studentRegistrationNumber")
+    @Auditable(action = "LOAN_CREATED", targetParam = "#request.readerRegistrationNumber")
     @Transactional
     @CacheEvict(value = {
             DASHBOARD_STATS,
@@ -77,22 +77,22 @@ public class LoanService {
             throw BusinessRuleException.ofKey("loan.return-date.before-borrow-date");
         }
 
-        Student student = studentRepository.findByRegistrationNumber(request.getStudentRegistrationNumber())
-                .orElseThrow(() -> ResourceNotFoundException.ofKey("student.not-found"));
+        Reader reader = readerRepository.findByRegistrationNumber(request.getReaderRegistrationNumber())
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("reader.not-found"));
 
         OffsetDateTime now = OffsetDateTime.now();
-        if (student.getPenaltyExpiresAt() != null && student.getPenaltyExpiresAt().isBefore(now)) {
-            student.setPenaltyCode(null);
-            student.setPenaltyExpiresAt(null);
-            studentRepository.save(student);
+        if (reader.getPenaltyExpiresAt() != null && reader.getPenaltyExpiresAt().isBefore(now)) {
+            reader.setPenaltyCode(null);
+            reader.setPenaltyExpiresAt(null);
+            readerRepository.save(reader);
         }
 
-        long activeLoans = loanRepository.countByStudent_RegistrationNumberAndStatus(
-                student.getRegistrationNumber(), LoanStatus.ACTIVE)
-                + loanRepository.countByStudent_RegistrationNumberAndStatus(
-                        student.getRegistrationNumber(), LoanStatus.OVERDUE);
+        long activeLoans = loanRepository.countByReader_RegistrationNumberAndStatus(
+                reader.getRegistrationNumber(), LoanStatus.ACTIVE)
+                + loanRepository.countByReader_RegistrationNumberAndStatus(
+                        reader.getRegistrationNumber(), LoanStatus.OVERDUE);
 
-        LoanPolicy.validateNewLoan(activeLoans, student.getPenaltyExpiresAt());
+        LoanPolicy.validateNewLoan(activeLoans, reader.getPenaltyExpiresAt());
 
         BookCopy bookCopy = bookCopyRepository.findByCopyCode(request.getCopyCode())
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.copy.not-found"));
@@ -100,7 +100,7 @@ public class LoanService {
         BookAvailabilityPolicy.validateAvailable(bookCopy.getStatus());
 
         Loan loan = Loan.builder()
-                .student(student)
+                .reader(reader)
                 .bookCopy(bookCopy)
                 .borrowedAt(request.getBorrowedAt())
                 .dueAt(request.getDueAt())
@@ -112,7 +112,7 @@ public class LoanService {
 
         Loan saved = loanRepository.save(loan);
 
-        enviarEmailEmprestimo(student, bookCopy, request);
+        enviarEmailEmprestimo(reader, bookCopy, request);
 
         return saved;
     }
@@ -155,17 +155,17 @@ public class LoanService {
         }
 
         OffsetDateTime now = OffsetDateTime.now();
-        Student student = loan.getStudent();
+        Reader reader = loan.getReader();
 
         if (loan.getDueAt().isBefore(now)) {
             long daysLate = Duration.between(loan.getDueAt(), now).toDays();
             PenaltyCode penalty = PenaltyPolicy.calculate(daysLate);
             loan.setPenaltyCode(penalty);
 
-            if (PenaltyPolicy.isMoreSevere(penalty, student.getPenaltyCode())) {
-                student.setPenaltyCode(penalty);
-                student.setPenaltyExpiresAt(now.plusDays(7));
-                studentRepository.save(student);
+            if (PenaltyPolicy.isMoreSevere(penalty, reader.getPenaltyCode())) {
+                reader.setPenaltyCode(penalty);
+                reader.setPenaltyExpiresAt(now.plusDays(7));
+                readerRepository.save(reader);
             }
         }
 
@@ -178,7 +178,7 @@ public class LoanService {
 
         Loan saved = loanRepository.save(loan);
 
-        enviarEmailConclusao(student, bookCopy, loan);
+        enviarEmailConclusao(reader, bookCopy, loan);
 
         reservationRepository.findFirstByBook_IdAndStatusOrderByQueuePositionAsc(
                 bookCopy.getBook().getId(), ReservationStatus.WAITING)
@@ -187,9 +187,9 @@ public class LoanService {
                     next.setNotifiedAt(now);
                     next.setExpiresAt(now.plusDays(ReservationPolicy.PICKUP_DEADLINE_DAYS));
                     reservationRepository.save(next);
-                    Locale recipientLocale = localeFor(next.getStudent());
+                    Locale recipientLocale = localeFor(next.getReader());
                     outboxPublisher.publish(EventType.REQUEST_ACCEPTED,
-                            next.getStudent().getEmail(),
+                            next.getReader().getEmail(),
                             messages.resolve("email.reservation-ready.subject", recipientLocale),
                             messages.resolve("email.reservation-ready.body", recipientLocale,
                                     bookCopy.getBook().getTitle(),
@@ -238,15 +238,15 @@ public class LoanService {
             throw BusinessRuleException.ofKey("loan.renew.already-completed");
         }
 
-        Student student = loan.getStudent();
+        Reader reader = loan.getReader();
         UUID bookId = loan.getBookCopy().getBook().getId();
 
         boolean hasReservation = reservationRepository
                 .findFirstByBook_IdAndStatusOrderByQueuePositionAsc(bookId, ReservationStatus.WAITING)
-                .map(r -> !r.getStudent().getRegistrationNumber().equals(student.getRegistrationNumber()))
+                .map(r -> !r.getReader().getRegistrationNumber().equals(reader.getRegistrationNumber()))
                 .orElse(false);
 
-        LoanPolicy.validateRenewal(loan.getRenewalCount(), hasReservation, student.getPenaltyExpiresAt());
+        LoanPolicy.validateRenewal(loan.getRenewalCount(), hasReservation, reader.getPenaltyExpiresAt());
 
         loan.setDueAt(loan.getDueAt().plusDays(LoanPolicy.RENEWAL_DAYS));
         loan.setRenewalCount(loan.getRenewalCount() + 1);
@@ -254,8 +254,8 @@ public class LoanService {
 
         Loan saved = loanRepository.save(loan);
 
-        Locale recipientLocale = localeFor(student);
-        outboxPublisher.publish(EventType.REQUEST_ACCEPTED, student.getEmail(),
+        Locale recipientLocale = localeFor(reader);
+        outboxPublisher.publish(EventType.REQUEST_ACCEPTED, reader.getEmail(),
                 messages.resolve("email.loan-renewed.subject", recipientLocale),
                 messages.resolve("email.loan-renewed.body", recipientLocale,
                         loan.getBookCopy().getBook().getTitle(),
@@ -277,12 +277,12 @@ public class LoanService {
         return loanRepository.searchListItems(texto, pageableOrdenado);
     }
 
-    public List<Loan> listarEmprestimosAlunoV2(String matricula) {
-        return loanRepository.findActiveLoansForStudent(matricula);
+    public List<Loan> listarEmprestimosLeitorV2(String matricula) {
+        return loanRepository.findActiveLoansForReader(matricula);
     }
 
     public List<Loan> listarHistoricoV2(String matricula) {
-        return loanRepository.findLoanHistoryForStudent(matricula);
+        return loanRepository.findLoanHistoryForReader(matricula);
     }
 
     public Loan buscarPorId(UUID id) {
@@ -315,7 +315,7 @@ public class LoanService {
             LoanStatus statusEmprestimo,
             String tombo,
             String livroNome,
-            String alunoNomeCompleto,
+            String leitorNomeCompleto,
             String dataEmprestimo,
             String dataDevolucao,
             String dataDevolucaoInicio,
@@ -329,7 +329,7 @@ public class LoanService {
                 statusEmprestimo,
                 tombo,
                 livroNome,
-                alunoNomeCompleto,
+                leitorNomeCompleto,
                 dataEmprestimo,
                 dataDevolucao,
                 dueAtStart,
@@ -340,15 +340,15 @@ public class LoanService {
             LoanStatus statusEmprestimo,
             String tombo,
             String livroNome,
-            String alunoNomeCompleto,
+            String leitorNomeCompleto,
             String dataEmprestimo,
             String dataDevolucao,
             OffsetDateTime dataDevolucaoInicio,
             Pageable pageable) {
         String tomboFiltro = (tombo != null && !tombo.isBlank()) ? "%" + tombo + "%" : null;
         String livroNomeFiltro = (livroNome != null && !livroNome.isBlank()) ? "%" + livroNome + "%" : null;
-        String alunoNomeFiltro = (alunoNomeCompleto != null && !alunoNomeCompleto.isBlank())
-                ? "%" + alunoNomeCompleto + "%" : null;
+        String leitorNomeFiltro = (leitorNomeCompleto != null && !leitorNomeCompleto.isBlank())
+                ? "%" + leitorNomeCompleto + "%" : null;
 
         OffsetDateTime dataEmprestimoInicio = null;
         if (dataEmprestimo != null && !dataEmprestimo.isBlank()) {
@@ -368,7 +368,7 @@ public class LoanService {
                 statusString,
                 tomboFiltro,
                 livroNomeFiltro,
-                alunoNomeFiltro,
+                leitorNomeFiltro,
                 dataEmprestimoInicio,
                 null,
                 dataDevolucaoInicio,
@@ -381,35 +381,35 @@ public class LoanService {
         return loanRepository.findAll();
     }
 
-    private void enviarEmailEmprestimo(Student student, BookCopy bookCopy, LoanRequest request) {
-        Locale locale = localeFor(student);
+    private void enviarEmailEmprestimo(Reader reader, BookCopy bookCopy, LoanRequest request) {
+        Locale locale = localeFor(reader);
         String subject = messages.resolve("email.loan-created.subject", locale);
         String body = messages.resolve("email.loan-created.body", locale,
-                student.getFullName(),
+                reader.getFullName(),
                 bookCopy.getBook().getTitle(),
                 request.getBorrowedAt(),
                 request.getDueAt());
-        outboxPublisher.publish(EventType.LOAN_CREATED, student.getEmail(), subject, body, locale);
+        outboxPublisher.publish(EventType.LOAN_CREATED, reader.getEmail(), subject, body, locale);
     }
 
-    private void enviarEmailConclusao(Student student, BookCopy bookCopy, Loan loan) {
-        Locale locale = localeFor(student);
+    private void enviarEmailConclusao(Reader reader, BookCopy bookCopy, Loan loan) {
+        Locale locale = localeFor(reader);
         String penaltyStatus = loan.getPenaltyCode() != null
                 ? loan.getPenaltyCode().getStatus()
                 : messages.resolve("email.penalty.none", locale);
         String subject = messages.resolve("email.loan-completed.subject", locale);
         String body = messages.resolve("email.loan-completed.body", locale,
-                student.getFullName(),
+                reader.getFullName(),
                 bookCopy.getBook().getTitle(),
                 penaltyStatus);
-        outboxPublisher.publish(EventType.LOAN_RETURNED, student.getEmail(), subject, body, locale);
+        outboxPublisher.publish(EventType.LOAN_RETURNED, reader.getEmail(), subject, body, locale);
     }
 
-    private Locale localeFor(Student student) {
-        if (student != null && student.getAppUser() != null
-                && student.getAppUser().getPreferredLocale() != null
-                && !student.getAppUser().getPreferredLocale().isBlank()) {
-            return Locale.forLanguageTag(student.getAppUser().getPreferredLocale());
+    private Locale localeFor(Reader reader) {
+        if (reader != null && reader.getAppUser() != null
+                && reader.getAppUser().getPreferredLocale() != null
+                && !reader.getAppUser().getPreferredLocale().isBlank()) {
+            return Locale.forLanguageTag(reader.getAppUser().getPreferredLocale());
         }
         return Locale.forLanguageTag("pt-BR");
     }

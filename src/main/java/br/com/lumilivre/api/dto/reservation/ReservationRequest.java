@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class ReservationRequest {
 
     @NotBlank
-    private String studentRegistrationNumber;
+    private String readerRegistrationNumber;
 
     @NotNull
     private UUID bookId;

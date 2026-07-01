@@ -1,4 +1,4 @@
-package br.com.lumilivre.api.dto.student;
+package br.com.lumilivre.api.dto.reader;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudentResponse {
+public class ReaderResponse {
 
     private String registrationNumber;
     private String fullName;
@@ -25,6 +25,7 @@ public class StudentResponse {
     private String courseName;
     private String studyShiftName;
     private String academicModuleName;
+    private String readerCategory;
     private String postalCode;
     private String street;
     private String district;

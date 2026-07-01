@@ -51,8 +51,8 @@ class FlywayMigrationTest {
                 .isTrue();
 
         assertThat(result.migrationsExecuted)
-                .as("Must apply V1..V5 core baseline")
-                .isGreaterThanOrEqualTo(5);
+                .as("Must apply V1..V7 core baseline")
+                .isGreaterThanOrEqualTo(7);
 
         assertThat(result.warnings)
                 .as("No warnings expected on a fresh database")
@@ -89,7 +89,8 @@ class FlywayMigrationTest {
         MigrateResult result = flyway.migrate();
 
         assertThat(result.success).isTrue();
-        assertThat(countRows("student")).isEqualTo(8);
+        assertThat(countRows("reader")).isEqualTo(8);
+        assertThat(countRowsWhere("library_settings", "library_type = 'SCHOOL'")).isEqualTo(1);
         assertThat(countRows("book")).isEqualTo(30);
         assertThat(countRowsWhere("book", "cover_url IS NOT NULL")).isEqualTo(30);
         assertThat(countRows("book_copy")).isEqualTo(15);

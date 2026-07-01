@@ -18,7 +18,7 @@ import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.mapper.LoanMapper;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
-import br.com.lumilivre.api.security.StudentAuthorizationService;
+import br.com.lumilivre.api.security.ReaderAuthorizationService;
 import br.com.lumilivre.api.service.EnumLabelResolver;
 import br.com.lumilivre.api.service.LoanService;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ class LoanControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @MockBean
-    private StudentAuthorizationService studentAuthorizationService;
+    private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
     void listReturnsPtBRWithEnFieldNames() throws Exception {
@@ -66,7 +66,7 @@ class LoanControllerTest {
                 .andExpect(header().string("Content-Language", "pt-BR"))
                 .andExpect(jsonPath("$.content[0].id").value(id.toString()))
                 .andExpect(jsonPath("$.content[0].bookTitle").value("Dom Quixote"))
-                .andExpect(jsonPath("$.content[0].studentRegistrationNumber").value("12345"))
+                .andExpect(jsonPath("$.content[0].readerRegistrationNumber").value("12345"))
                 .andExpect(jsonPath("$.content[0].status.code").value("OVERDUE"))
                 .andExpect(jsonPath("$.content[0].status.label").value("Atrasado"));
     }

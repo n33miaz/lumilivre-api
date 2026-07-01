@@ -8,13 +8,13 @@ import java.lang.annotation.Target;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
- * Garante que o chamador é ADMIN, BIBLIOTECARIO ou o próprio aluno
- * dono da {matricula} presente no path variable.
+ * Garante que o chamador é ADMIN, BIBLIOTECARIO ou o próprio leitor
+ * dono da {registrationNumber} presente no path variable.
  *
- * Uso: @CanAccessStudent no método do controller que recebe {matricula}.
+ * Uso: @CanAccessReader no método do controller que recebe {registrationNumber}.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@PreAuthorize("@studentAuthz.canAccess(#matricula)")
-public @interface CanAccessStudent {
+@PreAuthorize("@readerAuthz.canAccess(#registrationNumber)")
+public @interface CanAccessReader {
 }

@@ -40,7 +40,7 @@ public class AcademicModuleController {
 
     @GetMapping
     @Operation(operationId = "academic-modules.list")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<Page<AcademicModuleSummaryResponse>> list(
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable,

@@ -46,22 +46,22 @@ class RecommendationServiceTest {
     private ArgumentCaptor<List<UUID>> readBooksCaptor;
 
     @Test
-    void recommendForStudentReturnsTopRatedWhenStudentHasNoHistory() {
+    void recommendForReaderReturnsTopRatedWhenReaderHasNoHistory() {
         List<BookCardResponse> topRated = List.of(card("Clean Code"));
-        when(loanRepository.findByStudent_RegistrationNumber(REGISTRATION_NUMBER)).thenReturn(List.of());
+        when(loanRepository.findByReader_RegistrationNumber(REGISTRATION_NUMBER)).thenReturn(List.of());
         when(bookRepository.findTopRated(PageRequest.of(0, 10))).thenReturn(topRated);
 
-        List<BookCardResponse> result = service().recommendForStudent(REGISTRATION_NUMBER);
+        List<BookCardResponse> result = service().recommendForReader(REGISTRATION_NUMBER);
 
         assertThat(result).isSameAs(topRated);
         verify(bookRepository).findTopRated(PageRequest.of(0, 10));
     }
 
     @Test
-    void recommendForStudentUsesPreferredGenresAndExcludesReadBooks() {
+    void recommendForReaderUsesPreferredGenresAndExcludesReadBooks() {
         UUID readBookId = UUID.randomUUID();
         List<BookCardResponse> recommendations = new ArrayList<>(List.of(card("Domain-Driven Design")));
-        when(loanRepository.findByStudent_RegistrationNumber(REGISTRATION_NUMBER))
+        when(loanRepository.findByReader_RegistrationNumber(REGISTRATION_NUMBER))
                 .thenReturn(List.of(loan(readBookId, "Architecture")));
         when(bookRepository.findRecomendacoesPorGenero(
                 genresCaptor.capture(),
@@ -69,7 +69,7 @@ class RecommendationServiceTest {
                 eq(PageRequest.of(0, 10))))
                 .thenReturn(recommendations);
 
-        List<BookCardResponse> result = service().recommendForStudent(REGISTRATION_NUMBER);
+        List<BookCardResponse> result = service().recommendForReader(REGISTRATION_NUMBER);
 
         assertThat(genresCaptor.getValue()).containsExactly("architecture");
         assertThat(readBooksCaptor.getValue()).containsExactly(readBookId);
@@ -80,15 +80,15 @@ class RecommendationServiceTest {
     }
 
     @Test
-    void recommendForStudentFallsBackToTopRatedWhenGenreRecommendationsAreEmpty() {
+    void recommendForReaderFallsBackToTopRatedWhenGenreRecommendationsAreEmpty() {
         List<BookCardResponse> topRated = List.of(card("Refactoring"));
-        when(loanRepository.findByStudent_RegistrationNumber(REGISTRATION_NUMBER))
+        when(loanRepository.findByReader_RegistrationNumber(REGISTRATION_NUMBER))
                 .thenReturn(List.of(loan(UUID.randomUUID(), "Software Engineering")));
         when(bookRepository.findRecomendacoesPorGenero(anyList(), anyList(), eq(PageRequest.of(0, 10))))
                 .thenReturn(List.of());
         when(bookRepository.findTopRated(PageRequest.of(0, 10))).thenReturn(topRated);
 
-        List<BookCardResponse> result = service().recommendForStudent(REGISTRATION_NUMBER);
+        List<BookCardResponse> result = service().recommendForReader(REGISTRATION_NUMBER);
 
         assertThat(result).isSameAs(topRated);
     }

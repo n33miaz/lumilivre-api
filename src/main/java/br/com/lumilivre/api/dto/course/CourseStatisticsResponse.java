@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 public class CourseStatisticsResponse {
 
     private String courseName;
-    private long studentCount;
+    private long readerCount;
     private long totalLoans;
 
-    public double getAvgLoansPerStudent() {
-        return studentCount == 0 ? 0.0 : (double) totalLoans / studentCount;
+    public double getAvgLoansPerReader() {
+        return readerCount == 0 ? 0.0 : (double) totalLoans / readerCount;
     }
 }

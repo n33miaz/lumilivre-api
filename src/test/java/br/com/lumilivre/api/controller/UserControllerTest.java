@@ -14,7 +14,7 @@ import br.com.lumilivre.api.mapper.UserMapper;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
-import br.com.lumilivre.api.security.StudentAuthorizationService;
+import br.com.lumilivre.api.security.ReaderAuthorizationService;
 import br.com.lumilivre.api.service.AppUserService;
 import br.com.lumilivre.api.service.EnumLabelResolver;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ class UserControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @MockBean
-    private StudentAuthorizationService studentAuthorizationService;
+    private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
     void listReturnsPtBRContentLanguage() throws Exception {

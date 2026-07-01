@@ -37,8 +37,8 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
                 COUNT(l)
             )
             FROM Course c
-            LEFT JOIN c.students a
-            LEFT JOIN Loan l ON l.student = a
+            LEFT JOIN c.readers a
+            LEFT JOIN Loan l ON l.reader = a
             GROUP BY c.id, c.name
             ORDER BY c.name
             """)
@@ -47,7 +47,7 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     @Query("""
             SELECT new br.com.lumilivre.api.dto.course.CourseSummaryResponse(c.id, c.name, COUNT(a))
             FROM Course c
-            LEFT JOIN c.students a
+            LEFT JOIN c.readers a
             WHERE (:texto IS NULL OR c.name ILIKE %:texto%)
             GROUP BY c.id, c.name
             ORDER BY c.name
@@ -57,8 +57,8 @@ public interface CourseRepository extends JpaRepository<Course, Integer> {
     @Query("""
             SELECT new br.com.lumilivre.api.dto.common.ChartItemResponse(c.name, COUNT(l))
             FROM Course c
-            JOIN c.students a
-            JOIN Loan l ON l.student = a
+            JOIN c.readers a
+            JOIN Loan l ON l.reader = a
             GROUP BY c.name
             HAVING COUNT(l) > 0
             """)

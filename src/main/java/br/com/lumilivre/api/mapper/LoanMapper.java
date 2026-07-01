@@ -43,10 +43,10 @@ public class LoanMapper {
                         .coverUrl(loan.getBookCopy().getBook().getCoverUrl());
             }
         }
-        if (loan.getStudent() != null) {
-            b.studentName(loan.getStudent().getFullName())
-                    .studentRegistrationNumber(loan.getStudent().getRegistrationNumber())
-                    .courseName(loan.getStudent().getCourse() != null ? loan.getStudent().getCourse().getName() : null);
+        if (loan.getReader() != null) {
+            b.readerName(loan.getReader().getFullName())
+                    .readerRegistrationNumber(loan.getReader().getRegistrationNumber())
+                    .courseName(loan.getReader().getCourse() != null ? loan.getReader().getCourse().getName() : null);
         }
         return b.build();
     }
@@ -64,8 +64,8 @@ public class LoanMapper {
                 .status(status)
                 .bookTitle(item.bookTitle())
                 .copyCode(item.copyCode())
-                .studentName(item.studentName())
-                .studentRegistrationNumber(item.studentRegistrationNumber())
+                .readerName(item.readerName())
+                .readerRegistrationNumber(item.readerRegistrationNumber())
                 .courseName(item.courseName())
                 .build();
     }
@@ -78,8 +78,8 @@ public class LoanMapper {
         return new ActiveLoanResponse(
                 item.id(),
                 item.bookTitle(),
-                item.studentName(),
-                item.studentRegistrationNumber(),
+                item.readerName(),
+                item.readerRegistrationNumber(),
                 item.copyCode(),
                 item.borrowedAt(),
                 item.dueAt(),

@@ -24,5 +24,5 @@ public class AcademicModule {
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<Student> students = new ArrayList<>();
+    private List<Reader> readers = new ArrayList<>();
 }

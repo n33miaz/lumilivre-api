@@ -13,7 +13,7 @@ import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.dto.dashboard.DashboardStatsResponse;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
-import br.com.lumilivre.api.security.StudentAuthorizationService;
+import br.com.lumilivre.api.security.ReaderAuthorizationService;
 import br.com.lumilivre.api.service.DashboardService;
 import br.com.lumilivre.api.service.EnumLabelResolver;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class DashboardControllerTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @MockBean
-    private StudentAuthorizationService studentAuthorizationService;
+    private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
     void statsReturnsPtBRContentLanguage() throws Exception {

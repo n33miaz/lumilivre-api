@@ -10,9 +10,9 @@ import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
 
-@Service("studentAuthz")
+@Service("readerAuthz")
 @RequiredArgsConstructor
-public class StudentAuthorizationService {
+public class ReaderAuthorizationService {
 
     private final LoanRepository loanRepository;
 
@@ -32,8 +32,8 @@ public class StudentAuthorizationService {
             return true;
         }
 
-        var student = details.getAppUser().getStudent();
-        return student != null && student.getRegistrationNumber().equals(matricula);
+        var reader = details.getAppUser().getReader();
+        return reader != null && reader.getRegistrationNumber().equals(matricula);
     }
 
     public boolean canAccessLoan(UUID loanId) {
@@ -52,14 +52,14 @@ public class StudentAuthorizationService {
             return true;
         }
 
-        var student = details.getAppUser().getStudent();
-        if (student == null || loanId == null) {
+        var reader = details.getAppUser().getReader();
+        if (reader == null || loanId == null) {
             return false;
         }
 
         return loanRepository.findById(loanId)
-                .map(loan -> loan.getStudent() != null
-                        && student.getRegistrationNumber().equals(loan.getStudent().getRegistrationNumber()))
+                .map(loan -> loan.getReader() != null
+                        && reader.getRegistrationNumber().equals(loan.getReader().getRegistrationNumber()))
                 .orElse(false);
     }
 }

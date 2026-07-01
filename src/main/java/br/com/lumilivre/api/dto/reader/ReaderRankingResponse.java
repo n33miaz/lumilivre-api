@@ -1,6 +1,6 @@
-package br.com.lumilivre.api.dto.student;
+package br.com.lumilivre.api.dto.reader;
 
-public record StudentRankingResponse(
+public record ReaderRankingResponse(
         String registrationNumber,
         String fullName,
         long loanCount) {}

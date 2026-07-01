@@ -60,10 +60,10 @@ public class Loan {
 
     @NotNull
     @ManyToOne
-    @JoinColumn(name = "student_id", nullable = false)
+    @JoinColumn(name = "reader_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Student student;
+    private Reader reader;
 
     @NotNull
     @ManyToOne

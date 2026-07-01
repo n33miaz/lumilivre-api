@@ -63,7 +63,7 @@ No painel, `Storage -> New bucket`:
 |---|---|---|
 | `covers` | publico | capas de livros |
 | `theses` | publico | PDFs de TCC |
-| `avatars` | **privado** | fotos de aluno (acesso via signed URL emitida pelo backend) |
+| `avatars` | **privado** | fotos de leitor (acesso via signed URL emitida pelo backend) |
 
 Em `avatars`, criar politica de acesso apenas para o `service_role` (default quando o bucket e privado).
 
@@ -76,7 +76,7 @@ Apos o PR 3 rodar, validar com a publishable key:
 ```bash
 curl -H "apikey: $LUMILIVRE_SUPABASE_KEY" \
      -H "Authorization: Bearer $LUMILIVRE_SUPABASE_KEY" \
-     "$LUMILIVRE_SUPABASE_URL/rest/v1/student?select=*"
+     "$LUMILIVRE_SUPABASE_URL/rest/v1/reader?select=*"
 ```
 
 Resposta esperada: `[]` ou erro de permissao. Nunca retornar linhas com essa chave.

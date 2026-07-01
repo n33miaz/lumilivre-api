@@ -11,7 +11,7 @@ import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_STATS;
 import static br.com.lumilivre.api.config.CacheNames.DASHBOARD_TOP_BOOKS;
 import static br.com.lumilivre.api.config.CacheNames.MOBILE_CATALOG;
 import static br.com.lumilivre.api.config.CacheNames.MOBILE_RECOMMENDATIONS;
-import static br.com.lumilivre.api.config.CacheNames.STUDENT_COUNT;
+import static br.com.lumilivre.api.config.CacheNames.READER_COUNT;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -98,7 +98,7 @@ public class CacheConfig implements CachingConfigurer {
                 DASHBOARD_OVERDUE_LIST,
                 DASHBOARD_LOAN_REQUESTS,
                 BOOK_COUNT,
-                STUDENT_COUNT,
+                READER_COUNT,
                 "cdds",
                 "generos-dto",
                 "modulos",

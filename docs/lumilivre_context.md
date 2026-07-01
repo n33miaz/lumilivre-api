@@ -6,7 +6,7 @@ LumiLivre e um ecossistema de gestao de biblioteca formado por tres projetos pri
 
 - `lumilivre-api`: backend Spring Boot, fonte de verdade das regras de negocio, persistencia, autenticacao e integracoes.
 - `lumilivre-web`: painel administrativo React para bibliotecarios e administradores.
-- `lumilivre-app`: aplicativo Flutter para alunos e convidados.
+- `lumilivre-app`: aplicativo Flutter para leitores e convidados.
 
 A API e o centro arquitetural. Web e mobile se comunicam com ela por REST/JSON usando JWT. A API persiste dados em PostgreSQL, armazena arquivos no Supabase Storage e consulta servicos externos para ISBN, CEP e emails.
 
@@ -17,7 +17,7 @@ A pasta `integracao` na raiz contem scripts e planilhas auxiliares de preparacao
 ```mermaid
 flowchart LR
     Admin[Admin ou Bibliotecario] --> Web[LumiLivre Web]
-    Aluno[Aluno] --> App[LumiLivre App]
+    Leitor[Leitor] --> App[LumiLivre App]
     Convidado[Convidado] --> App
 
     Web -->|REST JSON + JWT| API[LumiLivre API]
@@ -62,23 +62,23 @@ Patterns observados:
 - Senhas sao armazenadas com BCrypt.
 - JWT contem roles e expira conforme configuracao da API.
 - Roles de dominio: `ADMIN`, `BIBLIOTECARIO`, `ALUNO`.
-- Aluno tem senha inicial igual a matricula.
+- Leitor tem senha inicial igual a matricula.
 - Admin/bibliotecario podem ser marcados como senha inicial quando a senha equivale ao email.
 - Recuperacao de senha usa token UUID com validade de 30 minutos.
 - Alteracao de senha exige senha atual.
-- Aluno so pode alterar a propria senha quando a role e `ALUNO`.
+- Leitor so pode alterar a propria senha quando a role e `ALUNO`.
 
-### Alunos
+### Leitores
 
 - Matricula e unica.
 - CPF e unico quando informado.
 - Email deve ser unico na tabela de usuarios.
-- Curso, turno e modulo devem existir para cadastrar/atualizar aluno.
-- Cadastro de aluno com email cria usuario vinculado com role `ALUNO`.
-- Reset administrativo de senha de aluno volta a senha para a matricula.
+- Curso, turno e modulo devem existir para cadastrar/atualizar leitor.
+- Cadastro de leitor com email cria usuario vinculado com role `ALUNO`.
+- Reset administrativo de senha de leitor volta a senha para a matricula.
 - CEP com 8 digitos pode enriquecer endereco via ViaCEP.
-- Aluno possui `emprestimosCount`, usado no ranking.
-- Aluno pode ter penalidade e data de expiracao de penalidade.
+- Leitor possui `emprestimosCount`, usado no ranking.
+- Leitor pode ter penalidade e data de expiracao de penalidade.
 
 ### Livros e Catalogo
 
@@ -107,17 +107,17 @@ Patterns observados:
 
 - Data de emprestimo e data de devolucao sao obrigatorias.
 - Data de devolucao nao pode ser anterior a data de emprestimo.
-- Limite principal: 3 emprestimos ativos por aluno.
+- Limite principal: 3 emprestimos ativos por leitor.
 - No fluxo de solicitacao, o limite considera `ATIVO` + `ATRASADO`.
-- Aluno com penalidade ativa nao pode emprestar nem solicitar.
+- Leitor com penalidade ativa nao pode emprestar nem solicitar.
 - Penalidade expirada pode ser removida no fluxo de novo emprestimo.
 - Status de emprestimo: `ATIVO`, `CONCLUIDO`, `ATRASADO`.
 - Atraso tambem e inferido por `dataDevolucao < hoje` em consultas, mesmo quando o status persistido ainda esta `ATIVO`.
-- Ao cadastrar emprestimo, contador de emprestimos do aluno aumenta.
-- Ao excluir emprestimo, contador diminui quando existe aluno vinculado.
+- Ao cadastrar emprestimo, contador de emprestimos do leitor aumenta.
+- Ao excluir emprestimo, contador diminui quando existe leitor vinculado.
 - Emprestimo concluido nao pode ser alterado nem concluido novamente.
 - Conclusao atrasada calcula penalidade por dias de atraso.
-- Penalidade aplicada ao aluno dura 7 dias quando for mais grave que a atual.
+- Penalidade aplicada ao leitor dura 7 dias quando for mais grave que a atual.
 
 ### Penalidades
 
@@ -141,7 +141,7 @@ Patterns observados:
 
 ### TCCs
 
-- Titulo, alunos e curso sao obrigatorios.
+- Titulo, leitores e curso sao obrigatorios.
 - Curso informado deve existir.
 - PDF deve ser `application/pdf`.
 - Foto e PDF sao enviados para storage.
@@ -151,10 +151,10 @@ Patterns observados:
 
 - Relatorios administrativos sao gerados em PDF.
 - Importacao aceita apenas `.xlsx`.
-- Tipos aceitos: aluno, livro e exemplar.
+- Tipos aceitos: leitor, livro e exemplar.
 - Importacao trabalha em lotes de 50.
 - Planilhas validam duplicidades internas e duplicidades ja existentes.
-- Alunos importados geram usuarios com senha padrao igual a matricula.
+- Leitores importados geram usuarios com senha padrao igual a matricula.
 - Livros importados exigem CDD valido.
 - Exemplares importados atualizam a quantidade do livro.
 
@@ -195,12 +195,12 @@ sequenceDiagram
     participant Mail as SMTP
 
     App->>API: GET /livros/{id}
-    App->>API: GET /emprestimos/aluno/{matricula}
-    App->>API: GET /solicitacoes/aluno/{matricula}
-    App->>API: GET /alunos/{matricula}
+    App->>API: GET /emprestimos/leitor/{matricula}
+    App->>API: GET /solicitacoes/leitor/{matricula}
+    App->>API: GET /leitores/{matricula}
     App->>App: calcula LoanStatus
     App->>API: POST /solicitacoes/solicitar-mobile
-    API->>DB: valida aluno, penalidade, limite e exemplar disponivel
+    API->>DB: valida leitor, penalidade, limite e exemplar disponivel
     API->>DB: cria solicitacao PENDENTE
     API->>Mail: envia email de recebimento
     Web->>API: POST /solicitacoes/processar/{id}?aceitar=true
@@ -218,12 +218,12 @@ sequenceDiagram
     participant Mail as SMTP
 
     Web->>API: PUT /emprestimos/concluir/{id}
-    API->>DB: carrega emprestimo, aluno e exemplar
+    API->>DB: carrega emprestimo, leitor e exemplar
     API->>API: compara dataDevolucao com agora
     API->>API: calcula penalidade por dias de atraso
     API->>DB: marca emprestimo CONCLUIDO
     API->>DB: exemplar vira DISPONIVEL
-    API->>DB: aluno recebe penalidade por 7 dias se aplicavel
+    API->>DB: leitor recebe penalidade por 7 dias se aplicavel
     API->>Mail: envia email de conclusao
 ```
 

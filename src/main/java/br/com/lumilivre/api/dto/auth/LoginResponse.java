@@ -16,7 +16,7 @@ public class LoginResponse {
     private UUID id;
     private String email;
     private String role;
-    private String studentRegistrationNumber;
+    private String readerRegistrationNumber;
     private String token;
     private boolean initialPasswordChange;
 }

@@ -34,12 +34,12 @@ public class ReservationController {
 
     @PostMapping
     @Operation(operationId = "reservations.create")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<ReservationResponse> create(
             @Valid @RequestBody ReservationRequest request,
             Locale locale) {
         Reservation saved = reservationService.criarReserva(
-                request.getStudentRegistrationNumber(), request.getBookId());
+                request.getReaderRegistrationNumber(), request.getBookId());
         return ResponseEntity.status(201)
                 .header("Content-Language", locale.toLanguageTag())
                 .body(mapper.toResponse(saved, locale));
@@ -47,11 +47,11 @@ public class ReservationController {
 
     @DeleteMapping("/{id}/cancel")
     @Operation(operationId = "reservations.cancel")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<Void> cancel(
             @PathVariable UUID id,
-            @RequestParam String studentRegistrationNumber) {
-        reservationService.cancelarReserva(id, studentRegistrationNumber);
+            @RequestParam String readerRegistrationNumber) {
+        reservationService.cancelarReserva(id, readerRegistrationNumber);
         return ResponseEntity.noContent().build();
     }
 }

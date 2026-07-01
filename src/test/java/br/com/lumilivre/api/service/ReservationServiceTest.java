@@ -31,10 +31,10 @@ import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.Reservation;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.repository.ReservationRepository;
-import br.com.lumilivre.api.repository.StudentRepository;
+import br.com.lumilivre.api.repository.ReaderRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
@@ -46,7 +46,7 @@ class ReservationServiceTest {
     private ReservationRepository reservationRepository;
 
     @Mock
-    private StudentRepository studentRepository;
+    private ReaderRepository readerRepository;
 
     @Mock
     private BookRepository bookRepository;
@@ -88,23 +88,23 @@ class ReservationServiceTest {
 
     @Test
     void criarReservaSavesNextQueuePositionAndPublishesOutbox() {
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student("12345")));
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader("12345")));
         when(bookRepository.findById(BOOK_ID)).thenReturn(Optional.of(book()));
-        when(reservationRepository.findByStudent_RegistrationNumberOrderByCreatedAtDesc("12345")).thenReturn(List.of());
-        when(reservationRepository.existsByStudent_RegistrationNumberAndBook_IdAndStatusIn(eq("12345"), eq(BOOK_ID), any()))
+        when(reservationRepository.findByReader_RegistrationNumberOrderByCreatedAtDesc("12345")).thenReturn(List.of());
+        when(reservationRepository.existsByReader_RegistrationNumberAndBook_IdAndStatusIn(eq("12345"), eq(BOOK_ID), any()))
                 .thenReturn(false);
         when(reservationRepository.maxQueuePosition(BOOK_ID)).thenReturn(2);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Reservation reservation = service.criarReserva("12345", BOOK_ID);
 
-        assertThat(reservation.getStudent().getRegistrationNumber()).isEqualTo("12345");
+        assertThat(reservation.getReader().getRegistrationNumber()).isEqualTo("12345");
         assertThat(reservation.getBook().getId()).isEqualTo(BOOK_ID);
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.WAITING);
         assertThat(reservation.getQueuePosition()).isEqualTo(3);
         verify(outboxPublisher).publish(
                 eq(EventType.REQUEST_ACCEPTED),
-                eq("aluno@lumilivre.test"),
+                eq("leitor@lumilivre.test"),
                 eq("Reserva registrada"),
                 org.mockito.ArgumentMatchers.contains("3"),
                 any());
@@ -112,10 +112,10 @@ class ReservationServiceTest {
 
     @Test
     void criarReservaRejectsDuplicateActiveReservation() {
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student("12345")));
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader("12345")));
         when(bookRepository.findById(BOOK_ID)).thenReturn(Optional.of(book()));
-        when(reservationRepository.findByStudent_RegistrationNumberOrderByCreatedAtDesc("12345")).thenReturn(List.of());
-        when(reservationRepository.existsByStudent_RegistrationNumberAndBook_IdAndStatusIn(eq("12345"), eq(BOOK_ID), any()))
+        when(reservationRepository.findByReader_RegistrationNumberOrderByCreatedAtDesc("12345")).thenReturn(List.of());
+        when(reservationRepository.existsByReader_RegistrationNumberAndBook_IdAndStatusIn(eq("12345"), eq(BOOK_ID), any()))
                 .thenReturn(true);
 
         assertThatThrownBy(() -> service.criarReserva("12345", BOOK_ID))
@@ -127,7 +127,7 @@ class ReservationServiceTest {
     }
 
     @Test
-    void cancelarReservaRequiresOwningStudent() {
+    void cancelarReservaRequiresOwningReader() {
         Reservation reservation = reservation("12345", ReservationStatus.WAITING);
         when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.of(reservation));
 
@@ -162,7 +162,7 @@ class ReservationServiceTest {
         verify(reservationRepository).save(reservation);
         verify(outboxPublisher).publish(
                 eq(EventType.REQUEST_ACCEPTED),
-                eq("aluno@lumilivre.test"),
+                eq("leitor@lumilivre.test"),
                 org.mockito.ArgumentMatchers.contains("dispon"),
                 org.mockito.ArgumentMatchers.contains("Livro Teste"),
                 any());
@@ -187,19 +187,19 @@ class ReservationServiceTest {
     private static Reservation reservation(String registrationNumber, ReservationStatus status) {
         Reservation reservation = new Reservation();
         reservation.setId(RESERVATION_ID);
-        reservation.setStudent(student(registrationNumber));
+        reservation.setReader(reader(registrationNumber));
         reservation.setBook(book());
         reservation.setStatus(status);
         reservation.setQueuePosition(1);
         return reservation;
     }
 
-    private static Student student(String registrationNumber) {
-        Student student = new Student();
-        student.setRegistrationNumber(registrationNumber);
-        student.setFullName("Aluno Teste");
-        student.setEmail("aluno@lumilivre.test");
-        return student;
+    private static Reader reader(String registrationNumber) {
+        Reader reader = new Reader();
+        reader.setRegistrationNumber(registrationNumber);
+        reader.setFullName("Leitor Teste");
+        reader.setEmail("leitor@lumilivre.test");
+        return reader;
     }
 
     private static Book book() {

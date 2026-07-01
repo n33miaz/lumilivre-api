@@ -34,11 +34,11 @@ import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.LoanRequest;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.repository.LoanRequestRepository;
-import br.com.lumilivre.api.repository.StudentRepository;
+import br.com.lumilivre.api.repository.ReaderRepository;
 
 @ExtendWith(MockitoExtension.class)
 class LoanRequestServiceTest {
@@ -47,7 +47,7 @@ class LoanRequestServiceTest {
     private static final UUID REQUEST_ID = UUID.fromString("00000000-0000-0000-0000-000000000007");
 
     @Mock
-    private StudentRepository studentRepository;
+    private ReaderRepository readerRepository;
 
     @Mock
     private BookCopyRepository bookCopyRepository;
@@ -99,12 +99,12 @@ class LoanRequestServiceTest {
     }
 
     @Test
-    void solicitarEmprestimoReturnsBadRequestWhenStudentDoesNotExist() {
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.empty());
+    void solicitarEmprestimoReturnsBadRequestWhenReaderDoesNotExist() {
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.solicitarEmprestimo("12345", "T001"))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("student.not-found");
+                .hasMessage("reader.not-found");
 
         verify(loanRequestRepository, never()).save(any());
         verify(outboxPublisher, never()).publish(any(), any(), any(), any(), any());
@@ -112,7 +112,7 @@ class LoanRequestServiceTest {
 
     @Test
     void solicitarEmprestimoReturnsBadRequestWhenBookCopyDoesNotExist() {
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student()));
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader()));
         when(bookCopyRepository.findByCopyCode("T001")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.solicitarEmprestimo("12345", "T001"))
@@ -125,11 +125,11 @@ class LoanRequestServiceTest {
 
     @Test
     void solicitarEmprestimoCreatesPendingRequestAndPublishesOutbox() {
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student()));
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader()));
         when(bookCopyRepository.findByCopyCode("T001")).thenReturn(Optional.of(bookCopy(BookCopyStatus.AVAILABLE)));
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE))
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE))
                 .thenReturn(1L);
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE))
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE))
                 .thenReturn(0L);
 
         var result = service.solicitarEmprestimo("12345", "T001");
@@ -138,13 +138,13 @@ class LoanRequestServiceTest {
 
         ArgumentCaptor<LoanRequest> captor = ArgumentCaptor.forClass(LoanRequest.class);
         verify(loanRequestRepository).save(captor.capture());
-        assertThat(captor.getValue().getStudent().getRegistrationNumber()).isEqualTo("12345");
+        assertThat(captor.getValue().getReader().getRegistrationNumber()).isEqualTo("12345");
         assertThat(captor.getValue().getBookCopy().getCopyCode()).isEqualTo("T001");
         assertThat(captor.getValue().getStatus()).isEqualTo(LoanRequestStatus.PENDING);
 
         verify(outboxPublisher).publish(
                 eq(EventType.REQUEST_ACCEPTED),
-                eq("aluno@lumilivre.test"),
+                eq("leitor@lumilivre.test"),
                 org.mockito.ArgumentMatchers.contains("recebida"),
                 org.mockito.ArgumentMatchers.contains("Livro Teste"),
                 any());
@@ -152,12 +152,12 @@ class LoanRequestServiceTest {
 
     @Test
     void solicitarEmprestimoPorLivroUsesFirstAvailableCopyAndMarksMobileOrigin() {
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student()));
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader()));
         when(bookCopyRepository.findFirstAvailable(BOOK_ID))
                 .thenReturn(Optional.of(bookCopy(BookCopyStatus.AVAILABLE)));
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE))
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE))
                 .thenReturn(0L);
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE))
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE))
                 .thenReturn(0L);
 
         var result = service.solicitarEmprestimoPorLivro("12345", BOOK_ID);
@@ -172,11 +172,11 @@ class LoanRequestServiceTest {
 
     @Test
     void solicitarEmprestimoRejectsUnavailableBookCopy() {
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student()));
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader()));
         when(bookCopyRepository.findByCopyCode("T001")).thenReturn(Optional.of(bookCopy(BookCopyStatus.BORROWED)));
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE))
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE))
                 .thenReturn(0L);
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE))
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE))
                 .thenReturn(0L);
 
         assertThatThrownBy(() -> service.solicitarEmprestimo("12345", "T001"))
@@ -200,14 +200,14 @@ class LoanRequestServiceTest {
         ArgumentCaptor<br.com.lumilivre.api.dto.loan.LoanRequest> requestCaptor =
                 ArgumentCaptor.forClass(br.com.lumilivre.api.dto.loan.LoanRequest.class);
         verify(loanService).cadastrar(requestCaptor.capture());
-        assertThat(requestCaptor.getValue().getStudentRegistrationNumber()).isEqualTo("12345");
+        assertThat(requestCaptor.getValue().getReaderRegistrationNumber()).isEqualTo("12345");
         assertThat(requestCaptor.getValue().getCopyCode()).isEqualTo("T001");
         assertThat(requestCaptor.getValue().getDueAt()).isAfter(requestCaptor.getValue().getBorrowedAt());
 
         verify(loanRequestRepository).save(request);
         verify(outboxPublisher).publish(
                 eq(EventType.REQUEST_ACCEPTED),
-                eq("aluno@lumilivre.test"),
+                eq("leitor@lumilivre.test"),
                 org.mockito.ArgumentMatchers.contains("aceita"),
                 org.mockito.ArgumentMatchers.contains("aceita"),
                 any());
@@ -226,7 +226,7 @@ class LoanRequestServiceTest {
         verify(loanRequestRepository).save(request);
         verify(outboxPublisher).publish(
                 eq(EventType.REQUEST_REJECTED),
-                eq("aluno@lumilivre.test"),
+                eq("leitor@lumilivre.test"),
                 org.mockito.ArgumentMatchers.contains("rejeitada"),
                 org.mockito.ArgumentMatchers.contains("rejeitada"),
                 any());
@@ -262,18 +262,18 @@ class LoanRequestServiceTest {
     private static LoanRequest loanRequest(LoanRequestStatus status) {
         LoanRequest request = new LoanRequest();
         request.setId(REQUEST_ID);
-        request.setStudent(student());
+        request.setReader(reader());
         request.setBookCopy(bookCopy(BookCopyStatus.AVAILABLE));
         request.setStatus(status);
         return request;
     }
 
-    private static Student student() {
-        Student student = new Student();
-        student.setRegistrationNumber("12345");
-        student.setFullName("Aluno Teste");
-        student.setEmail("aluno@lumilivre.test");
-        return student;
+    private static Reader reader() {
+        Reader reader = new Reader();
+        reader.setRegistrationNumber("12345");
+        reader.setFullName("Leitor Teste");
+        reader.setEmail("leitor@lumilivre.test");
+        return reader;
     }
 
     private static BookCopy bookCopy(BookCopyStatus status) {

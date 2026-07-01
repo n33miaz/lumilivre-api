@@ -3,7 +3,7 @@ package br.com.lumilivre.api.enums;
 public enum Role {
     ADMIN("ADMIN"),
     LIBRARIAN("BIBLIOTECARIO"),
-    STUDENT("ALUNO");
+    READER("LEITOR");
 
     private final String ptBrCode;
 

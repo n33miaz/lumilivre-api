@@ -38,17 +38,17 @@ import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.Loan;
 import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.Reservation;
-import br.com.lumilivre.api.model.Student;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.repository.ReservationRepository;
-import br.com.lumilivre.api.repository.StudentRepository;
+import br.com.lumilivre.api.repository.ReaderRepository;
 
 @ExtendWith(MockitoExtension.class)
 class LoanServiceTest {
 
     @Mock
-    private StudentRepository studentRepository;
+    private ReaderRepository readerRepository;
 
     @Mock
     private BookCopyRepository bookCopyRepository;
@@ -81,11 +81,11 @@ class LoanServiceTest {
     }
 
     @Test
-    void cadastrarRejectsStudentAtActiveLoanLimit() {
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student()));
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE))
+    void cadastrarRejectsReaderAtActiveLoanLimit() {
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader()));
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE))
                 .thenReturn((long) LoanStatus.values().length);
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE))
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE))
                 .thenReturn(0L);
 
         assertThatThrownBy(() -> service.cadastrar(request()))
@@ -96,12 +96,12 @@ class LoanServiceTest {
     }
 
     @Test
-    void cadastrarRejectsStudentWithActivePenalty() {
-        Student student = student();
-        student.setPenaltyExpiresAt(OffsetDateTime.now().plusDays(2));
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student));
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus(any(), eq(LoanStatus.ACTIVE))).thenReturn(0L);
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus(any(), eq(LoanStatus.OVERDUE))).thenReturn(0L);
+    void cadastrarRejectsReaderWithActivePenalty() {
+        Reader reader = reader();
+        reader.setPenaltyExpiresAt(OffsetDateTime.now().plusDays(2));
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader));
+        when(loanRepository.countByReader_RegistrationNumberAndStatus(any(), eq(LoanStatus.ACTIVE))).thenReturn(0L);
+        when(loanRepository.countByReader_RegistrationNumberAndStatus(any(), eq(LoanStatus.OVERDUE))).thenReturn(0L);
 
         assertThatThrownBy(() -> service.cadastrar(request()))
                 .isInstanceOf(LoanPolicyViolationException.class);
@@ -112,9 +112,9 @@ class LoanServiceTest {
 
     @Test
     void cadastrarRejectsUnavailableBookCopy() {
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student()));
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus(any(), eq(LoanStatus.ACTIVE))).thenReturn(0L);
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus(any(), eq(LoanStatus.OVERDUE))).thenReturn(0L);
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader()));
+        when(loanRepository.countByReader_RegistrationNumberAndStatus(any(), eq(LoanStatus.ACTIVE))).thenReturn(0L);
+        when(loanRepository.countByReader_RegistrationNumberAndStatus(any(), eq(LoanStatus.OVERDUE))).thenReturn(0L);
         when(bookCopyRepository.findByCopyCode("T001")).thenReturn(Optional.of(bookCopy(BookCopyStatus.BORROWED)));
 
         assertThatThrownBy(() -> service.cadastrar(request()))
@@ -125,40 +125,40 @@ class LoanServiceTest {
 
     @Test
     void cadastrarCreatesActiveLoanMarksCopyBorrowedAndPublishesEmail() {
-        Student student = student();
+        Reader reader = reader();
         BookCopy copy = bookCopy(BookCopyStatus.AVAILABLE);
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student));
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE)).thenReturn(0L);
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE)).thenReturn(0L);
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader));
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE)).thenReturn(0L);
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE)).thenReturn(0L);
         when(bookCopyRepository.findByCopyCode("T001")).thenReturn(Optional.of(copy));
         when(loanRepository.save(any(Loan.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Loan saved = service.cadastrar(request());
 
-        assertThat(saved.getStudent()).isSameAs(student);
+        assertThat(saved.getReader()).isSameAs(reader);
         assertThat(saved.getBookCopy()).isSameAs(copy);
         assertThat(saved.getStatus()).isEqualTo(LoanStatus.ACTIVE);
         assertThat(copy.getStatus()).isEqualTo(BookCopyStatus.BORROWED);
         verify(bookCopyRepository).save(copy);
-        verify(outboxPublisher).publish(eq(EventType.LOAN_CREATED), eq("aluno@lumilivre.test"), any(), any(), any());
+        verify(outboxPublisher).publish(eq(EventType.LOAN_CREATED), eq("leitor@lumilivre.test"), any(), any(), any());
     }
 
     @Test
     void cadastrarClearsExpiredPenaltyBeforeValidatingNewLoan() {
-        Student student = student();
-        student.setPenaltyCode(PenaltyCode.WARNING);
-        student.setPenaltyExpiresAt(OffsetDateTime.now().minusDays(1));
-        when(studentRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(student));
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE)).thenReturn(0L);
-        when(loanRepository.countByStudent_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE)).thenReturn(0L);
+        Reader reader = reader();
+        reader.setPenaltyCode(PenaltyCode.WARNING);
+        reader.setPenaltyExpiresAt(OffsetDateTime.now().minusDays(1));
+        when(readerRepository.findByRegistrationNumber("12345")).thenReturn(Optional.of(reader));
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.ACTIVE)).thenReturn(0L);
+        when(loanRepository.countByReader_RegistrationNumberAndStatus("12345", LoanStatus.OVERDUE)).thenReturn(0L);
         when(bookCopyRepository.findByCopyCode("T001")).thenReturn(Optional.of(bookCopy(BookCopyStatus.AVAILABLE)));
         when(loanRepository.save(any(Loan.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.cadastrar(request());
 
-        assertThat(student.getPenaltyCode()).isNull();
-        assertThat(student.getPenaltyExpiresAt()).isNull();
-        verify(studentRepository).save(student);
+        assertThat(reader.getPenaltyCode()).isNull();
+        assertThat(reader.getPenaltyExpiresAt()).isNull();
+        verify(readerRepository).save(reader);
     }
 
     @Test
@@ -203,7 +203,7 @@ class LoanServiceTest {
         assertThat(completed.getReturnedAt()).isNotNull();
         assertThat(completed.getBookCopy().getStatus()).isEqualTo(BookCopyStatus.AVAILABLE);
         verify(bookCopyRepository).save(completed.getBookCopy());
-        verify(outboxPublisher).publish(eq(EventType.LOAN_RETURNED), eq("aluno@lumilivre.test"), any(), any(), any());
+        verify(outboxPublisher).publish(eq(EventType.LOAN_RETURNED), eq("leitor@lumilivre.test"), any(), any(), any());
     }
 
     @Test
@@ -211,7 +211,7 @@ class LoanServiceTest {
         UUID id = UUID.randomUUID();
         Loan loan = loan(LoanStatus.ACTIVE, OffsetDateTime.now().minusDays(6));
         Reservation reservation = Reservation.builder()
-                .student(student("54321", "next@lumilivre.test"))
+                .reader(reader("54321", "next@lumilivre.test"))
                 .book(loan.getBookCopy().getBook())
                 .status(ReservationStatus.WAITING)
                 .queuePosition(1)
@@ -224,12 +224,12 @@ class LoanServiceTest {
         service.concluirEmprestimo(id);
 
         assertThat(loan.getPenaltyCode()).isEqualTo(PenaltyCode.SUSPENSION);
-        assertThat(loan.getStudent().getPenaltyCode()).isEqualTo(PenaltyCode.SUSPENSION);
-        assertThat(loan.getStudent().getPenaltyExpiresAt()).isAfter(OffsetDateTime.now());
+        assertThat(loan.getReader().getPenaltyCode()).isEqualTo(PenaltyCode.SUSPENSION);
+        assertThat(loan.getReader().getPenaltyExpiresAt()).isAfter(OffsetDateTime.now());
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.READY);
         assertThat(reservation.getNotifiedAt()).isNotNull();
         assertThat(reservation.getExpiresAt()).isNotNull();
-        verify(studentRepository).save(loan.getStudent());
+        verify(readerRepository).save(loan.getReader());
         verify(reservationRepository).save(reservation);
         verify(outboxPublisher).publish(eq(EventType.REQUEST_ACCEPTED), eq("next@lumilivre.test"), any(), any(), any());
     }
@@ -264,15 +264,15 @@ class LoanServiceTest {
         assertThat(renewed.getDueAt()).isEqualTo(originalDueAt.plusDays(14));
         assertThat(renewed.getRenewalCount()).isEqualTo(2);
         assertThat(renewed.getStatus()).isEqualTo(LoanStatus.ACTIVE);
-        verify(outboxPublisher).publish(eq(EventType.REQUEST_ACCEPTED), eq("aluno@lumilivre.test"), any(), any(), any());
+        verify(outboxPublisher).publish(eq(EventType.REQUEST_ACCEPTED), eq("leitor@lumilivre.test"), any(), any(), any());
     }
 
     @Test
-    void renovarRejectsWhenAnotherStudentIsFirstInReservationQueue() {
+    void renovarRejectsWhenAnotherReaderIsFirstInReservationQueue() {
         UUID id = UUID.randomUUID();
         Loan loan = loan(LoanStatus.ACTIVE, OffsetDateTime.now().plusDays(7));
         Reservation reservation = Reservation.builder()
-                .student(student("54321", "next@lumilivre.test"))
+                .reader(reader("54321", "next@lumilivre.test"))
                 .book(loan.getBookCopy().getBook())
                 .status(ReservationStatus.WAITING)
                 .queuePosition(1)
@@ -318,30 +318,30 @@ class LoanServiceTest {
     private static LoanRequest request() {
         OffsetDateTime now = OffsetDateTime.now();
         return LoanRequest.builder()
-                .studentRegistrationNumber("12345")
+                .readerRegistrationNumber("12345")
                 .copyCode("T001")
                 .borrowedAt(now)
                 .dueAt(now.plusDays(14))
                 .build();
     }
 
-    private static Student student() {
-        return student("12345", "aluno@lumilivre.test");
+    private static Reader reader() {
+        return reader("12345", "leitor@lumilivre.test");
     }
 
-    private static Student student(String registrationNumber, String email) {
-        Student student = new Student();
-        student.setRegistrationNumber(registrationNumber);
-        student.setFullName("Aluno Teste");
-        student.setEmail(email);
+    private static Reader reader(String registrationNumber, String email) {
+        Reader reader = new Reader();
+        reader.setRegistrationNumber(registrationNumber);
+        reader.setFullName("Leitor Teste");
+        reader.setEmail(email);
         AppUser appUser = AppUser.builder()
                 .email(email)
-                .role(br.com.lumilivre.api.enums.Role.STUDENT)
+                .role(br.com.lumilivre.api.enums.Role.READER)
                 .preferredLocale("en-US")
-                .student(student)
+                .reader(reader)
                 .build();
-        student.setAppUser(appUser);
-        return student;
+        reader.setAppUser(appUser);
+        return reader;
     }
 
     private static BookCopy bookCopy(BookCopyStatus status) {
@@ -359,7 +359,7 @@ class LoanServiceTest {
     private static Loan loan(LoanStatus status, OffsetDateTime dueAt) {
         return Loan.builder()
                 .id(UUID.randomUUID())
-                .student(student())
+                .reader(reader())
                 .bookCopy(bookCopy(BookCopyStatus.BORROWED))
                 .borrowedAt(dueAt.minusDays(14))
                 .dueAt(dueAt)

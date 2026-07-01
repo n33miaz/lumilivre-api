@@ -17,5 +17,5 @@ public class UserResponse {
     private UUID id;
     private String email;
     private LocalizedEnum role;
-    private String studentRegistrationNumber;
+    private String readerRegistrationNumber;
 }

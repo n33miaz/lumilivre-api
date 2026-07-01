@@ -8,7 +8,7 @@ import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.dto.loanrequest.LoanRequestResponse;
 import br.com.lumilivre.api.mapper.LoanRequestMapper;
-import br.com.lumilivre.api.security.CanAccessStudent;
+import br.com.lumilivre.api.security.CanAccessReader;
 import br.com.lumilivre.api.service.LoanRequestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -58,13 +58,13 @@ public class LoanRequestController {
                 .body(body);
     }
 
-    @GetMapping("/student/{registrationNumber}")
-    @Operation(operationId = "loan-requests.byStudent")
-    @CanAccessStudent
-    public ResponseEntity<List<LoanRequestResponse>> listByStudent(
+    @GetMapping("/reader/{registrationNumber}")
+    @Operation(operationId = "loan-requests.byReader")
+    @CanAccessReader
+    public ResponseEntity<List<LoanRequestResponse>> listByReader(
             @PathVariable String registrationNumber,
             Locale locale) {
-        List<LoanRequestResponse> body = loanRequestService.listByStudent(registrationNumber)
+        List<LoanRequestResponse> body = loanRequestService.listByReader(registrationNumber)
                 .stream()
                 .map(request -> mapper.toResponse(request, locale))
                 .toList();
@@ -75,12 +75,12 @@ public class LoanRequestController {
 
     @PostMapping
     @Operation(operationId = "loan-requests.create")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<String> create(
-            @RequestParam String studentRegistrationNumber,
+            @RequestParam String readerRegistrationNumber,
             @RequestParam String copyCode,
             Locale locale) {
-        String messageKey = loanRequestService.solicitarEmprestimo(studentRegistrationNumber, copyCode);
+        String messageKey = loanRequestService.solicitarEmprestimo(readerRegistrationNumber, copyCode);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(messages.resolve(messageKey, locale));
@@ -88,12 +88,12 @@ public class LoanRequestController {
 
     @PostMapping("/by-book")
     @Operation(operationId = "loan-requests.createByBook")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
     public ResponseEntity<String> createByBook(
-            @RequestParam String studentRegistrationNumber,
+            @RequestParam String readerRegistrationNumber,
             @RequestParam UUID bookId,
             Locale locale) {
-        String messageKey = loanRequestService.solicitarEmprestimoPorLivro(studentRegistrationNumber, bookId);
+        String messageKey = loanRequestService.solicitarEmprestimoPorLivro(readerRegistrationNumber, bookId);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(messages.resolve(messageKey, locale));
