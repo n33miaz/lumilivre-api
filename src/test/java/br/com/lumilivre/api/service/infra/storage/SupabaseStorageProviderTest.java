@@ -19,6 +19,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 class SupabaseStorageProviderTest {
 
+    // Assinatura PNG válida (SEC-14: a validação agora é por magic bytes).
+    private static final byte[] PNG_BYTES = {
+            (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x00 };
+
     private HttpClient httpClient;
     private SupabaseStorageProvider provider;
 
@@ -41,7 +45,7 @@ class SupabaseStorageProviderTest {
 
     @Test
     void uploadReturnsPublicUrlOnSuccess() throws Exception {
-        MockMultipartFile cover = new MockMultipartFile("file", "capa.png", "image/png", "fake".getBytes());
+        MockMultipartFile cover = new MockMultipartFile("file", "capa.png", "image/png", PNG_BYTES);
         stubResponse(200, "");
 
         String url = provider.upload(cover, StorageBucket.COVERS);
@@ -54,7 +58,7 @@ class SupabaseStorageProviderTest {
     @Test
     void uploadSanitizesUnsafeFilenameCharacters() throws Exception {
         MockMultipartFile cover = new MockMultipartFile(
-                "file", "imagem com espaco & simbolos.png", "image/png", "fake".getBytes());
+                "file", "imagem com espaco & simbolos.png", "image/png", PNG_BYTES);
         stubResponse(201, "");
 
         String url = provider.upload(cover, StorageBucket.COVERS);
@@ -67,7 +71,7 @@ class SupabaseStorageProviderTest {
 
     @Test
     void uploadFailsWhenResponseStatusIsNotSuccess() throws Exception {
-        MockMultipartFile cover = new MockMultipartFile("file", "capa.png", "image/png", "fake".getBytes());
+        MockMultipartFile cover = new MockMultipartFile("file", "capa.png", "image/png", PNG_BYTES);
         stubResponse(500, "internal error");
 
         assertThatThrownBy(() -> provider.upload(cover, StorageBucket.COVERS))
@@ -104,8 +108,21 @@ class SupabaseStorageProviderTest {
     }
 
     @Test
+    void uploadRejectsSvgDisguisedAsImage() {
+        // SEC-14: SVG carrega JavaScript (stored XSS). Mesmo rotulado "image/svg+xml"
+        // (passava no startsWith("image/") antigo), os magic bytes não batem com
+        // nenhum raster permitido → deve ser recusado.
+        byte[] svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>".getBytes();
+        MockMultipartFile malicious = new MockMultipartFile("file", "logo.svg", "image/svg+xml", svg);
+
+        assertThatThrownBy(() -> provider.upload(malicious, StorageBucket.COVERS))
+                .isInstanceOf(StorageException.class)
+                .hasMessageContaining("SVG");
+    }
+
+    @Test
     void uploadWrapsIoExceptionAsStorageException() throws Exception {
-        MockMultipartFile cover = new MockMultipartFile("file", "capa.png", "image/png", "fake".getBytes());
+        MockMultipartFile cover = new MockMultipartFile("file", "capa.png", "image/png", PNG_BYTES);
         when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
                 .thenThrow(new java.io.IOException("connection reset"));
 

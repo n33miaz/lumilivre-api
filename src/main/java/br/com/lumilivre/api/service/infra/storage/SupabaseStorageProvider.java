@@ -62,7 +62,17 @@ public class SupabaseStorageProvider implements StorageProvider {
         if (file == null || file.isEmpty()) {
             throw new StorageException("The file is empty.");
         }
-        validateContentType(file, bucket);
+
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (IOException e) {
+            throw new StorageException("Could not read the uploaded file.", e);
+        }
+        // SEC-14: valida pelo conteudo real (magic bytes), NAO pelo Content-Type
+        // do cliente, e devolve um tipo seguro fixo. SVG/HTML sao rejeitados
+        // (evita stored XSS servido pela origem do storage).
+        String safeContentType = validateAndDetect(bytes, bucket);
 
         String bucketName = bucketName(bucket);
         String folderName = bucket.folder();
@@ -76,8 +86,9 @@ public class SupabaseStorageProvider implements StorageProvider {
                     .uri(URI.create(supabaseUrl + "/storage/v1/object/" + bucketName + "/" + objectPath))
                     .header("apikey", supabaseKey)
                     .header("Authorization", "Bearer " + supabaseKey)
-                    .header("Content-Type", file.getContentType())
-                    .PUT(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
+                    .header("Content-Type", safeContentType)
+                    .header("X-Content-Type-Options", "nosniff")
+                    .PUT(HttpRequest.BodyPublishers.ofByteArray(bytes))
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -94,20 +105,53 @@ public class SupabaseStorageProvider implements StorageProvider {
         }
     }
 
-    private void validateContentType(MultipartFile file, StorageBucket bucket) {
-        String contentType = file.getContentType();
+    /**
+     * SEC-14: valida o arquivo pelo seu conteudo real (magic bytes) contra uma
+     * allowlist por bucket e devolve o Content-Type seguro a ser gravado.
+     * Imagens: apenas raster (PNG/JPEG/WEBP/GIF) — SVG e explicitamente recusado
+     * pois pode carregar JavaScript (stored XSS). Documentos: apenas PDF.
+     */
+    private String validateAndDetect(byte[] bytes, StorageBucket bucket) {
+        String sniffed = sniffContentType(bytes);
         switch (bucket) {
             case COVERS, AVATARS -> {
-                if (contentType == null || !contentType.startsWith("image/")) {
-                    throw new StorageException("Only image files are allowed for covers and avatars.");
+                if (sniffed == null || !sniffed.startsWith("image/")) {
+                    throw new StorageException(
+                            "Only raster image files (PNG, JPEG, WEBP, GIF) are allowed. SVG is not accepted.");
                 }
+                return sniffed;
             }
             case THESES -> {
-                if (!"application/pdf".equalsIgnoreCase(contentType)) {
-                    throw new StorageException("Only PDF files are allowed for theses.");
+                if (!"application/pdf".equals(sniffed)) {
+                    throw new StorageException("Only PDF files are allowed for documents.");
                 }
+                return sniffed;
             }
+            default -> throw new StorageException("Unsupported storage bucket.");
         }
+    }
+
+    /** Detecta o tipo por assinatura de bytes; null se nao reconhecido/permitido. */
+    private String sniffContentType(byte[] b) {
+        if (b.length >= 8 && (b[0] & 0xFF) == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47
+                && b[4] == 0x0D && b[5] == 0x0A && b[6] == 0x1A && b[7] == 0x0A) {
+            return "image/png";
+        }
+        if (b.length >= 3 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) {
+            return "image/jpeg";
+        }
+        if (b.length >= 6 && b[0] == 0x47 && b[1] == 0x49 && b[2] == 0x46 && b[3] == 0x38
+                && (b[4] == 0x37 || b[4] == 0x39) && b[5] == 0x61) {
+            return "image/gif";
+        }
+        if (b.length >= 12 && b[0] == 0x52 && b[1] == 0x49 && b[2] == 0x46 && b[3] == 0x46
+                && b[8] == 0x57 && b[9] == 0x45 && b[10] == 0x42 && b[11] == 0x50) {
+            return "image/webp";
+        }
+        if (b.length >= 5 && b[0] == 0x25 && b[1] == 0x50 && b[2] == 0x44 && b[3] == 0x46 && b[4] == 0x2D) {
+            return "application/pdf";
+        }
+        return null;
     }
 
     private String bucketName(StorageBucket bucket) {
