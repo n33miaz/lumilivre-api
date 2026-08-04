@@ -3,8 +3,8 @@
 -- -----------------------------------------------------------------------------
 --  Toggle unico em library_settings (single-row) que controla se os leitores
 --  podem trocar a propria foto pelo app. Default TRUE preserva o comportamento
---  atual. A UI de administracao expoe o toggle; a API reforca a regra
---  no upload self-service (defesa em profundidade).
+--  atual. A UI de administracao expoe o toggle (WS-09); a API reforca a regra
+--  no upload self-service (WS-02, defesa em profundidade).
 -- =============================================================================
 
 ALTER TABLE library_settings

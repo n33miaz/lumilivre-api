@@ -136,6 +136,12 @@ aplicadas pelo Flyway na subida. Destaques do schema:
 O `ddl-auto` fica em `validate`: o schema é responsabilidade do Flyway, nunca do
 Hibernate.
 
+> Uma migration versionada já aplicada é **imutável**, inclusive nos comentários:
+> o Flyway calcula o checksum sobre o arquivo inteiro, então qualquer byte
+> alterado faz a subida falhar com *checksum mismatch* em todo banco que já a
+> rodou. Corrija sempre com uma nova migration. Só o seed `R__` pode ser editado,
+> porque migrations repetíveis são reaplicadas quando o checksum muda.
+
 ### Seed de demonstração
 
 `src/main/resources/db/seed/R__seed_demo_data.sql` popula 50 leitores, 100
