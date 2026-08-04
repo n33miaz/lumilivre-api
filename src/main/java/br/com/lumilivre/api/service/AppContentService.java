@@ -1,9 +1,12 @@
 package br.com.lumilivre.api.service;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,8 @@ import br.com.lumilivre.api.repository.StudyShiftRepository;
 import br.com.lumilivre.api.security.CustomUserDetails;
 import br.com.lumilivre.api.service.infra.storage.StorageBucket;
 import br.com.lumilivre.api.service.infra.storage.StorageProvider;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -64,13 +69,60 @@ public class AppContentService {
 
     @Transactional(readOnly = true)
     public List<AppContent> listForAdmin(String q, ContentType type) {
-        String term = (q != null && !q.isBlank()) ? q.trim() : null;
-        return contentRepository.findForAdmin(term, type);
+        String term = (q != null && !q.isBlank()) ? q.trim().toLowerCase(Locale.ROOT) : null;
+        return contentRepository.findAll(adminSpec((root, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (term != null) {
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("title")), "%" + term + "%"),
+                        cb.like(cb.lower(cb.coalesce(root.get("authors"), "")), "%" + term + "%")));
+            }
+            if (type != null) {
+                predicates.add(cb.equal(root.get("contentType"), type));
+            }
+            return predicates;
+        }));
     }
 
     @Transactional(readOnly = true)
     public List<AppContent> searchAdvanced(ContentType type, AudienceScope scope, Integer courseId, String year) {
-        return contentRepository.searchAdvanced(type, scope, courseId, parseYear(year));
+        Integer parsedYear = parseYear(year);
+        return contentRepository.findAll(adminSpec((root, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (type != null)       predicates.add(cb.equal(root.get("contentType"), type));
+            if (scope != null)      predicates.add(cb.equal(root.get("audienceScope"), scope));
+            if (courseId != null)   predicates.add(cb.equal(root.get("course").get("id"), courseId));
+            if (parsedYear != null) predicates.add(cb.equal(root.get("completionYear"), parsedYear));
+            return predicates;
+        }));
+    }
+
+    private interface AdminPredicates {
+        List<Predicate> build(jakarta.persistence.criteria.Root<AppContent> root,
+                jakarta.persistence.criteria.CriteriaBuilder cb);
+    }
+
+    /**
+     * Base das listagens do painel: exclui removidos, faz fetch das associações
+     * exibidas (evita N+1 no mapper) e ordena como o mural (pin > ordem > data).
+     */
+    private static Specification<AppContent> adminSpec(AdminPredicates extra) {
+        return (root, query, cb) -> {
+            // O count query do executor não aceita fetch — só aplica na query de dados.
+            if (query != null && AppContent.class.equals(query.getResultType())) {
+                root.fetch("course", JoinType.LEFT);
+                root.fetch("academicModule", JoinType.LEFT);
+                root.fetch("studyShift", JoinType.LEFT);
+                query.orderBy(
+                        cb.desc(root.get("pinned")),
+                        cb.asc(root.get("displayOrder")),
+                        cb.desc(root.get("createdAt")));
+            }
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.isNull(root.get("deletedAt")));
+            predicates.addAll(extra.build(root, cb));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
     }
 
     @Transactional(readOnly = true)

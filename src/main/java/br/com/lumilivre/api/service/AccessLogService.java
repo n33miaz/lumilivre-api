@@ -1,15 +1,22 @@
 package br.com.lumilivre.api.service;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.persistence.criteria.Predicate;
 
 import br.com.lumilivre.api.enums.AccessEvent;
 import br.com.lumilivre.api.model.AccessLog;
@@ -68,7 +75,34 @@ public class AccessLogService {
     @Transactional(readOnly = true)
     public Page<AccessLog> search(String event, String channel, String result, String actor, String ip,
             OffsetDateTime from, OffsetDateTime to, Pageable pageable) {
-        return accessLogRepository.search(event, channel, result, actor, ip, from, to, pageable);
+        Specification<AccessLog> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (hasText(event))   predicates.add(cb.equal(root.get("event"), event));
+            if (hasText(channel)) predicates.add(cb.equal(root.get("channel"), channel));
+            if (hasText(result))  predicates.add(cb.equal(root.get("result"), result));
+            if (hasText(actor)) {
+                predicates.add(cb.like(cb.lower(root.get("actor")),
+                        "%" + actor.toLowerCase(Locale.ROOT) + "%"));
+            }
+            if (hasText(ip))      predicates.add(cb.like(root.get("ipAddress"), "%" + ip + "%"));
+            if (from != null)     predicates.add(cb.greaterThanOrEqualTo(root.get("occurredAt"), from));
+            if (to != null)       predicates.add(cb.lessThanOrEqualTo(root.get("occurredAt"), to));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        return accessLogRepository.findAll(spec, newestFirst(pageable));
+    }
+
+    /** Sem sort explícito do cliente, a trilha é exibida do mais recente para o mais antigo. */
+    static Pageable newestFirst(Pageable pageable) {
+        if (pageable.getSort().isSorted()) {
+            return pageable;
+        }
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "occurredAt"));
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     /** Canal derivado do header explícito X-Client; fallback pelo User-Agent. */

@@ -5,51 +5,18 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import br.com.lumilivre.api.enums.AudienceScope;
-import br.com.lumilivre.api.enums.ContentType;
 import br.com.lumilivre.api.model.AppContent;
 
-public interface AppContentRepository extends JpaRepository<AppContent, UUID> {
-
-    /**
-     * Lista para o painel admin: todos os conteudos nao removidos (inclusive
-     * despublicados/agendados), com filtro textual e por tipo opcionais.
-     */
-    @Query("""
-            SELECT c FROM AppContent c
-            LEFT JOIN FETCH c.course
-            LEFT JOIN FETCH c.academicModule
-            LEFT JOIN FETCH c.studyShift
-            WHERE c.deletedAt IS NULL
-              AND (:q IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :q, '%'))
-                   OR LOWER(COALESCE(c.authors, '')) LIKE LOWER(CONCAT('%', :q, '%')))
-              AND (:type IS NULL OR c.contentType = :type)
-            ORDER BY c.pinned DESC, c.displayOrder ASC, c.createdAt DESC
-            """)
-    List<AppContent> findForAdmin(@Param("q") String q, @Param("type") ContentType type);
-
-    /**
-     * Filtro avancado do painel admin.
-     */
-    @Query("""
-            SELECT c FROM AppContent c
-            LEFT JOIN FETCH c.course
-            LEFT JOIN FETCH c.academicModule
-            LEFT JOIN FETCH c.studyShift
-            WHERE c.deletedAt IS NULL
-              AND (:type IS NULL OR c.contentType = :type)
-              AND (:scope IS NULL OR c.audienceScope = :scope)
-              AND (:courseId IS NULL OR c.course.id = :courseId)
-              AND (:year IS NULL OR c.completionYear = :year)
-            ORDER BY c.pinned DESC, c.displayOrder ASC, c.createdAt DESC
-            """)
-    List<AppContent> searchAdvanced(@Param("type") ContentType type,
-                                    @Param("scope") AudienceScope scope,
-                                    @Param("courseId") Integer courseId,
-                                    @Param("year") Integer year);
+// As listagens do painel (busca textual + filtro avançado) usam Specification
+// dinâmica montada no AppContentService: o padrão JPQL "(:p IS NULL OR ...)"
+// quebra no PostgreSQL para parâmetros nulos não-string ("could not determine
+// data type of parameter").
+public interface AppContentRepository
+        extends JpaRepository<AppContent, UUID>, JpaSpecificationExecutor<AppContent> {
 
     /**
      * Feed do leitor (mural do app): apenas publicados, dentro da janela e
