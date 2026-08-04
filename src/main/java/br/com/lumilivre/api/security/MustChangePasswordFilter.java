@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * SEC-03: enquanto o usuário tem {@code must_change_password = true}, bloqueia no
+ * Enquanto o usuário tem {@code must_change_password = true}, bloqueia no
  * servidor qualquer operação que modifique estado (POST/PUT/PATCH/DELETE) — exceto
  * a própria troca de senha — para que a flag não seja apenas um aviso ao cliente.
  *

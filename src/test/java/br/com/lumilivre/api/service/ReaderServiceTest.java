@@ -237,7 +237,7 @@ class ReaderServiceTest {
         assertThat(result.getCpf()).isEqualTo("22222222222");
         assertThat(result.getEmail()).isEqualTo("new@example.test");
         assertThat(result.getAppUser().getEmail()).isEqualTo("new@example.test");
-        // SEC-03: editar o CPF não pode mais resetar a senha para um valor previsível.
+        // Editar o CPF não pode mais resetar a senha para um valor previsível.
         assertThat(result.getAppUser().getPasswordHash()).isEqualTo("old-hash");
         verify(passwordEncoder, never()).encode(any());
         verify(postalCodeRouter, never()).lookup(any(), any());

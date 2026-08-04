@@ -2,7 +2,7 @@
 --  V12 - flags de onboarding em app_user (primeira senha + tour)
 -- -----------------------------------------------------------------------------
 --  Substitui a inferência frágil de "primeira senha" (comparação de string) por
---  uma flag persistida, e registra a conclusão do tour guiado. Ver WS-10 / SEC-03.
+--  uma flag persistida, e registra a conclusão do tour guiado.
 -- =============================================================================
 
 ALTER TABLE app_user

@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
 /**
- * SEC-05: trava por CONTA (complementa o rate limit por IP do
+ * Trava por CONTA (complementa o rate limit por IP do
  * {@link AuthRateLimitFilter}). Depois de {@value #MAX_ATTEMPTS} falhas de login
  * na janela, a conta fica bloqueada por {@link #LOCK}, derrotando brute force
  * distribuído (muitos IPs contra um mesmo usuário) que o limite por IP não pega.

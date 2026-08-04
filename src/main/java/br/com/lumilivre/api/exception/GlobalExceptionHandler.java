@@ -97,7 +97,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(LockedException.class)
     public ResponseEntity<ErrorResponse> handleLocked(
             LockedException ex, Locale locale, WebRequest request) {
-        // SEC-05: conta temporariamente bloqueada por excesso de tentativas.
+        // Conta temporariamente bloqueada por excesso de tentativas.
         ErrorResponse body = ErrorResponse.builder()
                 .status(HttpStatus.TOO_MANY_REQUESTS.value())
                 .error(messages.resolve("error.too-many-attempts.title", locale))

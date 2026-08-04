@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
  * and {@link #sendHtml} handles SMTP delivery. This keeps the visual identity
  * (logo + brand colors + footer) consistent and customizable in one place, makes
  * the HTML unit-testable, and lets tooling preview the exact production markup.
- * Copy is fully internationalized (ADR-009): the effective {@link Locale} drives
+ * Copy is fully internationalized: the effective {@link Locale} drives
  * both the body and the shell.
  */
 @Service

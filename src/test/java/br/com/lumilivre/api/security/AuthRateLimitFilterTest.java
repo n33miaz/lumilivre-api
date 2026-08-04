@@ -12,7 +12,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 /**
- * SEC-02/SEC-04: o filtro deve throttlar os endpoints REAIS de auth
+ * O filtro deve throttlar os endpoints REAIS de auth
  * (/api/auth/**) por IP resolvido pelo proxy — e NÃO deve confiar em
  * X-Forwarded-For do cliente (falsificável).
  */
@@ -43,7 +43,7 @@ class AuthRateLimitFilterTest {
     @Test
     void forwardedForHeaderIsIgnoredForRateLimiting() throws Exception {
         // Mesmo IP resolvido pelo proxy (remoteAddr) com X-Forwarded-For variável
-        // NÃO deve burlar o limite: o filtro ignora o header do cliente (SEC-04).
+        // NÃO deve burlar o limite: o filtro ignora o header do cliente.
         AuthRateLimitFilter filter = new AuthRateLimitFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
 

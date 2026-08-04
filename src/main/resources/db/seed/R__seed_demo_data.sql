@@ -6,7 +6,7 @@
 --  ambiente local/dev.
 --
 --  Cobre todos os status de cada entidade para exercitar a UI completa.
---  Base explicita (nomeada) + expansao WS-06 (generate_series deterministico):
+--  Base explicita (nomeada) + expansao gerada (generate_series deterministico):
 --    - reader      (50): penalidades variadas (11), com/sem foto, todos os cursos
 --    - app_user     (4): admin, librarian, studant (1a senha+tour), librarian2 (1a senha)
 --    - book        (100): 92 com capa / 8 sem (fallback), todos os generos
@@ -124,7 +124,7 @@ ON CONFLICT (registration_number) DO UPDATE SET
 -- novos ainda nao tem conta (cria-se via fluxo normal). Mantemos so as
 -- credenciais demo abaixo para nao explodir esse seed com hashes BCrypt.
 -- ----------------------------------------------------------------------------
--- Flags de onboarding (WS-10): studant demonstra 1ª senha (must_change) + tour pendente;
+-- Flags de onboarding: studant demonstra 1ª senha (must_change) + tour pendente;
 -- librarian tem tour pendente; admin já concluiu o tour.
 INSERT INTO app_user (id, email, password_hash, role, reader_id, preferred_locale,
                       must_change_password, guided_tour_completed)
@@ -416,7 +416,7 @@ VALUES
     ('studant',     'READER',   'demo-reader-2401','READER_VIEW',   'DENIED',  'Tentativa de acessar outro leitor',now() - INTERVAL '30 minutes');
 
 -- ----------------------------------------------------------------------------
--- Access log (12) - trilha de acessos (WS-07): LOGIN / LOGIN_FAILED / ACCESS_DENIED,
+-- Access log (12) - trilha de acessos: LOGIN / LOGIN_FAILED / ACCESS_DENIED,
 -- canais WEB/APP, IPs e user-agents variados. Idempotente via marcador correlation_id.
 -- ----------------------------------------------------------------------------
 DELETE FROM access_log WHERE correlation_id = 'demo-seed';
@@ -449,7 +449,7 @@ VALUES
         'Solicitação demo aceita; notificação enviada.',     'SENT', 0, now() - INTERVAL '2 hours');
 
 -- ============================================================================
--- VOLUME EXPANSION (WS-06)
+-- VOLUME EXPANSION
 -- Dados gerados deterministicamente (generate_series, sem random()) para dar
 -- evidencia visual a todas as features: paginacao real, dashboard populado
 -- (mv_loans_by_month com ~12 meses), penalidades, filas de reserva, etc.
@@ -597,7 +597,7 @@ ON CONFLICT (copy_code) DO UPDATE SET
 
 -- Loans gerados (5011..5060) -----------------------------------------------------------
 -- 5011-5030 ACTIVE (vencimentos 1..13 dias); 5031-5035 OVERDUE; 5036-5060 COMPLETED
--- espalhados em ~12 meses (alimenta mv_loans_by_month -> WS-04).
+-- espalhados em ~12 meses (alimenta mv_loans_by_month).
 INSERT INTO loan (id, borrowed_at, due_at, returned_at, status, reader_id, book_copy_id, renewal_count, penalty_code)
 SELECT
     ('00000000-0000-4000-8000-00000000' || lpad((5000 + g.i)::text, 4, '0'))::uuid,

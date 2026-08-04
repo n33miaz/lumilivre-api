@@ -27,7 +27,7 @@ public class SettingsService {
         return getOrCreateSettings().getLibraryType();
     }
 
-    /** Permissão global de troca de foto pelo app (WS-02). Default TRUE. */
+    /** Permissão global de troca de foto pelo app. Default TRUE. */
     @Transactional(readOnly = true)
     public boolean isReaderCanEditAvatar() {
         return Boolean.TRUE.equals(getOrCreateSettings().getReaderCanEditAvatar());

@@ -174,7 +174,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs", "/docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
-                        // Métricas/infos operacionais só para ADMIN (SEC-18)
+                        // Métricas/infos operacionais só para ADMIN
                         .requestMatchers("/actuator/prometheus", "/actuator/info").hasRole("ADMIN")
 
                         // Public catalogue reads
@@ -184,7 +184,7 @@ public class SecurityConfig {
                                 "/api/books/genres/**")
                                 .permitAll()
 
-                        // App version check (WS-08): app consulta antes de logar
+                        // App version check: app consulta antes de logar
                         .requestMatchers(HttpMethod.GET, "/api/app-version").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/app-version").hasRole("ADMIN")
 
@@ -242,10 +242,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/settings").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/settings").hasRole("ADMIN")
                         .requestMatchers("/api/imports/**").hasRole("ADMIN")
-                        // Self-service do próprio usuário (ex.: concluir tour) — WS-10
+                        // Self-service do próprio usuário (ex.: concluir tour)
                         .requestMatchers("/api/users/me/**").authenticated()
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
-                        // Auditoria & acessos (WS-07) — leitura só ADMIN
+                        // Auditoria & acessos — leitura só ADMIN
                         .requestMatchers("/api/access-logs/**", "/api/audit-logs/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated();
@@ -257,7 +257,7 @@ public class SecurityConfig {
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                // SEC-03: após o JWT autenticar, bloqueia writes até a troca de senha obrigatória.
+                // Após o JWT autenticar, bloqueia writes até a troca de senha obrigatória.
                 .addFilterAfter(mustChangePasswordFilter, JwtAuthenticationFilter.class);
 
         return http.build();
@@ -279,7 +279,7 @@ public class SecurityConfig {
         return Locale.forLanguageTag("pt-BR");
     }
 
-    /** Registra a tentativa de acesso negado (403) na trilha de acessos (WS-07). */
+    /** Registra a tentativa de acesso negado (403) na trilha de acessos. */
     private void logAccessDenied(String message) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String actor = "anonymous";

@@ -8,7 +8,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * Resolve o IP real do cliente (requisito do dono, WS-07).
+ * Resolve o IP real do cliente (requisito do dono).
  *
  * <p>A API roda atrás de um reverse proxy (Render). Com
  * {@code server.forward-headers-strategy=framework} habilitado no
@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * <p>Deliberadamente <b>não</b> parseamos {@code X-Forwarded-For} manualmente a
  * partir do request do cliente: o primeiro hop é falsificável e chavear baldes
  * de rate-limit por valor controlado pelo atacante habilita spoofing + DoS de
- * memória (SEC-04). Confiamos apenas no IP resolvido pelo proxy.
+ * memória. Confiamos apenas no IP resolvido pelo proxy.
  */
 @Component
 public class ClientIpResolver {

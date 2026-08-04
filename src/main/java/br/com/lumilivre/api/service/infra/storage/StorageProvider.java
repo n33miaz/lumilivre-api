@@ -12,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
  * </ul>
  *
  * Seleção via property {@code lumilivre.storage.provider} (supabase | local).
- * ADR-011 registra a decisão.
  */
 public interface StorageProvider {
 

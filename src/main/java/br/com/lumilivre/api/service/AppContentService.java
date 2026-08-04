@@ -131,7 +131,7 @@ public class AppContentService {
                 .filter(c -> c.getDeletedAt() == null)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("content.not-found"));
 
-        // NEW-01: um READER só pode ler conteúdo que passaria no feed (publicado,
+        // Um READER só pode ler conteúdo que passaria no feed (publicado,
         // dentro da janela e com audiência compatível). ADMIN/LIBRARIAN veem tudo.
         // Caso contrário devolve 404 (não revela rascunhos/agendados/segmentados).
         if (isReaderOnly()) {
@@ -276,7 +276,7 @@ public class AppContentService {
                 && details.getAppUser().getRole() == Role.READER;
     }
 
-    /** Mesma regra do feed, aplicada a um único conteúdo (NEW-01). */
+    /** Mesma regra do feed, aplicada a um único conteúdo. */
     private boolean isVisibleToReader(AppContent c, Integer readerCourseId,
             Integer readerModuleId, Integer readerShiftId) {
         if (!Boolean.TRUE.equals(c.getPublished())) {

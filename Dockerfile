@@ -1,5 +1,5 @@
 # =============================================================================
-#  LumiLivre API — multi-stage Docker build (EX-01)
+#  LumiLivre API — multi-stage Docker build
 # -----------------------------------------------------------------------------
 #  Build:  docker build -t lumilivre-api:dev .
 #  Run:    docker run -p 8080:8080 \

@@ -71,7 +71,7 @@ public class AppUserService {
 
         appUser.setPasswordHash(passwordEncoder.encode(rawPassword));
         appUser.setRole(appUser.getRole() != null ? appUser.getRole() : Role.LIBRARIAN);
-        // Novo usuário criado por admin deve trocar a senha no 1º acesso (WS-10/SEC-03).
+        // Novo usuário criado por admin deve trocar a senha no 1º acesso.
         appUser.setMustChangePassword(true);
 
         if (appUser.getRole() == Role.READER) {
@@ -115,7 +115,7 @@ public class AppUserService {
 
         if (rawPassword != null && !rawPassword.isBlank()) {
             appUser.setPasswordHash(passwordEncoder.encode(rawPassword));
-            // Senha redefinida pelo admin é conhecida por ele → força troca (SEC-03).
+            // Senha redefinida pelo admin é conhecida por ele → força troca.
             appUser.setMustChangePassword(true);
         }
 
@@ -153,12 +153,12 @@ public class AppUserService {
         }
 
         appUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        // Troca concluída → limpa a flag de primeira senha (WS-10).
+        // Troca concluída → limpa a flag de primeira senha.
         appUser.setMustChangePassword(false);
         appUserRepository.save(appUser);
     }
 
-    /** WS-10: marca o tour guiado como concluído para o usuário autenticado. Idempotente. */
+    /** Marca o tour guiado como concluído para o usuário autenticado. Idempotente. */
     @Transactional
     public void completeTour() {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

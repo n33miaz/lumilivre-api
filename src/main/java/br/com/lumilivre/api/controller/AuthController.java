@@ -49,7 +49,7 @@ public class AuthController {
                     .body(body);
         } catch (AuthenticationException e) {
             // Registra a tentativa (credenciais inválidas OU conta bloqueada) para
-            // detecção de brute force (SEC-05). Usuário inexistente também cai aqui.
+            // detecção de brute force. Usuário inexistente também cai aqui.
             String reason = (e instanceof org.springframework.security.authentication.LockedException)
                     ? "account-locked" : "invalid-credentials";
             accessLogService.record(AccessEvent.LOGIN_FAILED, req.getUsername(), "ANONYMOUS",

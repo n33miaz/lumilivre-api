@@ -5,7 +5,7 @@ import java.util.Optional;
 /**
  * Strategy de busca de metadados externos por ISBN/título/autor. Implementações
  * registradas como Spring beans são compostas pela {@link BookMetadataChain} —
- * a ordem é controlada por {@code lumilivre.book-metadata.providers} (ADR-012).
+ * a ordem é controlada por {@code lumilivre.book-metadata.providers}.
  *
  * <p>Implementadores devem:
  * <ul>

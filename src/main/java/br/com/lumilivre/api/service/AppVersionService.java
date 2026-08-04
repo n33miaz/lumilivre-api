@@ -29,7 +29,7 @@ public class AppVersionService {
         String normalized = normalize(platform);
         AppVersion version = repository.findById(normalized)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("app-version.not-found"));
-        // NEW-02: o GET é público (o app consulta antes do login). Só expõe
+        // O GET é público (o app consulta antes do login). Só expõe
         // updatedBy/updatedAt a chamadores autenticados (painel admin) — para o
         // app anônimo esses campos vêm nulos e não vazam o username do admin.
         return toResponse(version, isAuthenticatedStaff());

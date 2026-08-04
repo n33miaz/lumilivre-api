@@ -3,7 +3,7 @@
 -- -----------------------------------------------------------------------------
 --  Uma linha por plataforma. O app, na inicialização, compara sua versão de
 --  runtime com `min_supported_*` e bloqueia se estiver abaixo (ou se
---  `force_update` = TRUE). O admin edita via web (WS-08/WS-09).
+--  `force_update` = TRUE). O admin edita via web.
 -- =============================================================================
 
 CREATE TABLE app_version (

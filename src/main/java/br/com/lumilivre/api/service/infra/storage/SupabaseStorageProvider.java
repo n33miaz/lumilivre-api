@@ -69,7 +69,7 @@ public class SupabaseStorageProvider implements StorageProvider {
         } catch (IOException e) {
             throw new StorageException("Could not read the uploaded file.", e);
         }
-        // SEC-14: valida pelo conteudo real (magic bytes), NAO pelo Content-Type
+        // Valida pelo conteudo real (magic bytes), NAO pelo Content-Type
         // do cliente, e devolve um tipo seguro fixo. SVG/HTML sao rejeitados
         // (evita stored XSS servido pela origem do storage).
         String safeContentType = validateAndDetect(bytes, bucket);
@@ -106,7 +106,7 @@ public class SupabaseStorageProvider implements StorageProvider {
     }
 
     /**
-     * SEC-14: valida o arquivo pelo seu conteudo real (magic bytes) contra uma
+     * Valida o arquivo pelo seu conteudo real (magic bytes) contra uma
      * allowlist por bucket e devolve o Content-Type seguro a ser gravado.
      * Imagens: apenas raster (PNG/JPEG/WEBP/GIF) — SVG e explicitamente recusado
      * pois pode carregar JavaScript (stored XSS). Documentos: apenas PDF.

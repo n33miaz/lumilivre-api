@@ -19,7 +19,7 @@ import br.com.lumilivre.api.config.MessageResolver;
  * and assets come from {@link EmailBrandingProperties}, making the header
  * customizable per deployment; user-facing copy is resolved per {@link Locale}
  * via {@link MessageResolver}, so the shell honors the same i18n contract as the
- * email body (ADR-009).
+ * email body.
  */
 @Component
 public class EmailTemplate {

@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * Generates the branded, internationalized PDF reports. Every report shares a
  * consistent visual system: a brand header band (logo + wordmark + tagline),
  * a summary row of KPI tiles, color-coded status badges (enum labels resolved
- * per {@link Locale} — ADR-009), zebra-striped tables, and a per-page footer
+ * per {@link Locale}), zebra-striped tables, and a per-page footer
  * (brand · timestamp · confidential · page number).
  */
 @Service

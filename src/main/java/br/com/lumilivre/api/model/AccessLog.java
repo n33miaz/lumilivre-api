@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Trilha de acessos ao sistema (login/logout/falha/negado). Append-only,
- * PK BIGINT IDENTITY como as demais tabelas de infraestrutura (ADR-001). Ver V10.
+ * PK BIGINT IDENTITY como as demais tabelas de infraestrutura. Ver V10.
  */
 @Entity
 @Table(name = "access_log")

@@ -28,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    // SEC-12: hash BCrypt fixo e válido usado só para gastar o mesmo tempo de um
+    // Hash BCrypt fixo e válido usado só para gastar o mesmo tempo de um
     // matches() real quando o usuário NÃO existe — iguala o timing e derrota a
     // enumeração de contas por tempo de resposta. (Não é credencial de ninguém.)
     private static final String DUMMY_HASH =
@@ -58,14 +58,14 @@ public class AuthService {
     }
 
     private AuthenticatedLogin authenticate(String username, String password) {
-        // SEC-05: trava por conta antes de qualquer verificação de senha.
+        // Trava por conta antes de qualquer verificação de senha.
         if (loginAttemptService.isBlocked(username)) {
             throw new LockedException("auth.login.error.too-many-attempts");
         }
 
         Optional<AppUser> found = appUserRepository.findByEmailOrRegistrationNumber(username, username);
         if (found.isEmpty()) {
-            // SEC-12: roda um matches() dummy para gastar o mesmo tempo de um
+            // Roda um matches() dummy para gastar o mesmo tempo de um
             // login real (evita enumeração por timing). Resultado ignorado.
             passwordEncoder.matches(password, DUMMY_HASH);
             loginAttemptService.recordFailure(username);
@@ -81,7 +81,7 @@ public class AuthService {
 
         loginAttemptService.recordSuccess(username);
 
-        // WS-10/SEC-03: a "primeira senha" agora vem de uma flag persistida, não de
+        // A "primeira senha" agora vem de uma flag persistida, não de
         // comparação de string (que quebrava se a nova senha coincidisse com a matrícula).
         boolean isInitialPassword = Boolean.TRUE.equals(appUser.getMustChangePassword());
 

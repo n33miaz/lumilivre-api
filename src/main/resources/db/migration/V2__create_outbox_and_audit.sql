@@ -2,7 +2,7 @@
 --  V2__create_outbox_and_audit.sql
 -- -----------------------------------------------------------------------------
 --  Outbox de eventos (SMTP assincrono) e trilha de auditoria.
---  Tabelas append-only de infraestrutura -> PK BIGINT IDENTITY (ADR-001).
+--  Tabelas append-only de infraestrutura -> PK BIGINT IDENTITY.
 -- =============================================================================
 
 CREATE TABLE outbox_event (

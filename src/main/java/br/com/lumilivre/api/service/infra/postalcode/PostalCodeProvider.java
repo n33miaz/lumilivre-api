@@ -5,8 +5,8 @@ import java.util.Set;
 
 /**
  * Strategy de consulta de código postal. Cada provider declara os países que
- * suporta e implementa o lookup com sua API externa. ADR-014 registra a
- * decisão de roteamento.
+ * suporta e implementa o lookup com sua API externa. O roteador escolhe o
+ * primeiro provider que declara suportar o país consultado.
  */
 public interface PostalCodeProvider {
 

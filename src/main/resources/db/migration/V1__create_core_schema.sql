@@ -297,7 +297,7 @@ CREATE TABLE password_reset_token (
 );
 
 -- ----------------------------------------------------------------------------
--- 8. RLS deny-by-default (ADR-005)
+-- 8. RLS deny-by-default
 --    Backend conecta como owner/postgres e bypassa; Data API fica bloqueada.
 -- ----------------------------------------------------------------------------
 ALTER TABLE course                 ENABLE ROW LEVEL SECURITY; ALTER TABLE course                 FORCE ROW LEVEL SECURITY;

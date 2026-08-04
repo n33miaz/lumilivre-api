@@ -20,7 +20,7 @@ public interface AppContentRepository
 
     /**
      * Feed do leitor (mural do app): apenas publicados, dentro da janela e
-     * direcionados ao publico do leitor. Ver WS-01 / regra do feed.
+     * direcionados ao publico do leitor. Ver a regra do feed.
      */
     @Query("""
             SELECT c FROM AppContent c

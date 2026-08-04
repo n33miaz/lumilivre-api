@@ -101,7 +101,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> service.login("ninguemm", "senha"))
                 .isInstanceOf(BadCredentialsException.class);
 
-        // SEC-12: um matches() dummy roda mesmo sem usuário (timing constante)
+        // Um matches() dummy roda mesmo sem usuário (timing constante)
         verify(passwordEncoder).matches(eq("senha"), any());
         verify(loginAttemptService).recordFailure("ninguemm");
         verify(jwtUtil, never()).generateToken(any());

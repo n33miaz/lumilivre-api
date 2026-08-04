@@ -169,7 +169,7 @@ public class ReaderService {
         mapearDtoParaEntidade(reader, request, relatedEntities);
         preencherEnderecoPorCep(reader, request.getPostalCode());
 
-        // SEC-03: NÃO resetar a senha ao editar o CPF (era um vetor de senha previsível).
+        // NÃO resetar a senha ao editar o CPF (era um vetor de senha previsível).
 
         if (reader.getAppUser() != null && !reader.getEmail().equals(reader.getAppUser().getEmail())) {
             reader.getAppUser().setEmail(reader.getEmail());
@@ -200,14 +200,14 @@ public class ReaderService {
         }
 
         reader.getAppUser().setPasswordHash(passwordEncoder.encode(reader.getRegistrationNumber()));
-        // Reset volta para a matrícula → força troca no próximo login (WS-10/SEC-03).
+        // Reset volta para a matrícula → força troca no próximo login.
         reader.getAppUser().setMustChangePassword(true);
         appUserRepository.save(reader.getAppUser());
     }
 
     @Transactional
     public void uploadFoto(String matricula, MultipartFile file) {
-        // Defesa em profundidade (WS-02): quando a permissão global está desligada,
+        // Defesa em profundidade: quando a permissão global está desligada,
         // um LEITOR não pode trocar a própria foto pelo app; ADMIN/BIBLIOTECARIO sempre podem.
         if (isSelfServiceReader() && !settingsService.isReaderCanEditAvatar()) {
             throw new AccessDeniedException("reader.avatar.edit-not-allowed");
@@ -305,7 +305,7 @@ public class ReaderService {
         appUser.setPasswordHash(passwordEncoder.encode(reader.getRegistrationNumber()));
         appUser.setRole(Role.READER);
         appUser.setReader(reader);
-        // Senha inicial = matrícula (previsível) → força troca no primeiro acesso (WS-10/SEC-03).
+        // Senha inicial = matrícula (previsível) → força troca no primeiro acesso.
         appUser.setMustChangePassword(true);
         return appUser;
     }
