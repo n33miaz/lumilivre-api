@@ -51,8 +51,8 @@ class FlywayMigrationTest {
                 .isTrue();
 
         assertThat(result.migrationsExecuted)
-                .as("Must apply V1..V7 core baseline")
-                .isGreaterThanOrEqualTo(7);
+                .as("Must apply V1..V8 core baseline")
+                .isGreaterThanOrEqualTo(8);
 
         assertThat(result.warnings)
                 .as("No warnings expected on a fresh database")
@@ -89,37 +89,40 @@ class FlywayMigrationTest {
         MigrateResult result = flyway.migrate();
 
         assertThat(result.success).isTrue();
-        assertThat(countRows("reader")).isEqualTo(8);
+        assertThat(countRows("reader")).isEqualTo(50);
+        assertThat(countRowsWhere("reader", "penalty_code IS NOT NULL")).isEqualTo(11);
         assertThat(countRowsWhere("library_settings", "library_type = 'SCHOOL'")).isEqualTo(1);
-        assertThat(countRows("book")).isEqualTo(30);
-        assertThat(countRowsWhere("book", "cover_url IS NOT NULL")).isEqualTo(30);
-        assertThat(countRows("book_copy")).isEqualTo(15);
-        assertThat(countRowsWhere("book_copy", "status = 'AVAILABLE'")).isEqualTo(8);
-        assertThat(countRowsWhere("book_copy", "status = 'BORROWED'")).isEqualTo(5);
-        assertThat(countRowsWhere("book_copy", "status = 'MAINTENANCE'")).isEqualTo(1);
-        assertThat(countRowsWhere("book_copy", "status = 'UNAVAILABLE'")).isEqualTo(1);
-        assertThat(countRows("loan")).isEqualTo(10);
-        assertThat(countRowsWhere("loan", "status = 'ACTIVE'")).isEqualTo(4);
-        assertThat(countRowsWhere("loan", "status = 'OVERDUE'")).isEqualTo(1);
-        assertThat(countRowsWhere("loan", "status = 'COMPLETED'")).isEqualTo(5);
-        assertThat(countRows("loan_request")).isEqualTo(6);
-        assertThat(countRowsWhere("loan_request", "status = 'PENDING'")).isEqualTo(2);
-        assertThat(countRowsWhere("loan_request", "status = 'ACCEPTED'")).isEqualTo(2);
-        assertThat(countRowsWhere("loan_request", "status = 'REJECTED'")).isEqualTo(1);
-        assertThat(countRowsWhere("loan_request", "status = 'CANCELLED'")).isEqualTo(1);
-        assertThat(countRows("reservation")).isEqualTo(5);
-        assertThat(countRowsWhere("reservation", "status = 'WAITING'")).isEqualTo(2);
-        assertThat(countRowsWhere("reservation", "status = 'READY'")).isEqualTo(1);
-        assertThat(countRowsWhere("reservation", "status = 'FULFILLED'")).isEqualTo(1);
-        assertThat(countRowsWhere("reservation", "status = 'EXPIRED'")).isEqualTo(1);
-        assertThat(countRows("thesis")).isEqualTo(3);
-        assertThat(countRowsWhere("thesis", "pdf_url IS NOT NULL")).isEqualTo(3);
-        assertThat(countRows("audit_log")).isEqualTo(3);
-        assertThat(countRowsWhere("outbox_event", "status = 'SENT'")).isEqualTo(2);
+        assertThat(countRows("book")).isEqualTo(100);
+        assertThat(countRowsWhere("book", "cover_url IS NOT NULL")).isEqualTo(92);
+        assertThat(countRows("book_copy")).isEqualTo(150);
+        assertThat(countRowsWhere("book_copy", "status = 'AVAILABLE'")).isEqualTo(98);
+        assertThat(countRowsWhere("book_copy", "status = 'BORROWED'")).isEqualTo(30);
+        assertThat(countRowsWhere("book_copy", "status = 'MAINTENANCE'")).isEqualTo(11);
+        assertThat(countRowsWhere("book_copy", "status = 'UNAVAILABLE'")).isEqualTo(11);
+        assertThat(countRows("loan")).isEqualTo(60);
+        assertThat(countRowsWhere("loan", "status = 'ACTIVE'")).isEqualTo(24);
+        assertThat(countRowsWhere("loan", "status = 'OVERDUE'")).isEqualTo(6);
+        assertThat(countRowsWhere("loan", "status = 'COMPLETED'")).isEqualTo(30);
+        assertThat(countRows("loan_request")).isEqualTo(15);
+        assertThat(countRowsWhere("loan_request", "status = 'PENDING'")).isEqualTo(4);
+        assertThat(countRowsWhere("loan_request", "status = 'ACCEPTED'")).isEqualTo(4);
+        assertThat(countRowsWhere("loan_request", "status = 'REJECTED'")).isEqualTo(3);
+        assertThat(countRowsWhere("loan_request", "status = 'CANCELLED'")).isEqualTo(4);
+        assertThat(countRows("reservation")).isEqualTo(15);
+        assertThat(countRowsWhere("reservation", "status = 'WAITING'")).isEqualTo(5);
+        assertThat(countRowsWhere("reservation", "status = 'READY'")).isEqualTo(3);
+        assertThat(countRowsWhere("reservation", "status = 'FULFILLED'")).isEqualTo(4);
+        assertThat(countRowsWhere("reservation", "status = 'EXPIRED'")).isEqualTo(2);
+        assertThat(countRows("app_content")).isEqualTo(14);
+        assertThat(countRowsWhere("app_content", "content_type = 'WORK'")).isEqualTo(4);
+        assertThat(countRowsWhere("app_content", "is_published = TRUE")).isEqualTo(13);
+        assertThat(countRows("access_log")).isEqualTo(50);
+        assertThat(countRows("audit_log")).isEqualTo(15);
+        assertThat(countRowsWhere("outbox_event", "status = 'SENT'")).isEqualTo(3);
 
-        assertThat(metric("active_loans")).isEqualTo(4);
-        assertThat(metric("overdue_loans")).isEqualTo(1);
-        assertThat(metric("pending_requests")).isEqualTo(2);
+        assertThat(metric("active_loans")).isEqualTo(24);
+        assertThat(metric("overdue_loans")).isEqualTo(6);
+        assertThat(metric("pending_requests")).isEqualTo(4);
         assertThat(metric("avg_return_days")).isGreaterThan(0);
     }
 
