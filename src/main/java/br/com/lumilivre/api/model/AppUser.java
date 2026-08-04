@@ -59,6 +59,14 @@ public class AppUser {
     @Builder.Default
     private String preferredLocale = "pt-BR";
 
+    @Column(name = "must_change_password", nullable = false)
+    @Builder.Default
+    private Boolean mustChangePassword = false;
+
+    @Column(name = "guided_tour_completed", nullable = false)
+    @Builder.Default
+    private Boolean guidedTourCompleted = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -73,6 +81,8 @@ public class AppUser {
         OffsetDateTime now = OffsetDateTime.now();
         if (createdAt == null) createdAt = now;
         if (updatedAt == null) updatedAt = now;
+        if (mustChangePassword == null) mustChangePassword = false;
+        if (guidedTourCompleted == null) guidedTourCompleted = false;
     }
 
     @PreUpdate

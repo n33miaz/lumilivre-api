@@ -100,4 +100,12 @@ public class UserController {
         userService.excluir(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/me/complete-tour")
+    @Operation(operationId = "users.completeTour")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> completeTour() {
+        userService.completeTour();
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -19,4 +19,5 @@ public class LoginResponse {
     private String readerRegistrationNumber;
     private String token;
     private boolean initialPasswordChange;
+    private boolean guidedTourCompleted;
 }

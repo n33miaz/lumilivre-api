@@ -44,6 +44,7 @@ public class AuthService {
                                 : null)
                 .token(login.token())
                 .initialPasswordChange(login.initialPassword())
+                .guidedTourCompleted(Boolean.TRUE.equals(login.appUser().getGuidedTourCompleted()))
                 .build();
     }
 
@@ -55,15 +56,9 @@ public class AuthService {
             throw new BadCredentialsException("auth.login.error.invalid-credentials");
         }
 
-        boolean isInitialPassword = false;
-        if (appUser.getReader() != null) {
-            String matricula = appUser.getReader().getRegistrationNumber();
-            if (password.equals(matricula)) {
-                isInitialPassword = true;
-            }
-        } else if (password.equals(appUser.getEmail())) {
-            isInitialPassword = true;
-        }
+        // WS-10/SEC-03: a "primeira senha" agora vem de uma flag persistida, não de
+        // comparação de string (que quebrava se a nova senha coincidisse com a matrícula).
+        boolean isInitialPassword = Boolean.TRUE.equals(appUser.getMustChangePassword());
 
         List<SimpleGrantedAuthority> authorities = List.of(
                 new SimpleGrantedAuthority("ROLE_" + appUser.getRole().name()));
@@ -108,6 +103,8 @@ public class AuthService {
 
         AppUser appUser = passwordResetToken.getAppUser();
         appUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        // Senha escolhida pelo próprio usuário: a troca obrigatória deixa de valer.
+        appUser.setMustChangePassword(false);
         appUserRepository.save(appUser);
 
         passwordResetTokenRepository.delete(passwordResetToken);

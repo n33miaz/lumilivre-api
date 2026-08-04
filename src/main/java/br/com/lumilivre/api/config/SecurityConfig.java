@@ -28,6 +28,7 @@ import br.com.lumilivre.api.security.AuthRateLimitFilter;
 import br.com.lumilivre.api.security.CorrelationIdFilter;
 import br.com.lumilivre.api.security.CustomUserDetails;
 import br.com.lumilivre.api.security.JwtAuthenticationFilter;
+import br.com.lumilivre.api.security.MustChangePasswordFilter;
 import br.com.lumilivre.api.service.AccessLogService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,6 +47,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthRateLimitFilter authRateLimitFilter;
     private final CorrelationIdFilter correlationIdFilter;
+    private final MustChangePasswordFilter mustChangePasswordFilter;
     private final ObjectMapper objectMapper;
     private final MessageResolver messageResolver;
     private final AccessLogService accessLogService;
@@ -59,12 +61,14 @@ public class SecurityConfig {
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           AuthRateLimitFilter authRateLimitFilter,
                           CorrelationIdFilter correlationIdFilter,
+                          MustChangePasswordFilter mustChangePasswordFilter,
                           ObjectMapper objectMapper,
                           MessageResolver messageResolver,
                           AccessLogService accessLogService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.authRateLimitFilter = authRateLimitFilter;
         this.correlationIdFilter = correlationIdFilter;
+        this.mustChangePasswordFilter = mustChangePasswordFilter;
         this.objectMapper = objectMapper;
         this.messageResolver = messageResolver;
         this.accessLogService = accessLogService;
@@ -238,6 +242,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/settings").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/settings").hasRole("ADMIN")
                         .requestMatchers("/api/imports/**").hasRole("ADMIN")
+                        // Self-service do próprio usuário (ex.: concluir tour) — WS-10
+                        .requestMatchers("/api/users/me/**").authenticated()
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
                         // Auditoria & acessos (WS-07) — leitura só ADMIN
                         .requestMatchers("/api/access-logs/**", "/api/audit-logs/**").hasRole("ADMIN")
@@ -250,7 +256,9 @@ public class SecurityConfig {
 
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // SEC-03: após o JWT autenticar, bloqueia writes até a troca de senha obrigatória.
+                .addFilterAfter(mustChangePasswordFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

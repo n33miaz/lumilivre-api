@@ -73,11 +73,12 @@ class AuthServiceTest {
     }
 
     @Test
-    void loginDeveMarcarSenhaInicialQuandoLeitorUsaMatricula() {
+    void loginDeveMarcarSenhaInicialQuandoFlagAtiva() {
         Reader leitor = new Reader();
         leitor.setRegistrationNumber("12345");
 
         AppUser usuario = usuario(Role.READER, leitor);
+        usuario.setMustChangePassword(true);
         when(usuarioRepository.findByEmailOrRegistrationNumber("12345", "12345")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("12345", "hash")).thenReturn(true);
         when(jwtUtil.generateToken(any(UserDetails.class))).thenReturn("jwt-token");

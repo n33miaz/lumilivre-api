@@ -206,6 +206,8 @@ public class ReaderService {
         }
 
         reader.getAppUser().setPasswordHash(passwordEncoder.encode(reader.getRegistrationNumber()));
+        // Reset volta para a matrícula → força troca no próximo login (WS-10/SEC-03).
+        reader.getAppUser().setMustChangePassword(true);
         appUserRepository.save(reader.getAppUser());
     }
 
@@ -309,6 +311,8 @@ public class ReaderService {
         appUser.setPasswordHash(passwordEncoder.encode(reader.getRegistrationNumber()));
         appUser.setRole(Role.READER);
         appUser.setReader(reader);
+        // Senha inicial = matrícula (previsível) → força troca no primeiro acesso (WS-10/SEC-03).
+        appUser.setMustChangePassword(true);
         return appUser;
     }
 
