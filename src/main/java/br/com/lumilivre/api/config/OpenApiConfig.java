@@ -28,6 +28,13 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class OpenApiConfig {
 
+    /**
+     * Os componentes compartilhados (headers, parametros e respostas de erro) sao
+     * unicos para todos os grupos, entao nao passam pelos customizers por locale.
+     * Resolvem no idioma primario da documentacao.
+     */
+    private static final Locale DEFAULT_DOC_LOCALE = Locale.forLanguageTag("pt-BR");
+
     private final MessageSource messageSource;
 
     @Bean
@@ -75,13 +82,20 @@ public class OpenApiConfig {
 
     private Info buildInfo() {
         return new Info()
-                .title(messageSource.getMessage("swagger.api.title", null, "LumiLivre API", Locale.forLanguageTag("pt-BR")))
-                .version(messageSource.getMessage("swagger.api.version", null, "1.0.0", Locale.forLanguageTag("pt-BR")))
-                .description(messageSource.getMessage("swagger.api.description", null, "", Locale.forLanguageTag("pt-BR")))
+                .title(msg("swagger.api.title", "LumiLivre API"))
+                .version(msg("swagger.api.version", "1.0.0"))
+                .description(msg("swagger.api.description", ""))
                 .contact(new Contact()
                         .name("LumiLivre")
                         .email("ncormino@gmail.com"))
-                .license(new License().name("MIT").url("https://opensource.org/licenses/MIT"));
+                .license(new License()
+                        .name("Proprietary - All rights reserved")
+                        .url("https://github.com/n33miaz/lumilivre-api/blob/main/LICENSE"));
+    }
+
+    /** Resolve uma chave do bundle de swagger; sem isso a chave crua vaza para o spec. */
+    private String msg(String key, String fallback) {
+        return messageSource.getMessage(key, null, fallback, DEFAULT_DOC_LOCALE);
     }
 
     private List<Server> buildServers() {
@@ -109,21 +123,24 @@ public class OpenApiConfig {
                 .addResponses("RateLimited", response("swagger.response.common.429.description"))
                 .addResponses("ServerError", response("swagger.response.common.500.description"))
                 .addHeaders("Content-Language", new Header()
-                        .description("swagger.header.content-language.description")
+                        .description(msg("swagger.header.content-language.description",
+                                "Idioma efetivo da resposta (BCP-47)."))
                         .schema(new StringSchema().example("pt-BR")))
                 .addHeaders("X-Correlation-Id", new Header()
-                        .description("swagger.header.x-correlation-id.description")
+                        .description(msg("swagger.header.x-correlation-id.description",
+                                "Identificador de correlacao propagado nos logs."))
                         .schema(new StringSchema().example("a1b2c3d4-e5f6-7890")))
                 .addParameters("AcceptLanguage", new HeaderParameter()
                         .name("Accept-Language")
                         .required(false)
-                        .description("swagger.parameter.common.locale.description")
+                        .description(msg("swagger.parameter.common.locale.description",
+                                "Idioma desejado para a resposta."))
                         .schema(new StringSchema()._enum(List.of("pt-BR", "en-US")).example("pt-BR")));
     }
 
     private ApiResponse response(String descriptionKey) {
         return new ApiResponse()
-                .description(descriptionKey)
+                .description(msg(descriptionKey, descriptionKey))
                 .addHeaderObject("Content-Language", new Header().$ref("#/components/headers/Content-Language"))
                 .addHeaderObject("X-Correlation-Id", new Header().$ref("#/components/headers/X-Correlation-Id"))
                 .content(new Content().addMediaType("application/json",
