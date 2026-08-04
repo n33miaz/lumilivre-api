@@ -27,6 +27,7 @@ public class AuditAspect {
     private static final Logger log = LoggerFactory.getLogger(AuditAspect.class);
 
     private final AuditLogRepository auditLogRepository;
+    private final ClientIpResolver clientIpResolver;
     private final ExpressionParser spel = new SpelExpressionParser();
 
     @Around("@annotation(auditable)")
@@ -95,6 +96,7 @@ public class AuditAspect {
                             .targetId(targetId)
                             .result(result)
                             .errorMessage(errorMessage)
+                            .ipAddress(clientIpResolver.resolveCurrent())
                             .occurredAt(OffsetDateTime.now())
                             .build()
             );

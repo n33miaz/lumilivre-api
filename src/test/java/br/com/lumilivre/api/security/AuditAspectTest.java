@@ -31,6 +31,9 @@ class AuditAspectTest {
     private AuditLogRepository auditLogRepository;
 
     @Mock
+    private ClientIpResolver clientIpResolver;
+
+    @Mock
     private ProceedingJoinPoint joinPoint;
 
     @Mock

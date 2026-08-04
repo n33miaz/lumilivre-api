@@ -23,15 +23,20 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import br.com.lumilivre.api.dto.common.ErrorResponse;
+import br.com.lumilivre.api.enums.AccessEvent;
 import br.com.lumilivre.api.security.AuthRateLimitFilter;
 import br.com.lumilivre.api.security.CorrelationIdFilter;
+import br.com.lumilivre.api.security.CustomUserDetails;
 import br.com.lumilivre.api.security.JwtAuthenticationFilter;
+import br.com.lumilivre.api.service.AccessLogService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Locale;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Configuration
 @EnableWebSecurity
@@ -43,6 +48,7 @@ public class SecurityConfig {
     private final CorrelationIdFilter correlationIdFilter;
     private final ObjectMapper objectMapper;
     private final MessageResolver messageResolver;
+    private final AccessLogService accessLogService;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:8080}")
     private String[] allowedOrigins;
@@ -54,12 +60,14 @@ public class SecurityConfig {
                           AuthRateLimitFilter authRateLimitFilter,
                           CorrelationIdFilter correlationIdFilter,
                           ObjectMapper objectMapper,
-                          MessageResolver messageResolver) {
+                          MessageResolver messageResolver,
+                          AccessLogService accessLogService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.authRateLimitFilter = authRateLimitFilter;
         this.correlationIdFilter = correlationIdFilter;
         this.objectMapper = objectMapper;
         this.messageResolver = messageResolver;
+        this.accessLogService = accessLogService;
     }
 
     @PostConstruct
@@ -135,6 +143,7 @@ public class SecurityConfig {
                             objectMapper.writeValue(res.getWriter(), body);
                         })
                         .accessDeniedHandler((req, res, e) -> {
+                            logAccessDenied(e.getMessage());
                             Locale locale = resolveLocale(req);
                             ErrorResponse body = ErrorResponse.builder()
                                     .status(HttpStatus.FORBIDDEN.value())
@@ -161,6 +170,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs", "/docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        // Métricas/infos operacionais só para ADMIN (SEC-18)
+                        .requestMatchers("/actuator/prometheus", "/actuator/info").hasRole("ADMIN")
 
                         // Public catalogue reads
                         .requestMatchers(HttpMethod.GET,
@@ -224,6 +235,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/settings").hasRole("ADMIN")
                         .requestMatchers("/api/imports/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        // Auditoria & acessos (WS-07) — leitura só ADMIN
+                        .requestMatchers("/api/access-logs/**", "/api/audit-logs/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated();
                 })
@@ -252,6 +265,20 @@ public class SecurityConfig {
         Locale requested = req.getLocale();
         if ("en".equals(requested.getLanguage())) return Locale.forLanguageTag("en-US");
         return Locale.forLanguageTag("pt-BR");
+    }
+
+    /** Registra a tentativa de acesso negado (403) na trilha de acessos (WS-07). */
+    private void logAccessDenied(String message) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String actor = "anonymous";
+        String role = "ANONYMOUS";
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
+            var reader = details.getAppUser().getReader();
+            actor = reader != null ? reader.getRegistrationNumber() : details.getUsername();
+            role = "ROLE_" + details.getAppUser().getRole().name();
+        }
+        accessLogService.record(AccessEvent.ACCESS_DENIED, actor, role,
+                AccessLogService.RESULT_DENIED, message);
     }
 
     @Bean

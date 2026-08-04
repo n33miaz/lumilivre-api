@@ -9,6 +9,7 @@ import br.com.lumilivre.api.dto.settings.SettingsResponse;
 import br.com.lumilivre.api.enums.LibraryType;
 import br.com.lumilivre.api.model.LibrarySettings;
 import br.com.lumilivre.api.repository.LibrarySettingsRepository;
+import br.com.lumilivre.api.security.Auditable;
 
 @Service
 public class SettingsService {
@@ -38,6 +39,7 @@ public class SettingsService {
     }
 
     @Transactional
+    @Auditable(action = "SETTINGS_UPDATED")
     public SettingsResponse update(SettingsRequest request) {
         LibrarySettings settings = getOrCreateSettings();
         settings.setLibraryType(request.libraryType());

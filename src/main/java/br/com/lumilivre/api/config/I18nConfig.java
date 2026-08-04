@@ -50,6 +50,7 @@ public class I18nConfig {
             "classpath:i18n/swagger/reports",
             "classpath:i18n/swagger/imports",
             "classpath:i18n/swagger/settings",
+            "classpath:i18n/swagger/audit",
             "classpath:i18n/swagger/metadata",
             "classpath:i18n/swagger/courses",
             "classpath:i18n/swagger/study-shifts",

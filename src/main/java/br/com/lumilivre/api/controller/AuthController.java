@@ -8,6 +8,8 @@ import br.com.lumilivre.api.dto.auth.ChangePasswordRequest;
 import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.LoginResponse;
 import br.com.lumilivre.api.dto.auth.ResetPasswordTokenRequest;
+import br.com.lumilivre.api.enums.AccessEvent;
+import br.com.lumilivre.api.service.AccessLogService;
 import br.com.lumilivre.api.service.AppUserService;
 import br.com.lumilivre.api.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +18,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,14 +35,27 @@ public class AuthController {
 
     private final AuthService authService;
     private final AppUserService userService;
+    private final AccessLogService accessLogService;
 
     @PostMapping("/login")
     @Operation(operationId = "auth.login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest req, Locale locale) {
-        LoginResponse body = authService.login(req.getUsername(), req.getPassword());
-        return ResponseEntity.ok()
-                .header("Content-Language", locale.toLanguageTag())
-                .body(body);
+        try {
+            LoginResponse body = authService.login(req.getUsername(), req.getPassword());
+            accessLogService.record(AccessEvent.LOGIN, body.getEmail(), body.getRole(),
+                    AccessLogService.RESULT_SUCCESS, null);
+            return ResponseEntity.ok()
+                    .header("Content-Language", locale.toLanguageTag())
+                    .body(body);
+        } catch (AuthenticationException e) {
+            // Registra a tentativa (credenciais inválidas OU conta bloqueada) para
+            // detecção de brute force (SEC-05). Usuário inexistente também cai aqui.
+            String reason = (e instanceof org.springframework.security.authentication.LockedException)
+                    ? "account-locked" : "invalid-credentials";
+            accessLogService.record(AccessEvent.LOGIN_FAILED, req.getUsername(), "ANONYMOUS",
+                    AccessLogService.RESULT_FAILURE, reason);
+            throw e;
+        }
     }
 
     @PostMapping("/forgot-password")

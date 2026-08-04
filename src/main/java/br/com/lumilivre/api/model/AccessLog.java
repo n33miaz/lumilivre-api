@@ -13,39 +13,49 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * Trilha de acessos ao sistema (login/logout/falha/negado). Append-only,
+ * PK BIGINT IDENTITY como as demais tabelas de infraestrutura (ADR-001). Ver V10.
+ */
 @Entity
-@Table(name = "audit_log")
+@Table(name = "access_log")
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuditLog {
+public class AccessLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String actor;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "actor_role", length = 50)
     private String actorRole;
 
-    @Column(length = 200)
-    private String targetId;
+    @Column(nullable = false, length = 40)
+    private String event;
 
-    @Column(nullable = false, length = 100)
-    private String action;
+    @Column(nullable = false, length = 20)
+    private String channel;
 
     @Column(nullable = false, length = 20)
     private String result;
 
-    @Column(columnDefinition = "TEXT")
-    private String errorMessage;
-
     @Column(name = "ip_address", length = 64)
     private String ipAddress;
 
-    @Column(nullable = false)
+    @Column(name = "user_agent", length = 512)
+    private String userAgent;
+
+    @Column(name = "correlation_id", length = 64)
+    private String correlationId;
+
+    @Column(name = "error_message", columnDefinition = "TEXT")
+    private String errorMessage;
+
+    @Column(name = "occurred_at", nullable = false)
     private OffsetDateTime occurredAt;
 }

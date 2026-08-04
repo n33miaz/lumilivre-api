@@ -18,6 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.security.ReaderAuthorizationService;
+import br.com.lumilivre.api.service.AccessLogService;
 import br.com.lumilivre.api.service.AppUserService;
 import br.com.lumilivre.api.service.AuthService;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,9 @@ class AuthControllerTest {
 
     @MockBean
     private AppUserService userService;
+
+    @MockBean
+    private AccessLogService accessLogService;
 
     @MockBean
     private JwtUtil jwtUtil;
