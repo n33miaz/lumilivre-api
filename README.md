@@ -3,9 +3,9 @@
   <a href="https://n33miaz.github.io/n33miaz-links/#lumitcc"><img width="100%" src="https://github-stats-api-rfi2.onrender.com/api/banner?title=LumiLivre&subtitle=Library%20Management%20System&tag=(TCC)%20Bachelor%27s%20Thesis&title_color=762075&text_color=c9d1d9&v=1" /></a>
 
   <!-- Pins-->
-  <a href="https://n33miaz.github.io/n33miaz-links/#lumiweb"><img src="https://github-stats-api-rfi2.onrender.com/api/pin?username=n33miaz&repo=lumilivre-web&custom_title=WebSite&bg_color=0d1117&title_color=762075&text_color=c9d1d9&icon_color=762075&hide_border=true&min_width=270&show_description=false&v=1" /></a>
-  <a href="https://n33miaz.github.io/n33miaz-links/#lumiapp"><img src="https://github-stats-api-rfi2.onrender.com/api/pin?username=n33miaz&repo=lumilivre-app&custom_title=Application&bg_color=0d1117&title_color=762075&text_color=c9d1d9&icon_color=762075&hide_border=true&min_width=270&show_description=false&v=1" /></a>
-  <a href="https://n33miaz.github.io/n33miaz-links/#lumiapi"><img src="https://github-stats-api-rfi2.onrender.com/api/pin?username=n33miaz&repo=lumilivre-api&custom_title=API%20Restfull&bg_color=0d1117&title_color=762075&text_color=c9d1d9&icon_color=762075&hide_border=true&min_width=270&show_description=false&v=1" /></a>
+  <a href="https://github.com/n33miaz/lumilivre-web"><img src="https://github-stats-api-rfi2.onrender.com/api/pin?username=n33miaz&repo=lumilivre-web&custom_title=WebSite&bg_color=0d1117&title_color=762075&text_color=c9d1d9&icon_color=762075&hide_border=true&min_width=270&show_description=false&v=1" /></a>
+  <a href="https://github.com/n33miaz/lumilivre-app"><img src="https://github-stats-api-rfi2.onrender.com/api/pin?username=n33miaz&repo=lumilivre-app&custom_title=Application&bg_color=0d1117&title_color=762075&text_color=c9d1d9&icon_color=762075&hide_border=true&min_width=270&show_description=false&v=1" /></a>
+  <a href="https://github.com/n33miaz/lumilivre-api"><img src="https://github-stats-api-rfi2.onrender.com/api/pin?username=n33miaz&repo=lumilivre-api&custom_title=API%20Restfull&bg_color=0d1117&title_color=762075&text_color=c9d1d9&icon_color=762075&hide_border=true&min_width=270&show_description=false&v=1" /></a>
 </div>
 
 <br/>
@@ -15,7 +15,7 @@
 ![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-762075?style=flat-square)
 ![Java](https://img.shields.io/badge/Java-17-red?style=flat-square&logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.5-6DB33F?style=flat-square&logo=springboot)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-42.7-336791?style=flat-square&logo=postgresql)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker)
 ![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue?style=flat-square&logo=githubactions)
 [![API Docs](https://img.shields.io/badge/docs-Swagger-purple?style=flat-square)](https://lumilivre-api.onrender.com/docs)
@@ -25,273 +25,244 @@
 <br/>
 
 <div align="center">
-  <h1>Sobre o Projeto</h1>
+  <h1>LumiLivre API</h1>
+  <p><em>Núcleo REST do ecossistema LumiLivre — regras de negócio, persistência e segurança.</em></p>
 </div>
 
-A **LumiLivre API** é o núcleo de processamento e inteligência de todo o ecossistema. Desenvolvida em **Java 17** com **Spring Boot 3**, ela centraliza a lógica de negócios, a persistência de dados e a segurança, servindo tanto o painel administrativo (Web) quanto o aplicativo dos leitores (Mobile).
+A **LumiLivre API** centraliza a lógica de uma biblioteca escolar: catálogo e
+exemplares, empréstimos com renovação e multa, fila de reservas FIFO,
+solicitações do leitor, avisos do mural, relatórios e dashboard. Serve o painel
+administrativo (React) e o app do leitor (Flutter) pela mesma superfície REST.
 
-Atualmente hospedada no **Render** via Docker, a API utiliza **PostgreSQL** (hospedado no Supabase) como banco de dados relacional, garantindo robustez e integridade para as operações da biblioteca.
+São 23 controllers, 12 migrations versionadas e 65 classes de teste. A
+documentação interativa fica em `/docs`.
 
-A documentação interativa está disponível em: [lumilivre-api.onrender.com/docs](https://lumilivre-api.onrender.com/docs).
-
-<br/>
-
-<div align="center">
-  <h1>Stack Técnica</h1>
-</div>
+## Stack
 
 | Camada | Tecnologia |
 |--------|------------|
-| Linguagem / Runtime | Java 17 (Eclipse Temurin) |
-| Framework | Spring Boot 3.2.5 (Web MVC, Data JPA, Security, Cache, Mail, Actuator) |
-| Persistência | PostgreSQL 16 (Supabase) + Hibernate + **Flyway** |
-| Cache | **Redis** (Spring Data Redis) com fallback `ConcurrentMap` |
-| Observabilidade | Logback JSON + Logstash encoder, **Micrometer + Prometheus**, correlationId via MDC |
-| Resiliência | **Resilience4j** (retry + circuit-breaker + timeout + fallback) |
-| Segurança | Spring Security, JWT (`jjwt`), BCrypt, **Bucket4j** (rate-limit) |
-| Mensageria leve | **Outbox Pattern** com `@Scheduled` publisher |
-| Docs | Springdoc OpenAPI 3 |
+| Linguagem / runtime | Java 17 (Eclipse Temurin) |
+| Framework | Spring Boot 3.2.5 — Web MVC, Data JPA, Security, Cache, Mail, Actuator, AOP |
+| Persistência | PostgreSQL 16 + Hibernate + Flyway |
+| Cache | `ConcurrentMap` por padrão; Redis opcional via Spring Data Redis |
+| Observabilidade | Logback JSON, Micrometer + Prometheus, `correlationId` no MDC |
+| Resiliência | Resilience4j — retry, circuit breaker, time limiter, fallback |
+| Segurança | Spring Security, JWT (`jjwt`), BCrypt, Bucket4j |
+| Assíncrono | Outbox pattern com publisher `@Scheduled` |
+| Docs | springdoc-openapi 2.5.0 |
 | Relatórios | OpenPDF |
-| Importação | Apache POI 5.3 (XLSX) |
-| Build | Maven Wrapper |
-| Deploy | Dockerfile multi-stage + Render |
+| Planilhas | Apache POI 5.3 (XLSX) |
+| Testes | JUnit 5, Mockito, ArchUnit, Testcontainers, WireMock |
 
-<br/>
+## Subindo em um comando
 
-<div align="center">
-  <h1>Funcionalidades Principais</h1>
-</div>
-
-### 🧠 Regras de Negócio
-- **Gestão de Empréstimos:** controle rigoroso de prazos, penalidades por faixa (0-1, 2-5, 6-7, 8-90, >90 dias) e **job noturno** que sincroniza `ATIVO → ATRASADO`.
-- **Controle de Estoque:** exemplares físicos por tombo com status `DISPONIVEL/EMPRESTADO/INDISPONIVEL/EM_MANUTENCAO`.
-- **Solicitações e Reservas FIFO:** leitor solicita pelo app, bibliotecário aprova no web; livros sem exemplar entram em fila de reserva.
-- **Recomendações:** top livros por gênero favorito + fallback por avaliação, com cache por matrícula.
-- **Trilha de auditoria admin:** todas as ações sobre leitores, livros, usuários e TCCs gravam `before/after` via aspect `@Auditable`.
-
-### 🔌 Integrações Externas (resilientes)
-- **Google Books & BrasilAPI** para metadados por ISBN.
-- **Supabase Storage** para capas e PDFs.
-- **SMTP Gmail** com publicação via **Outbox** — falha de email não reverte a transação de empréstimo.
-- **ViaCEP** para preenchimento automático de endereço.
-
-### 📊 Dashboards e Relatórios
-- Views materializadas `mv_dashboard_stats`, `mv_top_livros`, `mv_emprestimos_por_mes` alimentando dashboard em <500ms.
-- Geração de PDF (OpenPDF) para acervo, leitores, exemplares e empréstimos.
-- Endpoints `/actuator/prometheus` com métricas de domínio (`loans.active`, `loans.overdue`, `requests.pending`, `returns.avg_days`).
-
-### 🔐 Segurança (reforçada)
-- **Allowlist explícita** no Spring Security — todo endpoint fora da lista é autenticado por padrão.
-- **Ownership por leitor** via `@CanAccessReader` + `ReaderAuthorizationService` (mitiga IDOR).
-- **Rate-limit** em `/auth/login` e `/auth/esqueci-senha` com Bucket4j.
-- **CORS por ambiente** via `${LUMILIVRE_CORS_ORIGINS}`.
-- **Segredos fora do repositório**: `application.properties` consome `${ENV}`; `application-example.properties` serve como template.
-
-<br/>
-
-<div align="center">
-  <h1>Arquitetura do Sistema</h1>
-</div>
-
-Utilizamos uma arquitetura cliente-servidor moderna baseada em microsserviços e nuvem para garantir escalabilidade.
-
-```mermaid
-flowchart TD
-    classDef mobile fill:#02569B,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef web fill:#61DAFB,stroke:#fff,stroke-width:2px,color:#000;
-    classDef api fill:#762075,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef db fill:#336791,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef storage fill:#3ECF8E,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef external fill:#ddd,stroke:#333,stroke-width:1px,color:#000,stroke-dasharray: 5 5;
-
-    UserMobile["Application (Leitor)"]:::mobile
-    UserWeb["WebSite (Bibliotecário)"]:::web
-
-    subgraph Cloud["-"]
-        direction TB
-        API["API RestFull"]:::api
-        DB[("PostgreSQL")]:::db
-        Storage["Supabase Storage"]:::storage
-    end
-
-    External["Google Books / BrasilAPI"]:::external
-
-    UserMobile -->|REST API / JSON| API
-    UserWeb -->|REST API / JSON| API
-
-    API -->|JPA / Hibernate| DB
-    API -->|Upload Capas e PDF's| Storage
-    API -.->|Consulta Metadados| External
-```
-
-### Camadas internas
-
-```
-controller  →  service  →  domain/policy  →  repository  →  PostgreSQL
-                                           ↘ infra (Google Books, BrasilAPI, ViaCEP, Supabase, SMTP)
-                                           ↘ outbox (eventos assíncronos)
-config · security (JWT, ownership, rate-limit, audit) · cache (Redis) · exception · dto
-```
-
-As **policies puras** em `api/domain/policy/` (LoanPolicy, PenaltyPolicy, BookAvailabilityPolicy, RequestApprovalPolicy, ReservationPolicy) não dependem de Spring e por isso são diretamente testáveis.
-
-<br/>
-
-<div align="center">
-  <h1>Observabilidade</h1>
-</div>
-
-- **Logs JSON** em produção (`logback-spring.xml`) com `correlationId` propagado via filtro `CorrelationIdFilter`.
-- **Actuator** expõe `/actuator/health`, `/actuator/info`, `/actuator/metrics`, `/actuator/prometheus`.
-- **Métricas de negócio** via `BusinessMetricsService` (empréstimos ativos/atrasados, solicitações pendentes, tempo médio de devolução).
-- **Trilha de auditoria** em `audit_log` para cada ação admin.
-
-<br/>
-
-<div align="center">
-  <h1>Resiliência</h1>
-</div>
-
-- **Resilience4j** envolve Google Books, BrasilAPI e Supabase Storage com retry + circuit-breaker + timeout + fallback — uma instabilidade externa não derruba o cadastro.
-- **Outbox Pattern** desacopla SMTP da transação principal: eventos `LoanCreated/Returned/RequestAccepted/Rejected` são persistidos e republicados pelo scheduler, com retry ≤ 3.
-- **Job de atraso** e **job de notificação** (D-3, D-1, D0, atraso) rodam diariamente sem afetar o caminho síncrono do usuário.
-
-<br/>
-
-<div align="center">
-  <h1>Sem Supabase, em 60 segundos</h1>
-</div>
-
-Para contribuidor que clonou o repo e quer ver a API rodando sem criar conta em nenhum SaaS:
-
-```bash
-# 1. Sobe Postgres 16 + Redis + Mailhog em containers locais
-docker compose up -d
-
-# 2. Aplica migrations + seed demo (cria tabelas e popula dados sintéticos)
-just setup        # ou: docker compose up -d && ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
-
-# 3. Roda a API no profile `local` (sem exigir nenhum LUMILIVRE_* secret)
-just api
-
-# 4. Acesso:
-#    API           → http://localhost:8080
-#    Swagger       → http://localhost:8080/docs
-#    Mailhog UI    → http://localhost:8025
-#    Health        → http://localhost:8080/actuator/health
-```
-
-Contas demo seedadas pelo `R__seed_demo_data.sql`:
-
-| Perfil           | Login                        | Senha                        |
-|------------------|------------------------------|------------------------------|
-| Admin            | `admin@lumilivre.test`       | `admin@lumilivre.test`       |
-| Bibliotecário    | `librarian@lumilivre.test`   | `librarian@lumilivre.test`   |
-| Leitor (matrícula)| `2025001`                    | `2025001`                    |
-
-> Pré-requisitos: Docker Desktop / Docker Engine, Java 17, [just](https://just.systems) (`scoop install just` no Windows, `brew install just` no macOS). Sem `just`? Os comandos equivalentes estão no `justfile` — basta copiar a linha.
-
-A stack local usa o profile `local` (em `application-local.properties`), que aponta para containers em `localhost`, com Mailhog capturando emails e Flyway aplicando migrations + seed automaticamente. Não há dependência de Supabase, Gmail SMTP ou ViaCEP nessa configuração.
-
-<br/>
-
-<div align="center">
-  <h1>Como rodar localmente (produção / Supabase)</h1>
-</div>
-
-O `application.properties` usa variáveis de ambiente (`${LUMILIVRE_*}`) para manter segredos fora do repositório. Se alguma variável obrigatória faltar, o Spring falha na inicialização antes de subir a API.
-
-Variáveis obrigatórias:
-
-- `LUMILIVRE_DB_URL` (JDBC, Session pooler do Supabase em `:5432`, com `sslmode=require`)
-- `LUMILIVRE_DB_USER` (formato `postgres.<project-ref>`)
-- `LUMILIVRE_DB_PASSWORD`
-- `LUMILIVRE_JWT_SECRET` (≥ 64 caracteres aleatórios)
-- `LUMILIVRE_MAIL_USERNAME`
-- `LUMILIVRE_MAIL_PASSWORD`
-- `LUMILIVRE_SUPABASE_URL`
-- `LUMILIVRE_SUPABASE_KEY` (publishable / anon — exposição pública controlada)
-- `LUMILIVRE_SUPABASE_SERVICE_ROLE_KEY` (JWT `service_role` — **backend apenas**; bypassa RLS)
-
-### Git Bash
-
-```bash
-# 1. Configure as variáveis locais
-cp .env.example .env
-
-# Edite o .env e substitua todos os placeholders.
-# Depois carregue as variáveis na sessão atual:
-set -a
-source .env
-set +a
-
-# 2. Execute
-./mvnw clean install
-./mvnw spring-boot:run
-
-# 3. Testes
-./mvnw test
-```
-
-### PowerShell
+O caminho mais curto é o `docker-compose.yml` do repositório de orquestração
+[`lumilivre`](https://github.com/n33miaz/lumilivre), que sobe PostgreSQL, esta
+API e o painel web já migrados e populados:
 
 ```powershell
-# 1. Configure as variáveis locais na sessão atual
-$env:LUMILIVRE_DB_URL = "jdbc:postgresql://<host>:5432/postgres"
-$env:LUMILIVRE_DB_USER = "<postgres-user>"
-$env:LUMILIVRE_DB_PASSWORD = "<postgres-password>"
-$env:LUMILIVRE_JWT_SECRET = "<random-64-plus-character-jwt-secret>"
-$env:LUMILIVRE_MAIL_USERNAME = "<smtp-user>"
-$env:LUMILIVRE_MAIL_PASSWORD = "<smtp-password>"
-$env:LUMILIVRE_SUPABASE_URL = "https://<project-ref>.supabase.co"
-$env:LUMILIVRE_SUPABASE_KEY = "<supabase-key>"
-$env:LUMILIVRE_CORS_ORIGINS = "http://localhost:5173,http://localhost:8080"
+docker compose up -d --build
+```
 
-# Opcional para banco dev vazio: Flyway cria o schema antes do Hibernate validar.
-$env:LUMILIVRE_FLYWAY_ENABLED = "true"
+Só a API, contra um PostgreSQL que você já tenha:
 
-# Opcional para popular dados demo sinteticos.
-$env:LUMILIVRE_FLYWAY_LOCATIONS = "classpath:db/migration,classpath:db/seed,classpath:db/vendor/postgresql"
-
-# 2. Execute
-.\mvnw.cmd clean install
-.\mvnw.cmd spring-boot:run
-
-# 3. Testes
-.\mvnw.cmd test
-
-# 4. Container, usando um .env real
+```powershell
 docker build -t lumilivre-api .
 docker run -p 8080:8080 --env-file .env lumilivre-api
 ```
 
-As mensagens `Spring Data Redis - Could not safely identify store assignment` podem aparecer quando JPA e Redis estão no classpath. Elas são informativas; o erro fatal é o primeiro `Caused by` apontando uma variável obrigatória ausente.
+| Recurso | Endereço |
+|---------|----------|
+| Swagger UI | http://localhost:8080/docs |
+| OpenAPI JSON | http://localhost:8080/v3/api-docs |
+| Health | http://localhost:8080/actuator/health |
 
-### Banco de dados e migrations
+## Desenvolvendo local
 
-Toda alteração de schema passa por **Flyway** em `src/main/resources/db/migration/V<seq>__<desc>.sql`.
-O `ddl-auto` deve permanecer em `validate`: para criar tabelas em banco vazio, habilite Flyway com `LUMILIVRE_FLYWAY_ENABLED=true`. Dados demo ficam fora do caminho padrão e só entram quando `classpath:db/seed` for incluído em `LUMILIVRE_FLYWAY_LOCATIONS`.
+Requer Java 17 e um PostgreSQL 16 alcançável. Copie `.env.example` para `.env`,
+preencha as variáveis e rode:
+
+```powershell
+.\mvnw.cmd spring-boot:run     # sobe em http://localhost:8080
+.\mvnw.cmd test                # suíte de testes
+.\mvnw.cmd verify              # testes + gate de cobertura JaCoCo
+```
+
+O PostgreSQL precisa das extensões `pgcrypto`, `citext`, `pg_trgm` e `unaccent`
+— `docker/postgres/init.sql` as cria. Usando o compose do repositório de
+orquestração, isso já vem feito.
+
+Há também um `justfile` com atalhos (`just setup`, `just api`, `just migrate`)
+para quem tem o [just](https://just.systems) instalado.
+
+## Configuração
+
+Nenhum segredo é versionado — tudo entra por variável de ambiente. Estas nove não
+têm default e a aplicação falha na subida sem elas:
+
+| Variável | Uso |
+|----------|-----|
+| `LUMILIVRE_DB_URL` · `_DB_USER` · `_DB_PASSWORD` | Conexão PostgreSQL |
+| `LUMILIVRE_JWT_SECRET` | Assinatura HS256 — mínimo 32 caracteres |
+| `LUMILIVRE_MAIL_USERNAME` · `_MAIL_PASSWORD` | SMTP das notificações |
+| `LUMILIVRE_SUPABASE_URL` · `_SUPABASE_KEY` · `_SUPABASE_SERVICE_ROLE_KEY` | Storage remoto |
+
+As opcionais que mais importam:
+
+| Variável | Default | Uso |
+|----------|---------|-----|
+| `PORT` | `8080` | Porta HTTP (Render/Heroku injetam) |
+| `LUMILIVRE_CORS_ORIGINS` | `localhost:5173,localhost:8080` | Origens liberadas |
+| `LUMILIVRE_STORAGE_PROVIDER` | `supabase` | `local` grava em disco, sem Supabase |
+| `LUMILIVRE_FLYWAY_LOCATIONS` | `classpath:db/migration` | Inclua `classpath:db/seed` para popular a demo |
+| `LUMILIVRE_CACHE_TYPE` · `LUMILIVRE_REDIS_URL` | `simple` | Troque para `redis` em produção |
+| `LUMILIVRE_API_ENABLED` | `true` | `false` bloqueia todo `/api/**` (rollback) |
+| `LUMILIVRE_SCHEDULING_ENABLED` | `true` | Desliga os jobs agendados |
+
+`.env.example` traz o conjunto completo comentado.
+
+## Banco de dados
+
+Doze migrations versionadas (`V1`…`V12`) em `src/main/resources/db/migration`,
+aplicadas pelo Flyway na subida. Destaques do schema:
+
+- **Row Level Security** habilitada e negando por padrão nas tabelas de domínio.
+- **Views materializadas** `mv_dashboard_stats`, `mv_top_books` e
+  `mv_loans_by_month` alimentam o dashboard sem varrer as tabelas quentes.
+- **Busca textual** com `pg_trgm` e `unaccent`, tolerante a acento e digitação.
+- Tabelas append-only de infraestrutura (`audit_log`, `access_log`,
+  `outbox_event`) com PK `BIGINT IDENTITY`.
+
+O `ddl-auto` fica em `validate`: o schema é responsabilidade do Flyway, nunca do
+Hibernate.
+
+### Seed de demonstração
+
+`src/main/resources/db/seed/R__seed_demo_data.sql` popula 50 leitores, 100
+livros, 150 exemplares, 60 empréstimos em todos os estados, filas de reserva,
+avisos e trilha de auditoria — o suficiente para nenhuma tela ficar vazia.
+
+É **opt-in**: fica fora do caminho padrão porque cria credenciais fixas e, sendo
+repetível, reescreve a senha do admin a cada migração. Para usar em dev:
+
+```powershell
+$env:LUMILIVRE_FLYWAY_LOCATIONS = "classpath:db/migration,classpath:db/seed"
+```
+
+Credenciais criadas pelo seed (o login aceita e-mail **ou** matrícula):
+
+| Usuário | Senha | Papel |
+|---------|-------|-------|
+| `admin` | `admin` | ADMIN |
+| `librarian` | `librarian` | LIBRARIAN |
+| `2024001` | `2024001` | READER — entra com troca de senha obrigatória |
+
+## Documentação da API
+
+Swagger UI em `/docs`, spec em `/v3/api-docs`. Três grupos: `api-pt-br`,
+`api-en-us` e `system`. Todos os controllers têm `@Tag` e toda operação tem
+`@Operation` com `operationId`, título e descrição nos dois idiomas —
+`scripts/check-openapi-annotations.sh` falha o CI se alguma faltar.
+
+As respostas honram `Accept-Language` (`pt-BR` ou `en-US`) e devolvem
+`Content-Language` e `X-Correlation-Id`. Os textos vivem em
+`src/main/resources/i18n/`, e `scripts/check-i18n-coverage.sh` garante paridade
+de chaves entre os locales.
+
+## Regras de negócio
+
+As decisões de domínio ficam em classes puras, sem Spring nem JPA, em
+`domain/policy/`: `LoanPolicy`, `BookAvailabilityPolicy`, `PenaltyPolicy`,
+`RequestApprovalPolicy` e `ReservationPolicy`. Violação vira HTTP 422 com
+mensagem localizada.
+
+Penalidade por atraso, em dias de suspensão:
+
+| Atraso | Suspensão |
+|--------|-----------|
+| 0–1 dia | nenhuma |
+| 2–5 dias | 7 dias |
+| 6–7 dias | 15 dias |
+| 8–90 dias | 30 dias |
+| acima de 90 dias | bloqueio até resolução manual |
+
+## Tarefas agendadas
+
+| Job | Quando | O que faz |
+|-----|--------|-----------|
+| `OverdueMarkerJob` | diário | Marca vencidos como atrasados e aplica a penalidade |
+| `DueDateNotificationJob` | diário | Avisa em D-3, D-1, no dia e no atraso |
+| `OutboxPublisherService` | a cada 30 s | Entrega os e-mails pendentes do outbox |
+
+O outbox grava o evento na mesma transação da operação de domínio, então uma
+falha de SMTP nunca desfaz um empréstimo. Desligue tudo com
+`LUMILIVRE_SCHEDULING_ENABLED=false`.
+
+## Segurança
+
+- **JWT HS256** validado a cada requisição; sessão stateless.
+- **Autorização em duas camadas** — regras de URL no `SecurityConfig` mais
+  `@PreAuthorize` por método, para que uma falha em uma não abra a outra.
+- **Prevenção de IDOR** — `@CanAccessReader` e `@CanAccessLoan` garantem que um
+  leitor só alcança os próprios dados.
+- **Rate limit** (Bucket4j) em `/api/auth/login`, `/api/auth/forgot-password` e
+  `/api/auth/reset-password`, com trava adicional por conta.
+- **Troca de senha obrigatória** no primeiro acesso, imposta no servidor por um
+  filtro que bloqueia escritas até a troca acontecer.
+- **Upload validado por magic bytes**, não pela extensão nem pelo `Content-Type`.
+- **Auditoria** — escritas anotadas com `@Auditable` gravam ator, papel, alvo e
+  resultado; tentativas negadas vão para `access_log`.
+- **Teto de paginação** global de 100 itens por página.
+
+## Observabilidade
+
+`/actuator/health` é público (usado pelo healthcheck do container);
+`/actuator/info` e `/actuator/prometheus` exigem ADMIN. As métricas de domínio
+expostas são `loans.active`, `loans.overdue`, `requests.pending` e
+`returns.avg_days`.
+
+Todo request recebe um `X-Correlation-Id`, propagado pelo MDC e presente em cada
+linha de log JSON.
+
+## Integrações externas
+
+Metadados de livro por ISBN vêm de uma cadeia configurável
+(`LUMILIVRE_BOOK_METADATA_PROVIDERS`): Google Books, BrasilAPI e Open Library,
+consultados em ordem até um responder. CEP usa a mesma estratégia. Todas as
+chamadas passam por circuit breaker, retry e timeout do Resilience4j com
+fallback — indisponibilidade externa degrada a funcionalidade, não a API.
+
+## Testes e CI
+
+```powershell
+.\mvnw.cmd test      # unitários + ArchUnit
+.\mvnw.cmd verify    # inclui o gate de cobertura JaCoCo
+```
+
+A suíte cobre serviços, controllers, políticas de domínio, filtros de segurança,
+regras de arquitetura (ArchUnit impede controller conversar direto com
+repository) e um fluxo completo de empréstimo em Testcontainers contra
+PostgreSQL real.
+
+O workflow `.github/workflows/api.yml` roda, em ordem: Gitleaks, paridade de
+i18n, cobertura de anotações OpenAPI, `mvnw verify` com o gate de cobertura e o
+empacotamento.
+
+## Deploy
+
+`Dockerfile` multi-stage: build com Maven, runtime em JRE 17 slim, usuário
+não-root, `JAVA_OPTS` dimensionado para container pequeno
+(`-XX:MaxRAMPercentage=75`) e healthcheck em `/actuator/health`. A porta vem de
+`PORT` quando o host a injeta.
+
+## Licença
+
+**Proprietário — todos os direitos reservados.** Veja [`LICENSE`](LICENSE). O
+código é publicado para leitura, estudo e avaliação técnica; qualquer uso, cópia
+ou execução em produção requer licença comercial — **ncormino@gmail.com**.
 
 <br/>
 
 <div align="center">
-  <h1>Testes</h1>
-</div>
-
-- Unitários: JUnit 5 + AssertJ para policies puras.
-- Integração: Spring Boot Test + Testcontainers PostgreSQL (roadmap em `execution_plan_v2.md`).
-- Workflow CI em `.github/workflows/api.yml` executa `mvn test` + `mvn package`.
-
-<br/>
-
-<div align="center">
-  <h1>Licença</h1>
-</div>
-
-**Proprietário — Todos os direitos reservados.** O código-fonte é público apenas para leitura, estudo e avaliação. Qualquer uso, cópia, modificação ou execução em produção requer licença comercial mediante negociação. Veja [`LICENSE`](LICENSE). Interessados: **ncormino@gmail.com**.
-
-<br/>
-
-<div align="center">
-  <sub>LumiLivre © 2025 - Todos os direitos reservados.</sub>
+  <sub>LumiLivre © 2026 — Gestão de bibliotecas escolares · Todos os direitos reservados.</sub>
 </div>
