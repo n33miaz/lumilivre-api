@@ -12,7 +12,7 @@ public final class SwaggerTags {
     public static final String LOANS = "loans";
     public static final String LOAN_REQUESTS = "loan-requests";
     public static final String RESERVATIONS = "reservations";
-    public static final String THESES = "theses";
+    public static final String CONTENTS = "contents";
     public static final String DASHBOARD = "dashboard";
     public static final String REPORTS = "reports";
     public static final String IMPORTS = "imports";
@@ -34,7 +34,7 @@ public final class SwaggerTags {
             LOANS,
             LOAN_REQUESTS,
             RESERVATIONS,
-            THESES,
+            CONTENTS,
             DASHBOARD,
             REPORTS,
             IMPORTS,

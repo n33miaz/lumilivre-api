@@ -47,8 +47,11 @@ public class SettingsService {
 
     private SettingsResponse toResponse(LibraryType libraryType) {
         boolean school = libraryType == LibraryType.SCHOOL;
+        // `contents` (ex-`thesis`): comunicados fazem sentido em qualquer biblioteca,
+        // entao a feature fica sempre habilitada; apenas o tipo WORK/TCC e destacado
+        // quando SCHOOL. Campos academicos e ranking seguem o tipo de biblioteca.
         return new SettingsResponse(
                 libraryType,
-                new SettingsFeaturesResponse(school, school, school));
+                new SettingsFeaturesResponse(school, school, true));
     }
 }

@@ -54,9 +54,12 @@ class SchemaStructureTest {
                 "reader", "app_user",
                 "book", "book_genre", "book_copy",
                 "loan", "loan_request", "reservation",
-                "thesis", "password_reset_token",
+                "app_content", "password_reset_token",
                 "outbox_event", "audit_log"
         );
+
+        // thesis foi generalizado em app_content (V8) e removido
+        assertThat(tables).doesNotContain("thesis");
 
         // Nao deve existir nada em portugues remanescente
         assertThat(tables).doesNotContain(
@@ -89,7 +92,7 @@ class SchemaStructureTest {
 
         assertThat(uuidTables).contains(
                 "reader", "app_user", "book", "book_copy",
-                "loan", "loan_request", "reservation", "thesis"
+                "loan", "loan_request", "reservation", "app_content"
         );
     }
 

@@ -183,6 +183,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/loans/*/renew")
                                 .hasAnyRole("ADMIN", "LIBRARIAN", "READER")
 
+                        // Content feed + single read available to readers (app mural)
+                        .requestMatchers(HttpMethod.GET, "/api/contents/feed", "/api/contents/{id}")
+                                .hasAnyRole("ADMIN", "LIBRARIAN", "READER")
+                        // Content management (list/search/create/update/delete) is staff-only
+                        .requestMatchers("/api/contents/**")
+                                .hasAnyRole("ADMIN", "LIBRARIAN")
+
                         .requestMatchers("/api/readers/**", "/api/books/**", "/api/loans/**",
                                 "/api/book-copies/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN")
@@ -198,8 +205,7 @@ public class SecurityConfig {
                                 "/api/metadata/**",
                                 "/api/dewey-classifications/**",
                                 "/api/academic-modules/**",
-                                "/api/study-shifts/**",
-                                "/api/theses/**")
+                                "/api/study-shifts/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN", "READER")
 
                         // Reference data writes
@@ -207,8 +213,7 @@ public class SecurityConfig {
                                 "/api/genres/**",
                                 "/api/dewey-classifications/**",
                                 "/api/academic-modules/**",
-                                "/api/study-shifts/**",
-                                "/api/theses/**")
+                                "/api/study-shifts/**")
                                 .hasAnyRole("ADMIN", "LIBRARIAN")
 
                         .requestMatchers("/api/dashboard/**", "/api/reports/**")
