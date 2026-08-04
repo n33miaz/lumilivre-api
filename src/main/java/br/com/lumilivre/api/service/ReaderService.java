@@ -12,6 +12,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +38,7 @@ import br.com.lumilivre.api.repository.AppUserRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.ReaderRepository;
 import br.com.lumilivre.api.repository.StudyShiftRepository;
+import br.com.lumilivre.api.security.CustomUserDetails;
 import br.com.lumilivre.api.service.infra.EmailService;
 import br.com.lumilivre.api.service.infra.postalcode.PostalAddress;
 import br.com.lumilivre.api.service.infra.postalcode.PostalCodeRouter;
@@ -207,6 +211,12 @@ public class ReaderService {
 
     @Transactional
     public void uploadFoto(String matricula, MultipartFile file) {
+        // Defesa em profundidade (WS-02): quando a permissão global está desligada,
+        // um LEITOR não pode trocar a própria foto pelo app; ADMIN/BIBLIOTECARIO sempre podem.
+        if (isSelfServiceReader() && !settingsService.isReaderCanEditAvatar()) {
+            throw new AccessDeniedException("reader.avatar.edit-not-allowed");
+        }
+
         Reader reader = readerRepository.findByRegistrationNumber(matricula)
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("reader.not-found"));
 
@@ -300,6 +310,14 @@ public class ReaderService {
         appUser.setRole(Role.READER);
         appUser.setReader(reader);
         return appUser;
+    }
+
+    /** True quando o chamador autenticado é um LEITOR (self-service pelo app). */
+    private boolean isSelfServiceReader() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null
+                && auth.getPrincipal() instanceof CustomUserDetails details
+                && details.getAppUser().getRole() == Role.READER;
     }
 
     private <T extends Enum<T>> T parseEnum(String value, Class<T> enumClass) {

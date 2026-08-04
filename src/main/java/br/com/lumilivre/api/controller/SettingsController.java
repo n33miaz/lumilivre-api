@@ -35,6 +35,6 @@ public class SettingsController {
     @Operation(operationId = "settings.update")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SettingsResponse> update(@Valid @RequestBody SettingsRequest request) {
-        return ResponseEntity.ok(settingsService.updateLibraryType(request.libraryType()));
+        return ResponseEntity.ok(settingsService.update(request));
     }
 }

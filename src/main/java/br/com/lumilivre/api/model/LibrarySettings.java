@@ -32,6 +32,9 @@ public class LibrarySettings {
     @Column(name = "library_type", nullable = false, length = 20)
     private LibraryType libraryType;
 
+    @Column(name = "reader_can_edit_avatar", nullable = false)
+    private Boolean readerCanEditAvatar;
+
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
@@ -39,6 +42,7 @@ public class LibrarySettings {
     void prePersist() {
         if (id == null) id = Boolean.TRUE;
         if (libraryType == null) libraryType = LibraryType.SCHOOL;
+        if (readerCanEditAvatar == null) readerCanEditAvatar = Boolean.TRUE;
         if (updatedAt == null) updatedAt = OffsetDateTime.now();
     }
 
