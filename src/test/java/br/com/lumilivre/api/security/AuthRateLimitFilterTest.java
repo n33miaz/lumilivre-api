@@ -11,6 +11,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+/**
+ * SEC-02/SEC-04: o filtro deve throttlar os endpoints REAIS de auth
+ * (/api/auth/**) por IP resolvido pelo proxy — e NÃO deve confiar em
+ * X-Forwarded-For do cliente (falsificável).
+ */
 class AuthRateLimitFilterTest {
 
     @Test
@@ -36,16 +41,18 @@ class AuthRateLimitFilterTest {
     }
 
     @Test
-    void forwardedForHeaderUsesFirstClientIp() throws Exception {
+    void forwardedForHeaderIsIgnoredForRateLimiting() throws Exception {
+        // Mesmo IP resolvido pelo proxy (remoteAddr) com X-Forwarded-For variável
+        // NÃO deve burlar o limite: o filtro ignora o header do cliente (SEC-04).
         AuthRateLimitFilter filter = new AuthRateLimitFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
 
         for (int i = 0; i < 5; i++) {
-            filter.doFilter(forwardedLoginRequest("198.51.100.7, 10.0.0.1"), new MockHttpServletResponse(), chain);
+            filter.doFilter(forwardedLoginRequest("10.0.0.99", "198.51.100." + i), new MockHttpServletResponse(), chain);
         }
 
         MockHttpServletResponse blocked = new MockHttpServletResponse();
-        filter.doFilter(forwardedLoginRequest("198.51.100.7, 10.0.0.2"), blocked, chain);
+        filter.doFilter(forwardedLoginRequest("10.0.0.99", "198.51.100.250"), blocked, chain);
 
         assertThat(blocked.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
     }
@@ -55,7 +62,6 @@ class AuthRateLimitFilterTest {
         AuthRateLimitFilter filter = new AuthRateLimitFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/books");
-        request.setServletPath("/api/books");
         request.setRemoteAddr("203.0.113.20");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -68,16 +74,16 @@ class AuthRateLimitFilterTest {
     }
 
     @Test
-    void authPasswordResetEndpointUsesSameLimit() throws Exception {
+    void forgotPasswordEndpointUsesSameLimit() throws Exception {
         AuthRateLimitFilter filter = new AuthRateLimitFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
 
         for (int i = 0; i < 5; i++) {
-            filter.doFilter(authRequest("/auth/esqueci-senha", "203.0.113.30"), new MockHttpServletResponse(), chain);
+            filter.doFilter(authRequest("/api/auth/forgot-password", "203.0.113.30"), new MockHttpServletResponse(), chain);
         }
 
         MockHttpServletResponse blocked = new MockHttpServletResponse();
-        filter.doFilter(authRequest("/auth/esqueci-senha", "203.0.113.30"), blocked, chain);
+        filter.doFilter(authRequest("/api/auth/forgot-password", "203.0.113.30"), blocked, chain);
 
         verify(chain, times(5)).doFilter(
                 org.mockito.ArgumentMatchers.any(),
@@ -103,18 +109,39 @@ class AuthRateLimitFilterTest {
     }
 
     private static MockHttpServletRequest loginRequest(String remoteAddr) {
-        return authRequest("/auth/login", remoteAddr);
+        return authRequest("/api/auth/login", remoteAddr);
     }
 
-    private static MockHttpServletRequest forwardedLoginRequest(String forwardedFor) {
-        MockHttpServletRequest request = loginRequest("10.0.0.99");
+    private static MockHttpServletRequest forwardedLoginRequest(String remoteAddr, String forwardedFor) {
+        MockHttpServletRequest request = loginRequest(remoteAddr);
         request.addHeader("X-Forwarded-For", forwardedFor);
         return request;
     }
 
-    private static MockHttpServletRequest authRequest(String path, String remoteAddr) {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
-        request.setServletPath(path);
+    @Test
+    void percentEncodedPathDoesNotBypassRateLimit() throws Exception {
+        // O container decodifica o path (servletPath). Como o filtro compara o
+        // servletPath — e não o requestURI cru — /api/%61uth/login não burla.
+        AuthRateLimitFilter filter = new AuthRateLimitFilter();
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        for (int i = 0; i < 6; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/%61uth/login");
+            request.setServletPath("/api/auth/login");
+            request.setRemoteAddr("203.0.113.50");
+            filter.doFilter(request, new MockHttpServletResponse(), chain);
+        }
+
+        verify(chain, times(5)).doFilter(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any());
+    }
+
+    private static MockHttpServletRequest authRequest(String uri, String remoteAddr) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", uri);
+        // Espelha o container: com o mapping "/" do Spring Boot, o servletPath
+        // é o path decodificado/normalizado — é ele que o filtro compara.
+        request.setServletPath(uri);
         request.setRemoteAddr(remoteAddr);
         return request;
     }

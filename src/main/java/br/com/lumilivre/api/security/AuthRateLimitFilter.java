@@ -25,13 +25,21 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private static final int MAX_REQUESTS = 5;
     private static final Duration WINDOW = Duration.ofMinutes(10);
+    // Teto de baldes para evitar crescimento ilimitado do mapa (SEC-04, DoS de memória).
+    private static final int MAX_BUCKETS = 50_000;
 
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        // Casa com os paths REAIS (@RequestMapping("/api/auth")). SEC-02: antes
+        // comparava "/auth/login", que nunca batia, então o filtro nunca throttava.
+        // getServletPath() é decodificado/normalizado — getRequestURI() permitiria
+        // burlar o limite com percent-encoding (ex.: /api/%61uth/login).
         String path = request.getServletPath();
-        return !path.equals("/auth/login") && !path.equals("/auth/esqueci-senha");
+        return !("/api/auth/login".equals(path)
+                || "/api/auth/forgot-password".equals(path)
+                || "/api/auth/reset-password".equals(path));
     }
 
     @Override
@@ -39,6 +47,11 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
         String ip = resolveClientIp(request);
+        // Eviction simples: chave é o IP resolvido pelo proxy (não spoofável), mas
+        // ainda assim limitamos o tamanho do mapa por segurança.
+        if (buckets.size() > MAX_BUCKETS) {
+            buckets.clear();
+        }
         Bucket bucket = buckets.computeIfAbsent(ip, k -> buildBucket());
 
         if (bucket.tryConsume(1)) {
@@ -63,10 +76,10 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     }
 
     private String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
+        // Com server.forward-headers-strategy=framework, getRemoteAddr() já é o IP
+        // real resolvido pelo proxy confiável. NÃO parseamos X-Forwarded-For do
+        // cliente (falsificável → burla o limite + DoS de memória). SEC-04.
+        String ip = request.getRemoteAddr();
+        return (ip != null && !ip.isBlank()) ? ip : "unknown";
     }
 }
