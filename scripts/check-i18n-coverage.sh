@@ -10,6 +10,15 @@ I18N_DIR="src/main/resources/i18n"
 SERVICE_DIR="src/main/java/br/com/lumilivre/api/service"
 FAILED=0
 
+# Accented Portuguese letters only. A broad [À-ÿ] range also matches punctuation
+# such as the "·" separator, which is not translatable copy.
+ACCENTED='áàâãäéèêëíìîïóòôõöúùûüçñÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ'
+
+if [ ! -d "$I18N_DIR" ]; then
+  echo "ERROR: $I18N_DIR not found. Run this script from the lumilivre-api root."
+  exit 1
+fi
+
 check_keys() {
   local source_file="$1"
   local target_file="$2"
@@ -45,7 +54,7 @@ done
 # Allow internal logs (log.* / System.err / // comments / /* ... */ blocks).
 if [ -d "$SERVICE_DIR" ]; then
   TMP=$(mktemp)
-  grep -RInE '"[^"]*[À-ÿ]+[^"]*"' "$SERVICE_DIR" \
+  grep -RInE "\"[^\"]*[$ACCENTED]+[^\"]*\"" "$SERVICE_DIR" \
     | grep -vE 'log\.(trace|debug|info|warn|error)' \
     | grep -vE 'System\.err\.println|System\.out\.println' \
     | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' \
