@@ -14,7 +14,7 @@
 #  Toda a configuração vem de variáveis de ambiente (application.properties usa
 #  ${LUMILIVRE_*}). NUNCA copie .env nem asse segredos na imagem.
 #  Opcionais úteis em dev: LUMILIVRE_STORAGE_PROVIDER=local,
-#  LUMILIVRE_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed,classpath:db/vendor/{vendor}
+#  LUMILIVRE_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
 # =============================================================================
 
 # ---- Stage 1: build (Maven + JDK 17) ----------------------------------------

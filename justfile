@@ -13,7 +13,7 @@ mvnw := if os() == "windows" { ".\\mvnw.cmd" } else { "./mvnw" }
 flyway_url   := "jdbc:postgresql://localhost:5432/lumilivre"
 flyway_user  := "lumilivre"
 flyway_pass  := "lumilivre"
-flyway_locs  := "classpath:db/migration,classpath:db/seed,classpath:db/vendor/postgresql"
+flyway_locs  := "classpath:db/migration,classpath:db/seed"
 
 # Mostra a lista de targets ordenada.
 default:

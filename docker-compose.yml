@@ -7,7 +7,7 @@ version: '3.8'
 #  credencial Supabase. Use:
 #      docker compose up -d
 #      LUMILIVRE_FLYWAY_ENABLED=true \
-#      LUMILIVRE_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed,classpath:db/vendor/postgresql \
+#      LUMILIVRE_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed \
 #      ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 #
 #  Acesso:
