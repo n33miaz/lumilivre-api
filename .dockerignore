@@ -25,7 +25,6 @@ storage/
 .mcp.json
 
 # Docs e infra local (não afetam o build do JAR)
-docs/
 docker/
 docker-compose.yml
 Dockerfile
