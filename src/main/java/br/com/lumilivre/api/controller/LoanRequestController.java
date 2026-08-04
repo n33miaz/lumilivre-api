@@ -75,7 +75,8 @@ public class LoanRequestController {
 
     @PostMapping
     @Operation(operationId = "loan-requests.create")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
+    // SEC-06: leitor só solicita em nome próprio; ADMIN/BIBLIOTECARIO liberados.
+    @PreAuthorize("@readerAuthz.canAccess(#readerRegistrationNumber)")
     public ResponseEntity<String> create(
             @RequestParam String readerRegistrationNumber,
             @RequestParam String copyCode,
@@ -88,7 +89,8 @@ public class LoanRequestController {
 
     @PostMapping("/by-book")
     @Operation(operationId = "loan-requests.createByBook")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
+    // SEC-06: leitor só solicita em nome próprio; ADMIN/BIBLIOTECARIO liberados.
+    @PreAuthorize("@readerAuthz.canAccess(#readerRegistrationNumber)")
     public ResponseEntity<String> createByBook(
             @RequestParam String readerRegistrationNumber,
             @RequestParam UUID bookId,

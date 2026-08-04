@@ -34,7 +34,8 @@ public class ReservationController {
 
     @PostMapping
     @Operation(operationId = "reservations.create")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
+    // SEC-06: leitor só cria reserva em nome próprio; ADMIN/BIBLIOTECARIO liberados (canAccess trata os papéis).
+    @PreAuthorize("@readerAuthz.canAccess(#request.readerRegistrationNumber)")
     public ResponseEntity<ReservationResponse> create(
             @Valid @RequestBody ReservationRequest request,
             Locale locale) {
@@ -47,7 +48,8 @@ public class ReservationController {
 
     @DeleteMapping("/{id}/cancel")
     @Operation(operationId = "reservations.cancel")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
+    // SEC-06: só o dono da reserva (ou staff) pode cancelar.
+    @PreAuthorize("@readerAuthz.canAccess(#readerRegistrationNumber)")
     public ResponseEntity<Void> cancel(
             @PathVariable UUID id,
             @RequestParam String readerRegistrationNumber) {
