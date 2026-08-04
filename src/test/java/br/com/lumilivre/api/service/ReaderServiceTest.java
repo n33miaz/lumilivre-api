@@ -211,7 +211,7 @@ class ReaderServiceTest {
     }
 
     @Test
-    void updateReaderRefreshesCpfPasswordAndLinkedUserEmail() {
+    void updateReaderKeepsPasswordOnCpfChange() {
         Reader existing = existingReader();
         existing.setCpf("11111111111");
         existing.setEmail("old@example.test");
@@ -230,7 +230,6 @@ class ReaderServiceTest {
         when(readerRepository.findByRegistrationNumber("2025001")).thenReturn(Optional.of(existing));
         when(readerRepository.existsByCpf("22222222222")).thenReturn(false);
         stubRelatedEntities();
-        when(passwordEncoder.encode("22222222222")).thenReturn("new-cpf-hash");
         when(readerRepository.save(any(Reader.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Reader result = service().atualizar("2025001", request);
@@ -238,7 +237,9 @@ class ReaderServiceTest {
         assertThat(result.getCpf()).isEqualTo("22222222222");
         assertThat(result.getEmail()).isEqualTo("new@example.test");
         assertThat(result.getAppUser().getEmail()).isEqualTo("new@example.test");
-        assertThat(result.getAppUser().getPasswordHash()).isEqualTo("new-cpf-hash");
+        // SEC-03: editar o CPF não pode mais resetar a senha para um valor previsível.
+        assertThat(result.getAppUser().getPasswordHash()).isEqualTo("old-hash");
+        verify(passwordEncoder, never()).encode(any());
         verify(postalCodeRouter, never()).lookup(any(), any());
     }
 

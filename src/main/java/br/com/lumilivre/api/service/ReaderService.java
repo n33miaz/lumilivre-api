@@ -166,16 +166,10 @@ public class ReaderService {
 
         RelatedEntities relatedEntities = buscarEntidadesRelacionadas(request);
 
-        boolean cpfMudou = request.getCpf() != null
-                && !request.getCpf().isBlank()
-                && (reader.getCpf() == null || !reader.getCpf().equals(request.getCpf()));
-
         mapearDtoParaEntidade(reader, request, relatedEntities);
         preencherEnderecoPorCep(reader, request.getPostalCode());
 
-        if (cpfMudou && reader.getAppUser() != null && request.getCpf() != null) {
-            reader.getAppUser().setPasswordHash(passwordEncoder.encode(request.getCpf()));
-        }
+        // SEC-03: NÃO resetar a senha ao editar o CPF (era um vetor de senha previsível).
 
         if (reader.getAppUser() != null && !reader.getEmail().equals(reader.getAppUser().getEmail())) {
             reader.getAppUser().setEmail(reader.getEmail());
