@@ -18,7 +18,8 @@ public class UserRequest {
     @Email
     private String email;
 
-    @NotBlank
+    // Obrigatória só na criação (validada no service via user.password.required);
+    // em branco na edição significa "manter a senha atual".
     private String password;
 
     private String readerRegistrationNumber;
