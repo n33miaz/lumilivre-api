@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +20,7 @@ import br.com.lumilivre.api.model.PasswordResetToken;
 import br.com.lumilivre.api.repository.AppUserRepository;
 import br.com.lumilivre.api.repository.PasswordResetTokenRepository;
 import br.com.lumilivre.api.security.JwtUtil;
+import br.com.lumilivre.api.security.LoginAttemptService;
 import br.com.lumilivre.api.service.infra.EmailService;
 import lombok.RequiredArgsConstructor;
 
@@ -26,11 +28,18 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
+    // SEC-12: hash BCrypt fixo e válido usado só para gastar o mesmo tempo de um
+    // matches() real quando o usuário NÃO existe — iguala o timing e derrota a
+    // enumeração de contas por tempo de resposta. (Não é credencial de ninguém.)
+    private static final String DUMMY_HASH =
+            "$2a$10$fHJ73JQxR0RhvAJVYA8ZtuoNyfup0aE1WML5B82x.VSkQigYppugK";
+
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+    private final LoginAttemptService loginAttemptService;
 
     public LoginResponse login(String username, String password) {
         AuthenticatedLogin login = authenticate(username, password);
@@ -49,12 +58,28 @@ public class AuthService {
     }
 
     private AuthenticatedLogin authenticate(String username, String password) {
-        AppUser appUser = appUserRepository.findByEmailOrRegistrationNumber(username, username)
-                .orElseThrow(() -> new BadCredentialsException("auth.login.error.invalid-credentials"));
+        // SEC-05: trava por conta antes de qualquer verificação de senha.
+        if (loginAttemptService.isBlocked(username)) {
+            throw new LockedException("auth.login.error.too-many-attempts");
+        }
 
-        if (!passwordEncoder.matches(password, appUser.getPasswordHash())) {
+        Optional<AppUser> found = appUserRepository.findByEmailOrRegistrationNumber(username, username);
+        if (found.isEmpty()) {
+            // SEC-12: roda um matches() dummy para gastar o mesmo tempo de um
+            // login real (evita enumeração por timing). Resultado ignorado.
+            passwordEncoder.matches(password, DUMMY_HASH);
+            loginAttemptService.recordFailure(username);
             throw new BadCredentialsException("auth.login.error.invalid-credentials");
         }
+
+        AppUser appUser = found.get();
+
+        if (!passwordEncoder.matches(password, appUser.getPasswordHash())) {
+            loginAttemptService.recordFailure(username);
+            throw new BadCredentialsException("auth.login.error.invalid-credentials");
+        }
+
+        loginAttemptService.recordSuccess(username);
 
         // WS-10/SEC-03: a "primeira senha" agora vem de uma flag persistida, não de
         // comparação de string (que quebrava se a nova senha coincidisse com a matrícula).

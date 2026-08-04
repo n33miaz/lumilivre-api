@@ -13,6 +13,7 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -91,6 +92,23 @@ public class GlobalExceptionHandler {
             : ex.getMessage();
         return errorResponse(HttpStatus.UNPROCESSABLE_ENTITY,
             messages.resolve("error.policy-violation.title", locale), msg, locale, request);
+    }
+
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<ErrorResponse> handleLocked(
+            LockedException ex, Locale locale, WebRequest request) {
+        // SEC-05: conta temporariamente bloqueada por excesso de tentativas.
+        ErrorResponse body = ErrorResponse.builder()
+                .status(HttpStatus.TOO_MANY_REQUESTS.value())
+                .error(messages.resolve("error.too-many-attempts.title", locale))
+                .message(messages.resolve("error.too-many-attempts.message", locale))
+                .path(extractPath(request))
+                .correlationId(MDC.get("correlationId"))
+                .build();
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Content-Language", locale.toLanguageTag())
+                .header("Retry-After", "900")
+                .body(body);
     }
 
     @ExceptionHandler(AuthenticationException.class)

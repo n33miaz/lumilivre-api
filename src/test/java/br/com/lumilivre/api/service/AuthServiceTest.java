@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -33,6 +34,7 @@ import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.AppUserRepository;
 import br.com.lumilivre.api.repository.PasswordResetTokenRepository;
 import br.com.lumilivre.api.security.JwtUtil;
+import br.com.lumilivre.api.security.LoginAttemptService;
 import br.com.lumilivre.api.service.infra.EmailService;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,6 +54,9 @@ class AuthServiceTest {
 
     @Mock
     private EmailService emailService;
+
+    @Mock
+    private LoginAttemptService loginAttemptService;
 
     @InjectMocks
     private AuthService service;
@@ -96,7 +101,9 @@ class AuthServiceTest {
         assertThatThrownBy(() -> service.login("ninguemm", "senha"))
                 .isInstanceOf(BadCredentialsException.class);
 
-        verify(passwordEncoder, never()).matches(any(), any());
+        // SEC-12: um matches() dummy roda mesmo sem usuário (timing constante)
+        verify(passwordEncoder).matches(eq("senha"), any());
+        verify(loginAttemptService).recordFailure("ninguemm");
         verify(jwtUtil, never()).generateToken(any());
     }
 
@@ -110,6 +117,18 @@ class AuthServiceTest {
         assertThatThrownBy(() -> service.login("biblioteca@lumilivre.test", "errada"))
                 .isInstanceOf(BadCredentialsException.class);
 
+        verify(loginAttemptService).recordFailure("biblioteca@lumilivre.test");
+        verify(jwtUtil, never()).generateToken(any());
+    }
+
+    @Test
+    void loginDeveBloquearQuandoContaTravadaPorTentativas() {
+        when(loginAttemptService.isBlocked("admin@lumilivre.test")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.login("admin@lumilivre.test", "senha"))
+                .isInstanceOf(LockedException.class);
+
+        verify(usuarioRepository, never()).findByEmailOrRegistrationNumber(any(), any());
         verify(jwtUtil, never()).generateToken(any());
     }
 
