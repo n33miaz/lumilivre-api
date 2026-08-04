@@ -700,12 +700,14 @@ FROM generate_series(1, 38) AS g(i);
 -- Outbox extra (3): PENDING / FAILED / SENT ---------------------------------------------
 INSERT INTO outbox_event (event_type, recipient_email, subject, body, status, retry_count, processed_at, next_retry_at)
 VALUES
-    ('LOAN_DUE_SOON',   'leitor2412@example.com', 'Demo: Emprestimo vence em breve',
-        'Lembrete demo de vencimento.',            'PENDING', 0, NULL,                        now() + INTERVAL '30 minutes'),
-    ('LOAN_OVERDUE',    'leitor2415@example.com', 'Demo: Emprestimo em atraso',
-        'Notificacao demo de atraso.',             'FAILED',  3, NULL,                        now() + INTERVAL '2 hours'),
-    ('RESERVATION_READY','leitor2412@example.com','Demo: Reserva disponivel',
-        'Sua reserva demo esta pronta para retirada.', 'SENT', 0, now() - INTERVAL '1 hour', NULL);
+    -- Tipos restritos ao enum OutboxEvent.EventType (LOAN_CREATED, LOAN_RETURNED,
+    -- REQUEST_ACCEPTED, REQUEST_REJECTED) — valor fora do enum quebra a leitura JPA.
+    ('LOAN_CREATED',     'leitor2412@example.com', 'Demo: Emprestimo registrado',
+        'Confirmacao demo de emprestimo.',         'PENDING', 0, NULL,                        now() + INTERVAL '30 minutes'),
+    ('REQUEST_REJECTED', 'leitor2415@example.com', 'Demo: Solicitacao recusada',
+        'Notificacao demo de recusa.',             'FAILED',  3, NULL,                        now() + INTERVAL '2 hours'),
+    ('LOAN_RETURNED',    'leitor2412@example.com', 'Demo: Devolucao registrada',
+        'Sua devolucao demo foi registrada.',      'SENT', 0, now() - INTERVAL '1 hour', NULL);
 
 -- ----------------------------------------------------------------------------
 -- Refresh materialized views (sem CONCURRENTLY: mv_dashboard_stats nao tem UNIQUE INDEX rowmaster)
