@@ -180,6 +180,10 @@ public class SecurityConfig {
                                 "/api/books/genres/**")
                                 .permitAll()
 
+                        // App version check (WS-08): app consulta antes de logar
+                        .requestMatchers(HttpMethod.GET, "/api/app-version").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/app-version").hasRole("ADMIN")
+
                         // Mixed access by role
                         .requestMatchers(HttpMethod.GET,
                                 "/api/readers/ranking",

@@ -18,6 +18,7 @@ public final class SwaggerTags {
     public static final String IMPORTS = "imports";
     public static final String SETTINGS = "settings";
     public static final String AUDIT = "audit";
+    public static final String APP_VERSION = "app-version";
     public static final String METADATA = "metadata";
     public static final String COURSES = "courses";
     public static final String STUDY_SHIFTS = "study-shifts";
@@ -41,6 +42,7 @@ public final class SwaggerTags {
             IMPORTS,
             SETTINGS,
             AUDIT,
+            APP_VERSION,
             METADATA,
             COURSES,
             STUDY_SHIFTS,
