@@ -3,6 +3,7 @@ package br.com.lumilivre.api.exception;
 import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.domain.policy.BookAvailabilityPolicy.BookAvailabilityViolationException;
 import br.com.lumilivre.api.domain.policy.LoanPolicy.LoanPolicyViolationException;
+import br.com.lumilivre.api.domain.policy.PasswordPolicy.PasswordPolicyViolationException;
 import br.com.lumilivre.api.domain.policy.RequestApprovalPolicy.RequestApprovalViolationException;
 import br.com.lumilivre.api.dto.common.ErrorResponse;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
@@ -13,6 +14,7 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
@@ -127,6 +129,30 @@ public class GlobalExceptionHandler {
                 .header("Content-Language", locale.toLanguageTag())
                 .header("Retry-After", "900")
                 .body(body);
+    }
+
+    /**
+     * Senha fraca é erro de entrada do usuário, não conflito de estado: 400 com
+     * a mensagem específica, para o formulário dizer o que corrigir.
+     */
+    @ExceptionHandler(PasswordPolicyViolationException.class)
+    public ResponseEntity<ErrorResponse> handlePasswordPolicy(
+            PasswordPolicyViolationException ex, Locale locale, WebRequest request) {
+        return errorResponse(HttpStatus.BAD_REQUEST,
+            messages.resolve("error.validation.title", locale),
+            messages.resolve(ex.getMessageKey(), locale, ex.getMessageArgs()), locale, request);
+    }
+
+    /**
+     * Conta desativada/bloqueada: a senha estava certa, o acesso é que foi
+     * retirado. 403 em vez de 401 para o cliente não tentar renovar credencial.
+     */
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorResponse> handleDisabledAccount(
+            DisabledException ex, Locale locale, WebRequest request) {
+        return errorResponse(HttpStatus.FORBIDDEN,
+            messages.resolve("error.access-denied.title", locale),
+            messages.resolve(ex.getMessage(), locale), locale, request);
     }
 
     @ExceptionHandler(AuthenticationException.class)
