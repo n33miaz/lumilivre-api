@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -14,7 +15,12 @@ import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.Reader;
 
-public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
+// A busca avancada da aba Usuarios usa Specification (montada no AppUserService).
+// A versao em JPQL nao funcionava no Postgres: comparava o enum com LIKE
+// (LOWER(u.role) virava lower(bytea) e estourava 42883) e deixava o UUID solto
+// num ":id IS NULL", sem tipo para o Postgres inferir. Com Specification, filtro
+// nulo nao gera predicado nenhum — nao ha parametro sem tipo para inferir.
+public interface AppUserRepository extends JpaRepository<AppUser, UUID>, JpaSpecificationExecutor<AppUser> {
 
     boolean existsByEmail(String email);
 
@@ -63,15 +69,4 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
                     """)
     Page<AppUser> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
-    @Query("""
-                        SELECT u FROM AppUser u
-                        WHERE (:id IS NULL OR u.id = :id)
-                          AND (:email IS NULL OR u.email = :email)
-                          AND (:role IS NULL OR LOWER(u.role) LIKE LOWER(CONCAT('%', :role, '%')))
-                    """)
-    Page<AppUser> buscarAvancado(
-            @Param("id") UUID id,
-            @Param("email") String email,
-            @Param("role") Role role,
-            Pageable pageable);
 }

@@ -1,10 +1,13 @@
 package br.com.lumilivre.api.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,6 +27,7 @@ import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.repository.AppUserRepository;
 import br.com.lumilivre.api.service.infra.EmailService;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -43,8 +47,29 @@ public class AppUserService {
         return appUserRepository.buscarPorTexto(text, pageable);
     }
 
+    /**
+     * Busca avancada da aba Usuarios. Cada filtro nulo simplesmente nao entra no
+     * WHERE: e o que evita o parametro nulo sem tipo que o Postgres nao consegue
+     * inferir, e o que permite comparar o papel por igualdade em vez de LIKE
+     * sobre enum (que no Postgres virava {@code lower(bytea)} e respondia 500).
+     */
     public Page<AppUser> searchUsersAdvanced(UUID id, String email, Role role, Pageable pageable) {
-        return appUserRepository.buscarAvancado(id, email, role, pageable);
+        Specification<AppUser> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (id != null) {
+                predicates.add(cb.equal(root.get("id"), id));
+            }
+            if (email != null && !email.isBlank()) {
+                // Igualdade, como no JPQL anterior — a busca por trecho e a do
+                // campo de texto livre (buscarPorTexto), nao a do filtro avancado.
+                predicates.add(cb.equal(root.get("email"), email.trim()));
+            }
+            if (role != null) {
+                predicates.add(cb.equal(root.get("role"), role));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        return appUserRepository.findAll(spec, pageable);
     }
 
     @Transactional

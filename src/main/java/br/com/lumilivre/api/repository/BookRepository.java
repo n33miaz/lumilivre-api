@@ -45,6 +45,20 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
             """)
     Page<Book> findIdsPorTexto(@Param("texto") String texto, Pageable pageable);
 
+    /**
+     * Filtro avancado da tela de livros.
+     *
+     * <p>Dois detalhes que parecem cosmeticos e nao sao:
+     *
+     * <p>{@code cast(:dataLancamento as date)} — sem o cast o Postgres recebe um
+     * parametro sem tipo no {@code IS NULL} e responde
+     * "could not determine data type of parameter", derrubando a busca sempre que
+     * a data e preenchida. Mesmo remedio ja aplicado nos {@code findForReport}.
+     *
+     * <p>{@code COUNT(DISTINCT e.id)} — o LEFT JOIN em generos multiplica as
+     * linhas, e um {@code COUNT(e)} contava exemplar x genero: livro com 3
+     * exemplares e 2 generos aparecia com 6 exemplares na tela.
+     */
     @Query("""
             SELECT new br.com.lumilivre.api.dto.book.BookGroupedResponse(
                 l.id,
@@ -52,7 +66,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
                 l.title,
                 l.author,
                 l.publisher,
-                COUNT(e)
+                COUNT(DISTINCT e.id)
             )
             FROM Book l
             LEFT JOIN l.copies e
@@ -66,7 +80,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
               AND (:cdd IS NULL OR c.code = :cdd)
               AND (:classificacao IS NULL OR l.ageRating = :classificacao)
               AND (:tipoCapa IS NULL OR l.coverType = :tipoCapa)
-              AND (:dataLancamento IS NULL OR l.publicationDate = :dataLancamento)
+              AND (cast(:dataLancamento as date) IS NULL OR l.publicationDate = :dataLancamento)
             GROUP BY l.id, l.isbn, l.title, l.author, l.publisher
             """)
     Page<BookGroupedResponse> buscarAvancado(

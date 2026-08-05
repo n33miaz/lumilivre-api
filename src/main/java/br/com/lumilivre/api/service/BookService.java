@@ -45,11 +45,39 @@ import br.com.lumilivre.api.service.infra.bookmetadata.BookMetadata;
 import br.com.lumilivre.api.service.infra.bookmetadata.BookMetadataChain;
 import br.com.lumilivre.api.service.infra.storage.StorageBucket;
 import br.com.lumilivre.api.service.infra.storage.StorageProvider;
+import br.com.lumilivre.api.utils.SortAllowlist;
 
 @Service
 public class BookService {
 
     private static final Logger log = LoggerFactory.getLogger(BookService.class);
+
+    /**
+     * Colunas ordenaveis da listagem administrativa de exemplares.
+     *
+     * <p>{@code findLivrosParaListaAdmin} e a unica query nativa que recebe
+     * {@link Pageable} do request, e numa query nativa o {@code ORDER BY} do
+     * sort e interpolado como texto. Sem este mapa, o nome da coluna vem do
+     * cliente; com ele, o que chega na consulta e sempre uma destas constantes.
+     *
+     * <p>Sobre a forma das colunas: o Spring Data prefixa a propriedade com o
+     * alias primario da query nativa ({@code e}, de {@code book_copy}) a menos
+     * que ela ja comece por um alias de join. Por isso as colunas de
+     * {@code book_copy} vao sem qualificador (viram {@code e.status}) e as de
+     * {@code book} vao com {@code l.} (ficam intactas). Os nomes nao colidem
+     * entre as duas tabelas, entao vale nos dois casos — e o
+     * OptionalFilterQueriesPostgresTest ordena por cada um deles contra Postgres
+     * de verdade, que foi o que pegou a versao anterior deste mapa.
+     */
+    private static final SortAllowlist LISTA_ADMIN_SORT = SortAllowlist.of(
+            "status", "status",
+            "copyCode", "copy_code",
+            "physicalLocation", "shelf_location",
+            "isbn", "l.isbn",
+            "deweyCode", "l.dewey_code",
+            "title", "l.title",
+            "author", "l.author",
+            "publisher", "l.publisher");
 
     private final BookCopyRepository bookCopyRepository;
     private final BookRepository bookRepository;
@@ -101,7 +129,7 @@ public class BookService {
     }
 
     public Page<BookListItemProjection> buscarParaListaAdmin(Pageable pageable) {
-        return bookRepository.findLivrosParaListaAdmin(pageable);
+        return bookRepository.findLivrosParaListaAdmin(LISTA_ADMIN_SORT.sanitize(pageable));
     }
 
     public Page<BookGroupedResponse> buscarLivrosAgrupados(Pageable pageable, String texto) {
@@ -154,7 +182,7 @@ public class BookService {
     }
 
     public Page<BookListItemProjection> buscarPorTexto(String texto, Pageable pageable) {
-        return bookRepository.findLivrosParaListaAdmin(pageable);
+        return bookRepository.findLivrosParaListaAdmin(LISTA_ADMIN_SORT.sanitize(pageable));
     }
 
     @Cacheable(value = BOOK_COUNT)

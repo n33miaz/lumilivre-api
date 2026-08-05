@@ -40,33 +40,6 @@ public interface ReaderRepository extends JpaRepository<Reader, UUID> {
     Page<Reader> buscarPorTexto(@Param("texto") String texto, Pageable pageable);
 
     @Query("""
-            SELECT a FROM Reader a
-            LEFT JOIN FETCH a.course c
-            LEFT JOIN FETCH a.studyShift
-            LEFT JOIN FETCH a.academicModule
-            WHERE (:penalidadeEnum IS NULL OR a.penaltyCode = :penalidadeEnum)
-              AND (:matricula IS NULL OR a.registrationNumber = :matricula)
-              AND (:nomeCompleto IS NULL OR a.fullName ILIKE :nomeCompleto)
-              AND (:cursoNome IS NULL OR c.name ILIKE :cursoNome)
-              AND (:turnoId IS NULL OR a.studyShift.id = :turnoId)
-              AND (:moduloId IS NULL OR a.academicModule.id = :moduloId)
-              AND (:dataNascimento IS NULL OR a.birthDate = :dataNascimento)
-              AND (:email IS NULL OR a.email ILIKE :email)
-              AND (:celular IS NULL OR a.phoneNumber = :celular)
-            """)
-    Page<Reader> buscarAvancado(
-            @Param("penalidadeEnum") PenaltyCode penalidadeEnum,
-            @Param("matricula") String matricula,
-            @Param("nomeCompleto") String nomeCompleto,
-            @Param("cursoNome") String cursoNome,
-            @Param("turnoId") Integer turnoId,
-            @Param("moduloId") Integer moduloId,
-            @Param("dataNascimento") LocalDate dataNascimento,
-            @Param("email") String email,
-            @Param("celular") String celular,
-            Pageable pageable);
-
-    @Query("""
             SELECT new br.com.lumilivre.api.dto.reader.ReaderListItem(
                 a.penaltyCode,
                 a.registrationNumber,
@@ -143,7 +116,7 @@ public interface ReaderRepository extends JpaRepository<Reader, UUID> {
               AND (:cursoNome IS NULL OR c.name ILIKE :cursoNome)
               AND (:turnoId IS NULL OR t.id = :turnoId)
               AND (:moduloId IS NULL OR m.id = :moduloId)
-              AND (:dataNascimento IS NULL OR a.birthDate = :dataNascimento)
+              AND (cast(:dataNascimento as date) IS NULL OR a.birthDate = :dataNascimento)
               AND (:email IS NULL OR a.email ILIKE :email)
               AND (:celular IS NULL OR a.phoneNumber = :celular)
             """)

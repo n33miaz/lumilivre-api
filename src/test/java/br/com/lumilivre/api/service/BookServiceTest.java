@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import br.com.lumilivre.api.dto.book.BookGroupedResponse;
+import br.com.lumilivre.api.dto.book.BookListItemProjection;
 import br.com.lumilivre.api.dto.book.BookRequest;
 import br.com.lumilivre.api.enums.AgeRating;
 import br.com.lumilivre.api.enums.BookCopyStatus;
@@ -42,6 +43,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,6 +74,9 @@ class BookServiceTest {
     @Captor
     private ArgumentCaptor<Book> bookCaptor;
 
+    @Captor
+    private ArgumentCaptor<Pageable> pageableCaptor;
+
     @Test
     void advancedSearchNormalizesFiltersAndParsesEnums() {
         var pageable = PageRequest.of(0, 10);
@@ -99,6 +105,54 @@ class BookServiceTest {
                 "softcover",
                 publicationDate,
                 pageable)).isSameAs(page);
+    }
+
+    // ---- SEC-15: sort da query nativa ----------------------------------------
+
+    @Test
+    void adminListRejectsSortFieldOutsideTheAllowlist() {
+        var malicioso = PageRequest.of(0, 20, Sort.by("id;DROP TABLE book--"));
+
+        assertThatExceptionOfType(BusinessRuleException.class)
+                .isThrownBy(() -> service().buscarParaListaAdmin(malicioso))
+                .satisfies(error -> assertThat(error.getMessageKey()).isEqualTo("error.sort.invalid-field"));
+
+        verify(bookRepository, never()).findLivrosParaListaAdmin(any());
+    }
+
+    @Test
+    void adminListRejectsRawColumnNameEvenWhenItExists() {
+        // copy_code e o nome real da coluna e ordenava de verdade antes da
+        // allowlist — prova de que o texto do cliente entrava na query.
+        var pageable = PageRequest.of(0, 20, Sort.by("copy_code"));
+
+        assertThatExceptionOfType(BusinessRuleException.class)
+                .isThrownBy(() -> service().buscarParaListaAdmin(pageable));
+
+        verify(bookRepository, never()).findLivrosParaListaAdmin(any());
+    }
+
+    @Test
+    void adminListTranslatesAllowedSortFieldToColumn() {
+        var page = new PageImpl<BookListItemProjection>(List.of());
+        when(bookRepository.findLivrosParaListaAdmin(any(Pageable.class))).thenReturn(page);
+
+        service().buscarParaListaAdmin(PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "title")));
+
+        verify(bookRepository).findLivrosParaListaAdmin(pageableCaptor.capture());
+        Sort.Order order = pageableCaptor.getValue().getSort().getOrderFor("l.title");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
+    }
+
+    @Test
+    void textSearchSanitizesSortToo() {
+        var malicioso = PageRequest.of(0, 20, Sort.by("id;DROP TABLE book--"));
+
+        assertThatExceptionOfType(BusinessRuleException.class)
+                .isThrownBy(() -> service().buscarPorTexto("dom", malicioso));
+
+        verify(bookRepository, never()).findLivrosParaListaAdmin(any());
     }
 
     @Test

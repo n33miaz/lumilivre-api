@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,9 +30,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -55,9 +62,31 @@ class AppUserServiceTest {
     @Captor
     private ArgumentCaptor<AppUser> appUserCaptor;
 
+    @Captor
+    private ArgumentCaptor<Specification<AppUser>> specCaptor;
+
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    /**
+     * A busca avançada virou Specification para não deixar parâmetro nulo sem
+     * tipo chegar no Postgres. Aqui só verificamos que a delegação existe e que
+     * filtro inteiramente vazio não explode; o SQL de verdade é exercitado em
+     * OptionalFilterQueriesPostgresTest, contra Postgres.
+     */
+    @Test
+    void advancedSearchDelegatesToSpecificationEvenWithEveryFilterNull() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<AppUser> page = new PageImpl<>(List.of());
+        when(appUserRepository.findAll(ArgumentMatchers.<Specification<AppUser>>any(), eq(pageable)))
+                .thenReturn(page);
+
+        assertThat(service().searchUsersAdvanced(null, null, null, pageable)).isSameAs(page);
+
+        verify(appUserRepository).findAll(specCaptor.capture(), eq(pageable));
+        assertThat(specCaptor.getValue()).isNotNull();
     }
 
     @Test
@@ -395,7 +424,7 @@ class AppUserServiceTest {
                 .isThrownBy(() -> service().excluir(id))
                 .satisfies(error -> assertThat(error.getMessageKey())
                         .isEqualTo("user.status.cannot-disable-self"));
-        verify(appUserRepository, never()).delete(any());
+        verify(appUserRepository, never()).delete(any(AppUser.class));
     }
 
     @Test
@@ -414,7 +443,7 @@ class AppUserServiceTest {
                 .isThrownBy(() -> service().excluir(id))
                 .satisfies(error -> assertThat(error.getMessageKey())
                         .isEqualTo("user.status.cannot-disable-last-admin"));
-        verify(appUserRepository, never()).delete(any());
+        verify(appUserRepository, never()).delete(any(AppUser.class));
     }
 
     @Test
