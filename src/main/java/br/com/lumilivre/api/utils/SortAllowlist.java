@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.utils;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +33,13 @@ public final class SortAllowlist {
 
     private final Map<String, String> columnsByField;
 
-    private SortAllowlist(Map<String, String> columnsByField) {
-        this.columnsByField = Map.copyOf(columnsByField);
+    private SortAllowlist(LinkedHashMap<String, String> columnsByField) {
+        // unmodifiableMap e nao Map.copyOf: o copyOf devolve mapa cuja ordem de
+        // iteracao e salteada por JVM, o que quebraria a "ordem de declaracao"
+        // que allowedFields() promete — e faria a mensagem de erro listar os
+        // campos aceitos em ordem diferente a cada reinicio. O mapa vem do
+        // of(), que o cria e nunca o compartilha, entao embrulhar basta.
+        this.columnsByField = Collections.unmodifiableMap(columnsByField);
     }
 
     /**
@@ -43,7 +49,7 @@ public final class SortAllowlist {
         if (pairs.length % 2 != 0) {
             throw new IllegalArgumentException("SortAllowlist.of expects field/column pairs");
         }
-        Map<String, String> map = new LinkedHashMap<>();
+        LinkedHashMap<String, String> map = new LinkedHashMap<>();
         for (int i = 0; i < pairs.length; i += 2) {
             map.put(pairs[i], pairs[i + 1]);
         }
