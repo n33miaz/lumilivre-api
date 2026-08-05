@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.dto.book.BookCardResponse;
 import br.com.lumilivre.api.model.Loan;
@@ -27,6 +28,21 @@ public class RecommendationService {
     private final LoanRepository loanRepository;
     private final BookRepository bookRepository;
 
+    /**
+     * Recomendacoes da home do app.
+     *
+     * <p>{@code @Transactional(readOnly = true)}: o metodo navega
+     * {@code loan -> bookCopy -> book -> genres} (colecao lazy) e, com
+     * {@code spring.jpa.open-in-view=false}, a sessao ja estava fechada quando o
+     * getter era chamado — a rota respondia 500 com LazyInitializationException
+     * no stack local. Com a transacao aberta aqui, a colecao carrega dentro dela.
+     *
+     * <p>A chave do cache e a matricula, ou seja, o proprio recurso: dois leitores
+     * nunca compartilham entrada. Quem garante que o chamador pode pedir esta
+     * matricula e o {@code @CanAccessReader} no controller — sem ele o cache
+     * serviria a lista de outro leitor com toda a fidelidade.
+     */
+    @Transactional(readOnly = true)
     @Cacheable(value = MOBILE_RECOMMENDATIONS, key = "#matricula")
     public List<BookCardResponse> recommendForReader(String matricula) {
         List<Loan> historico = loanRepository.findByReader_RegistrationNumber(matricula);

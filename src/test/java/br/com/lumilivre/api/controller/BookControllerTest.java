@@ -14,6 +14,7 @@ import java.util.UUID;
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.dto.book.BookListItemProjection;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.mapper.BookMapper;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
@@ -91,6 +92,33 @@ class BookControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(header().string("Content-Language", "en-US"))
                 .andExpect(jsonPath("$.message").value("Book not found."));
+    }
+
+    /**
+     * SEC-15 ponta a ponta: sort recusado tem que sair como 400 no envelope
+     * padrão e localizado — não como 500, que era o que o guarda interno do
+     * Spring Data produzia.
+     */
+    @Test
+    void maliciousSortReturnsLocalizedBadRequest() throws Exception {
+        when(bookService.buscarParaListaAdmin(any(Pageable.class)))
+                .thenThrow(BusinessRuleException.ofKey(
+                        "error.sort.invalid-field", "id;DROP TABLE book--", "title, copyCode"));
+
+        mockMvc.perform(get("/api/books")
+                        .param("sort", "id;DROP TABLE book--")
+                        .header("Accept-Language", "pt-BR"))
+                .andExpect(status().isBadRequest())
+                .andExpect(header().string("Content-Language", "pt-BR"))
+                .andExpect(jsonPath("$.message")
+                        .value("Campo de ordenação inválido: 'id;DROP TABLE book--'. Campos aceitos: title, copyCode."));
+    }
+
+    @Test
+    void invalidUuidPathVariableReturnsBadRequestNotServerError() throws Exception {
+        mockMvc.perform(get("/api/books/{id}", "nao-e-uuid").header("Accept-Language", "en-US"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.violations.id").value("Invalid value for this parameter."));
     }
 
     private BookListItemProjection bookListItem(

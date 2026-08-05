@@ -14,6 +14,7 @@ import br.com.lumilivre.api.dto.book.BookGroupedResponse;
 import br.com.lumilivre.api.dto.book.BookSummaryResponse;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.mapper.BookMapper;
+import br.com.lumilivre.api.security.CanAccessReader;
 import br.com.lumilivre.api.service.BookService;
 import br.com.lumilivre.api.service.RecommendationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -151,9 +152,16 @@ public class BookController {
                         .body(page);
     }
 
+    /**
+     * As recomendacoes derivam do historico de emprestimos do leitor, e ficam em
+     * cache com a matricula como chave. Sem o {@code @CanAccessReader} qualquer
+     * LEITOR autenticado podia passar a matricula de outro e receber a lista dele
+     * — inclusive servida do cache. ADMIN/BIBLIOTECARIO seguem podendo consultar
+     * qualquer matricula.
+     */
     @GetMapping("/recommendations/{registrationNumber}")
     @Operation(operationId = "books.recommendations")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
+    @CanAccessReader
     public ResponseEntity<List<BookCardResponse>> recommendations(
             @PathVariable String registrationNumber,
             Locale locale) {
