@@ -256,11 +256,14 @@ class AuthRateLimitFilterTest {
 
     private static AuthRateLimitFilter newFilter() {
         // ObjectMapper pelo builder do Spring (registra o módulo de java.time,
-        // igual ao bean injetado em produção) e MessageResolver com os bundles
-        // de verdade — assim o corpo do 429 é exercitado, não simulado.
+        // igual ao bean injetado em produção), MessageResolver com os bundles de
+        // verdade e o LocaleResolver real — assim o corpo do 429 é exercitado,
+        // não simulado, e no idioma que o header pediu.
+        I18nConfig i18n = new I18nConfig();
         return new AuthRateLimitFilter(
                 Jackson2ObjectMapperBuilder.json().build(),
-                new MessageResolver(new I18nConfig().messageSource()));
+                new MessageResolver(i18n.messageSource()),
+                i18n.localeResolver());
     }
 
     private static MockHttpServletRequest loginRequest(String remoteAddr) {

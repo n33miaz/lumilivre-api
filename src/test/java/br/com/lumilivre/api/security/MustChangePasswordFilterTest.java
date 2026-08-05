@@ -10,6 +10,8 @@ import java.util.Locale;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
@@ -30,11 +32,14 @@ import jakarta.servlet.FilterChain;
  */
 class MustChangePasswordFilterTest {
 
-    // ObjectMapper pelo builder do Spring e MessageResolver com os bundles de
-    // verdade: o corpo do 403 é exercitado, não simulado.
+    // ObjectMapper pelo builder do Spring, MessageResolver com os bundles de
+    // verdade e o LocaleResolver real: o corpo do 403 é exercitado, não simulado.
+    private static final I18nConfig I18N = new I18nConfig();
+
     private final MustChangePasswordFilter filter = new MustChangePasswordFilter(
             Jackson2ObjectMapperBuilder.json().build(),
-            new MessageResolver(new I18nConfig().messageSource()));
+            new MessageResolver(I18N.messageSource()),
+            I18N.localeResolver());
     private final FilterChain chain = mock(FilterChain.class);
 
     @AfterEach
@@ -98,6 +103,36 @@ class MustChangePasswordFilterTest {
 
         assertThat(enResponse.getHeader("Content-Language")).isEqualTo("en-US");
         assertThat(enResponse.getContentAsString()).contains("Change the initial password");
+    }
+
+    /**
+     * Este 403 é o primeiro que o aluno vê quando entra com a senha inicial, e o
+     * filtro roda antes do DispatcherServlet — resolvia o locale sozinho, num
+     * {@code if} de dois idiomas, então es/zh/hi saíam em português. O {@code code}
+     * não é traduzido: é contrato com o app.
+     */
+    @ParameterizedTest(name = "Accept-Language {0} => 403 em {1}")
+    @CsvSource({
+        "es,    es, Cambia la contraseña inicial",
+        "zh-CN, zh, 请先修改初始密码",
+        "hi-IN, hi, शुरुआती पासवर्ड बदलें"
+    })
+    void forbiddenBodyIsLocalizedInEveryPublishedLanguage(
+            String header, String expectedContentLanguage, String expectedFragment) throws Exception {
+        authenticate(true);
+
+        MockHttpServletRequest request = request("POST", "/api/loan-requests");
+        request.addHeader("Accept-Language", header);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        response.setCharacterEncoding("UTF-8");
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.FORBIDDEN.value());
+        assertThat(response.getHeader("Content-Language")).isEqualTo(expectedContentLanguage);
+        assertThat(response.getContentAsString())
+            .contains(expectedFragment)
+            .contains("\"code\":\"PASSWORD_CHANGE_REQUIRED\"");
     }
 
     @Test

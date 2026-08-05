@@ -10,6 +10,7 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.LocaleResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -80,6 +81,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
     private final MessageResolver messageResolver;
+    private final LocaleResolver localeResolver;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -171,13 +173,14 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         objectMapper.writeValue(response.getWriter(), body);
     }
 
-    /** O filtro roda antes do DispatcherServlet, então o locale vem do header. */
+    /**
+     * O filtro roda antes do DispatcherServlet, então resolve o locale por conta
+     * própria — mas pelo mesmo {@link LocaleResolver} que o dispatcher usa depois.
+     * Um {@code if} de dois idiomas aqui deixaria es/zh/hi recebendo este 429 em
+     * português, e a lista de suportados viveria em dois lugares.
+     */
     private Locale resolveLocale(HttpServletRequest request) {
-        Locale requested = request.getLocale();
-        if (requested != null && "en".equals(requested.getLanguage())) {
-            return Locale.forLanguageTag("en-US");
-        }
-        return Locale.forLanguageTag("pt-BR");
+        return localeResolver.resolveLocale(request);
     }
 
     private static Duration windowOf(String group) {

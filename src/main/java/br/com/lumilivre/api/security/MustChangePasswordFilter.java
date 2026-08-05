@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.LocaleResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -57,6 +58,7 @@ public class MustChangePasswordFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
     private final MessageResolver messageResolver;
+    private final LocaleResolver localeResolver;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -103,13 +105,17 @@ public class MustChangePasswordFilter extends OncePerRequestFilter {
         objectMapper.writeValue(response.getWriter(), body);
     }
 
-    /** O filtro roda antes do DispatcherServlet, então o locale vem do header. */
+    /**
+     * O filtro roda antes do DispatcherServlet, então resolve o locale por conta
+     * própria — mas pelo mesmo {@link LocaleResolver} que o dispatcher usa depois.
+     *
+     * <p>Era um {@code if} de dois idiomas: qualquer coisa que não fosse inglês
+     * caía em português. Com cinco idiomas publicados isso deixaria três deles de
+     * fora justamente neste 403, que é o primeiro que o aluno vê ao entrar com a
+     * senha inicial. Delegar mantém a lista de suportados só no I18nConfig.
+     */
     private Locale resolveLocale(HttpServletRequest request) {
-        Locale requested = request.getLocale();
-        if (requested != null && "en".equals(requested.getLanguage())) {
-            return Locale.forLanguageTag("en-US");
-        }
-        return Locale.forLanguageTag("pt-BR");
+        return localeResolver.resolveLocale(request);
     }
 
     private boolean isStateChanging(String method) {
