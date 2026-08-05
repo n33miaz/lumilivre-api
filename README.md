@@ -18,7 +18,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker)
 ![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue?style=flat-square&logo=githubactions)
-[![API Docs](https://img.shields.io/badge/docs-Swagger-purple?style=flat-square)](https://lumilivre-api.onrender.com/docs)
+![API Docs](https://img.shields.io/badge/docs-Swagger%20(local)-purple?style=flat-square)
 
 </div>
 
@@ -180,6 +180,14 @@ Swagger UI em `/docs`, spec em `/v3/api-docs`. Três grupos: `api-pt-br`,
 `api-en-us` e `system`. Todos os controllers têm `@Tag` e toda operação tem
 `@Operation` com `operationId`, título e descrição nos dois idiomas —
 `scripts/check-openapi-annotations.sh` falha o CI se alguma faltar.
+
+O spec descreve a API inteira, então **em produção ele não é público**: defina
+`LUMILIVRE_DOCS_PUBLIC=false` e `/docs` e `/v3/api-docs/**` passam a exigir um
+token de ADMIN (a UI do Swagger tem o botão *Authorize*). Em dev o default é
+`true`, porque `npm run api:gen` (orval) e `scripts/generate_api.sh` (dart-dio)
+leem o spec sem autenticação para gerar os clients. **Não há mais link público
+para a documentação da instância hospedada** — suba a API local (ou autentique
+como ADMIN) para navegar por ela.
 
 As respostas honram `Accept-Language` (`pt-BR` ou `en-US`) e devolvem
 `Content-Language` e `X-Correlation-Id`. Os textos vivem em

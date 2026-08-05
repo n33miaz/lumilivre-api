@@ -52,11 +52,19 @@ public class SecurityConfig {
     private final MessageResolver messageResolver;
     private final AccessLogService accessLogService;
 
+    /** Rotas do springdoc: spec JSON, UI e o atalho /docs. */
+    private static final String[] DOCS_PATHS = {
+            "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs", "/docs/**"
+    };
+
     @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:8080}")
     private String[] allowedOrigins;
 
     @Value("${app.api.enabled:true}")
     private boolean apiEnabled;
+
+    @Value("${app.docs.public:true}")
+    private boolean docsPublic;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           AuthRateLimitFilter authRateLimitFilter,
@@ -174,8 +182,21 @@ public class SecurityConfig {
                         // Logout antes do permitAll de /api/auth/**: precisa de
                         // principal para saber de quem revogar os tokens.
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs", "/docs/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll();
+
+                    // Documentação OpenAPI (SEC-18): o spec é o mapa completo da
+                    // API — toda rota, todo parâmetro, todo schema. Em dev fica
+                    // aberto porque o orval (web) e o dart-dio (app) leem
+                    // /v3/api-docs sem token para gerar os clients; com
+                    // LUMILIVRE_DOCS_PUBLIC=false (produção) passa a exigir ADMIN,
+                    // que é quem já pode ver tudo de qualquer forma.
+                    if (docsPublic) {
+                        auth.requestMatchers(DOCS_PATHS).permitAll();
+                    } else {
+                        auth.requestMatchers(DOCS_PATHS).hasRole("ADMIN");
+                    }
+
+                    auth
                         .requestMatchers("/actuator/health").permitAll()
                         // Métricas/infos operacionais só para ADMIN
                         .requestMatchers("/actuator/prometheus", "/actuator/info").hasRole("ADMIN")
