@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.utils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -78,6 +79,58 @@ public final class SortAllowlist {
                 .toList();
 
         return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(safeOrders));
+    }
+
+    /**
+     * Como {@link #sanitize(Pageable)}, e alem disso garante <b>ordem total</b>:
+     * ordena por {@code defaultField} quando o cliente nao pede nada e sempre
+     * termina por {@code tieBreakerField}.
+     *
+     * <p>Existe porque paginar consulta sem ordem total nao e questao de
+     * estetica: sem desempate o Postgres nao promete ordem estavel entre dois
+     * {@code LIMIT/OFFSET}, e a pagina 1 pode repetir ou pular linhas que a
+     * pagina 0 ja trouxe. A navegacao por genero do app tinha exatamente isso —
+     * e {@code title} sozinho nao resolve, porque titulo repete entre volumes.
+     *
+     * <p>Vale tambem para JPQL, nao so para query nativa: o {@code sanitize}
+     * nasceu para impedir que texto do cliente entrasse numa query nativa, mas
+     * em JPQL o campo desconhecido tambem chega ao banco — como
+     * {@code ORDER BY alias.campoInexistente}, que o Hibernate rejeita e o
+     * handler transforma em 500. Passando por aqui, vira 400.
+     *
+     * @throws IllegalStateException se {@code defaultField} ou
+     *         {@code tieBreakerField} nao estiverem na allowlist — e erro de
+     *         programacao, nao entrada do cliente
+     */
+    public Pageable sanitizeWithTotalOrder(Pageable pageable, String defaultField, String tieBreakerField) {
+        String defaultColumn = requireDeclared(defaultField);
+        String tieBreakerColumn = requireDeclared(tieBreakerField);
+
+        if (pageable == null) {
+            return null;
+        }
+
+        List<Sort.Order> orders = new ArrayList<>();
+        if (pageable.getSort().isUnsorted()) {
+            orders.add(Sort.Order.asc(defaultColumn));
+        } else {
+            pageable.getSort().forEach(requested -> orders.add(toSafeOrder(requested)));
+        }
+        boolean alreadyStable = orders.stream()
+                .anyMatch(order -> order.getProperty().equals(tieBreakerColumn));
+        if (!alreadyStable) {
+            orders.add(Sort.Order.asc(tieBreakerColumn));
+        }
+
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(orders));
+    }
+
+    private String requireDeclared(String field) {
+        String column = columnsByField.get(field);
+        if (column == null) {
+            throw new IllegalStateException("SortAllowlist does not declare the field '" + field + "'");
+        }
+        return column;
     }
 
     private Sort.Order toSafeOrder(Sort.Order requested) {
