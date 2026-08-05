@@ -5,9 +5,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.Locale;
+
+import br.com.lumilivre.api.config.I18nConfig;
+import br.com.lumilivre.api.config.MessageResolver;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -20,7 +25,7 @@ class AuthRateLimitFilterTest {
 
     @Test
     void authEndpointsAllowFiveRequestsAndRejectTheSixthForSameIp() throws Exception {
-        AuthRateLimitFilter filter = new AuthRateLimitFilter();
+        AuthRateLimitFilter filter = newFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
 
         for (int i = 0; i < 5; i++) {
@@ -37,14 +42,49 @@ class AuthRateLimitFilterTest {
                 org.mockito.ArgumentMatchers.any());
         assertThat(blocked.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
         assertThat(blocked.getHeader("Retry-After")).isEqualTo("600");
-        assertThat(blocked.getContentAsString()).contains("Too Many Requests");
+        // Mesmo envelope do resto da API: chaves em inglês, não erro/mensagem.
+        assertThat(blocked.getContentAsString())
+                .contains("\"status\":429")
+                .contains("\"error\":")
+                .contains("\"message\":")
+                .contains("\"path\":\"/api/auth/login\"")
+                .doesNotContain("\"erro\"")
+                .doesNotContain("\"mensagem\"");
+    }
+
+    @Test
+    void tooManyRequestsBodyIsLocalized() throws Exception {
+        AuthRateLimitFilter filter = newFilter();
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        for (int i = 0; i < 5; i++) {
+            filter.doFilter(loginRequest("203.0.113.80"), new MockHttpServletResponse(), chain);
+        }
+
+        MockHttpServletRequest ptRequest = loginRequest("203.0.113.80");
+        ptRequest.addPreferredLocale(Locale.forLanguageTag("pt-BR"));
+        MockHttpServletResponse ptResponse = new MockHttpServletResponse();
+        ptResponse.setCharacterEncoding("UTF-8");
+        filter.doFilter(ptRequest, ptResponse, chain);
+
+        assertThat(ptResponse.getHeader("Content-Language")).isEqualTo("pt-BR");
+        assertThat(ptResponse.getContentAsString()).contains("Muitas requisições");
+
+        MockHttpServletRequest enRequest = loginRequest("203.0.113.80");
+        enRequest.addPreferredLocale(Locale.forLanguageTag("en-US"));
+        MockHttpServletResponse enResponse = new MockHttpServletResponse();
+        enResponse.setCharacterEncoding("UTF-8");
+        filter.doFilter(enRequest, enResponse, chain);
+
+        assertThat(enResponse.getHeader("Content-Language")).isEqualTo("en-US");
+        assertThat(enResponse.getContentAsString()).contains("Too many requests");
     }
 
     @Test
     void forwardedForHeaderIsIgnoredForRateLimiting() throws Exception {
         // Mesmo IP resolvido pelo proxy (remoteAddr) com X-Forwarded-For variável
         // NÃO deve burlar o limite: o filtro ignora o header do cliente.
-        AuthRateLimitFilter filter = new AuthRateLimitFilter();
+        AuthRateLimitFilter filter = newFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
 
         for (int i = 0; i < 5; i++) {
@@ -59,7 +99,7 @@ class AuthRateLimitFilterTest {
 
     @Test
     void nonAuthEndpointsBypassRateLimit() throws Exception {
-        AuthRateLimitFilter filter = new AuthRateLimitFilter();
+        AuthRateLimitFilter filter = newFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/books");
         request.setRemoteAddr("203.0.113.20");
@@ -75,7 +115,7 @@ class AuthRateLimitFilterTest {
 
     @Test
     void forgotPasswordEndpointUsesSameLimit() throws Exception {
-        AuthRateLimitFilter filter = new AuthRateLimitFilter();
+        AuthRateLimitFilter filter = newFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
 
         for (int i = 0; i < 5; i++) {
@@ -92,8 +132,46 @@ class AuthRateLimitFilterTest {
     }
 
     @Test
+    void validateResetTokenEndpointIsThrottledDespiteTheTokenInThePath() throws Exception {
+        // Sem limite aqui, um atacante varre UUID de reset em paralelo.
+        AuthRateLimitFilter filter = newFilter();
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        for (int i = 0; i < 5; i++) {
+            filter.doFilter(authRequest("/api/auth/validate-token/token-" + i, "203.0.113.60"),
+                    new MockHttpServletResponse(), chain);
+        }
+
+        MockHttpServletResponse blocked = new MockHttpServletResponse();
+        filter.doFilter(authRequest("/api/auth/validate-token/token-x", "203.0.113.60"), blocked, chain);
+
+        verify(chain, times(5)).doFilter(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any());
+        assertThat(blocked.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+    }
+
+    @Test
+    void validateResetTokenDoesNotEatTheLoginBudgetOfTheSameIp() throws Exception {
+        // O fluxo de recuperação (pedir + validar + trocar, com um recarregamento
+        // no meio) não pode deixar o usuário sem tentativas de login.
+        AuthRateLimitFilter filter = newFilter();
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        for (int i = 0; i < 6; i++) {
+            filter.doFilter(authRequest("/api/auth/validate-token/token-" + i, "203.0.113.70"),
+                    new MockHttpServletResponse(), chain);
+        }
+
+        MockHttpServletResponse login = new MockHttpServletResponse();
+        filter.doFilter(loginRequest("203.0.113.70"), login, chain);
+
+        assertThat(login.getStatus()).isEqualTo(HttpStatus.OK.value());
+    }
+
+    @Test
     void blockedRequestDoesNotContinueFilterChain() throws Exception {
-        AuthRateLimitFilter filter = new AuthRateLimitFilter();
+        AuthRateLimitFilter filter = newFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
 
         for (int i = 0; i < 6; i++) {
@@ -106,6 +184,15 @@ class AuthRateLimitFilterTest {
         verify(chain, never()).doFilter(
                 org.mockito.ArgumentMatchers.isNull(),
                 org.mockito.ArgumentMatchers.any());
+    }
+
+    private static AuthRateLimitFilter newFilter() {
+        // ObjectMapper pelo builder do Spring (registra o módulo de java.time,
+        // igual ao bean injetado em produção) e MessageResolver com os bundles
+        // de verdade — assim o corpo do 429 é exercitado, não simulado.
+        return new AuthRateLimitFilter(
+                Jackson2ObjectMapperBuilder.json().build(),
+                new MessageResolver(new I18nConfig().messageSource()));
     }
 
     private static MockHttpServletRequest loginRequest(String remoteAddr) {
@@ -122,7 +209,7 @@ class AuthRateLimitFilterTest {
     void percentEncodedPathDoesNotBypassRateLimit() throws Exception {
         // O container decodifica o path (servletPath). Como o filtro compara o
         // servletPath — e não o requestURI cru — /api/%61uth/login não burla.
-        AuthRateLimitFilter filter = new AuthRateLimitFilter();
+        AuthRateLimitFilter filter = newFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
 
         for (int i = 0; i < 6; i++) {
