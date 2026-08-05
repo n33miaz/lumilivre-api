@@ -40,6 +40,16 @@ public class ErrorResponse {
     @Schema(description = "Correlation identifier propagated in logs and response headers.", example = "a1b2c3d4-e5f6-7890")
     private String correlationId;
 
+    /**
+     * Código estável de máquina, presente só onde o cliente precisa distinguir a
+     * causa e não pode depender de texto localizado. Hoje: {@code
+     * PASSWORD_CHANGE_REQUIRED}, que o app usa para abrir o gate de troca de
+     * senha em vez de deslogar o usuário no 403.
+     */
+    @Schema(description = "Stable machine-readable cause, present only where the client must branch on it.",
+            example = "PASSWORD_CHANGE_REQUIRED")
+    private String code;
+
     @Schema(description = "Field-level validation errors keyed by field name.")
     private Map<String, String> violations;
 }

@@ -29,19 +29,20 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.domain.policy.PasswordPolicy.PasswordPolicyViolationException;
 import br.com.lumilivre.api.dto.auth.ResetPasswordTokenRequest;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.AppUser;
+import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.PasswordResetToken;
 import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.AppUserRepository;
 import br.com.lumilivre.api.repository.PasswordResetTokenRepository;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.security.LoginAttemptService;
-import br.com.lumilivre.api.service.infra.EmailService;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -59,7 +60,10 @@ class AuthServiceTest {
     private PasswordResetTokenRepository tokenRepository;
 
     @Mock
-    private EmailService emailService;
+    private OutboxPublisherService outboxPublisher;
+
+    @Mock
+    private MessageResolver messages;
 
     @Mock
     private LoginAttemptService loginAttemptService;
@@ -262,7 +266,12 @@ class AuthServiceTest {
     }
 
     @Test
-    void solicitarResetSenhaDeveSalvarTokenEEnviarEmailQuandoUsuarioExiste() {
+    void solicitarResetSenhaDeveSalvarTokenEPublicarNoOutbox() {
+        // O envio ficava dentro desta transacao: MailAuthenticationException e
+        // RuntimeException e derrubava tudo, entao o token novo se perdia E a
+        // invalidacao do anterior era desfeita -- recuperacao de senha nao
+        // funcionava com SMTP ruim. Agora o e-mail e um evento persistido junto
+        // com o token, entregue depois e com retry.
         AppUser usuario = usuario(Role.ADMIN, null);
         when(usuarioRepository.findByEmail("admin@lumilivre.test")).thenReturn(Optional.of(usuario));
 
@@ -273,8 +282,10 @@ class AuthServiceTest {
         assertThat(tokenCaptor.getValue().getAppUser()).isSameAs(usuario);
         assertThat(tokenCaptor.getValue().isExpired()).isFalse();
 
-        verify(emailService).enviarEmailResetSenha(
+        verify(outboxPublisher).publish(
+                eq(EventType.PASSWORD_RESET),
                 eq("admin@lumilivre.test"),
+                any(),
                 contains(tokenCaptor.getValue().getToken()),
                 any(Locale.class));
     }
@@ -286,7 +297,19 @@ class AuthServiceTest {
         service.solicitarResetSenha("desconhecido@lumilivre.test");
 
         verify(tokenRepository, never()).save(any());
-        verify(emailService, never()).enviarEmailResetSenha(any(), any(), any());
+        verify(outboxPublisher, never()).publish(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void solicitarResetSenhaNaoEstouraQuandoOEmailVemAusenteOuVazio() {
+        // 204 em qualquer caminho: e o que fecha o oraculo de enumeracao. Antes,
+        // endereco inexistente devolvia 204 e conta real devolvia 500.
+        service.solicitarResetSenha(null);
+        service.solicitarResetSenha("   ");
+
+        verify(usuarioRepository, never()).findByEmail(any());
+        verify(tokenRepository, never()).save(any());
+        verify(outboxPublisher, never()).publish(any(), any(), any(), any(), any());
     }
 
     @Test

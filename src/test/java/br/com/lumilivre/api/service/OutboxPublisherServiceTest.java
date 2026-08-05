@@ -99,6 +99,56 @@ class OutboxPublisherServiceTest {
         verify(outboxRepository).save(event);
     }
 
+    @Test
+    void resetDeSenhaUsaOTemplateDedicadoComOLinkNoCorpo() {
+        // O template genérico escapa o corpo e aponta o botão para o portal: o
+        // link de redefinição sairia como texto não clicável.
+        OutboxEvent event = OutboxEvent.builder()
+                .id(11L)
+                .eventType(EventType.PASSWORD_RESET)
+                .recipientEmail("admin@lumilivre.test")
+                .subject("Redefinicao de Senha")
+                .body("https://lumilivre.test/mudar-senha?token=abc")
+                .status(EventStatus.PENDING)
+                .locale("pt-BR")
+                .build();
+        when(outboxRepository.findByStatusAndRetryCountLessThan(EventStatus.PENDING, 3))
+                .thenReturn(List.of(event));
+
+        service.processPendingEvents();
+
+        verify(emailService).enviarEmailResetSenha(
+                eq("admin@lumilivre.test"),
+                eq("https://lumilivre.test/mudar-senha?token=abc"),
+                any());
+        verify(emailService, org.mockito.Mockito.never()).enviarEmail(any(), any(), any(), any());
+        assertThat(event.getStatus()).isEqualTo(EventStatus.SENT);
+    }
+
+    @Test
+    void smtpRuimNoResetDeSenhaVirRetry() {
+        // Era exatamente este caminho que perdia o token: o envio acontecia na
+        // transação do pedido, então a falha de SMTP desfazia o insert.
+        OutboxEvent event = OutboxEvent.builder()
+                .id(12L)
+                .eventType(EventType.PASSWORD_RESET)
+                .recipientEmail("admin@lumilivre.test")
+                .subject("Redefinicao de Senha")
+                .body("https://lumilivre.test/mudar-senha?token=abc")
+                .status(EventStatus.PENDING)
+                .build();
+        when(outboxRepository.findByStatusAndRetryCountLessThan(EventStatus.PENDING, 3))
+                .thenReturn(List.of(event));
+        doThrow(new RuntimeException("smtp indisponivel"))
+                .when(emailService).enviarEmailResetSenha(any(), any(), any());
+
+        service.processPendingEvents();
+
+        assertThat(event.getStatus()).isEqualTo(EventStatus.PENDING);
+        assertThat(event.getRetryCount()).isEqualTo(1);
+        assertThat(event.getNextRetryAt()).isNotNull();
+    }
+
     private static OutboxEvent event(int retryCount) {
         return OutboxEvent.builder()
                 .id(10L)

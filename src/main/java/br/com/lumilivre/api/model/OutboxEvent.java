@@ -27,7 +27,14 @@ public class OutboxEvent {
         LOAN_CREATED,
         LOAN_RETURNED,
         REQUEST_ACCEPTED,
-        REQUEST_REJECTED
+        REQUEST_REJECTED,
+        /**
+         * Recuperação de senha. Único tipo em que {@code body} não é o texto do
+         * e-mail e sim o <b>link de redefinição</b>: o envio usa o template
+         * dedicado ({@code enviarEmailResetSenha}), com o link num botão, e não o
+         * template genérico, que escaparia a URL como texto.
+         */
+        PASSWORD_RESET
     }
 
     public enum EventStatus {

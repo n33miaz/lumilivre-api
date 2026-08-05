@@ -6,14 +6,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import br.com.lumilivre.api.config.I18nConfig;
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.model.AppUser;
 import jakarta.servlet.FilterChain;
@@ -24,12 +30,17 @@ import jakarta.servlet.FilterChain;
  */
 class MustChangePasswordFilterTest {
 
-    private final MustChangePasswordFilter filter = new MustChangePasswordFilter();
+    // ObjectMapper pelo builder do Spring e MessageResolver com os bundles de
+    // verdade: o corpo do 403 é exercitado, não simulado.
+    private final MustChangePasswordFilter filter = new MustChangePasswordFilter(
+            Jackson2ObjectMapperBuilder.json().build(),
+            new MessageResolver(new I18nConfig().messageSource()));
     private final FilterChain chain = mock(FilterChain.class);
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+        MDC.clear();
     }
 
     @Test
@@ -42,6 +53,51 @@ class MustChangePasswordFilterTest {
         assertThat(response.getStatus()).isEqualTo(HttpStatus.FORBIDDEN.value());
         assertThat(response.getContentAsString()).contains("PASSWORD_CHANGE_REQUIRED");
         verify(chain, never()).doFilter(any(), any());
+    }
+
+    @Test
+    void forbiddenBodyUsesTheStandardErrorEnvelope() throws Exception {
+        // Este 403 era o único da API montado como string à mão: sem timestamp,
+        // sem path, sem correlationId e com o texto cravado em inglês.
+        authenticate(true);
+        MDC.put("correlationId", "corr-123");
+        MockHttpServletRequest request = request("POST", "/api/loan-requests");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        response.setCharacterEncoding("UTF-8");
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(response.getContentAsString())
+                .contains("\"status\":403")
+                .contains("\"timestamp\":")
+                .contains("\"path\":\"/api/loan-requests\"")
+                .contains("\"correlationId\":\"corr-123\"")
+                // Contrato com o app: abrir o gate de senha, não deslogar.
+                .contains("\"code\":\"PASSWORD_CHANGE_REQUIRED\"");
+        assertThat(response.getContentType()).contains("application/json");
+    }
+
+    @Test
+    void forbiddenBodyIsLocalized() throws Exception {
+        authenticate(true);
+
+        MockHttpServletRequest ptRequest = request("POST", "/api/loan-requests");
+        ptRequest.addPreferredLocale(Locale.forLanguageTag("pt-BR"));
+        MockHttpServletResponse ptResponse = new MockHttpServletResponse();
+        ptResponse.setCharacterEncoding("UTF-8");
+        filter.doFilter(ptRequest, ptResponse, chain);
+
+        assertThat(ptResponse.getHeader("Content-Language")).isEqualTo("pt-BR");
+        assertThat(ptResponse.getContentAsString()).contains("Troque a senha inicial");
+
+        MockHttpServletRequest enRequest = request("POST", "/api/loan-requests");
+        enRequest.addPreferredLocale(Locale.forLanguageTag("en-US"));
+        MockHttpServletResponse enResponse = new MockHttpServletResponse();
+        enResponse.setCharacterEncoding("UTF-8");
+        filter.doFilter(enRequest, enResponse, chain);
+
+        assertThat(enResponse.getHeader("Content-Language")).isEqualTo("en-US");
+        assertThat(enResponse.getContentAsString()).contains("Change the initial password");
     }
 
     @Test

@@ -1,9 +1,11 @@
 package br.com.lumilivre.api.service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
@@ -13,19 +15,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.domain.policy.PasswordPolicy;
 import br.com.lumilivre.api.dto.auth.LoginResponse;
 import br.com.lumilivre.api.dto.auth.ResetPasswordTokenRequest;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.AppUser;
+import br.com.lumilivre.api.model.OutboxEvent.EventType;
 import br.com.lumilivre.api.model.PasswordResetToken;
 import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.AppUserRepository;
 import br.com.lumilivre.api.repository.PasswordResetTokenRepository;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.security.LoginAttemptService;
-import br.com.lumilivre.api.service.infra.EmailService;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -46,8 +49,14 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final EmailService emailService;
+    private final OutboxPublisherService outboxPublisher;
+    private final MessageResolver messages;
     private final LoginAttemptService loginAttemptService;
+
+    // O link de reset apontava para o domínio de produção cravado no código, o
+    // que quebra qualquer ambiente que não seja ele (dev, staging, homologação).
+    @Value("${app.public-url:https://www.lumilivre.com.br}")
+    private String publicUrl;
 
     public LoginResponse login(String username, String password) {
         AuthenticatedLogin login = authenticate(username, password);
@@ -129,28 +138,61 @@ public class AuthService {
         }
     }
 
+    /**
+     * Emite um link de redefinição, se a conta existir. Sempre retorna sem erro.
+     *
+     * <p>Duas correções vivem aqui, e as duas eram graves.
+     *
+     * <p><b>Oráculo de enumeração.</b> O endpoint respondia 204 para endereço
+     * inexistente e <b>500</b> para endereço de conta real (o SMTP falhava
+     * dentro da transação). Isso é um oráculo limpo para colher contas válidas —
+     * e destruía o motivo de existir a resposta genérica. Agora nenhum caminho
+     * levanta exceção: existir ou não, e o e-mail sair ou não, dá o mesmo 204.
+     *
+     * <p><b>O token não era gravado.</b> O envio SMTP acontecia dentro desta
+     * transação; {@code MailAuthenticationException} é {@code RuntimeException} e
+     * derrubava tudo, então o token novo se perdia <i>e</i> a invalidação do
+     * anterior (SEC-23) era desfeita — recuperação de senha simplesmente não
+     * funcionava com SMTP ruim. O envio passa a ser um evento no
+     * {@code outbox_event}, que é persistido nesta mesma transação (o link só
+     * existe se o token existir) e entregue depois pelo publisher, com retry.
+     *
+     * <p>Fica um oráculo de <i>tempo</i> residual: conta existente paga dois
+     * inserts. Não compensamos com trabalho falso porque o sinal é de poucos
+     * milissegundos sobre a rede e o limite de 5 requisições por 10 minutos por
+     * IP ({@code AuthRateLimitFilter}) impede a repetição que uma medição de
+     * tempo confiável exigiria.
+     */
     @Transactional
     public void solicitarResetSenha(String email) {
-        Optional<AppUser> appUserOpt = appUserRepository.findByEmail(email);
-
-        if (appUserOpt.isPresent()) {
-            AppUser appUser = appUserOpt.get();
-            String token = UUID.randomUUID().toString();
-
-            // Um pedido novo invalida o anterior (SEC-23): dois links vivos ao
-            // mesmo tempo dobram a janela de ataque e a tabela tem UNIQUE em
-            // app_user_id, então o insert seguinte precisa da limpeza + flush.
-            passwordResetTokenRepository.deleteByAppUserId(appUser.getId());
-            passwordResetTokenRepository.flush();
-
-            PasswordResetToken passwordResetToken = new PasswordResetToken(token, appUser, TOKEN_TTL_MINUTES);
-            passwordResetTokenRepository.save(passwordResetToken);
-
-            String linkReset = "https://www.lumilivre.com.br/mudar-senha?token=" + token;
-            String preferredLocale = appUser.getPreferredLocale() != null ? appUser.getPreferredLocale() : "pt-BR";
-            emailService.enviarEmailResetSenha(appUser.getEmail(), linkReset,
-                    java.util.Locale.forLanguageTag(preferredLocale));
+        if (email == null || email.isBlank()) {
+            return;
         }
+        Optional<AppUser> appUserOpt = appUserRepository.findByEmail(email);
+        if (appUserOpt.isEmpty()) {
+            return;
+        }
+
+        AppUser appUser = appUserOpt.get();
+        String token = UUID.randomUUID().toString();
+
+        // Um pedido novo invalida o anterior (SEC-23): dois links vivos ao
+        // mesmo tempo dobram a janela de ataque e a tabela tem UNIQUE em
+        // app_user_id, então o insert seguinte precisa da limpeza + flush.
+        passwordResetTokenRepository.deleteByAppUserId(appUser.getId());
+        passwordResetTokenRepository.flush();
+
+        PasswordResetToken passwordResetToken = new PasswordResetToken(token, appUser, TOKEN_TTL_MINUTES);
+        passwordResetTokenRepository.save(passwordResetToken);
+
+        String linkReset = publicUrl + "/mudar-senha?token=" + token;
+        String preferredLocale = appUser.getPreferredLocale() != null ? appUser.getPreferredLocale() : "pt-BR";
+        Locale locale = Locale.forLanguageTag(preferredLocale);
+
+        // O corpo guarda o link, não o texto: o publisher usa o template
+        // dedicado de reset. Ver OutboxEvent.EventType.PASSWORD_RESET.
+        outboxPublisher.publish(EventType.PASSWORD_RESET, appUser.getEmail(),
+                messages.resolve("email.reset-password.subject", locale), linkReset, locale);
     }
 
     public boolean validarTokenReset(String token) {

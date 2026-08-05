@@ -1,16 +1,24 @@
 package br.com.lumilivre.api.security;
 
 import java.io.IOException;
+import java.util.Locale;
 
+import org.slf4j.MDC;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.dto.common.ErrorResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Enquanto o usuário tem {@code must_change_password = true}, bloqueia no
@@ -29,7 +37,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * no cliente; este filtro é a rede de segurança do lado servidor.
  */
 @Component
+@RequiredArgsConstructor
 public class MustChangePasswordFilter extends OncePerRequestFilter {
+
+    /** Contrato com o cliente: abrir o gate de senha, não deslogar. */
+    static final String PASSWORD_CHANGE_REQUIRED_CODE = "PASSWORD_CHANGE_REQUIRED";
 
     // Todo o fluxo de autenticação fica isento: login, forgot/reset-password e a
     // própria troca de senha precisam funcionar mesmo com a flag ativa (um token
@@ -43,6 +55,9 @@ public class MustChangePasswordFilter extends OncePerRequestFilter {
     // que o app abre logo depois do login — fica fora do bloqueio.
     private static final String READER_RANKING_PATH = "/api/readers/ranking";
 
+    private final ObjectMapper objectMapper;
+    private final MessageResolver messageResolver;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain chain) throws ServletException, IOException {
@@ -52,16 +67,49 @@ public class MustChangePasswordFilter extends OncePerRequestFilter {
         if (!path.startsWith(AUTH_PATH_PREFIX)
                 && (isStateChanging(request.getMethod()) || isPersonalDataRead(request.getMethod(), path))
                 && currentUserMustChangePassword()) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write(
-                    "{\"status\":403,\"error\":\"Forbidden\","
-                            + "\"message\":\"Password change required before performing this action.\","
-                            + "\"code\":\"PASSWORD_CHANGE_REQUIRED\"}");
+            writeForbidden(request, response);
             return;
         }
 
         chain.doFilter(request, response);
+    }
+
+    /**
+     * Envelope padrão da API, e não JSON montado à mão.
+     *
+     * <p>O corpo anterior tinha os nomes de campo certos mas nascia sem {@code
+     * timestamp}, {@code path} e {@code correlationId}, com a mensagem cravada em
+     * inglês e sem {@code Content-Language} — ou seja, era o único 403 do sistema
+     * que um cliente genérico não conseguia tratar como os outros, e sem
+     * correlationId ninguém liga esse 403 a nada no log.
+     *
+     * <p>O {@code code} permanece: é contrato deliberado com o app, que o usa
+     * para abrir o gate de troca de senha em vez de deslogar em 403.
+     */
+    private void writeForbidden(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        Locale locale = resolveLocale(request);
+        ErrorResponse body = ErrorResponse.builder()
+                .status(HttpStatus.FORBIDDEN.value())
+                .error(messageResolver.resolve("error.password-change-required.title", locale))
+                .message(messageResolver.resolve("error.password-change-required.message", locale))
+                .path(request.getRequestURI())
+                .correlationId(MDC.get("correlationId"))
+                .code(PASSWORD_CHANGE_REQUIRED_CODE)
+                .build();
+
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        response.setContentType("application/json;charset=UTF-8");
+        response.setHeader("Content-Language", locale.toLanguageTag());
+        objectMapper.writeValue(response.getWriter(), body);
+    }
+
+    /** O filtro roda antes do DispatcherServlet, então o locale vem do header. */
+    private Locale resolveLocale(HttpServletRequest request) {
+        Locale requested = request.getLocale();
+        if (requested != null && "en".equals(requested.getLanguage())) {
+            return Locale.forLanguageTag("en-US");
+        }
+        return Locale.forLanguageTag("pt-BR");
     }
 
     private boolean isStateChanging(String method) {

@@ -67,8 +67,7 @@ public class OutboxPublisherService {
 
         for (OutboxEvent event : pending) {
             try {
-                emailService.enviarEmail(event.getRecipientEmail(), event.getSubject(), event.getBody(),
-                        parseLocale(event.getLocale()));
+                dispatch(event);
                 event.setStatus(EventStatus.SENT);
                 event.setProcessedAt(OffsetDateTime.now());
                 log.info("Outbox email sent: id={}, type={}", event.getId(), event.getEventType());
@@ -87,6 +86,20 @@ public class OutboxPublisherService {
             }
             outboxRepository.save(event);
         }
+    }
+
+    /**
+     * Escolhe o template pelo tipo. A recuperação de senha precisa do template
+     * dedicado — o genérico escapa o corpo e põe um botão fixo para o portal, o
+     * que transformaria o link de redefinição em texto não clicável.
+     */
+    private void dispatch(OutboxEvent event) {
+        Locale locale = parseLocale(event.getLocale());
+        if (event.getEventType() == EventType.PASSWORD_RESET) {
+            emailService.enviarEmailResetSenha(event.getRecipientEmail(), event.getBody(), locale);
+            return;
+        }
+        emailService.enviarEmail(event.getRecipientEmail(), event.getSubject(), event.getBody(), locale);
     }
 
     private static Locale parseLocale(String tag) {
