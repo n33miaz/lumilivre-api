@@ -2,7 +2,13 @@ package br.com.lumilivre.api.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
@@ -203,6 +209,76 @@ class GlobalExceptionHandlerI18nTest {
         assertThat(enUs.getBody().getMessage())
             .isEqualTo("Invalid sort field: 'id;DROP TABLE book--'. Accepted fields: title, copyCode.");
     }
+
+    // ---- T06: penalidade em segunda pessoa, com data localizada ---------------
+
+    /**
+     * A frase de penalidade e o que o aluno le no app, nao o que a bibliotecaria
+     * ve no painel: nao pode falar dele em terceira pessoa nem imprimir data ISO.
+     */
+    @ParameterizedTest(name = "penalidade em {0} sai localizada")
+    @CsvSource({ "pt-BR", "en-US", "es", "zh", "hi" })
+    void activePenaltyMessageIsLocalizedAndNeverLeaksIsoDate(String tag) {
+        LocalDate expiry = LocalDate.of(2026, 8, 11);
+        Locale locale = Locale.forLanguageTag(tag);
+        String expectedDate = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+            .withLocale(locale)
+            .format(expiry);
+
+        for (String key : PENALTY_KEYS) {
+            String message = handler.handleBusinessRule(
+                BusinessRuleException.ofKey(key, expiry), locale, webRequest("POST", "/api/loans"))
+                .getBody().getMessage();
+
+            assertThat(message).as("%s em %s", key, tag)
+                .isNotEqualTo(key)
+                .contains(expectedDate)
+                .doesNotContain("2026-08-11");
+        }
+    }
+
+    @Test
+    void activePenaltyMessageAddressesTheReaderDirectly() {
+        LocalDate expiry = LocalDate.of(2026, 8, 11);
+        WebRequest req = webRequest("POST", "/api/loans");
+
+        for (String key : PENALTY_KEYS) {
+            assertThat(handler.handleBusinessRule(
+                    BusinessRuleException.ofKey(key, expiry), Locale.forLanguageTag("pt-BR"), req)
+                    .getBody().getMessage())
+                .as("%s em pt-BR", key)
+                .contains("Você")
+                .doesNotContain("Leitor bloqueado");
+
+            assertThat(handler.handleBusinessRule(
+                    BusinessRuleException.ofKey(key, expiry), Locale.forLanguageTag("en-US"), req)
+                    .getBody().getMessage())
+                .as("%s em en-US", key)
+                .contains("You will be able to")
+                .doesNotContain("Reader is blocked");
+        }
+    }
+
+    @Test
+    void everyPublishedLocaleHasItsOwnPenaltyWording() {
+        LocalDate expiry = LocalDate.of(2026, 8, 11);
+        WebRequest req = webRequest("POST", "/api/loans");
+
+        Set<String> wordings = Stream.of("pt-BR", "en-US", "es", "zh", "hi")
+            .map(tag -> handler.handleBusinessRule(
+                BusinessRuleException.ofKey("loan.policy-violation.active-penalty", expiry),
+                Locale.forLanguageTag(tag), req).getBody().getMessage())
+            .collect(Collectors.toSet());
+
+        assertThat(wordings).hasSize(5);
+    }
+
+    private static final String[] PENALTY_KEYS = {
+        "loan.policy-violation.active-penalty",
+        "loan.renewal.active-penalty",
+        "request.policy.active-penalty",
+        "reservation.policy.active-penalty"
+    };
 
     private static WebRequest webRequest(String method, String path) {
         MockHttpServletRequest req = new MockHttpServletRequest(method, path);
