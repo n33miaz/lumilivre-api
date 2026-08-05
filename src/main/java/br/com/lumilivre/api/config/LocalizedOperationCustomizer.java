@@ -165,6 +165,9 @@ public class LocalizedOperationCustomizer implements OperationCustomizer {
                 || operationId.endsWith(".getOne")
                 || operationId.endsWith(".update")
                 || operationId.endsWith(".delete")
+                // Interesse aponta para um livro pelo path: livro inexistente é 404.
+                || operationId.endsWith(".toggle")
+                || operationId.endsWith(".remove")
                 || operationId.endsWith(".cancel")
                 || operationId.endsWith(".close")
                 || operationId.endsWith(".renew")

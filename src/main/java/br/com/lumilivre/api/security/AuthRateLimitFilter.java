@@ -39,6 +39,17 @@ import lombok.RequiredArgsConstructor;
  * ele corta é varredura automatizada. Volume de tráfego de verdade se barra na
  * borda (proxy/CDN), não em processo — aqui já se pagou servlet e JSON.
  *
+ * <p><b>Marcar interesse</b> ({@code POST}/{@code DELETE}
+ * {@code /api/books/{id}/interest}): {@value #MAX_INTEREST_WRITES} por minuto.
+ * Tem balde próprio, e não o de leitura, por dois motivos. É escrita autenticada
+ * e não leitura anônima — o custo, o abuso possível e o teto natural são outros
+ * (a unicidade da V8 limita cada leitor ao tamanho do acervo, ele não consegue
+ * criar duas linhas para o mesmo livro por mais que insista). E, principalmente,
+ * porque compartilhar balde faria um laço de "marcar interesse" consumir a cota
+ * de <i>leitura do catálogo</i> do mesmo IP: numa escola atrás de um NAT único,
+ * um aluno com script deixaria a turma inteira sem catálogo. Balde separado
+ * transforma isso em "ele mesmo para de marcar interesse".
+ *
  * <p>Retorna HTTP 429 com {@code Retry-After} ao estourar o balde do grupo.
  */
 @Component
@@ -51,9 +62,16 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private static final int MAX_PUBLIC_READS = 300;
     private static final Duration PUBLIC_READ_WINDOW = Duration.ofMinutes(1);
 
+    // 120/min: uma pessoa tocando em coração faz umas dezenas por minuto no
+    // limite, e o NAT da escola soma várias. Folgado para uso humano, apertado
+    // para laço automatizado.
+    private static final int MAX_INTEREST_WRITES = 120;
+    private static final Duration INTEREST_WRITE_WINDOW = Duration.ofMinutes(1);
+
     private static final String GROUP_AUTH = "auth";
     private static final String GROUP_VALIDATE_TOKEN = "validate-token";
     private static final String GROUP_PUBLIC_READ = "public-read";
+    private static final String GROUP_INTEREST_WRITE = "interest-write";
 
     // Teto de baldes para evitar crescimento ilimitado do mapa (DoS de memória).
     private static final int MAX_BUCKETS = 50_000;
@@ -115,6 +133,11 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         if (path.startsWith("/api/auth/validate-token/")) {
             return GROUP_VALIDATE_TOKEN;
         }
+        // Antes do prefixo /api/books, senão a escrita cairia no balde de
+        // leitura do catálogo (que é o que se quer evitar).
+        if (path.startsWith("/api/books/") && path.endsWith("/interest")) {
+            return GROUP_INTEREST_WRITE;
+        }
         if (path.startsWith("/api/books")
                 || "/api/settings/public".equals(path)
                 || "/api/app-version".equals(path)) {
@@ -158,11 +181,19 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     }
 
     private static Duration windowOf(String group) {
-        return GROUP_PUBLIC_READ.equals(group) ? PUBLIC_READ_WINDOW : WINDOW;
+        return switch (group) {
+            case GROUP_PUBLIC_READ -> PUBLIC_READ_WINDOW;
+            case GROUP_INTEREST_WRITE -> INTEREST_WRITE_WINDOW;
+            default -> WINDOW;
+        };
     }
 
     private static int capacityOf(String group) {
-        return GROUP_PUBLIC_READ.equals(group) ? MAX_PUBLIC_READS : MAX_REQUESTS;
+        return switch (group) {
+            case GROUP_PUBLIC_READ -> MAX_PUBLIC_READS;
+            case GROUP_INTEREST_WRITE -> MAX_INTEREST_WRITES;
+            default -> MAX_REQUESTS;
+        };
     }
 
     private Bucket buildBucket(String group) {

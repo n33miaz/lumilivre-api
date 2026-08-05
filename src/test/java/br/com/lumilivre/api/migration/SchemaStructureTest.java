@@ -52,7 +52,7 @@ class SchemaStructureTest {
         assertThat(tables).contains(
                 "course", "academic_module", "study_shift", "genre", "dewey_classification",
                 "reader", "app_user",
-                "book", "book_genre", "book_copy",
+                "book", "book_genre", "book_copy", "book_interest",
                 "loan", "loan_request", "reservation",
                 "app_content", "password_reset_token",
                 "outbox_event", "audit_log"
@@ -91,7 +91,7 @@ class SchemaStructureTest {
                 "WHERE table_schema = 'public' AND column_name = 'id' AND data_type = 'uuid'");
 
         assertThat(uuidTables).contains(
-                "reader", "app_user", "book", "book_copy",
+                "reader", "app_user", "book", "book_copy", "book_interest",
                 "loan", "loan_request", "reservation", "app_content"
         );
     }
@@ -236,6 +236,68 @@ class SchemaStructureTest {
         assertThat(indexes).contains(
                 "idx_access_log_event_occurred_at",
                 "idx_access_log_target_occurred_at");
+    }
+
+    @Test
+    void book_interest_is_a_boolean_relation_and_not_a_counter() throws Exception {
+        // V8: sem o UNIQUE, "curtir" duas vezes valeria dois votos e inflar a
+        // demanda de um título seria questão de tocar no coração repetidamente.
+        // É também o que torna o POST idempotente sem consulta prévia.
+        try (Connection conn = newConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT indexdef FROM pg_indexes " +
+                     "WHERE schemaname = 'public' AND indexname = 'uq_book_interest_reader_book'")) {
+            assertThat(rs.next()).as("uq_book_interest_reader_book must exist").isTrue();
+            String def = rs.getString("indexdef");
+            assertThat(def).contains("UNIQUE").contains("reader_id").contains("book_id");
+        }
+
+        List<String> columns = listObjects(
+                "SELECT column_name FROM information_schema.columns " +
+                "WHERE table_schema = 'public' AND table_name = 'book_interest'");
+        assertThat(columns).containsExactlyInAnyOrder("id", "reader_id", "book_id", "created_at");
+        // Interesse não se edita: cria-se e apaga-se. Sem updated_at, e portanto
+        // sem o trigger touch_updated_at das outras tabelas.
+        assertThat(columns).doesNotContain("updated_at");
+    }
+
+    @Test
+    void book_interest_disappears_with_the_reader_and_with_the_book() throws Exception {
+        // Único FK para reader que não é RESTRICT, e de propósito: emprestimo é
+        // registro institucional e precisa impedir a exclusão; interesse é
+        // preferência de um menor de idade e tem de ir embora com a pessoa. Do
+        // lado do livro, CASCADE porque interesse só é legível através do livro
+        // — e porque RESTRICT transformaria "excluir livro curtido" em erro.
+        try (Connection conn = newConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT c.conname, c.confdeltype FROM pg_constraint c " +
+                     "JOIN pg_class t ON t.oid = c.conrelid " +
+                     "WHERE t.relname = 'book_interest' AND c.contype = 'f' " +
+                     "ORDER BY c.conname")) {
+            int checked = 0;
+            while (rs.next()) {
+                assertThat(rs.getString("confdeltype"))
+                        .as("%s must be ON DELETE CASCADE", rs.getString("conname"))
+                        .isEqualTo("c");
+                checked++;
+            }
+            assertThat(checked).as("both foreign keys must be declared").isEqualTo(2);
+        }
+    }
+
+    @Test
+    void book_interest_indexes_answer_the_two_reads_that_exist() throws Exception {
+        // "Quantos interesses este livro tem" precisa de índice próprio; "os
+        // interesses deste leitor" já é servido pelo índice do UNIQUE, cuja
+        // coluna principal é reader_id — criar outro seria índice morto pagando
+        // escrita.
+        List<String> indexes = listObjects(
+                "SELECT indexname FROM pg_indexes " +
+                "WHERE schemaname = 'public' AND tablename = 'book_interest'");
+
+        assertThat(indexes).contains("idx_book_interest_book_id", "uq_book_interest_reader_book");
     }
 
     @Test

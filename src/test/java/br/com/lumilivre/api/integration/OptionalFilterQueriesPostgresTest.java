@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -27,21 +29,31 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import jakarta.persistence.EntityManagerFactory;
+
 import br.com.lumilivre.api.enums.AgeRating;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.enums.PenaltyCode;
 import br.com.lumilivre.api.controller.BookController;
+import br.com.lumilivre.api.controller.BookInterestController;
+import br.com.lumilivre.api.dto.book.BookCopyCounts;
+import br.com.lumilivre.api.dto.book.BookInterestSummaryResponse;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
+import br.com.lumilivre.api.model.AppUser;
+import br.com.lumilivre.api.model.Book;
+import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.AcademicModuleRepository;
 import br.com.lumilivre.api.repository.BookCopyRepository;
+import br.com.lumilivre.api.repository.BookInterestRepository;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
 import br.com.lumilivre.api.repository.ReaderRepository;
 import br.com.lumilivre.api.repository.StudyShiftRepository;
+import br.com.lumilivre.api.security.CustomUserDetails;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.service.AppUserService;
 import br.com.lumilivre.api.service.BookService;
@@ -77,7 +89,11 @@ import br.com.lumilivre.api.service.BookService;
         "spring.mail.port=1025",
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration,classpath:db/seed",
-        "spring.jpa.hibernate.ddl-auto=validate"
+        "spring.jpa.hibernate.ddl-auto=validate",
+        // Contador de statements do Hibernate: e o que permite afirmar "uma
+        // consulta so" num teste, em vez de conferir no log de SQL uma vez e
+        // confiar que ninguem regride depois.
+        "spring.jpa.properties.hibernate.generate_statistics=true"
 })
 class OptionalFilterQueriesPostgresTest {
 
@@ -110,7 +126,12 @@ class OptionalFilterQueriesPostgresTest {
     @Autowired private BookService bookService;
     @Autowired private AppUserService appUserService;
     @Autowired private BookController bookController;
+    @Autowired private BookInterestController interestController;
+    @Autowired private BookInterestRepository bookInterestRepository;
     @Autowired private CustomUserDetailsService userDetailsService;
+    @Autowired private EntityManagerFactory entityManagerFactory;
+
+    private static final Locale PT_BR = Locale.forLanguageTag("pt-BR");
 
     // ---- livros ---------------------------------------------------------------
 
@@ -428,6 +449,409 @@ class OptionalFilterQueriesPostgresTest {
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    // ---- interesse (V8): a tabela nova, contra Postgres de verdade ------------
+    // Aqui em vez de num contexto proprio pelo mesmo motivo das recomendacoes:
+    // reaproveitar este container e este seed. A V8 nao semeia nada, entao o
+    // deleteAll() de cada teste apaga apenas o que os testes daqui criaram.
+
+    /**
+     * O que a unicidade da V8 promete, verificado contra a constraint de verdade:
+     * marcar duas vezes nao cria duas linhas e nao estoura. Com mock isso passaria
+     * de qualquer forma — quem recusa a segunda linha e o Postgres.
+     */
+    @Test
+    void markingInterestTwiceCreatesOneRowAndAnswersTheSameState() {
+        bookInterestRepository.deleteAll();
+        UUID bookId = anyBook().getId();
+        authenticateAs("2024001");
+        try {
+            var first = interestController.toggle(bookId, PT_BR).getBody();
+            var second = interestController.toggle(bookId, PT_BR).getBody();
+
+            assertThat(first).isNotNull();
+            assertThat(first.interested()).isTrue();
+            assertThat(second).isEqualTo(first);
+            assertThat(bookInterestRepository.count()).isEqualTo(1);
+        } finally {
+            SecurityContextHolder.clearContext();
+            bookInterestRepository.deleteAll();
+        }
+    }
+
+    @Test
+    void removingInterestIsIdempotentToo() {
+        bookInterestRepository.deleteAll();
+        UUID bookId = anyBook().getId();
+        authenticateAs("2024001");
+        try {
+            interestController.toggle(bookId, PT_BR);
+            assertThat(interestController.remove(bookId, PT_BR).getBody().interested()).isFalse();
+            assertThat(interestController.remove(bookId, PT_BR).getBody().interested()).isFalse();
+            assertThat(bookInterestRepository.count()).isZero();
+        } finally {
+            SecurityContextHolder.clearContext();
+            bookInterestRepository.deleteAll();
+        }
+    }
+
+    /**
+     * IDOR: nao ha parametro de leitor em rota nenhuma, entao o teste verifica a
+     * consequencia — o que um leitor marca nao aparece na lista do outro, e
+     * desmarcar nao alcanca a linha de outra pessoa.
+     */
+    @Test
+    void oneReadersInterestIsInvisibleToAnother() {
+        bookInterestRepository.deleteAll();
+        UUID bookId = anyBook().getId();
+        try {
+            authenticateAsReader("2024001");
+            interestController.toggle(bookId, PT_BR);
+            assertThat(interestController.mine(PAGE, PT_BR).getBody().getContent())
+                    .extracting(item -> item.book().getId())
+                    .containsExactly(bookId);
+
+            authenticateAsReader("2024002");
+            assertThat(interestController.mine(PAGE, PT_BR).getBody().getContent()).isEmpty();
+            // Desmarcar como o outro leitor responde "nao interessado" para ele e
+            // nao toca na linha do primeiro.
+            assertThat(interestController.remove(bookId, PT_BR).getBody().interested()).isFalse();
+            assertThat(bookInterestRepository.count()).isEqualTo(1);
+
+            authenticateAsReader("2024001");
+            assertThat(interestController.mine(PAGE, PT_BR).getBody().getContent()).hasSize(1);
+        } finally {
+            SecurityContextHolder.clearContext();
+            bookInterestRepository.deleteAll();
+        }
+    }
+
+    /** Interesse e do leitor: a equipe nao marca, nem le a lista de ninguem. */
+    @Test
+    void staffCannotMarkInterestNorReadAReadersList() {
+        UUID bookId = anyBook().getId();
+        authenticateAs("admin");
+        try {
+            assertThatExceptionOfType(AccessDeniedException.class)
+                    .isThrownBy(() -> interestController.toggle(bookId, PT_BR));
+            assertThatExceptionOfType(AccessDeniedException.class)
+                    .isThrownBy(() -> interestController.mine(PAGE, PT_BR));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
+    void readerCannotReadTheLibraryIndicator() {
+        authenticateAs("2024001");
+        try {
+            assertThatExceptionOfType(AccessDeniedException.class)
+                    .isThrownBy(() -> interestController.summary(false, PAGE, PT_BR));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    /**
+     * O cruzamento que decide compra de acervo: "quantos querem" x "quantos
+     * exemplares disponiveis", numa consulta so. O livro sem exemplar disponivel e
+     * com mais interesse tem de vir primeiro.
+     */
+    @Test
+    void theSummaryCrossesInterestWithAvailabilityAndPutsUnmetDemandFirst() {
+        bookInterestRepository.deleteAll();
+        Book wanted = bookWithoutAvailableCopy();
+        Book served = bookWithAvailableCopies();
+        try {
+            authenticateAsReader("2024001");
+            interestController.toggle(wanted.getId(), PT_BR);
+            interestController.toggle(served.getId(), PT_BR);
+            authenticateAsReader("2024002");
+            interestController.toggle(wanted.getId(), PT_BR);
+
+            authenticateAs("admin");
+            List<BookInterestSummaryResponse> rows =
+                    interestController.summary(false, PAGE, PT_BR).getBody().getContent();
+
+            assertThat(rows).hasSize(2);
+            BookInterestSummaryResponse first = rows.get(0);
+            assertThat(first.bookId()).isEqualTo(wanted.getId());
+            assertThat(first.interestCount()).isEqualTo(2);
+            assertThat(first.availableCopies()).isZero();
+            // Tem exemplar, so nao tem exemplar livre: e a diferenca entre as duas
+            // contagens que da sentido ao indicador.
+            assertThat(first.totalCopies()).isPositive();
+
+            BookInterestSummaryResponse second = rows.get(1);
+            assertThat(second.bookId()).isEqualTo(served.getId());
+            assertThat(second.interestCount()).isEqualTo(1);
+            assertThat(second.availableCopies()).isPositive();
+        } finally {
+            SecurityContextHolder.clearContext();
+            bookInterestRepository.deleteAll();
+        }
+    }
+
+    /**
+     * O LEFT JOIN com exemplares multiplica as linhas de interesse. Sem o
+     * {@code COUNT(DISTINCT)} o painel diria que 3 alunos querem um livro que so
+     * um aluno curtiu, porque ele tem 3 exemplares — o mesmo defeito que a
+     * buscarAvancado ja teve com exemplar x genero.
+     */
+    @Test
+    void theSummaryDoesNotCountInterestTimesCopies() {
+        bookInterestRepository.deleteAll();
+        Book withSeveralCopies = bookWithAtLeastTwoCopies();
+        long realCopies = bookCopyRepository.countByBook_Id(withSeveralCopies.getId());
+        try {
+            authenticateAs("2024001");
+            interestController.toggle(withSeveralCopies.getId(), PT_BR);
+
+            authenticateAs("admin");
+            BookInterestSummaryResponse row =
+                    interestController.summary(false, PAGE, PT_BR).getBody().getContent().get(0);
+
+            assertThat(row.interestCount()).isEqualTo(1);
+            assertThat(row.totalCopies()).isEqualTo(realCopies);
+        } finally {
+            SecurityContextHolder.clearContext();
+            bookInterestRepository.deleteAll();
+        }
+    }
+
+    @Test
+    void unmetOnlyKeepsOnlyWhatTheLibraryCannotServe() {
+        bookInterestRepository.deleteAll();
+        Book wanted = bookWithoutAvailableCopy();
+        Book served = bookWithAvailableCopies();
+        try {
+            authenticateAs("2024001");
+            interestController.toggle(wanted.getId(), PT_BR);
+            interestController.toggle(served.getId(), PT_BR);
+
+            authenticateAs("admin");
+            var page = interestController.summary(true, PAGE, PT_BR).getBody();
+
+            assertThat(page.getContent()).extracting(BookInterestSummaryResponse::bookId)
+                    .containsExactly(wanted.getId());
+            // O total da pagina tem de respeitar o mesmo filtro; contar o conjunto
+            // inteiro faria a paginacao prometer paginas que nao existem.
+            assertThat(page.getTotalElements()).isEqualTo(1);
+        } finally {
+            SecurityContextHolder.clearContext();
+            bookInterestRepository.deleteAll();
+        }
+    }
+
+    /**
+     * Uma pagina de interesses tem de custar uma consulta de dados, e nao uma por
+     * livro.
+     *
+     * <p>O log de SQL do Postgres mostrou o N+1 de verdade aqui: {@code Book}
+     * tem {@code deweyClassification} como {@code @ManyToOne}, cujo default no
+     * JPA e EAGER, entao cada livro da pagina disparava um
+     * {@code select ... from dewey_classification} proprio. O remedio foi trazer
+     * o CDD no mesmo fetch; este teste e o que impede alguem de remover o
+     * {@code LEFT JOIN FETCH} sem nada quebrar.
+     */
+    @Test
+    void aPageOfInterestsCostsOneQueryAndNotOnePerBook() {
+        bookInterestRepository.deleteAll();
+        List<Book> books = bookRepository.findAll(PageRequest.of(0, 5)).getContent();
+        try {
+            authenticateAsReader("2024001");
+            books.forEach(book -> interestController.toggle(book.getId(), PT_BR));
+
+            Statistics stats = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+            stats.clear();
+            var page = interestController.mine(PageRequest.of(0, 10), PT_BR).getBody();
+
+            assertThat(page.getContent()).hasSize(5);
+            // Duas: a pagina e o count do Page. Com o N+1 seriam sete.
+            assertThat(stats.getPrepareStatementCount())
+                    .as("uma consulta de dados + o count da pagina")
+                    .isLessThanOrEqualTo(2);
+        } finally {
+            SecurityContextHolder.clearContext();
+            bookInterestRepository.deleteAll();
+        }
+    }
+
+    /**
+     * O resumo cruza interesse com disponibilidade para uma pagina inteira sem
+     * uma contagem por livro — o N+1 classico deste tipo de painel.
+     */
+    @Test
+    void theSummaryCrossesAWholePageInASingleQuery() {
+        bookInterestRepository.deleteAll();
+        List<Book> books = bookRepository.findAll(PageRequest.of(0, 8)).getContent();
+        try {
+            authenticateAsReader("2024001");
+            books.forEach(book -> interestController.toggle(book.getId(), PT_BR));
+
+            authenticateAs("admin");
+            Statistics stats = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+            stats.clear();
+            var page = interestController.summary(false, PageRequest.of(0, 20), PT_BR).getBody();
+
+            assertThat(page.getContent()).hasSize(8);
+            assertThat(stats.getPrepareStatementCount())
+                    .as("agregacao e count, sem uma contagem de exemplares por livro")
+                    .isLessThanOrEqualTo(2);
+        } finally {
+            SecurityContextHolder.clearContext();
+            bookInterestRepository.deleteAll();
+        }
+    }
+
+    /**
+     * Sort do cliente nao chega nas duas consultas de interesse: elas tem
+     * ORDER BY proprio e em JPQL o Spring Data anexaria o campo do cliente ao
+     * final, o que daria 500.
+     */
+    @Test
+    void interestRoutesSurviveAnySortTheClientSends() {
+        Pageable bogusSort = PageRequest.of(0, 10, Sort.by("naoExisteEmLugarNenhum"));
+        authenticateAs("2024001");
+        try {
+            assertThatCode(() -> interestController.mine(bogusSort, PT_BR)).doesNotThrowAnyException();
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+        authenticateAs("admin");
+        try {
+            assertThatCode(() -> interestController.summary(false, bogusSort, PT_BR))
+                    .doesNotThrowAnyException();
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    // ---- navegacao por genero: ordem total e sort invalido --------------------
+
+    /**
+     * A rota respondia 500 para {@code ?sort=campoInexistente}: a allowlist do
+     * SEC-15 cobria a query nativa da lista administrativa, e esta e JPQL. Contra
+     * Postgres de verdade porque o erro nascia no Hibernate/banco, nao no Java.
+     */
+    @Test
+    void genreBrowsingTurnsAnUnknownSortIntoFourHundredAndNotFiveHundred() {
+        assertThatExceptionOfType(BusinessRuleException.class)
+                .isThrownBy(() -> bookService.buscarPorGenero(
+                        "Romance", PageRequest.of(0, 5, Sort.by("campoInexistente"))))
+                .satisfies(error -> assertThat(error.getMessageKey()).isEqualTo("error.sort.invalid-field"));
+
+        assertThat(bookRepository.count()).isPositive();
+    }
+
+    @ParameterizedTest(name = "genero ordenado por {0} chega no banco")
+    @ValueSource(strings = {"title", "author", "rating", "publicationDate", "id"})
+    void everyAllowedGenreSortFieldIsARealProperty(String field) {
+        assertThatCode(() -> bookService.buscarPorGenero(
+                "Romance", PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, field))).getContent())
+                .doesNotThrowAnyException();
+    }
+
+    /**
+     * Paginar sem ordem total repete ou pula linhas. Duas paginas de tamanho 1
+     * sobre o mesmo genero nao podem devolver o mesmo livro.
+     */
+    @Test
+    void genreBrowsingPaginatesWithoutRepeatingBooks() {
+        String genre = "Romance";
+        List<UUID> firstPages = new java.util.ArrayList<>();
+        for (int page = 0; page < 4; page++) {
+            bookService.buscarPorGenero(genre, PageRequest.of(page, 1)).getContent()
+                    .forEach(card -> firstPages.add(card.getId()));
+        }
+
+        assertThat(firstPages).doesNotHaveDuplicates();
+    }
+
+    /** O card das listas carrega updatedAt: sem ele o app nao invalida a capa. */
+    @Test
+    void bookCardsCarryTheUpdatedAtThatBustsTheCoverCache() {
+        assertThat(bookService.buscarPorGenero("Romance", PageRequest.of(0, 5)).getContent())
+                .isNotEmpty()
+                .allSatisfy(card -> assertThat(card.getUpdatedAt()).isNotNull());
+        assertThat(bookService.buscarMobilePorTexto("a", PAGE).getContent())
+                .isNotEmpty()
+                .allSatisfy(card -> assertThat(card.getUpdatedAt()).isNotNull());
+        // O catalogo mobile vem de query nativa, onde o tipo do timestamptz
+        // depende do driver — e justamente onde a conversao podia sair nula.
+        assertThat(bookService.buscarCatalogoParaMobile())
+                .isNotEmpty()
+                .allSatisfy(block -> assertThat(block.getBooks())
+                        .allSatisfy(card -> assertThat(card.getUpdatedAt()).isNotNull()));
+    }
+
+    /** Total e disponiveis numa consulta so, batendo com o que a tabela diz. */
+    @Test
+    void copyCountsMatchTheCopiesTable() {
+        Book book = bookWithAtLeastTwoCopies();
+
+        BookCopyCounts counts = bookService.contarExemplares(book.getId());
+
+        assertThat(counts.total()).isEqualTo(bookCopyRepository.countByBook_Id(book.getId()));
+        assertThat(counts.available()).isEqualTo(
+                bookCopyRepository.countByBookIdAndStatus(book.getId(), BookCopyStatus.AVAILABLE));
+        // Agregacao sobre conjunto vazio devolve uma linha com zeros, e nao
+        // nenhuma linha: livro sem exemplar responde 0/0, que e resposta.
+        assertThat(bookService.contarExemplares(UUID.randomUUID())).isEqualTo(BookCopyCounts.NONE);
+    }
+
+    private Book anyBook() {
+        return bookRepository.findAll(PageRequest.of(0, 1)).getContent().get(0);
+    }
+
+    /**
+     * Livro cujo acervo existe mas esta todo fora de circulacao (emprestado,
+     * manutencao, indisponivel) — o caso que interessa ao indicador. O seed atual
+     * nao tem nenhum livro com zero exemplares cadastrados; fica registrado para
+     * o T07.
+     */
+    private Book bookWithoutAvailableCopy() {
+        return bookRepository.findAll().stream()
+                .filter(book -> bookCopyRepository.countByBookIdAndStatus(
+                        book.getId(), BookCopyStatus.AVAILABLE) == 0)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("seed should have a book with no available copy"));
+    }
+
+    private Book bookWithAvailableCopies() {
+        return bookRepository.findAll().stream()
+                .filter(book -> bookCopyRepository.countByBookIdAndStatus(
+                        book.getId(), BookCopyStatus.AVAILABLE) > 0)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("seed should have a book with an available copy"));
+    }
+
+    private Book bookWithAtLeastTwoCopies() {
+        return bookRepository.findAll().stream()
+                .filter(book -> bookCopyRepository.countByBook_Id(book.getId()) >= 2)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("seed should have a book with two copies"));
+    }
+
+    /**
+     * Principal de leitor montado a partir da linha de {@code reader}.
+     *
+     * <p>O seed atual da conta de acesso a um unico leitor (2024001), e estes
+     * testes precisam de dois para provar que um nao ve o interesse do outro. O
+     * que o endpoint exige e um principal com papel READER e leitor vinculado,
+     * nao um fluxo de login — o login em si e coberto pelos testes de auth.
+     */
+    private void authenticateAsReader(String matricula) {
+        Reader reader = readerRepository.findByRegistrationNumber(matricula)
+                .orElseThrow(() -> new AssertionError("seed should have reader " + matricula));
+        AppUser user = new AppUser();
+        user.setRole(Role.READER);
+        user.setReader(reader);
+        user.setActive(true);
+        CustomUserDetails details = new CustomUserDetails(user);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities()));
     }
 
     private void authenticateAs(String login) {

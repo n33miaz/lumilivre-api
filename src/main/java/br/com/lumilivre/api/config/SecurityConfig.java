@@ -216,6 +216,22 @@ public class SecurityConfig {
                         // não descobre que o modo convidado foi desligado.
                         .requestMatchers(HttpMethod.GET, "/api/settings/public").permitAll()
 
+                        // Interesse (o "curtir" do app). Antes das regras gerais
+                        // de /api/books/**, que são de equipe.
+                        //
+                        // Só LEITOR marca, desmarca e lê a própria lista: o dono
+                        // do interesse vem do principal, então ADMIN e
+                        // BIBLIOTECARIO não têm o que marcar aqui. E o convidado
+                        // não entra — a ficha do livro virou pública, o interesse
+                        // não, porque interesse sem dono identificado não é dado.
+                        .requestMatchers(HttpMethod.POST, "/api/books/*/interest").hasRole("READER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/books/*/interest").hasRole("READER")
+                        .requestMatchers(HttpMethod.GET, "/api/books/interests/mine").hasRole("READER")
+                        // O indicador do painel é agregado (livro + quantos
+                        // querem + exemplares), nunca nominal.
+                        .requestMatchers(HttpMethod.GET, "/api/books/interests/summary")
+                                .hasAnyRole("ADMIN", "LIBRARIAN")
+
                         // App version check: app consulta antes de logar
                         .requestMatchers(HttpMethod.GET, "/api/app-version").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/app-version").hasRole("ADMIN")

@@ -186,6 +186,74 @@ class AuthRateLimitFilterTest {
                 org.mockito.ArgumentMatchers.any());
     }
 
+    @Test
+    void interestWritesHaveTheirOwnCeiling() throws Exception {
+        AuthRateLimitFilter filter = newFilter();
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        for (int i = 0; i < 120; i++) {
+            MockHttpServletResponse allowed = new MockHttpServletResponse();
+            filter.doFilter(interestRequest("POST", "198.51.100.10"), allowed, chain);
+            assertThat(allowed.getStatus()).isEqualTo(HttpStatus.OK.value());
+        }
+
+        MockHttpServletResponse blocked = new MockHttpServletResponse();
+        filter.doFilter(interestRequest("POST", "198.51.100.10"), blocked, chain);
+
+        assertThat(blocked.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+        // Janela de um minuto, não os 10 minutos do balde de autenticação.
+        assertThat(blocked.getHeader("Retry-After")).isEqualTo("60");
+    }
+
+    @Test
+    void aLoopOfInterestWritesDoesNotLeaveTheSameIpWithoutCatalogue() throws Exception {
+        // O motivo de o interesse ter balde próprio: numa escola atrás de um NAT
+        // único, um aluno com script não pode deixar a turma sem catálogo.
+        AuthRateLimitFilter filter = newFilter();
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        for (int i = 0; i < 200; i++) {
+            filter.doFilter(interestRequest("POST", "198.51.100.20"), new MockHttpServletResponse(), chain);
+        }
+
+        MockHttpServletResponse catalogue = new MockHttpServletResponse();
+        filter.doFilter(publicReadRequest("/api/books/catalog", "198.51.100.20"), catalogue, chain);
+
+        assertThat(catalogue.getStatus()).isEqualTo(HttpStatus.OK.value());
+    }
+
+    @Test
+    void removingInterestSharesTheBucketWithMarkingIt() throws Exception {
+        // Marcar e desmarcar em laço é o mesmo abuso, então é a mesma cota.
+        AuthRateLimitFilter filter = newFilter();
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        for (int i = 0; i < 120; i++) {
+            filter.doFilter(interestRequest(i % 2 == 0 ? "POST" : "DELETE", "198.51.100.30"),
+                    new MockHttpServletResponse(), chain);
+        }
+
+        MockHttpServletResponse blocked = new MockHttpServletResponse();
+        filter.doFilter(interestRequest("DELETE", "198.51.100.30"), blocked, chain);
+
+        assertThat(blocked.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+    }
+
+    private static MockHttpServletRequest interestRequest(String method, String remoteAddr) {
+        String uri = "/api/books/00000000-0000-4000-8000-000000003086/interest";
+        MockHttpServletRequest request = new MockHttpServletRequest(method, uri);
+        request.setServletPath(uri);
+        request.setRemoteAddr(remoteAddr);
+        return request;
+    }
+
+    private static MockHttpServletRequest publicReadRequest(String uri, String remoteAddr) {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", uri);
+        request.setServletPath(uri);
+        request.setRemoteAddr(remoteAddr);
+        return request;
+    }
+
     private static AuthRateLimitFilter newFilter() {
         // ObjectMapper pelo builder do Spring (registra o módulo de java.time,
         // igual ao bean injetado em produção) e MessageResolver com os bundles

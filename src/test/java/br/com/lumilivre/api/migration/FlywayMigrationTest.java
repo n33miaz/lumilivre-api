@@ -1,10 +1,12 @@
 package br.com.lumilivre.api.migration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.DriverManager;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.Test;
@@ -53,7 +55,7 @@ class FlywayMigrationTest {
 
         assertThat(result.migrationsExecuted)
                 .as("Must apply the whole baseline (V1..V9)")
-                .isGreaterThanOrEqualTo(8);
+                .isGreaterThanOrEqualTo(9);
 
         assertThat(result.warnings)
                 .as("No warnings expected on a fresh database")
@@ -87,7 +89,7 @@ class FlywayMigrationTest {
         Flyway upToPrevious = Flyway.configure()
                 .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
                 .locations("classpath:db/migration")
-                .target(MigrationVersion.fromVersion("7"))
+                .target(MigrationVersion.fromVersion("8"))
                 .cleanDisabled(false)
                 .load();
 
@@ -106,6 +108,55 @@ class FlywayMigrationTest {
                 .as("Only the pending migrations should run on an existing database")
                 .isEqualTo(1);
         assertThat(result.warnings).isEmpty();
+    }
+
+    /**
+     * O caso que o projeto realmente vive: as versões são reservadas por tarefa
+     * antes de o arquivo existir, e as tarefas não terminam na ordem da reserva —
+     * a V9 (acesso de convidado) foi escrita e aplicada antes da V8 (interesse).
+     *
+     * <p>Num banco que já está na V9, o Flyway considera a V8 "resolvida e não
+     * aplicada" e, por default, recusa: {@code validateOnMigrate} roda antes de
+     * qualquer migração, então a API inteira não sobe. Este teste trava as duas
+     * pontas — que sem {@code out-of-order} realmente falha, e que com ele a V8
+     * entra sozinha e cria a tabela.
+     */
+    @Test
+    void the_late_reserved_version_still_applies_on_a_database_already_ahead() throws Exception {
+        Flyway everything = Flyway.configure()
+                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                .locations("classpath:db/migration")
+                .cleanDisabled(false)
+                .load();
+        everything.clean();
+        assertThat(everything.migrate().success).isTrue();
+
+        // Reproduz o banco de dev/produção como ele ficou: histórico com a V9 e
+        // sem a V8, porque a V8 não existia quando a V9 foi aplicada.
+        execute("DROP TABLE book_interest");
+        execute("DELETE FROM flyway_schema_history WHERE version = '8'");
+
+        Flyway inOrderOnly = Flyway.configure()
+                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                .locations("classpath:db/migration")
+                .outOfOrder(false)
+                .load();
+        assertThatThrownBy(inOrderOnly::migrate)
+                .as("without out-of-order Flyway refuses and the API does not boot")
+                .isInstanceOf(FlywayException.class);
+
+        Flyway allowingOutOfOrder = Flyway.configure()
+                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                .locations("classpath:db/migration")
+                .outOfOrder(true)
+                .load();
+        MigrateResult result = allowingOutOfOrder.migrate();
+
+        assertThat(result.success).isTrue();
+        assertThat(result.migrationsExecuted)
+                .as("only the version that was missing should run")
+                .isEqualTo(1);
+        assertThat(countRows("book_interest")).isZero();
     }
 
     @Test
@@ -155,6 +206,14 @@ class FlywayMigrationTest {
         assertThat(metric("overdue_loans")).isEqualTo(6);
         assertThat(metric("pending_requests")).isEqualTo(4);
         assertThat(metric("avg_return_days")).isGreaterThan(0);
+    }
+
+    private void execute(String sql) throws Exception {
+        try (var connection = DriverManager.getConnection(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             var statement = connection.createStatement()) {
+            statement.execute(sql);
+        }
     }
 
     private long countRows(String tableName) throws Exception {
