@@ -44,6 +44,13 @@ public class AccessLog {
     @Column(nullable = false, length = 20)
     private String result;
 
+    /**
+     * Recurso consultado nos eventos de uso (id do livro, id do comunicado).
+     * Nulo nos eventos de autenticação, que não têm alvo. Ver V9.
+     */
+    @Column(name = "target_id", length = 200)
+    private String targetId;
+
     @Column(name = "ip_address", length = 64)
     private String ipAddress;
 

@@ -38,11 +38,14 @@ public class AccessLogController {
             @RequestParam(required = false) String result,
             @RequestParam(required = false) String actor,
             @RequestParam(required = false) String ip,
+            // Alvo do evento de uso (id do livro/comunicado): responde
+            // "quem abriu este item", que sem o filtro exigiria varrer a página.
+            @RequestParam(required = false) String target,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
             @PageableDefault(size = 20) Pageable pageable) {
         Page<AccessLogResponse> body = accessLogService
-                .search(event, channel, result, actor, ip, from, to, pageable)
+                .search(event, channel, result, actor, ip, target, from, to, pageable)
                 .map(this::toResponse);
         return ResponseEntity.ok(body);
     }
@@ -50,7 +53,7 @@ public class AccessLogController {
     private AccessLogResponse toResponse(AccessLog a) {
         return new AccessLogResponse(
                 a.getId(), a.getActor(), a.getActorRole(), a.getEvent(), a.getChannel(),
-                a.getResult(), a.getIpAddress(), a.getUserAgent(), a.getCorrelationId(),
-                a.getErrorMessage(), a.getOccurredAt());
+                a.getResult(), a.getTargetId(), a.getIpAddress(), a.getUserAgent(),
+                a.getCorrelationId(), a.getErrorMessage(), a.getOccurredAt());
     }
 }

@@ -24,10 +24,12 @@ import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.content.ContentFeedItemResponse;
 import br.com.lumilivre.api.dto.content.ContentRequest;
 import br.com.lumilivre.api.dto.content.ContentResponse;
+import br.com.lumilivre.api.enums.AccessEvent;
 import br.com.lumilivre.api.enums.AudienceScope;
 import br.com.lumilivre.api.enums.ContentType;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.mapper.ContentMapper;
+import br.com.lumilivre.api.security.AccessAudited;
 import br.com.lumilivre.api.service.AppContentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -90,6 +92,7 @@ public class ContentController {
     @GetMapping("/{id}")
     @Operation(operationId = "contents.get")
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
+    @AccessAudited(event = AccessEvent.CONTENT_VIEWED, targetParam = "#id")
     public ResponseEntity<ContentResponse> getOne(@PathVariable UUID id, Locale locale) {
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())

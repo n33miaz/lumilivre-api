@@ -52,8 +52,8 @@ class FlywayMigrationTest {
                 .isTrue();
 
         assertThat(result.migrationsExecuted)
-                .as("Must apply the whole baseline (V1..V7)")
-                .isGreaterThanOrEqualTo(7);
+                .as("Must apply the whole baseline (V1..V9)")
+                .isGreaterThanOrEqualTo(8);
 
         assertThat(result.warnings)
                 .as("No warnings expected on a fresh database")
@@ -80,17 +80,19 @@ class FlywayMigrationTest {
 
     @Test
     void latest_migration_applies_on_a_database_already_at_the_previous_version() {
-        // Cenário de deploy real: o banco está na V6 e só a V7 chega. Não basta
-        // aplicar em banco novo — ADD COLUMN tem de passar em tabela com dados.
-        Flyway upToSix = Flyway.configure()
+        // Cenário de deploy real: o banco está na versão anterior e só a última
+        // chega. Não basta aplicar em banco novo — ADD COLUMN tem de passar em
+        // tabela com dados. Ao acrescentar uma migration, mova o `target` para a
+        // penúltima versão e mantenha o `isEqualTo(1)`.
+        Flyway upToPrevious = Flyway.configure()
                 .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
                 .locations("classpath:db/migration")
-                .target(MigrationVersion.fromVersion("6"))
+                .target(MigrationVersion.fromVersion("7"))
                 .cleanDisabled(false)
                 .load();
 
-        upToSix.clean();
-        assertThat(upToSix.migrate().success).isTrue();
+        upToPrevious.clean();
+        assertThat(upToPrevious.migrate().success).isTrue();
 
         Flyway toLatest = Flyway.configure()
                 .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())

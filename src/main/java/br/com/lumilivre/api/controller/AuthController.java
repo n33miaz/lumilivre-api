@@ -24,7 +24,6 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,7 +47,10 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest req, Locale locale) {
         try {
             LoginResponse body = authService.login(req.getUsername(), req.getPassword());
-            accessLogService.record(AccessEvent.LOGIN, body.getEmail(), body.getRole(),
+            // Matrícula (não e-mail) e papel com prefixo ROLE_: é assim que o
+            // ator aparece nos eventos de uso e nas negativas de acesso. Sem
+            // isso, o LOGIN do aluno não casa com o que ele fez depois.
+            accessLogService.record(AccessEvent.LOGIN, loginActor(body), "ROLE_" + body.getRole(),
                     AccessLogService.RESULT_SUCCESS, null);
             return ResponseEntity.ok()
                     .header("Content-Language", locale.toLanguageTag())
@@ -64,10 +66,17 @@ public class AuthController {
         }
     }
 
+    /**
+     * Sempre 204: existir a conta, não existir, faltar o campo ou o e-mail não
+     * sair dão exatamente a mesma resposta. Antes o endereço inexistente
+     * respondia 204 e o de conta real respondia 500 — o que fazia deste endpoint
+     * um oráculo para descobrir quais contas existem, justamente o que a resposta
+     * genérica deveria impedir. Ver {@code AuthService#solicitarResetSenha}.
+     */
     @PostMapping("/forgot-password")
     @Operation(operationId = "auth.forgotPassword")
-    public ResponseEntity<Void> forgotPassword(@RequestBody Map<String, String> payload) {
-        authService.solicitarResetSenha(payload.get("email"));
+    public ResponseEntity<Void> forgotPassword(@RequestBody(required = false) Map<String, String> payload) {
+        authService.solicitarResetSenha(payload != null ? payload.get("email") : null);
         return ResponseEntity.noContent().build();
     }
 
@@ -102,8 +111,9 @@ public class AuthController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> logout(Authentication authentication) {
         String email = authService.logout(authentication.getName());
-        accessLogService.record(AccessEvent.LOGOUT, email, authority(authentication),
-                AccessLogService.RESULT_SUCCESS, null);
+        String actor = AccessLogService.actorOf(authentication);
+        accessLogService.record(AccessEvent.LOGOUT, actor != null ? actor : email,
+                AccessLogService.roleOf(authentication), AccessLogService.RESULT_SUCCESS, null);
         return ResponseEntity.noContent().build();
     }
 
@@ -121,10 +131,10 @@ public class AuthController {
         return "invalid-credentials";
     }
 
-    private String authority(Authentication authentication) {
-        return authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .findFirst()
-                .orElse("UNKNOWN");
+    /** Leitor é identificado pela matrícula; equipe, pelo login. */
+    private String loginActor(LoginResponse body) {
+        return body.getReaderRegistrationNumber() != null
+                ? body.getReaderRegistrationNumber()
+                : body.getEmail();
     }
 }

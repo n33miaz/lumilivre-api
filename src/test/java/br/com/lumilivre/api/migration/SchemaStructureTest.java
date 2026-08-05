@@ -195,6 +195,50 @@ class SchemaStructureTest {
     }
 
     @Test
+    void library_settings_carries_the_guest_access_flag() throws Exception {
+        // V9: sem a coluna o convidado do app não tem como ser desligado, e a
+        // flag no SettingsResponse ficaria sem lastro.
+        try (Connection conn = newConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT is_nullable, column_default, data_type " +
+                     "FROM information_schema.columns " +
+                     "WHERE table_schema = 'public' AND table_name = 'library_settings' " +
+                     "AND column_name = 'guest_access_enabled'")) {
+            assertThat(rs.next()).as("guest_access_enabled must exist").isTrue();
+            assertThat(rs.getString("data_type")).isEqualTo("boolean");
+            assertThat(rs.getString("is_nullable")).isEqualTo("NO");
+            // Default TRUE: desligar por omissão mudaria o comportamento de quem
+            // já usa o modo convidado hoje.
+            assertThat(rs.getString("column_default")).isEqualTo("true");
+        }
+    }
+
+    @Test
+    void access_log_can_record_which_resource_was_consulted() throws Exception {
+        // V9: sem target_id o access_log só responde "quem entrou". Com ela
+        // responde "quais livros os alunos abrem" e "quem viu este comunicado".
+        List<String> columns = listObjects(
+                "SELECT column_name FROM information_schema.columns " +
+                "WHERE table_schema = 'public' AND table_name = 'access_log'");
+
+        assertThat(columns).contains("target_id");
+    }
+
+    @Test
+    void access_log_indexes_support_usage_reports_and_retention() throws Exception {
+        // Os índices da V4 são todos de coluna única: o recorte por evento numa
+        // janela de tempo (e o DELETE da política de retenção) terminava em
+        // bitmap scan + filtro.
+        List<String> indexes = listObjects(
+                "SELECT indexname FROM pg_indexes WHERE schemaname = 'public'");
+
+        assertThat(indexes).contains(
+                "idx_access_log_event_occurred_at",
+                "idx_access_log_target_occurred_at");
+    }
+
+    @Test
     void rls_is_enabled_on_all_business_tables() throws Exception {
         List<String> rlsOff = listObjects(
                 "SELECT c.relname FROM pg_class c " +

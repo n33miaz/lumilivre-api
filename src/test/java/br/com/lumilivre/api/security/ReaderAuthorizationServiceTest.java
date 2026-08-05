@@ -16,6 +16,7 @@ import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.model.Loan;
 import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.repository.LoanRepository;
+import br.com.lumilivre.api.service.AccessLogService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,9 @@ class ReaderAuthorizationServiceTest {
 
     @Mock
     private LoanRepository loanRepository;
+
+    @Mock
+    private AccessLogService accessLogService;
 
     @AfterEach
     void tearDown() {
@@ -101,8 +105,54 @@ class ReaderAuthorizationServiceTest {
         assertThat(service().canAccessLoan(null)).isFalse();
     }
 
+    @Test
+    void tentativaDeAlcancarOutroLeitorEntraNaTrilhaComOAlvo() {
+        // Recusa de seguranca de metodo era invisivel: o GlobalExceptionHandler
+        // trata a AccessDeniedException antes do ExceptionTranslationFilter,
+        // entao o handler do SecurityConfig nunca via a tentativa de IDOR.
+        authenticate(Role.READER, reader("2025001"));
+
+        assertThat(service().canAccess("2025999")).isFalse();
+
+        verify(accessLogService).recordDenied("2025001", "ROLE_READER", "2025999", "reader-mismatch");
+    }
+
+    @Test
+    void tentativaDeAlcancarEmprestimoDeOutroEntraNaTrilha() {
+        UUID otherLoanId = UUID.randomUUID();
+        authenticate(Role.READER, reader("2025001"));
+        when(loanRepository.findById(otherLoanId)).thenReturn(Optional.of(loanFor("2025999")));
+
+        assertThat(service().canAccessLoan(otherLoanId)).isFalse();
+
+        verify(accessLogService).recordDenied("2025001", "ROLE_READER", otherLoanId.toString(),
+                "loan-not-owned");
+    }
+
+    @Test
+    void acessoPermitidoNaoGeraLinhaDeRecusa() {
+        authenticate(Role.READER, reader("2025001"));
+
+        assertThat(service().canAccess("2025001")).isTrue();
+
+        verify(accessLogService, never()).recordDenied(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void chamadorAnonimoNaoEscreveNaTrilha() {
+        // Recusa de anonimo e barreira de URL; dar escrita no banco ao anonimo e
+        // o oposto do que se quer com endpoint publico.
+        assertThat(service().canAccess("2025001")).isFalse();
+
+        verify(accessLogService, never()).recordDenied(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
     private ReaderAuthorizationService service() {
-        return new ReaderAuthorizationService(loanRepository);
+        return new ReaderAuthorizationService(loanRepository, accessLogService);
     }
 
     private static void authenticate(Role role, Reader reader) {

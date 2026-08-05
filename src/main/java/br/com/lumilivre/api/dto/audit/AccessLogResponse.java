@@ -10,6 +10,8 @@ public record AccessLogResponse(
         String event,
         String channel,
         String result,
+        /** Recurso consultado nos eventos de uso; nulo nos de autenticação. */
+        String targetId,
         String ipAddress,
         String userAgent,
         String correlationId,
