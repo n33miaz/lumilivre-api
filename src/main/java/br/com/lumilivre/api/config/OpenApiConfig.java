@@ -35,6 +35,18 @@ public class OpenApiConfig {
      */
     private static final Locale DEFAULT_DOC_LOCALE = Locale.forLanguageTag("pt-BR");
 
+    /**
+     * Idiomas que o {@code Accept-Language} aceita — cinco, iguais aos do
+     * {@code I18nConfig}. Nao confundir com os grupos publicados: as mensagens de
+     * negocio falam cinco idiomas, a documentacao continua em dois.
+     *
+     * <p>Um grupo por idioma multiplicaria o spec que os clients consomem (orval
+     * no web, dart-dio no app geram de um grupo so) sem ganho: quem le Swagger e
+     * desenvolvedor, e o texto de documentacao nao chega ao usuario final.
+     */
+    private static final List<String> SUPPORTED_LANGUAGE_TAGS =
+            List.of("pt-BR", "en-US", "es", "zh", "hi");
+
     private final MessageSource messageSource;
 
     @Bean
@@ -135,7 +147,7 @@ public class OpenApiConfig {
                         .required(false)
                         .description(msg("swagger.parameter.common.locale.description",
                                 "Idioma desejado para a resposta."))
-                        .schema(new StringSchema()._enum(List.of("pt-BR", "en-US")).example("pt-BR")));
+                        .schema(new StringSchema()._enum(SUPPORTED_LANGUAGE_TAGS).example("pt-BR")));
     }
 
     private ApiResponse response(String descriptionKey) {
