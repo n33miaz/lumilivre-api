@@ -10,6 +10,8 @@ import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.exception.custom.MessageKeyedException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.Locale;
 import java.util.Map;
@@ -31,6 +34,8 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private final MessageResolver messages;
 
@@ -76,11 +81,49 @@ public class GlobalExceptionHandler {
             messages.resolve("error.business-rule.title", locale), msg, locale, request);
     }
 
+    /**
+     * 400 com mensagem generica. {@code IllegalArgumentException} costuma vir de
+     * dentro (parser, conversor, Hibernate) e carrega nome de tabela, coluna e
+     * trecho de SQL na mensagem — devolver {@code getMessage()} cru entregava
+     * isso ao cliente. O detalhe vai para o log com o mesmo correlationId que
+     * volta na resposta, entao o suporte ainda cruza os dois.
+     *
+     * <p>Erro de entrada que o usuario precisa entender nao passa por aqui: usa
+     * {@link BusinessRuleException} com chave i18n (ver a validacao do arquivo em
+     * ImportService e o parse do multipart em ContentController).
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(
             IllegalArgumentException ex, Locale locale, WebRequest request) {
+        log.warn("Requisicao invalida em {} [correlationId={}]: {}",
+            extractPath(request), MDC.get("correlationId"), ex.toString());
         return errorResponse(HttpStatus.BAD_REQUEST,
-            messages.resolve("error.invalid-request.title", locale), ex.getMessage(), locale, request);
+            messages.resolve("error.invalid-request.title", locale),
+            messages.resolve("error.invalid-request.message", locale), locale, request);
+    }
+
+    /**
+     * Enum/UUID/data invalidos em query param ou path variable: 400, nao 500.
+     * Caiam no handler generico e viravam "erro inesperado" — por exemplo
+     * {@code ?status=BOGUS} em /api/loans/advanced. A mensagem do Spring nomeia a
+     * classe do enum e lista os valores validos, entao nao volta na resposta.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex, Locale locale, WebRequest request) {
+        log.warn("Parametro '{}' com valor invalido em {} [correlationId={}]",
+            ex.getName(), extractPath(request), MDC.get("correlationId"));
+        ErrorResponse body = ErrorResponse.builder()
+            .status(HttpStatus.BAD_REQUEST.value())
+            .error(messages.resolve("error.validation.title", locale))
+            .message(messages.resolve("error.validation.message", locale))
+            .path(extractPath(request))
+            .correlationId(MDC.get("correlationId"))
+            .violations(Map.of(ex.getName(), messages.resolve("error.parameter.invalid-value", locale)))
+            .build();
+        return ResponseEntity.badRequest()
+            .header("Content-Language", locale.toLanguageTag())
+            .body(body);
     }
 
     /** Método HTTP inexistente na rota: 405, nunca 500 do handler genérico. */
@@ -171,10 +214,19 @@ public class GlobalExceptionHandler {
             messages.resolve("error.access-denied.message", locale), locale, request);
     }
 
+    /**
+     * Ultimo recurso: 500 com mensagem generica e o stack trace no logger.
+     *
+     * <p>Era {@code ex.printStackTrace()}, que escrevia direto em System.err —
+     * fora do appender, sem nivel, sem timestamp e, o que mais importa, sem o
+     * correlationId. Sem ele nao havia como ligar o 500 que o usuario viu ao
+     * stack trace no log.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobal(
             Exception ex, Locale locale, WebRequest request) {
-        ex.printStackTrace();
+        log.error("Erro nao tratado em {} [correlationId={}]",
+            extractPath(request), MDC.get("correlationId"), ex);
         return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
             messages.resolve("error.internal.title", locale),
             messages.resolve("error.internal.message", locale), locale, request);

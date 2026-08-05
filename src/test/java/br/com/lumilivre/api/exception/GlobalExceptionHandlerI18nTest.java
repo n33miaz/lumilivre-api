@@ -7,6 +7,7 @@ import java.util.Locale;
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.dto.common.ErrorResponse;
+import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import jakarta.validation.constraints.NotBlank;
@@ -21,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 class GlobalExceptionHandlerI18nTest {
 
@@ -121,6 +123,85 @@ class GlobalExceptionHandlerI18nTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody().getMessage()).isEqualTo("Mensagem literal sem chave");
+    }
+
+    // ---- SEC-22: nenhum detalhe interno na resposta ---------------------------
+
+    @ParameterizedTest(name = "locale={0} => mensagem genérica")
+    @CsvSource({
+        "pt-BR, Requisição inválida. Verifique os dados enviados.",
+        "en-US, Invalid request. Check the submitted data."
+    })
+    void illegalArgumentReturnsGenericMessageInsteadOfExceptionDetail(String tag, String expected) {
+        // Mensagem no estilo do que o Hibernate/Postgres produz: nome de tabela,
+        // de coluna e trecho de SQL. Nada disso pode voltar para o cliente.
+        var ex = new IllegalArgumentException(
+            "could not determine data type of parameter $17 in select from app_user where password_hash = ?");
+        Locale locale = Locale.forLanguageTag(tag);
+        WebRequest req = webRequest("GET", "/api/books/advanced");
+
+        ResponseEntity<ErrorResponse> response = handler.handleIllegalArgument(ex, locale, req);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getHeaders().getFirst("Content-Language")).isEqualTo(tag);
+        assertThat(response.getBody().getMessage()).isEqualTo(expected);
+        assertThat(response.getBody().getMessage())
+            .doesNotContain("app_user", "password_hash", "parameter $17", "select");
+    }
+
+    @Test
+    void internalErrorNeverEchoesTheExceptionMessage() {
+        var ex = new RuntimeException("ERROR: relation \"app_user\" does not exist");
+        WebRequest req = webRequest("GET", "/api/users");
+
+        ResponseEntity<ErrorResponse> response = handler.handleGlobal(
+            ex, Locale.forLanguageTag("pt-BR"), req);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody().getMessage())
+            .isEqualTo("Ocorreu um erro inesperado. Por favor, contate o suporte.")
+            .doesNotContain("app_user", "relation");
+        // O path e o correlationId continuam voltando: e o que liga o 500 do
+        // usuário ao stack trace no log.
+        assertThat(response.getBody().getPath()).isEqualTo("/api/users");
+    }
+
+    @ParameterizedTest(name = "locale={0} => 400 com violation por parâmetro")
+    @CsvSource({
+        "pt-BR, Valor inválido para este parâmetro.",
+        "en-US, Invalid value for this parameter."
+    })
+    void invalidEnumQueryParamIsBadRequestNotServerError(String tag, String expectedViolation) {
+        var ex = new MethodArgumentTypeMismatchException(
+            "BOGUS", LoanStatus.class, "status", null,
+            new IllegalArgumentException("No enum constant br.com.lumilivre.api.enums.LoanStatus.BOGUS"));
+        Locale locale = Locale.forLanguageTag(tag);
+        WebRequest req = webRequest("GET", "/api/loans/advanced");
+
+        ResponseEntity<ErrorResponse> response = handler.handleTypeMismatch(ex, locale, req);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getHeaders().getFirst("Content-Language")).isEqualTo(tag);
+        assertThat(response.getBody().getViolations()).containsEntry("status", expectedViolation);
+        assertThat(response.getBody().getMessage()).doesNotContain("LoanStatus", "BOGUS");
+    }
+
+    @Test
+    void sortAllowlistViolationSurfacesAsLocalizedBadRequest() {
+        var ex = BusinessRuleException.ofKey("error.sort.invalid-field",
+            "id;DROP TABLE book--", "title, copyCode");
+        WebRequest req = webRequest("GET", "/api/books");
+
+        ResponseEntity<ErrorResponse> ptBr = handler.handleBusinessRule(
+            ex, Locale.forLanguageTag("pt-BR"), req);
+        ResponseEntity<ErrorResponse> enUs = handler.handleBusinessRule(
+            ex, Locale.forLanguageTag("en-US"), req);
+
+        assertThat(ptBr.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(ptBr.getBody().getMessage())
+            .isEqualTo("Campo de ordenação inválido: 'id;DROP TABLE book--'. Campos aceitos: title, copyCode.");
+        assertThat(enUs.getBody().getMessage())
+            .isEqualTo("Invalid sort field: 'id;DROP TABLE book--'. Accepted fields: title, copyCode.");
     }
 
     private static WebRequest webRequest(String method, String path) {

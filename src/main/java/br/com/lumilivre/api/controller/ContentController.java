@@ -26,12 +26,16 @@ import br.com.lumilivre.api.dto.content.ContentRequest;
 import br.com.lumilivre.api.dto.content.ContentResponse;
 import br.com.lumilivre.api.enums.AudienceScope;
 import br.com.lumilivre.api.enums.ContentType;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.mapper.ContentMapper;
 import br.com.lumilivre.api.service.AppContentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/contents")
 @RequiredArgsConstructor
@@ -129,11 +133,21 @@ public class ContentController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * O corpo do multipart traz o DTO como JSON na parte "data".
+     *
+     * <p>Falha de parse continua sendo 400 — e erro do cliente, e ele precisa
+     * saber — mas com mensagem i18n em vez do {@code getMessage()} do Jackson,
+     * que nomeia classe, campo e posicao do JSON. O detalhe fica no log com o
+     * correlationId.
+     */
     private ContentRequest parseRequest(String data) {
         try {
             return objectMapper.readValue(data, ContentRequest.class);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid content data: " + e.getMessage(), e);
+            log.warn("Parte 'data' do multipart de conteudo nao pode ser lida [correlationId={}]: {}",
+                    MDC.get("correlationId"), e.toString());
+            throw BusinessRuleException.ofKey("content.data.invalid");
         }
     }
 }

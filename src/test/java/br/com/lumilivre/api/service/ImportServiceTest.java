@@ -24,6 +24,7 @@ import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
 import br.com.lumilivre.api.enums.LibraryType;
 import br.com.lumilivre.api.enums.Role;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.AcademicModule;
 import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.model.BookCopy;
@@ -120,7 +121,10 @@ class ImportServiceTest {
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 new byte[0]);
 
-        assertThatExceptionOfType(IllegalArgumentException.class)
+        // BusinessRuleException, nao IllegalArgumentException: o handler de
+        // IllegalArgumentException devolve texto generico (SEC-22) e engoliria a
+        // mensagem que o usuario precisa ler para corrigir a planilha.
+        assertThatExceptionOfType(BusinessRuleException.class)
                 .isThrownBy(() -> service().importar("livro", file, Locale.US))
                 .withMessage("import.error.file.empty");
     }
@@ -129,7 +133,7 @@ class ImportServiceTest {
     void importRejectsInvalidContentType() {
         MockMultipartFile file = new MockMultipartFile("file", "books.csv", "text/csv", "isbn".getBytes());
 
-        assertThatExceptionOfType(IllegalArgumentException.class)
+        assertThatExceptionOfType(BusinessRuleException.class)
                 .isThrownBy(() -> service().importar("livro", file, Locale.US))
                 .withMessage("import.error.file.invalid-format");
     }

@@ -8,6 +8,7 @@ import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
 import br.com.lumilivre.api.enums.LibraryType;
 import br.com.lumilivre.api.enums.Role;
+import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.model.*;
 import br.com.lumilivre.api.repository.*;
 import br.com.lumilivre.api.config.MessageResolver;
@@ -77,9 +78,14 @@ public class ImportService {
                 case "leitor" -> importarLeitores(file, locale);
                 case "livro" -> importarLivros(file, locale);
                 case "exemplar" -> importarExemplares(file, locale);
-                default -> throw new IllegalArgumentException(
+                default -> throw new BusinessRuleException(
                         messages.resolve("import.error.type.invalid", locale, tipo));
             };
+        } catch (BusinessRuleException e) {
+            // Erro que o usuário tem que ler (tipo inválido, planilha fora do
+            // formato): sai como 400 com a própria mensagem. Envolvê-lo no
+            // Exception genérico abaixo o transformava num 500 opaco.
+            throw e;
         } catch (Exception e) {
             log.error("Erro crítico durante importação do tipo {}: {}", tipo, e.getMessage(), e);
             throw new Exception(messages.resolve("import.error.failure", locale, e.getMessage()), e);
@@ -402,12 +408,15 @@ public class ImportService {
         return map;
     }
 
+    // Mensagem específica (arquivo vazio / formato errado) via BusinessRuleException:
+    // o handler de IllegalArgumentException devolve texto genérico de propósito, e
+    // aqui o usuário precisa saber exatamente o que corrigir na planilha.
     private void validarArquivo(MultipartFile file, Locale locale) {
         if (file == null || file.isEmpty())
-            throw new IllegalArgumentException(messages.resolve("import.error.file.empty", locale));
+            throw new BusinessRuleException(messages.resolve("import.error.file.empty", locale));
         if (!Objects.equals(file.getContentType(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
-            throw new IllegalArgumentException(messages.resolve("import.error.file.invalid-format", locale));
+            throw new BusinessRuleException(messages.resolve("import.error.file.invalid-format", locale));
         }
     }
 
