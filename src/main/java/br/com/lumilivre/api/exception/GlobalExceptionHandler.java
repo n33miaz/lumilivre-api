@@ -16,6 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -78,6 +79,23 @@ public class GlobalExceptionHandler {
             IllegalArgumentException ex, Locale locale, WebRequest request) {
         return errorResponse(HttpStatus.BAD_REQUEST,
             messages.resolve("error.invalid-request.title", locale), ex.getMessage(), locale, request);
+    }
+
+    /** Método HTTP inexistente na rota: 405, nunca 500 do handler genérico. */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex, Locale locale, WebRequest request) {
+        ResponseEntity<ErrorResponse> response = errorResponse(HttpStatus.METHOD_NOT_ALLOWED,
+            messages.resolve("error.method-not-allowed.title", locale),
+            messages.resolve("error.method-not-allowed.message", locale), locale, request);
+        if (ex.getSupportedHttpMethods() == null || ex.getSupportedHttpMethods().isEmpty()) {
+            return response;
+        }
+        // Allow é obrigatório num 405 (RFC 9110).
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+            .headers(headers -> headers.setAllow(ex.getSupportedHttpMethods()))
+            .header("Content-Language", locale.toLanguageTag())
+            .body(response.getBody());
     }
 
     @ExceptionHandler({
