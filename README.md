@@ -34,7 +34,7 @@ exemplares, empréstimos com renovação e multa, fila de reservas FIFO,
 solicitações do leitor, avisos do mural, relatórios e dashboard. Serve o painel
 administrativo (React) e o app do leitor (Flutter) pela mesma superfície REST.
 
-São 23 controllers, 12 migrations versionadas e 65 classes de teste. A
+São 23 controllers, 6 migrations versionadas e 65 classes de teste. A
 documentação interativa fica em `/docs`.
 
 ## Stack
@@ -123,8 +123,19 @@ As opcionais que mais importam:
 
 ## Banco de dados
 
-Doze migrations versionadas (`V1`…`V12`) em `src/main/resources/db/migration`,
-aplicadas pelo Flyway na subida. Destaques do schema:
+Seis migrations em `src/main/resources/db/migration`, aplicadas pelo Flyway na
+subida e agrupadas por assunto:
+
+| Migration | Conteúdo |
+|-----------|----------|
+| `V1__core_schema` | Extensões, helpers, tabelas de referência e todo o domínio (leitores, usuários, acervo, exemplares, empréstimos, solicitações, reservas, mural) |
+| `V2__infrastructure_tables` | Outbox de e-mail, auditoria de negócio e trilha de acessos |
+| `V3__configuration_tables` | Configurações da biblioteca e versão mínima do app |
+| `V4__indexes_and_search` | Índices de FK, de filtro e GIN/trigram para busca |
+| `V5__materialized_views` | Views do dashboard |
+| `V6__reference_data` | Cursos, gêneros, módulos, turnos e Dewey |
+
+Destaques do schema:
 
 - **Row Level Security** habilitada e negando por padrão nas tabelas de domínio.
 - **Views materializadas** `mv_dashboard_stats`, `mv_top_books` e

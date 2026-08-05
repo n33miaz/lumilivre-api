@@ -58,7 +58,7 @@ class SchemaStructureTest {
                 "outbox_event", "audit_log"
         );
 
-        // thesis foi generalizado em app_content (V8) e removido
+        // thesis foi generalizado em app_content e nao existe mais
         assertThat(tables).doesNotContain("thesis");
 
         // Nao deve existir nada em portugues remanescente

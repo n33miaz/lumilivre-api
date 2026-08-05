@@ -51,8 +51,8 @@ class FlywayMigrationTest {
                 .isTrue();
 
         assertThat(result.migrationsExecuted)
-                .as("Must apply V1..V8 core baseline")
-                .isGreaterThanOrEqualTo(8);
+                .as("Must apply the whole baseline (V1..V6)")
+                .isGreaterThanOrEqualTo(6);
 
         assertThat(result.warnings)
                 .as("No warnings expected on a fresh database")

@@ -1,9 +1,10 @@
--- =============================================================================
---  LumiLivre - Baseline V2 (EN)
---  V1__create_core_schema_en.sql
--- -----------------------------------------------------------------------------
---  Schema que substitui o baseline preservado em src/main/resources/db/legacy
--- =============================================================================
+-- ============================================================================
+--  V1 - schema de dominio
+-- ----------------------------------------------------------------------------
+--  Extensoes, helpers, tabelas de referencia e todas as tabelas de negocio:
+--  leitores, usuarios, acervo, exemplares, emprestimos, solicitacoes,
+--  reservas e conteudos do mural. Indices de performance ficam na V4.
+-- ============================================================================
 
 -- ----------------------------------------------------------------------------
 -- 1. Extensoes (Forçadas no schema public para evitar conflito de search_path)
@@ -120,6 +121,9 @@ CREATE TABLE app_user (
     role           VARCHAR(30) NOT NULL,
     reader_id     UUID,
     preferred_locale VARCHAR(10) NOT NULL DEFAULT 'pt-BR',
+    -- Primeiro acesso: senha inicial e previsivel, entao a troca e obrigatoria.
+    must_change_password  BOOLEAN NOT NULL DEFAULT FALSE,
+    guided_tour_completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     deleted_at     TIMESTAMPTZ,
@@ -259,31 +263,51 @@ CREATE TRIGGER trg_reservation_touch BEFORE UPDATE ON reservation
     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
 -- ----------------------------------------------------------------------------
--- 7. thesis, password_reset_token
+-- 7. app_content (mural do app: comunicados, anexos e trabalhos academicos)
+--    Discriminador `content_type` mais os controles de visibilidade que o
+--    app respeita: publicacao, destaque/ordem, publico-alvo e janela.
 -- ----------------------------------------------------------------------------
-CREATE TABLE thesis (
-    id                  UUID        NOT NULL DEFAULT gen_random_uuid(),
-    title               VARCHAR(255) NOT NULL,
-    authors             VARCHAR(500) NOT NULL,
-    advisors            VARCHAR(500),
-    course_id           INTEGER     NOT NULL,
-    completion_year     INTEGER,
-    completion_semester VARCHAR(10),
-    pdf_url             VARCHAR(1024),
-    cover_url           VARCHAR(1024),
-    external_url        VARCHAR(1024),
-    is_active           BOOLEAN     NOT NULL DEFAULT TRUE,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
-    deleted_at          TIMESTAMPTZ,
-    CONSTRAINT pk_thesis PRIMARY KEY (id),
-    CONSTRAINT fk_thesis_course FOREIGN KEY (course_id) REFERENCES course (id) ON DELETE RESTRICT,
-    CONSTRAINT ck_thesis_year_range CHECK (completion_year IS NULL OR completion_year BETWEEN 1900 AND 2100)
+CREATE TABLE app_content (
+    id                   UUID         NOT NULL DEFAULT gen_random_uuid(),
+    content_type         VARCHAR(20)  NOT NULL,
+    title                VARCHAR(255) NOT NULL,
+    body                 TEXT,
+    authors              VARCHAR(500),
+    advisors             VARCHAR(500),
+    completion_year      INTEGER,
+    completion_semester  VARCHAR(10),
+    cover_url            VARCHAR(1024),
+    file_url             VARCHAR(1024),
+    external_url         VARCHAR(1024),
+    -- Visibilidade
+    is_published         BOOLEAN      NOT NULL DEFAULT TRUE,
+    is_pinned            BOOLEAN      NOT NULL DEFAULT FALSE,
+    display_order        INTEGER      NOT NULL DEFAULT 0,
+    audience_scope       VARCHAR(20)  NOT NULL DEFAULT 'ALL',
+    course_id            INTEGER,
+    academic_module_id   INTEGER,
+    study_shift_id       INTEGER,
+    publish_start_at     TIMESTAMPTZ,
+    publish_end_at       TIMESTAMPTZ,
+    created_at           TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at           TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    deleted_at           TIMESTAMPTZ,
+    CONSTRAINT pk_app_content PRIMARY KEY (id),
+    CONSTRAINT fk_app_content_course          FOREIGN KEY (course_id)          REFERENCES course (id)          ON DELETE RESTRICT,
+    CONSTRAINT fk_app_content_academic_module FOREIGN KEY (academic_module_id) REFERENCES academic_module (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_app_content_study_shift     FOREIGN KEY (study_shift_id)     REFERENCES study_shift (id)     ON DELETE RESTRICT,
+    CONSTRAINT ck_app_content_type          CHECK (content_type IN ('ANNOUNCEMENT', 'ATTACHMENT', 'WORK')),
+    CONSTRAINT ck_app_content_audience      CHECK (audience_scope IN ('ALL', 'COURSE', 'MODULE', 'SHIFT')),
+    CONSTRAINT ck_app_content_year_range    CHECK (completion_year IS NULL OR completion_year BETWEEN 1900 AND 2100),
+    CONSTRAINT ck_app_content_window        CHECK (publish_end_at IS NULL OR publish_start_at IS NULL OR publish_end_at >= publish_start_at)
 );
 
-CREATE TRIGGER trg_thesis_touch BEFORE UPDATE ON thesis
+CREATE TRIGGER trg_app_content_touch BEFORE UPDATE ON app_content
     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
+-- ----------------------------------------------------------------------------
+-- 8. password_reset_token
+-- ----------------------------------------------------------------------------
 CREATE TABLE password_reset_token (
     id          BIGINT      GENERATED ALWAYS AS IDENTITY,
     token       VARCHAR(255) NOT NULL,
@@ -297,21 +321,21 @@ CREATE TABLE password_reset_token (
 );
 
 -- ----------------------------------------------------------------------------
--- 8. RLS deny-by-default (ADR-005)
---    Backend conecta como owner/postgres e bypassa; Data API fica bloqueada.
+-- 9. RLS deny-by-default
+--    Backend conecta como owner e bypassa; qualquer acesso direto ao banco (ex.: Data API) fica bloqueado.
 -- ----------------------------------------------------------------------------
-ALTER TABLE course                 ENABLE ROW LEVEL SECURITY; ALTER TABLE course                 FORCE ROW LEVEL SECURITY;
-ALTER TABLE academic_module        ENABLE ROW LEVEL SECURITY; ALTER TABLE academic_module        FORCE ROW LEVEL SECURITY;
-ALTER TABLE study_shift            ENABLE ROW LEVEL SECURITY; ALTER TABLE study_shift            FORCE ROW LEVEL SECURITY;
-ALTER TABLE genre                  ENABLE ROW LEVEL SECURITY; ALTER TABLE genre                  FORCE ROW LEVEL SECURITY;
-ALTER TABLE dewey_classification   ENABLE ROW LEVEL SECURITY; ALTER TABLE dewey_classification   FORCE ROW LEVEL SECURITY;
-ALTER TABLE reader                ENABLE ROW LEVEL SECURITY; ALTER TABLE reader                FORCE ROW LEVEL SECURITY;
-ALTER TABLE app_user               ENABLE ROW LEVEL SECURITY; ALTER TABLE app_user               FORCE ROW LEVEL SECURITY;
-ALTER TABLE book                   ENABLE ROW LEVEL SECURITY; ALTER TABLE book                   FORCE ROW LEVEL SECURITY;
-ALTER TABLE book_genre             ENABLE ROW LEVEL SECURITY; ALTER TABLE book_genre             FORCE ROW LEVEL SECURITY;
-ALTER TABLE book_copy              ENABLE ROW LEVEL SECURITY; ALTER TABLE book_copy              FORCE ROW LEVEL SECURITY;
-ALTER TABLE loan                   ENABLE ROW LEVEL SECURITY; ALTER TABLE loan                   FORCE ROW LEVEL SECURITY;
-ALTER TABLE loan_request           ENABLE ROW LEVEL SECURITY; ALTER TABLE loan_request           FORCE ROW LEVEL SECURITY;
-ALTER TABLE reservation            ENABLE ROW LEVEL SECURITY; ALTER TABLE reservation            FORCE ROW LEVEL SECURITY;
-ALTER TABLE thesis                 ENABLE ROW LEVEL SECURITY; ALTER TABLE thesis                 FORCE ROW LEVEL SECURITY;
-ALTER TABLE password_reset_token   ENABLE ROW LEVEL SECURITY; ALTER TABLE password_reset_token   FORCE ROW LEVEL SECURITY;
+ALTER TABLE course               ENABLE ROW LEVEL SECURITY; ALTER TABLE course               FORCE ROW LEVEL SECURITY;
+ALTER TABLE academic_module      ENABLE ROW LEVEL SECURITY; ALTER TABLE academic_module      FORCE ROW LEVEL SECURITY;
+ALTER TABLE study_shift          ENABLE ROW LEVEL SECURITY; ALTER TABLE study_shift          FORCE ROW LEVEL SECURITY;
+ALTER TABLE genre                ENABLE ROW LEVEL SECURITY; ALTER TABLE genre                FORCE ROW LEVEL SECURITY;
+ALTER TABLE dewey_classification ENABLE ROW LEVEL SECURITY; ALTER TABLE dewey_classification FORCE ROW LEVEL SECURITY;
+ALTER TABLE reader               ENABLE ROW LEVEL SECURITY; ALTER TABLE reader               FORCE ROW LEVEL SECURITY;
+ALTER TABLE app_user             ENABLE ROW LEVEL SECURITY; ALTER TABLE app_user             FORCE ROW LEVEL SECURITY;
+ALTER TABLE book                 ENABLE ROW LEVEL SECURITY; ALTER TABLE book                 FORCE ROW LEVEL SECURITY;
+ALTER TABLE book_genre           ENABLE ROW LEVEL SECURITY; ALTER TABLE book_genre           FORCE ROW LEVEL SECURITY;
+ALTER TABLE book_copy            ENABLE ROW LEVEL SECURITY; ALTER TABLE book_copy            FORCE ROW LEVEL SECURITY;
+ALTER TABLE loan                 ENABLE ROW LEVEL SECURITY; ALTER TABLE loan                 FORCE ROW LEVEL SECURITY;
+ALTER TABLE loan_request         ENABLE ROW LEVEL SECURITY; ALTER TABLE loan_request         FORCE ROW LEVEL SECURITY;
+ALTER TABLE reservation          ENABLE ROW LEVEL SECURITY; ALTER TABLE reservation          FORCE ROW LEVEL SECURITY;
+ALTER TABLE app_content          ENABLE ROW LEVEL SECURITY; ALTER TABLE app_content          FORCE ROW LEVEL SECURITY;
+ALTER TABLE password_reset_token ENABLE ROW LEVEL SECURITY; ALTER TABLE password_reset_token FORCE ROW LEVEL SECURITY;

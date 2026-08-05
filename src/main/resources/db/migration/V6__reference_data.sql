@@ -1,10 +1,10 @@
--- =============================================================================
---  V5__seed_reference_data.sql
--- -----------------------------------------------------------------------------
---  Dados de referencia do dominio (PT-BR por natureza do negocio).
---  Idempotente via ON CONFLICT. Nao contem dados de negocio (emprestimos,
---  leitores, livros) - esses ficam no seed demo opt-in em db/seed.
--- =============================================================================
+-- ============================================================================
+--  V6 - dados de referencia do dominio
+-- ----------------------------------------------------------------------------
+--  Cursos, generos, modulos academicos, turnos e classificacao Dewey.
+--  Idempotente via ON CONFLICT. Nao contem dados de negocio - leitores,
+--  livros e emprestimos ficam no seed de demonstracao opt-in em db/seed.
+-- ============================================================================
 
 DO $$
 DECLARE

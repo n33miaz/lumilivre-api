@@ -1,13 +1,10 @@
--- =============================================================================
---  V3__create_materialized_views.sql
--- -----------------------------------------------------------------------------
---  Views materializadas do dashboard administrativo.
---  Refresh periodico feito por DashboardRefreshJob (apos PR 5).
---  Nomes equivalentes legacy:
---    mv_dashboard_stats       <- mv_dashboard_stats
---    mv_top_books             <- mv_top_livros
---    mv_loans_by_month        <- mv_emprestimos_por_mes
--- =============================================================================
+-- ============================================================================
+--  V5 - views materializadas do dashboard
+-- ----------------------------------------------------------------------------
+--  mv_dashboard_stats (contadores), mv_top_books (mais emprestados) e
+--  mv_loans_by_month (serie mensal). O refresh periodico fica no
+--  DashboardRefreshJob.
+-- ============================================================================
 
 -- ----------------------------------------------------------------------------
 -- mv_dashboard_stats: contadores agregados (1 linha)

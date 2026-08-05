@@ -13,7 +13,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Controle de versão do app por plataforma (ANDROID/IOS). Ver V11.
+ * Controle de versão do app por plataforma (ANDROID/IOS). Ver V3.
  */
 @Entity
 @Table(name = "app_version")

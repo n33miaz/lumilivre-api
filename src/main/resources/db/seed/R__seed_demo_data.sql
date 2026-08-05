@@ -365,7 +365,7 @@ INSERT INTO app_content (
     audience_scope, course_id, academic_module_id, study_shift_id, publish_start_at, publish_end_at
 )
 VALUES
-    -- Trabalhos/TCC (migrados do thesis)
+    -- Trabalhos academicos
     ('00000000-0000-4000-8000-000000008001'::uuid, 'WORK', 'Sistema de Catalogo Digital para Biblioteca Escolar', NULL, 'Ana Beatriz Lima; Mariana Oliveira Santos', 'Prof. Joao Pereira',  2025, '2', 'https://covers.openlibrary.org/b/id/10523338-L.jpg', 'https://www.africau.edu/images/default/sample.pdf', 'https://example.com/lumilivre/tcc-demo-1', TRUE, FALSE, 10, 'ALL', NULL, NULL, NULL, NULL, NULL),
     ('00000000-0000-4000-8000-000000008002'::uuid, 'WORK', 'Gestao de Estoque para Pequenas Bibliotecas Escolares', NULL, 'Carlos Henrique Souza', 'Profa. Beatriz Nunes', 2024, '2', 'https://covers.openlibrary.org/b/id/240727-L.jpg', 'https://www.africau.edu/images/default/sample.pdf', NULL, TRUE, FALSE, 11, 'ALL', NULL, NULL, NULL, NULL, NULL),
     ('00000000-0000-4000-8000-000000008003'::uuid, 'WORK', 'Automacao de Importacao de Acervos via Planilhas', NULL, 'Pedro Henrique Costa; Lucas Pereira Cardoso', 'Prof. Lucio Almeida', 2025, '1', 'https://covers.openlibrary.org/b/id/240727-L.jpg', 'https://www.africau.edu/images/default/sample.pdf', NULL, TRUE, FALSE, 12, 'ALL', NULL, NULL, NULL, NULL, NULL),

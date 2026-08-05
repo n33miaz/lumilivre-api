@@ -10,7 +10,7 @@ import lombok.*;
 
 /**
  * Conteudo publicavel do ecossistema (comunicado, anexo ou trabalho/TCC).
- * Generaliza a antiga entidade {@code Thesis} — ver migration V8. Carrega os
+ * Generaliza a antiga entidade {@code Thesis} — ver migration V1. Carrega os
  * metadados academicos (autores/orientadores/ano) usados por {@link ContentType#WORK}
  * e os quatro controles de visibilidade respeitados pelo mural do app.
  */

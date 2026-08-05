@@ -73,7 +73,7 @@ public class DashboardService {
 
     /**
      * Popula as materialized views assim que a aplicação sobe. Sem isto, as
-     * views criadas pela migration V3 (WITH DATA sobre tabelas ainda vazias)
+     * views criadas pela migration V5 (WITH DATA sobre tabelas ainda vazias)
      * permanecem vazias até o primeiro disparo agendado (15 min) — e os cards
      * de "Análise gerencial" aparecem vazios mesmo com dados no banco. Em
      * produção, onde o seed demo não roda, este é o único refresh garantido.

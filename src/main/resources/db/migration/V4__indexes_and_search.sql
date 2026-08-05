@@ -1,8 +1,9 @@
--- =============================================================================
---  V4__create_indexes_and_search.sql
--- -----------------------------------------------------------------------------
---  Indices de performance e busca textual.
--- =============================================================================
+-- ============================================================================
+--  V4 - indices e busca textual
+-- ----------------------------------------------------------------------------
+--  Indices de FK, de filtros frequentes e GIN/trigram para busca tolerante a
+--  acento. As unicidades parciais de integridade ficam junto das tabelas.
+-- ============================================================================
 
 -- ----------------------------------------------------------------------------
 -- Indices basicos de FK e filtros frequentes
@@ -63,11 +64,6 @@ CREATE UNIQUE INDEX uq_reservation_active_reader_book
     ON reservation (reader_id, book_id)
     WHERE status IN ('WAITING', 'READY');
 
--- thesis
-CREATE INDEX idx_thesis_course_id
-    ON thesis (course_id)
-    WHERE deleted_at IS NULL AND is_active = TRUE;
-
 -- outbox_event
 CREATE INDEX idx_outbox_event_status_next_retry_at_created_at
     ON outbox_event (status, next_retry_at NULLS FIRST, created_at);
@@ -112,3 +108,22 @@ CREATE INDEX idx_book_fts
         )
     )
     WHERE deleted_at IS NULL;
+
+
+-- ----------------------------------------------------------------------------
+-- app_content (feed do mural)
+-- ----------------------------------------------------------------------------
+CREATE INDEX idx_app_content_published_scope ON app_content (is_published, audience_scope);
+CREATE INDEX idx_app_content_publish_window  ON app_content (publish_start_at, publish_end_at);
+CREATE INDEX idx_app_content_pinned_order    ON app_content (is_pinned DESC, display_order ASC);
+CREATE INDEX idx_app_content_course_id          ON app_content (course_id);
+CREATE INDEX idx_app_content_academic_module_id ON app_content (academic_module_id);
+CREATE INDEX idx_app_content_study_shift_id     ON app_content (study_shift_id);
+
+-- ----------------------------------------------------------------------------
+-- access_log
+-- ----------------------------------------------------------------------------
+CREATE INDEX idx_access_log_occurred_at ON access_log (occurred_at DESC);
+CREATE INDEX idx_access_log_actor       ON access_log (actor);
+CREATE INDEX idx_access_log_event       ON access_log (event);
+CREATE INDEX idx_access_log_channel     ON access_log (channel);
