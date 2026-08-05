@@ -26,7 +26,6 @@ import br.com.lumilivre.api.dto.common.ErrorResponse;
 import br.com.lumilivre.api.enums.AccessEvent;
 import br.com.lumilivre.api.security.AuthRateLimitFilter;
 import br.com.lumilivre.api.security.CorrelationIdFilter;
-import br.com.lumilivre.api.security.CustomUserDetails;
 import br.com.lumilivre.api.security.JwtAuthenticationFilter;
 import br.com.lumilivre.api.security.MustChangePasswordFilter;
 import br.com.lumilivre.api.service.AccessLogService;
@@ -201,12 +200,21 @@ public class SecurityConfig {
                         // Métricas/infos operacionais só para ADMIN
                         .requestMatchers("/actuator/prometheus", "/actuator/info").hasRole("ADMIN")
 
-                        // Public catalogue reads
+                        // Public catalogue reads. A ficha do livro entra aqui: o
+                        // catálogo já era anônimo e ela era o único ponto que
+                        // exigia papel, o que o convidado do app via como erro
+                        // de rede. BookResponse só carrega dado bibliográfico —
+                        // ver o javadoc de BookController#getOne.
                         .requestMatchers(HttpMethod.GET,
                                 "/api/books/catalog",
                                 "/api/books/public/search",
-                                "/api/books/genres/**")
+                                "/api/books/genres/**",
+                                "/api/books/{id}")
                                 .permitAll()
+
+                        // Recorte anônimo das configurações: sem ele o convidado
+                        // não descobre que o modo convidado foi desligado.
+                        .requestMatchers(HttpMethod.GET, "/api/settings/public").permitAll()
 
                         // App version check: app consulta antes de logar
                         .requestMatchers(HttpMethod.GET, "/api/app-version").permitAll()
@@ -218,9 +226,6 @@ public class SecurityConfig {
                                 "/api/loans/reader/**",
                                 "/api/readers/{registrationNumber}",
                                 "/api/books/recommendations/**")
-                                .hasAnyRole("ADMIN", "LIBRARIAN", "READER")
-
-                        .requestMatchers(HttpMethod.GET, "/api/books/{id}")
                                 .hasAnyRole("ADMIN", "LIBRARIAN", "READER")
 
                         .requestMatchers(HttpMethod.PUT, "/api/loans/*/renew")
@@ -306,17 +311,17 @@ public class SecurityConfig {
         return Locale.forLanguageTag("pt-BR");
     }
 
-    /** Registra a tentativa de acesso negado (403) na trilha de acessos. */
+    /**
+     * Registra a tentativa de acesso negado (403) na trilha de acessos, com o
+     * ator resolvido pelo mesmo critério dos demais eventos (matrícula para
+     * leitor) — a trilha só liga "negado" a "quem" se o nome for o mesmo.
+     */
     private void logAccessDenied(String message) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String actor = "anonymous";
-        String role = "ANONYMOUS";
-        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails details) {
-            var reader = details.getAppUser().getReader();
-            actor = reader != null ? reader.getRegistrationNumber() : details.getUsername();
-            role = "ROLE_" + details.getAppUser().getRole().name();
-        }
-        accessLogService.record(AccessEvent.ACCESS_DENIED, actor, role,
+        String actor = AccessLogService.actorOf(auth);
+        accessLogService.record(AccessEvent.ACCESS_DENIED,
+                actor != null ? actor : "anonymous",
+                actor != null ? AccessLogService.roleOf(auth) : "ANONYMOUS",
                 AccessLogService.RESULT_DENIED, message);
     }
 

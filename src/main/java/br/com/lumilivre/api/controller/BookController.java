@@ -12,8 +12,10 @@ import br.com.lumilivre.api.dto.book.BookCardResponse;
 import br.com.lumilivre.api.dto.book.BookCatalogResponse;
 import br.com.lumilivre.api.dto.book.BookGroupedResponse;
 import br.com.lumilivre.api.dto.book.BookSummaryResponse;
+import br.com.lumilivre.api.enums.AccessEvent;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.mapper.BookMapper;
+import br.com.lumilivre.api.security.AccessAudited;
 import br.com.lumilivre.api.security.CanAccessReader;
 import br.com.lumilivre.api.service.BookService;
 import br.com.lumilivre.api.service.RecommendationService;
@@ -116,6 +118,7 @@ public class BookController {
 
     @GetMapping("/public/search")
     @Operation(operationId = "books.publicSearch")
+    @AccessAudited(event = AccessEvent.CATALOG_SEARCH)
     public ResponseEntity<Page<BookCardResponse>> publicSearch(
             @RequestParam String q,
             @PageableDefault(size = 20) Pageable pageable,
@@ -128,6 +131,7 @@ public class BookController {
 
     @GetMapping("/catalog")
     @Operation(operationId = "books.catalog")
+    @AccessAudited(event = AccessEvent.CATALOG_SEARCH)
     public ResponseEntity<List<BookCatalogResponse>> catalog(Locale locale) {
         List<BookCatalogResponse> body = bookService.buscarCatalogoParaMobile();
         if (body.isEmpty()) {
@@ -140,6 +144,7 @@ public class BookController {
 
     @GetMapping("/genres/{genreName}")
     @Operation(operationId = "books.byGenre")
+    @AccessAudited(event = AccessEvent.CATALOG_SEARCH)
     public ResponseEntity<Page<BookCardResponse>> byGenre(
             @PathVariable String genreName,
             @PageableDefault(size = 10) Pageable pageable,
@@ -180,9 +185,28 @@ public class BookController {
                 .body(body);
     }
 
+    /**
+     * Ficha do livro, aberta ao convidado.
+     *
+     * <p>Era o único ponto do catálogo que exigia papel, enquanto
+     * {@code /catalog}, {@code /public/search} e {@code /genres/**} já eram
+     * públicos: o convidado listava os livros e tomava 401 ao tocar em um deles,
+     * o que o app mostrava como erro de rede.
+     *
+     * <p>Abrir foi decisão de campo por campo, não de conveniência.
+     * {@link BookResponse} devolve apenas dado bibliográfico — ISBN, título,
+     * autor, editora, data, páginas, sinopse, capa, CDD, faixa etária, tipo de
+     * capa, edição, volume, nota e gêneros. Nada de exemplar (tombo,
+     * localização física, status), nada de empréstimo, nada de pessoa. É o
+     * conteúdo da lombada e da ficha catalográfica, que qualquer OPAC de
+     * biblioteca pública expõe, e metade dele já saía por {@code /catalog}.
+     * Enquanto isso valer, não há projeção pública a criar: ela seria cópia do
+     * DTO inteiro.
+     */
     @GetMapping("/{id}")
     @Operation(operationId = "books.get")
-    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN','READER')")
+    @PreAuthorize("permitAll()")
+    @AccessAudited(event = AccessEvent.BOOK_VIEWED, targetParam = "#id")
     public ResponseEntity<BookResponse> getOne(@PathVariable UUID id, Locale locale) {
         BookResponse body = bookService.findById(id)
                 .map(book -> mapper.toResponse(book, locale))

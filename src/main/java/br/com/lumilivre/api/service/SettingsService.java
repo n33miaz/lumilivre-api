@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.lumilivre.api.dto.settings.SettingsFeaturesResponse;
+import br.com.lumilivre.api.dto.settings.SettingsPublicResponse;
 import br.com.lumilivre.api.dto.settings.SettingsRequest;
 import br.com.lumilivre.api.dto.settings.SettingsResponse;
 import br.com.lumilivre.api.enums.LibraryType;
@@ -33,9 +34,33 @@ public class SettingsService {
         return Boolean.TRUE.equals(getOrCreateSettings().getReaderCanEditAvatar());
     }
 
+    // Não existe aqui um `isGuestAccessEnabled()` para uso interno, ao contrário
+    // de isReaderCanEditAvatar(): `guest_access_enabled` é, hoje, um toggle de
+    // produto que o cliente honra, e não uma barreira de autorização. Aplicá-lo
+    // no servidor significaria recusar /api/books/catalog, /public/search e
+    // /genres/** a chamador anônimo — e esses endpoints não servem só o modo
+    // convidado do app: são a vitrine pública do acervo. Desligar a flag
+    // derrubaria também isso. Um acessor sem uso sugeriria uma proteção que não
+    // existe, o que é pior que a ausência dela; a decisão está registrada no
+    // relatório do T04 para o dono resolver o escopo.
+
     @Transactional
     public SettingsResponse getSettingsView() {
         return toResponse(getOrCreateSettings());
+    }
+
+    /**
+     * Recorte anônimo: sem ele o convidado nunca descobre que o acesso de
+     * convidado foi desligado — pediria o catálogo, tomaria erro e leria isso
+     * como falha de rede, que era exatamente o sintoma relatado no app.
+     */
+    @Transactional
+    public SettingsPublicResponse getPublicSettingsView() {
+        LibrarySettings settings = getOrCreateSettings();
+        return new SettingsPublicResponse(
+                settings.getLibraryType(),
+                Boolean.TRUE.equals(settings.getGuestAccessEnabled()),
+                features(settings));
     }
 
     @Transactional
@@ -47,6 +72,9 @@ public class SettingsService {
         if (request.readerCanEditAvatar() != null) {
             settings.setReaderCanEditAvatar(request.readerCanEditAvatar());
         }
+        if (request.guestAccessEnabled() != null) {
+            settings.setGuestAccessEnabled(request.guestAccessEnabled());
+        }
         return toResponse(repository.save(settings));
     }
 
@@ -56,17 +84,23 @@ public class SettingsService {
                         .id(SINGLETON_ID)
                         .libraryType(LibraryType.SCHOOL)
                         .readerCanEditAvatar(Boolean.TRUE)
+                        .guestAccessEnabled(Boolean.TRUE)
                         .build()));
     }
 
     private SettingsResponse toResponse(LibrarySettings settings) {
+        return new SettingsResponse(
+                settings.getLibraryType(),
+                Boolean.TRUE.equals(settings.getReaderCanEditAvatar()),
+                Boolean.TRUE.equals(settings.getGuestAccessEnabled()),
+                features(settings));
+    }
+
+    private SettingsFeaturesResponse features(LibrarySettings settings) {
         boolean school = settings.getLibraryType() == LibraryType.SCHOOL;
         // `contents` (ex-`thesis`): comunicados fazem sentido em qualquer biblioteca,
         // entao a feature fica sempre habilitada; apenas o tipo WORK/TCC e destacado
         // quando SCHOOL. Campos academicos e ranking seguem o tipo de biblioteca.
-        return new SettingsResponse(
-                settings.getLibraryType(),
-                Boolean.TRUE.equals(settings.getReaderCanEditAvatar()),
-                new SettingsFeaturesResponse(school, school, true));
+        return new SettingsFeaturesResponse(school, school, true);
     }
 }

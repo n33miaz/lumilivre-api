@@ -35,6 +35,10 @@ public class LibrarySettings {
     @Column(name = "reader_can_edit_avatar", nullable = false)
     private Boolean readerCanEditAvatar;
 
+    /** Permite navegar o acervo sem login (modo convidado do app). Default TRUE. */
+    @Column(name = "guest_access_enabled", nullable = false)
+    private Boolean guestAccessEnabled;
+
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
@@ -43,6 +47,7 @@ public class LibrarySettings {
         if (id == null) id = Boolean.TRUE;
         if (libraryType == null) libraryType = LibraryType.SCHOOL;
         if (readerCanEditAvatar == null) readerCanEditAvatar = Boolean.TRUE;
+        if (guestAccessEnabled == null) guestAccessEnabled = Boolean.TRUE;
         if (updatedAt == null) updatedAt = OffsetDateTime.now();
     }
 

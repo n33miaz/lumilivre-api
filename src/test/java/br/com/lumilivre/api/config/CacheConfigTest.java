@@ -14,9 +14,14 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import br.com.lumilivre.api.dto.dashboard.LoansByMonthResponse;
 import br.com.lumilivre.api.model.Book;
+import br.com.lumilivre.api.service.BookService;
 import br.com.lumilivre.api.service.DashboardService;
 import br.com.lumilivre.api.service.LoanService;
 
@@ -66,6 +71,38 @@ class CacheConfigTest {
         assertThat(dashboardStats.value()).containsExactly(CacheNames.DASHBOARD_STATS);
         assertThat(dashboardStats.key()).isEqualTo("'stats'");
         assertThat(activeOverdueCount.value()).containsExactly(CacheNames.DASHBOARD_ACTIVE_OVERDUE_COUNT);
+    }
+
+    @Test
+    void bookDetailDoesNotCacheMissesAndItsUnlessExpressionActuallyEvaluates() throws NoSuchMethodException {
+        // A ficha do livro virou pública. Como o cache é ConcurrentMapCache sem
+        // limite de tamanho, guardar o resultado vazio de cada id inexistente
+        // deixava um anônimo encher a heap com UUID aleatório — daí o `unless`.
+        Cacheable bookDetail = BookService.class
+                .getDeclaredMethod("findById", UUID.class)
+                .getAnnotation(Cacheable.class);
+
+        assertThat(bookDetail.value()).containsExactly(CacheNames.BOOK_DETAIL);
+        assertThat(bookDetail.unless()).isNotBlank();
+
+        // O Spring desembrulha o Optional antes de avaliar a expressão: #result é
+        // o Book, ou null quando o Optional está vazio. Um `#result.isEmpty()`
+        // aqui compila, passa em teste de anotação e estoura em produção,
+        // transformando a ficha do livro num 500 — foi o que aconteceu.
+        ExpressionParser parser = new SpelExpressionParser();
+        Expression unless = parser.parseExpression(bookDetail.unless());
+
+        StandardEvaluationContext found = new StandardEvaluationContext();
+        found.setVariable("result", Book.builder().id(UUID.randomUUID()).title("Dom Casmurro").build());
+        assertThat(unless.getValue(found, Boolean.class))
+                .as("livro encontrado deve ser cacheado")
+                .isFalse();
+
+        StandardEvaluationContext missing = new StandardEvaluationContext();
+        missing.setVariable("result", null);
+        assertThat(unless.getValue(missing, Boolean.class))
+                .as("id inexistente nao pode entrar no cache")
+                .isTrue();
     }
 
     @Test

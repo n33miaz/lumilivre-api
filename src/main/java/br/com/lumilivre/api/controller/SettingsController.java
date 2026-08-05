@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.controller;
 
 import br.com.lumilivre.api.config.SwaggerTags;
+import br.com.lumilivre.api.dto.settings.SettingsPublicResponse;
 import br.com.lumilivre.api.dto.settings.SettingsRequest;
 import br.com.lumilivre.api.dto.settings.SettingsResponse;
 import br.com.lumilivre.api.service.SettingsService;
@@ -29,6 +30,19 @@ public class SettingsController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SettingsResponse> get() {
         return ResponseEntity.ok(settingsService.getSettingsView());
+    }
+
+    /**
+     * Recorte público: o convidado precisa saber se o modo convidado está
+     * ligado <b>antes</b> de ter token. O DTO é outro
+     * ({@link SettingsPublicResponse}) para que flag nova em
+     * {@code library_settings} não passe a ser pública por acidente.
+     */
+    @GetMapping("/public")
+    @Operation(operationId = "settings.public")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<SettingsPublicResponse> getPublic() {
+        return ResponseEntity.ok(settingsService.getPublicSettingsView());
     }
 
     @PutMapping
