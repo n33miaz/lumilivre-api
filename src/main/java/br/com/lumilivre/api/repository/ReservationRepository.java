@@ -27,4 +27,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
     int maxQueuePosition(@Param("bookId") UUID bookId);
 
     List<Reservation> findByStatusAndExpiresAtBefore(ReservationStatus status, OffsetDateTime now);
+
+    long countByStatus(ReservationStatus status);
 }
