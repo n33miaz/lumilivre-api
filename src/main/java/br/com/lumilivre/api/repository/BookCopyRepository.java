@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import br.com.lumilivre.api.dto.book.BookCopyCounts;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.model.BookCopy;
 
@@ -36,6 +37,24 @@ public interface BookCopyRepository extends JpaRepository<BookCopy, UUID> {
 
     @Query("SELECT COUNT(e) FROM BookCopy e WHERE e.book.id = :bookId AND e.status = :status")
     long countByBookIdAndStatus(@Param("bookId") UUID bookId, @Param("status") BookCopyStatus status);
+
+    /**
+     * Total e disponiveis numa consulta so, para a ficha do livro poder mostrar
+     * disponibilidade sem pagar duas idas ao banco.
+     *
+     * <p>Agregacao sobre conjunto vazio devolve uma linha com zeros, e nao
+     * nenhuma linha: livro sem exemplar responde 0/0, que e uma resposta, e nao
+     * ausencia de dado.
+     */
+    @Query("""
+            SELECT new br.com.lumilivre.api.dto.book.BookCopyCounts(
+                COUNT(e.id),
+                COUNT(CASE WHEN e.status = :available THEN e.id END))
+            FROM BookCopy e
+            WHERE e.book.id = :bookId
+            """)
+    BookCopyCounts contarExemplares(@Param("bookId") UUID bookId,
+            @Param("available") BookCopyStatus available);
 
     @Query("SELECT e FROM BookCopy e WHERE e.book.id = :bookId AND e.status = :status")
     List<BookCopy> findByBookIdAndStatus(@Param("bookId") UUID bookId, @Param("status") BookCopyStatus status);

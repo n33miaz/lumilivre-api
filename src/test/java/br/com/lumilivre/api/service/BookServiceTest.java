@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import br.com.lumilivre.api.dto.book.BookCopyCounts;
 import br.com.lumilivre.api.dto.book.BookGroupedResponse;
 import br.com.lumilivre.api.dto.book.BookListItemProjection;
 import br.com.lumilivre.api.dto.book.BookRequest;
@@ -338,13 +339,72 @@ class BookServiceTest {
     }
 
     @Test
-    void copyCountersDelegateToRepositories() {
+    void copyCountsComeFromASingleQuery() {
         UUID id = UUID.randomUUID();
-        when(bookCopyRepository.countByBookIdAndStatus(id, BookCopyStatus.AVAILABLE)).thenReturn(3L);
-        when(bookCopyRepository.countByBook_Id(id)).thenReturn(5L);
+        when(bookCopyRepository.contarExemplares(id, BookCopyStatus.AVAILABLE))
+                .thenReturn(new BookCopyCounts(5, 3));
 
-        assertThat(service().countAvailableCopies(id)).isEqualTo(3);
-        assertThat(service().countTotalCopies(id)).isEqualTo(5);
+        BookCopyCounts counts = service().contarExemplares(id);
+
+        assertThat(counts.total()).isEqualTo(5);
+        assertThat(counts.available()).isEqualTo(3);
+        // Duas contagens, uma ida ao banco: a ficha do livro nao paga dois
+        // roundtrips so para dizer "3 de 5 disponiveis".
+        verify(bookCopyRepository).contarExemplares(id, BookCopyStatus.AVAILABLE);
+        verify(bookCopyRepository, never()).countByBook_Id(any());
+    }
+
+    /**
+     * Livro sem exemplar nenhum tem de responder 0/0, e nunca nulo: nulo no DTO
+     * significa "a API nao informou", e foi lendo ausencia como zero que o app
+     * desabilitou o pedido de emprestimo em todo livro.
+     */
+    @Test
+    void copyCountsNeverComeBackNull() {
+        UUID id = UUID.randomUUID();
+        when(bookCopyRepository.contarExemplares(id, BookCopyStatus.AVAILABLE)).thenReturn(null);
+
+        assertThat(service().contarExemplares(id)).isEqualTo(BookCopyCounts.NONE);
+    }
+
+    /**
+     * A navegacao por genero e JPQL e ficou fora da allowlist da lista
+     * administrativa: campo inexistente chegava ao banco como
+     * {@code ORDER BY l.campoInexistente} e voltava 500.
+     */
+    @Test
+    void genreBrowsingRejectsUnknownSortFieldBeforeTheQuery() {
+        assertThatExceptionOfType(BusinessRuleException.class)
+                .isThrownBy(() -> service().buscarPorGenero(
+                        "Romance", PageRequest.of(0, 10, Sort.by("campoInexistente"))))
+                .satisfies(error -> assertThat(error.getMessageKey()).isEqualTo("error.sort.invalid-field"));
+
+        verify(bookRepository, never()).findByGeneroAsCatalogoDTO(any(), any());
+    }
+
+    /**
+     * Paginar sem ordem total repete ou pula linhas entre paginas, e titulo
+     * repete entre volumes de uma mesma obra — por isso o desempate por id entra
+     * mesmo quando o cliente pede outra ordem.
+     */
+    @Test
+    void genreBrowsingAlwaysPaginatesWithATotalOrder() {
+        when(bookRepository.findByGeneroAsCatalogoDTO(eq("Romance"), pageableCaptor.capture()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        service().buscarPorGenero("Romance", PageRequest.of(0, 10));
+        assertThat(pageableCaptor.getValue().getSort())
+                .containsExactly(Sort.Order.asc("title"), Sort.Order.asc("id"));
+
+        service().buscarPorGenero("Romance", PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "rating")));
+        assertThat(pageableCaptor.getValue().getSort())
+                .containsExactly(Sort.Order.desc("rating"), Sort.Order.asc("id"));
+
+        // Desempate pedido pelo cliente nao vira desempate duplicado.
+        service().buscarPorGenero("Romance",
+                PageRequest.of(0, 10, Sort.by(Sort.Order.asc("title"), Sort.Order.desc("id"))));
+        assertThat(pageableCaptor.getValue().getSort())
+                .containsExactly(Sort.Order.asc("title"), Sort.Order.desc("id"));
     }
 
     private BookService service() {

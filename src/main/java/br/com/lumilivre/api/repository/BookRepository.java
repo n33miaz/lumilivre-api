@@ -146,6 +146,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
                     l.author AS author,
                     l.cover_url AS coverUrl,
                     l.rating AS rating,
+                    l.updated_at AS updatedAt,
                     g.name AS genreName,
                     ROW_NUMBER() OVER(PARTITION BY g.name ORDER BY l.publication_date DESC, l.id DESC) as rn
                 FROM book l
@@ -158,6 +159,7 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
                 author,
                 coverUrl,
                 rating,
+                updatedAt,
                 genreName
             FROM RankedLivros
             WHERE rn <= 10
@@ -218,13 +220,24 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
     @Query("SELECT COUNT(e) FROM BookCopy e WHERE e.book.id = :bookId AND e.status = :status")
     long countCopiesByStatus(@Param("bookId") UUID bookId, @Param("status") BookCopyStatus status);
 
+    /**
+     * Navegacao por genero do app.
+     *
+     * <p>Sem {@code ORDER BY} de proposito: a ordem vem do {@link Pageable} que
+     * o {@code BookService} monta, e ela e sempre total (ver
+     * {@code GENERO_SORT}). Fixar a ordem aqui teria efeito contrario ao
+     * esperado — em JPQL o Spring Data <b>anexa</b> o sort do cliente a clausula
+     * existente, entao o {@code ORDER BY} do arquivo passaria na frente e o
+     * campo pedido pelo cliente viraria apenas criterio de desempate.
+     */
     @Query("""
             SELECT new br.com.lumilivre.api.dto.book.BookCardResponse(
                 l.id,
                 l.title,
                 l.author,
                 l.coverUrl,
-                l.rating
+                l.rating,
+                l.updatedAt
             )
             FROM Book l
             JOIN l.genres g
@@ -238,7 +251,8 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
                 COALESCE(l.title, ''),
                 COALESCE(l.author, 'Unknown Author'),
                 COALESCE(l.coverUrl, ''),
-                COALESCE(l.rating, 0.0)
+                COALESCE(l.rating, 0.0),
+                l.updatedAt
             )
             FROM Book l
             WHERE LOWER(l.title) LIKE LOWER(CONCAT('%', :texto, '%'))
@@ -252,7 +266,8 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
                 COALESCE(l.title, ''),
                 COALESCE(l.author, 'Unknown Author'),
                 COALESCE(l.coverUrl, ''),
-                COALESCE(l.rating, 0.0)
+                COALESCE(l.rating, 0.0),
+                l.updatedAt
             )
             FROM Book l JOIN l.genres g
             WHERE LOWER(g.name) IN :generos
@@ -270,7 +285,8 @@ public interface BookRepository extends JpaRepository<Book, UUID> {
                 COALESCE(l.title, ''),
                 COALESCE(l.author, 'Unknown Author'),
                 COALESCE(l.coverUrl, ''),
-                COALESCE(l.rating, 0.0)
+                COALESCE(l.rating, 0.0),
+                l.updatedAt
             )
             FROM Book l
             ORDER BY l.rating DESC NULLS LAST

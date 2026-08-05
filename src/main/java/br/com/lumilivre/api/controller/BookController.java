@@ -15,6 +15,7 @@ import br.com.lumilivre.api.dto.book.BookSummaryResponse;
 import br.com.lumilivre.api.enums.AccessEvent;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.mapper.BookMapper;
+import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.security.AccessAudited;
 import br.com.lumilivre.api.security.CanAccessReader;
 import br.com.lumilivre.api.service.BookService;
@@ -202,6 +203,13 @@ public class BookController {
      * biblioteca pública expõe, e metade dele já saía por {@code /catalog}.
      * Enquanto isso valer, não há projeção pública a criar: ela seria cópia do
      * DTO inteiro.
+     *
+     * <p>A esse recorte somam-se agora as <b>contagens</b> de exemplares (total
+     * e disponíveis). Contagem não identifica exemplar: não diz tombo nem
+     * prateleira, e é o mesmo "disponível / emprestado" que qualquer estante
+     * virtual de biblioteca pública mostra. Sem ela o app não tinha como saber
+     * se dava para pedir emprestado — lia a ausência do campo como zero e o
+     * botão de solicitar empréstimo ficava morto em todo livro para todo leitor.
      */
     @GetMapping("/{id}")
     @Operation(operationId = "books.get")
@@ -209,7 +217,7 @@ public class BookController {
     @AccessAudited(event = AccessEvent.BOOK_VIEWED, targetParam = "#id")
     public ResponseEntity<BookResponse> getOne(@PathVariable UUID id, Locale locale) {
         BookResponse body = bookService.findById(id)
-                .map(book -> mapper.toResponse(book, locale))
+                .map(book -> mapper.toResponse(book, locale, bookService.contarExemplares(id)))
                 .orElseThrow(() -> ResourceNotFoundException.ofKey("book.not-found"));
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
@@ -222,7 +230,11 @@ public class BookController {
     public ResponseEntity<BookResponse> create(
             @Valid @RequestBody BookRequest request,
             Locale locale) {
-        BookResponse body = mapper.toResponse(bookService.cadastrar(request, null), locale);
+        // Livro recém-criado ainda não tem exemplar, mas a contagem sai como 0/0
+        // explícito: campo ausente foi lido como zero por um cliente e é
+        // justamente a ambiguidade que este DTO deixou de ter.
+        Book created = bookService.cadastrar(request, null);
+        BookResponse body = mapper.toResponse(created, locale, bookService.contarExemplares(created.getId()));
         return ResponseEntity.status(201)
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);
@@ -235,7 +247,8 @@ public class BookController {
             @PathVariable UUID id,
             @Valid @RequestBody BookRequest request,
             Locale locale) {
-        BookResponse body = mapper.toResponse(bookService.atualizar(id, request, null), locale);
+        BookResponse body = mapper.toResponse(
+                bookService.atualizar(id, request, null), locale, bookService.contarExemplares(id));
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);
@@ -248,7 +261,8 @@ public class BookController {
             @PathVariable UUID id,
             @RequestParam("file") MultipartFile file,
             Locale locale) {
-        BookResponse body = mapper.toResponse(bookService.uploadCapa(id, file), locale);
+        BookResponse body = mapper.toResponse(
+                bookService.uploadCapa(id, file), locale, bookService.contarExemplares(id));
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);

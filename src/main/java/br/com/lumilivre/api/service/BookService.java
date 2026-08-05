@@ -4,7 +4,11 @@ import static br.com.lumilivre.api.config.CacheNames.BOOK_COUNT;
 import static br.com.lumilivre.api.config.CacheNames.BOOK_DETAIL;
 import static br.com.lumilivre.api.config.CacheNames.MOBILE_CATALOG;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -27,10 +31,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import br.com.lumilivre.api.dto.book.BookCardResponse;
 import br.com.lumilivre.api.dto.book.BookCatalogResponse;
+import br.com.lumilivre.api.dto.book.BookCopyCounts;
 import br.com.lumilivre.api.dto.book.BookGroupedResponse;
 import br.com.lumilivre.api.dto.book.BookListItemProjection;
 import br.com.lumilivre.api.dto.book.BookRequest;
 import br.com.lumilivre.api.enums.AgeRating;
+import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.CoverType;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
@@ -79,6 +85,26 @@ public class BookService {
             "title", "l.title",
             "author", "l.author",
             "publisher", "l.publisher");
+
+    /**
+     * Campos ordenaveis da navegacao por genero do app.
+     *
+     * <p>Aqui a consulta e JPQL, nao nativa, e por isso o valor de cada entrada
+     * e o nome da <b>propriedade</b> da entidade — o Spring Data prefixa com o
+     * alias e o Hibernate resolve para a coluna. O motivo da allowlist e o mesmo
+     * do {@code LISTA_ADMIN_SORT}: campo desconhecido chegava ao banco como
+     * {@code ORDER BY l.campoInexistente} e voltava como 500. Agora e 400.
+     *
+     * <p>{@code id} esta aqui para servir de desempate: o app ja mandava
+     * {@code sort=title,asc&sort=id,asc} como paliativo justamente porque a
+     * pagina 1 repetia livros da pagina 0.
+     */
+    private static final SortAllowlist GENERO_SORT = SortAllowlist.of(
+            "title", "title",
+            "author", "author",
+            "rating", "rating",
+            "publicationDate", "publicationDate",
+            "id", "id");
 
     private final BookCopyRepository bookCopyRepository;
     private final BookRepository bookRepository;
@@ -157,13 +183,23 @@ public class BookService {
         return bookRepository.findByIdWithDetails(id);
     }
 
-    public long countAvailableCopies(UUID bookId) {
-        return bookCopyRepository.countByBookIdAndStatus(bookId,
-                br.com.lumilivre.api.enums.BookCopyStatus.AVAILABLE);
-    }
-
-    public long countTotalCopies(UUID bookId) {
-        return bookCopyRepository.countByBook_Id(bookId);
+    /**
+     * Contagem de exemplares da ficha do livro.
+     *
+     * <p>Fora do {@link #findById(UUID)} de proposito, e nao dentro do
+     * {@code Book} cacheado: disponibilidade muda a cada emprestimo e devolucao,
+     * enquanto o dado bibliografico so muda quando alguem edita o livro. Se a
+     * contagem entrasse no cache, a ficha diria "1 disponivel" depois de o
+     * ultimo exemplar sair emprestado — o pior tipo de erro aqui, porque leva o
+     * leitor a pedir um livro que nao existe na estante.
+     *
+     * <p>Nao ha N+1 a temer: {@code BookResponse} e sempre resposta de um livro
+     * so. As listagens paginadas contam exemplares dentro da propria consulta
+     * ({@code buscarAvancado}, {@code findLivrosAgrupados}).
+     */
+    public BookCopyCounts contarExemplares(UUID bookId) {
+        BookCopyCounts counts = bookCopyRepository.contarExemplares(bookId, BookCopyStatus.AVAILABLE);
+        return counts != null ? counts : BookCopyCounts.NONE;
     }
 
     @Cacheable(MOBILE_CATALOG)
@@ -180,6 +216,7 @@ public class BookService {
                                 .author((String) row.get("author"))
                                 .coverUrl((String) row.get("coverurl"))
                                 .rating(row.get("rating") != null ? ((Number) row.get("rating")).doubleValue() : 4.6)
+                                .updatedAt(toOffsetDateTime(row.get("updatedat")))
                                 .build(),
                                 Collectors.toList())));
 
@@ -192,8 +229,36 @@ public class BookService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * O {@code sanitizeWithTotalOrder} resolve dois defeitos da mesma rota: sort
+     * inexistente respondia 500 (a allowlist da lista administrativa cobria
+     * apenas a query nativa) e a paginacao nao tinha ordem garantida, entao a
+     * pagina seguinte podia repetir ou pular livros. Titulo e o default porque e
+     * a ordem que o app espera ver; {@code id} e o desempate porque titulo
+     * repete entre volumes de uma mesma obra.
+     */
     public Page<BookCardResponse> buscarPorGenero(String nomeGenero, Pageable pageable) {
-        return bookRepository.findByGeneroAsCatalogoDTO(nomeGenero, pageable);
+        return bookRepository.findByGeneroAsCatalogoDTO(nomeGenero,
+                GENERO_SORT.sanitizeWithTotalOrder(pageable, "title", "id"));
+    }
+
+    /**
+     * Consulta nativa devolve {@code Map<String,Object>} com o tipo que o driver
+     * entregou, e para {@code timestamptz} isso varia entre {@code Timestamp} e
+     * {@code OffsetDateTime} conforme versao de driver e de Hibernate. Converter
+     * aqui evita que a capa do catalogo dependa desse detalhe.
+     */
+    private static OffsetDateTime toOffsetDateTime(Object value) {
+        if (value instanceof OffsetDateTime offsetDateTime) {
+            return offsetDateTime;
+        }
+        if (value instanceof Timestamp timestamp) {
+            return timestamp.toInstant().atOffset(ZoneOffset.UTC);
+        }
+        if (value instanceof Instant instant) {
+            return instant.atOffset(ZoneOffset.UTC);
+        }
+        return null;
     }
 
     public Page<BookListItemProjection> buscarPorTexto(String texto, Pageable pageable) {

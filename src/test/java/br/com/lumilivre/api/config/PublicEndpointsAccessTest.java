@@ -1,6 +1,8 @@
 package br.com.lumilivre.api.config;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,6 +22,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import br.com.lumilivre.api.dto.book.BookCopyCounts;
 import br.com.lumilivre.api.dto.settings.SettingsFeaturesResponse;
 import br.com.lumilivre.api.dto.settings.SettingsPublicResponse;
 import br.com.lumilivre.api.enums.LibraryType;
@@ -56,15 +59,33 @@ class PublicEndpointsAccessTest {
 
     /**
      * Campos que {@link br.com.lumilivre.api.dto.book.BookResponse} pode expor a
-     * um anônimo: tudo aqui é dado bibliográfico, o conteúdo da ficha
-     * catalográfica. Se alguém acrescentar exemplar, localização física,
-     * disponibilidade ou qualquer dado de pessoa ao DTO, este teste quebra — e é
-     * exatamente essa a intenção, porque a rota virou pública.
+     * um anônimo: dado bibliográfico — o conteúdo da ficha catalográfica — mais
+     * duas contagens de exemplares e o carimbo de atualização. Se alguém
+     * acrescentar dado de pessoa, de empréstimo ou de exemplar <i>identificado</i>
+     * ao DTO, este teste quebra, e é exatamente essa a intenção.
+     *
+     * <p>Por que a disponibilidade entrou depois de a rota virar pública: o T04
+     * fechou o DTO para "nada de exemplar" pensando em tombo, prateleira e status
+     * de exemplar específico — o que ajuda alguém a localizar fisicamente um
+     * livro. Contagem não é nada disso. "3 de 5 disponíveis" é o que qualquer
+     * OPAC de biblioteca pública mostra na estante virtual, e a sua ausência
+     * tinha um custo concreto: o app lia campo ausente como zero e o botão de
+     * solicitar empréstimo ficava morto em todo livro, para todo leitor. O que
+     * continua fora está travado em {@link #publicBookRecordNeverIdentifiesACopy}.
      */
     private static final Set<String> ALLOWED_BOOK_FIELDS = Set.of(
             "id", "isbn", "title", "author", "publisher", "publicationDate", "pageCount",
             "synopsis", "coverUrl", "deweyCode", "ageRating", "coverType", "edition",
-            "volume", "rating", "genres");
+            "volume", "rating", "genres", "updatedAt", "totalCopies", "availableCopies");
+
+    /**
+     * Dado de exemplar que jamais pode aparecer na ficha pública. Separado da
+     * allowlist porque a lista acima cresce quando alguém acrescenta um campo
+     * legítimo; esta não cresce nunca.
+     */
+    private static final Set<String> FORBIDDEN_BOOK_FIELDS = Set.of(
+            "copyCode", "copies", "shelfLocation", "physicalLocation", "copyStatus",
+            "loans", "readers", "interestCount");
 
     @Autowired
     private MockMvc mockMvc;
@@ -103,6 +124,37 @@ class PublicEndpointsAccessTest {
         new com.fasterxml.jackson.databind.ObjectMapper().readTree(body).fieldNames()
                 .forEachRemaining(returned::add);
         org.assertj.core.api.Assertions.assertThat(returned).isSubsetOf(ALLOWED_BOOK_FIELDS);
+    }
+
+    @Test
+    void publicBookRecordNeverIdentifiesACopy() throws Exception {
+        // A ficha diz quantos exemplares existem e quantos estão livres. Não diz
+        // qual exemplar, nem onde ele está, nem quem está com ele.
+        Mockito.when(bookService.findById(BOOK_ID)).thenReturn(Optional.of(book()));
+        Mockito.when(bookService.contarExemplares(BOOK_ID)).thenReturn(new BookCopyCounts(5, 3));
+
+        String body = mockMvc.perform(get("/api/books/{id}", BOOK_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalCopies").value(5))
+                .andExpect(jsonPath("$.availableCopies").value(3))
+                .andReturn().getResponse().getContentAsString();
+
+        List<String> returned = new ArrayList<>();
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(body).fieldNames()
+                .forEachRemaining(returned::add);
+        org.assertj.core.api.Assertions.assertThat(returned).doesNotContainAnyElementsOf(FORBIDDEN_BOOK_FIELDS);
+    }
+
+    @Test
+    void guestCannotMarkInterest() throws Exception {
+        // A ficha do livro é pública; o interesse não. Interesse sem dono
+        // identificado não é dado, e o dono vem do token.
+        mockMvc.perform(post("/api/books/{id}/interest", BOOK_ID))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/api/books/{id}/interest", BOOK_ID))
+                .andExpect(status().isUnauthorized());
+        refused(get("/api/books/interests/mine"));
+        refused(get("/api/books/interests/summary"));
     }
 
     @Test
