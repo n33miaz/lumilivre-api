@@ -65,6 +65,9 @@ class LoanFullFlowIntegrationTest {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
+        // O application.properties de teste fixa o driver do H2 para os demais
+        // testes; aqui a URL é do container, então o driver tem que vir junto.
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
     }
 
     private static final UUID PENDING_REQUEST_ID =

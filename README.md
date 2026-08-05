@@ -14,7 +14,7 @@
 
 ![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-762075?style=flat-square)
 ![Java](https://img.shields.io/badge/Java-17-red?style=flat-square&logo=openjdk)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.5-6DB33F?style=flat-square&logo=springboot)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.13-6DB33F?style=flat-square&logo=springboot)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker)
 ![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue?style=flat-square&logo=githubactions)
@@ -42,16 +42,16 @@ documentação interativa fica em `/docs`.
 | Camada | Tecnologia |
 |--------|------------|
 | Linguagem / runtime | Java 17 (Eclipse Temurin) |
-| Framework | Spring Boot 3.2.5 — Web MVC, Data JPA, Security, Cache, Mail, Actuator, AOP |
+| Framework | Spring Boot 3.4.13 — Web MVC, Data JPA, Security, Cache, Mail, Actuator, AOP |
 | Persistência | PostgreSQL 16 + Hibernate + Flyway |
 | Cache | `ConcurrentMap` por padrão; Redis opcional via Spring Data Redis |
 | Observabilidade | Logback JSON, Micrometer + Prometheus, `correlationId` no MDC |
 | Resiliência | Resilience4j — retry, circuit breaker, time limiter, fallback |
-| Segurança | Spring Security, JWT (`jjwt`), BCrypt, Bucket4j |
+| Segurança | Spring Security 6.4, JWT (`jjwt`), BCrypt, Bucket4j |
 | Assíncrono | Outbox pattern com publisher `@Scheduled` |
-| Docs | springdoc-openapi 2.5.0 |
-| Relatórios | OpenPDF |
-| Planilhas | Apache POI 5.3 (XLSX) |
+| Docs | springdoc-openapi 2.8.17 |
+| Relatórios | OpenPDF 2.4 |
+| Planilhas | Apache POI 5.4 (XLSX) |
 | Testes | JUnit 5, Mockito, ArchUnit, Testcontainers, WireMock |
 
 ## Subindo em um comando
