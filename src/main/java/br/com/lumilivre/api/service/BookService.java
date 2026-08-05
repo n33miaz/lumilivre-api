@@ -41,6 +41,7 @@ import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.repository.DeweyClassificationRepository;
 import br.com.lumilivre.api.repository.GenreRepository;
+import br.com.lumilivre.api.security.Auditable;
 import br.com.lumilivre.api.service.infra.bookmetadata.BookMetadata;
 import br.com.lumilivre.api.service.infra.bookmetadata.BookMetadataChain;
 import br.com.lumilivre.api.service.infra.storage.StorageBucket;
@@ -136,7 +137,21 @@ public class BookService {
         return bookRepository.findLivrosAgrupados(pageable, texto);
     }
 
-    @Cacheable(value = BOOK_DETAIL, key = "#id")
+    /**
+     * {@code unless} porque a ficha do livro passou a ser pública: o cache é um
+     * {@code ConcurrentMapCache} sem limite de tamanho, então guardar o
+     * {@code Optional.empty()} de cada id inexistente deixava qualquer anônimo
+     * encher a heap disparando UUID aleatório — amplificação bem mais barata
+     * para o atacante que o custo da própria consulta. Miss só toca o banco, que
+     * responde por índice de chave primária.
+     *
+     * <p>{@code #result == null} e não {@code #result.isEmpty()}: o Spring
+     * desembrulha o {@link Optional} antes de avaliar a expressão, então
+     * {@code #result} aqui é o {@code Book} (ou {@code null} para
+     * {@code Optional.empty()}). Chamar {@code isEmpty()} sobre ele estoura em
+     * SpEL e transforma a ficha do livro num 500.
+     */
+    @Cacheable(value = BOOK_DETAIL, key = "#id", unless = "#result == null")
     public Optional<Book> findById(UUID id) {
         log.info("Buscando livro ID {} no banco de dados (sem cache)...", id);
         return bookRepository.findByIdWithDetails(id);
@@ -211,6 +226,9 @@ public class BookService {
         return bookRepository.save(book);
     }
 
+    // Alvo pelo retorno: o UUID so existe depois do save, e usar o ISBN
+    // deixaria fora do audit livro cadastrado sem ISBN.
+    @Auditable(action = "BOOK_CREATED", targetParam = "#result.id")
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = MOBILE_CATALOG, allEntries = true),
@@ -238,6 +256,7 @@ public class BookService {
         }
     }
 
+    @Auditable(action = "BOOK_UPDATED", targetParam = "#id")
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = MOBILE_CATALOG, allEntries = true),
@@ -274,6 +293,7 @@ public class BookService {
         }
     }
 
+    @Auditable(action = "BOOK_DELETED", targetParam = "#id")
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = MOBILE_CATALOG, allEntries = true),

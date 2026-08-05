@@ -25,6 +25,7 @@ import br.com.lumilivre.api.repository.AcademicModuleRepository;
 import br.com.lumilivre.api.repository.AppContentRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.StudyShiftRepository;
+import br.com.lumilivre.api.security.Auditable;
 import br.com.lumilivre.api.security.CustomUserDetails;
 import br.com.lumilivre.api.service.infra.storage.StorageBucket;
 import br.com.lumilivre.api.service.infra.storage.StorageProvider;
@@ -42,6 +43,7 @@ public class AppContentService {
     private final AcademicModuleRepository academicModuleRepository;
     private final StudyShiftRepository studyShiftRepository;
 
+    @Auditable(action = "CONTENT_CREATED", targetParam = "#result.id")
     @Transactional
     public AppContent create(ContentRequest request, MultipartFile coverFile, MultipartFile docFile) {
         validate(request);
@@ -53,6 +55,7 @@ public class AppContentService {
         return contentRepository.save(content);
     }
 
+    @Auditable(action = "CONTENT_UPDATED", targetParam = "#id")
     @Transactional
     public AppContent update(UUID id, ContentRequest request, MultipartFile coverFile, MultipartFile docFile) {
         validate(request);
@@ -146,6 +149,7 @@ public class AppContentService {
         return content;
     }
 
+    @Auditable(action = "CONTENT_DELETED", targetParam = "#id")
     @Transactional
     public void delete(UUID id) {
         AppContent content = contentRepository.findById(id)

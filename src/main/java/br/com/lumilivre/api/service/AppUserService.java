@@ -26,6 +26,7 @@ import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.repository.AppUserRepository;
+import br.com.lumilivre.api.security.Auditable;
 import br.com.lumilivre.api.service.infra.EmailService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -72,6 +73,8 @@ public class AppUserService {
         return appUserRepository.findAll(spec, pageable);
     }
 
+    // Alvo pelo id, nao pelo e-mail: audit_log nao e lugar de dado de contato.
+    @Auditable(action = "USER_CREATED", targetParam = "#result.id")
     @Transactional
     public AppUser createAdmin(UserRequest request) {
         AppUser appUser = AppUser.builder()
@@ -81,6 +84,7 @@ public class AppUserService {
         return saveAdmin(appUser, request.getPassword());
     }
 
+    @Auditable(action = "USER_UPDATED", targetParam = "#id")
     @Transactional
     public AppUser updateUser(UUID id, UserRequest request) {
         return updateUser(id, request.getEmail(), request.getPassword());
@@ -161,6 +165,7 @@ public class AppUserService {
      * (erraria e perderia o painel) e a última conta ADMIN utilizável não pode
      * cair (não sobraria quem religasse).
      */
+    @Auditable(action = "USER_STATUS_CHANGED", targetParam = "#id")
     @Transactional
     public AppUser setStatus(UUID id, UserStatusRequest request) {
         if (request == null || (request.getActive() == null && request.getLocked() == null)) {
@@ -220,6 +225,7 @@ public class AppUserService {
         return target.canAuthenticate() && appUserRepository.countUsableAdmins() <= 1;
     }
 
+    @Auditable(action = "USER_DELETED", targetParam = "#id")
     @Transactional
     public void excluir(UUID id) {
         AppUser appUser = appUserRepository.findById(id)

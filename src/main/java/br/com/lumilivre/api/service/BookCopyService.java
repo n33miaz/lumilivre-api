@@ -18,6 +18,7 @@ import br.com.lumilivre.api.model.BookCopy;
 import br.com.lumilivre.api.repository.BookCopyRepository;
 import br.com.lumilivre.api.repository.BookRepository;
 import br.com.lumilivre.api.repository.LoanRepository;
+import br.com.lumilivre.api.security.Auditable;
 
 @Service
 public class BookCopyService {
@@ -50,6 +51,7 @@ public class BookCopyService {
         return bookCopyRepository.findAllByBookIdWithDetails(bookId);
     }
 
+    @Auditable(action = "COPY_CREATED", targetParam = "#request.copyCode")
     @Transactional
     public void cadastrar(BookCopyRequest request) {
         validarDadosExemplar(request);
@@ -77,6 +79,7 @@ public class BookCopyService {
         }
     }
 
+    @Auditable(action = "COPY_UPDATED", targetParam = "#copyCode")
     @Transactional
     public void atualizar(String copyCode, BookCopyRequest request) {
         BookCopy bookCopy = bookCopyRepository.findByCopyCode(copyCode)
@@ -103,6 +106,7 @@ public class BookCopyService {
         }
     }
 
+    @Auditable(action = "COPY_DELETED", targetParam = "#copyCode")
     @Transactional
     public void excluir(String copyCode) {
         BookCopy bookCopy = bookCopyRepository.findByCopyCode(copyCode)

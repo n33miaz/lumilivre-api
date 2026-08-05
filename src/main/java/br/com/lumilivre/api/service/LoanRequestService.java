@@ -58,6 +58,9 @@ public class LoanRequestService {
         return loanRequestRepository.findByReader_RegistrationNumberOrderByRequestedAtDesc(registrationNumber);
     }
 
+    // Pedido de emprestimo e acao do leitor sobre o acervo: entra na trilha de
+    // negocio (com ator, alvo e IP) e por isso NAO se repete no access_log.
+    @Auditable(action = "REQUEST_CREATED", targetParam = "#matriculaLeitor")
     @Transactional
     @CacheEvict(value = DASHBOARD_LOAN_REQUESTS, allEntries = true)
     public String solicitarEmprestimo(String matriculaLeitor, String copyCode) {
@@ -81,6 +84,7 @@ public class LoanRequestService {
         return REQUEST_CREATED_KEY;
     }
 
+    @Auditable(action = "REQUEST_CREATED", targetParam = "#matriculaLeitor")
     @Transactional
     @CacheEvict(value = DASHBOARD_LOAN_REQUESTS, allEntries = true)
     public String solicitarEmprestimoPorLivro(String matriculaLeitor, UUID bookId) {

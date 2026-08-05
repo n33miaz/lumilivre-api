@@ -38,6 +38,7 @@ import br.com.lumilivre.api.repository.AppUserRepository;
 import br.com.lumilivre.api.repository.CourseRepository;
 import br.com.lumilivre.api.repository.ReaderRepository;
 import br.com.lumilivre.api.repository.StudyShiftRepository;
+import br.com.lumilivre.api.security.Auditable;
 import br.com.lumilivre.api.security.CustomUserDetails;
 import br.com.lumilivre.api.service.infra.EmailService;
 import br.com.lumilivre.api.service.infra.postalcode.PostalAddress;
@@ -109,6 +110,7 @@ public class ReaderService {
         return readerRepository.count();
     }
 
+    @Auditable(action = "READER_CREATED", targetParam = "#request.registrationNumber")
     @Transactional
     @CacheEvict(value = READER_COUNT, allEntries = true)
     public Reader cadastrar(ReaderRequest request) {
@@ -152,6 +154,7 @@ public class ReaderService {
         return savedReader;
     }
 
+    @Auditable(action = "READER_UPDATED", targetParam = "#matricula")
     @Transactional
     public Reader atualizar(String matricula, ReaderRequest request) {
         Reader reader = readerRepository.findByRegistrationNumber(matricula)
@@ -178,6 +181,7 @@ public class ReaderService {
         return readerRepository.save(reader);
     }
 
+    @Auditable(action = "READER_DELETED", targetParam = "#matricula")
     @Transactional
     @CacheEvict(value = READER_COUNT, allEntries = true)
     public void excluir(String matricula) {
@@ -190,6 +194,7 @@ public class ReaderService {
         readerRepository.delete(reader);
     }
 
+    @Auditable(action = "READER_PASSWORD_RESET", targetParam = "#matricula")
     @Transactional
     public void resetarSenha(String matricula) {
         Reader reader = readerRepository.findByRegistrationNumber(matricula)
@@ -205,6 +210,9 @@ public class ReaderService {
         appUserRepository.save(reader.getAppUser());
     }
 
+    // A foto e imagem de uma pessoa e a troca e governada por flag global
+    // (reader_can_edit_avatar); auditar e o que torna a flag verificavel depois.
+    @Auditable(action = "READER_AVATAR_UPDATED", targetParam = "#matricula")
     @Transactional
     public void uploadFoto(String matricula, MultipartFile file) {
         // Defesa em profundidade: quando a permissão global está desligada,
