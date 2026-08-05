@@ -3,8 +3,10 @@ package br.com.lumilivre.api.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,17 +19,21 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import br.com.lumilivre.api.domain.policy.PasswordPolicy.PasswordPolicyViolationException;
 import br.com.lumilivre.api.dto.auth.ResetPasswordTokenRequest;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
+import br.com.lumilivre.api.exception.custom.ResourceNotFoundException;
 import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.model.PasswordResetToken;
 import br.com.lumilivre.api.model.Reader;
@@ -67,7 +73,7 @@ class AuthServiceTest {
         when(usuarioRepository.findByEmailOrRegistrationNumber("admin@lumilivre.test", "admin@lumilivre.test"))
                 .thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("senha-segura", "hash")).thenReturn(true);
-        when(jwtUtil.generateToken(any(UserDetails.class))).thenReturn("jwt-token");
+        when(jwtUtil.generateToken(any(UserDetails.class), anyInt())).thenReturn("jwt-token");
 
         var response = service.login("admin@lumilivre.test", "senha-segura");
 
@@ -86,7 +92,7 @@ class AuthServiceTest {
         usuario.setMustChangePassword(true);
         when(usuarioRepository.findByEmailOrRegistrationNumber("12345", "12345")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("12345", "hash")).thenReturn(true);
-        when(jwtUtil.generateToken(any(UserDetails.class))).thenReturn("jwt-token");
+        when(jwtUtil.generateToken(any(UserDetails.class), anyInt())).thenReturn("jwt-token");
 
         var response = service.login("12345", "12345");
 
@@ -104,7 +110,7 @@ class AuthServiceTest {
         // Um matches() dummy roda mesmo sem usuário (timing constante)
         verify(passwordEncoder).matches(eq("senha"), any());
         verify(loginAttemptService).recordFailure("ninguemm");
-        verify(jwtUtil, never()).generateToken(any());
+        verify(jwtUtil, never()).generateToken(any(), anyInt());
     }
 
     @Test
@@ -118,7 +124,7 @@ class AuthServiceTest {
                 .isInstanceOf(BadCredentialsException.class);
 
         verify(loginAttemptService).recordFailure("biblioteca@lumilivre.test");
-        verify(jwtUtil, never()).generateToken(any());
+        verify(jwtUtil, never()).generateToken(any(), anyInt());
     }
 
     @Test
@@ -129,7 +135,130 @@ class AuthServiceTest {
                 .isInstanceOf(LockedException.class);
 
         verify(usuarioRepository, never()).findByEmailOrRegistrationNumber(any(), any());
-        verify(jwtUtil, never()).generateToken(any());
+        verify(jwtUtil, never()).generateToken(any(), anyInt());
+    }
+
+    @Test
+    void loginDeveRecusarContaDesativada() {
+        AppUser usuario = usuario(Role.LIBRARIAN, null);
+        usuario.setActive(false);
+        when(usuarioRepository.findByEmailOrRegistrationNumber("librarian@lumilivre.test", "librarian@lumilivre.test"))
+                .thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("senha-segura", "hash")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.login("librarian@lumilivre.test", "senha-segura"))
+                .isInstanceOf(DisabledException.class)
+                .hasMessage("auth.login.error.account-disabled");
+
+        verify(jwtUtil, never()).generateToken(any(), anyInt());
+        // Senha correta: não é falha de credencial, então nada de contar tentativa.
+        verify(loginAttemptService, never()).recordSuccess(any());
+    }
+
+    @Test
+    void loginDeveRecusarContaBloqueada() {
+        AppUser usuario = usuario(Role.LIBRARIAN, null);
+        usuario.setLocked(true);
+        when(usuarioRepository.findByEmailOrRegistrationNumber("librarian@lumilivre.test", "librarian@lumilivre.test"))
+                .thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("senha-segura", "hash")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.login("librarian@lumilivre.test", "senha-segura"))
+                .isInstanceOf(DisabledException.class)
+                .hasMessage("auth.login.error.account-locked");
+
+        verify(jwtUtil, never()).generateToken(any(), anyInt());
+    }
+
+    @Test
+    void loginDeveRecusarContaExcluida() {
+        AppUser usuario = usuario(Role.LIBRARIAN, null);
+        usuario.setDeletedAt(OffsetDateTime.now().minusDays(1));
+        when(usuarioRepository.findByEmailOrRegistrationNumber("librarian@lumilivre.test", "librarian@lumilivre.test"))
+                .thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("senha-segura", "hash")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.login("librarian@lumilivre.test", "senha-segura"))
+                .isInstanceOf(DisabledException.class)
+                .hasMessage("auth.login.error.account-disabled");
+
+        verify(jwtUtil, never()).generateToken(any(), anyInt());
+    }
+
+    @Test
+    void logoutDeveIncrementarAGeracaoDeTokens() {
+        AppUser usuario = usuario(Role.ADMIN, null);
+        usuario.setTokenVersion(7);
+        when(usuarioRepository.findAliveByLogin("admin@lumilivre.test")).thenReturn(Optional.of(usuario));
+
+        String email = service.logout("admin@lumilivre.test");
+
+        assertThat(email).isEqualTo("admin@lumilivre.test");
+        assertThat(usuario.getTokenVersion()).isEqualTo(8);
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
+    void logoutDeveFalharQuandoContaNaoExisteMais() {
+        when(usuarioRepository.findAliveByLogin("fantasma")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.logout("fantasma"))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void solicitarResetSenhaDeveInvalidarTokensAnteriores() {
+        AppUser usuario = usuario(Role.ADMIN, null);
+        when(usuarioRepository.findByEmail("admin@lumilivre.test")).thenReturn(Optional.of(usuario));
+
+        service.solicitarResetSenha("admin@lumilivre.test");
+
+        // Ordem importa: apagar + flush antes do insert, senão o UNIQUE de
+        // app_user_id em password_reset_token estoura no segundo pedido.
+        InOrder ordem = inOrder(tokenRepository);
+        ordem.verify(tokenRepository).deleteByAppUserId(usuario.getId());
+        ordem.verify(tokenRepository).flush();
+        ordem.verify(tokenRepository).save(any(PasswordResetToken.class));
+    }
+
+    @Test
+    void mudarSenhaComTokenDeveRecusarSenhaFraca() {
+        PasswordResetToken tokenReset = tokenReset(OffsetDateTime.now().plusMinutes(5));
+        when(tokenRepository.findByToken("token-123")).thenReturn(Optional.of(tokenReset));
+
+        assertThatThrownBy(() -> service.resetPasswordWithToken(
+                new ResetPasswordTokenRequest("token-123", "123456")))
+                .isInstanceOf(PasswordPolicyViolationException.class);
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(usuarioRepository, never()).save(any());
+        verify(tokenRepository, never()).delete(any());
+    }
+
+    @Test
+    void mudarSenhaComTokenDeveRevogarTokensJaEmitidos() {
+        PasswordResetToken tokenReset = tokenReset(OffsetDateTime.now().plusMinutes(5));
+        tokenReset.getAppUser().setTokenVersion(7);
+        when(tokenRepository.findByToken("token-123")).thenReturn(Optional.of(tokenReset));
+        when(passwordEncoder.encode("nova-senha")).thenReturn("novo-hash");
+
+        service.resetPasswordWithToken(new ResetPasswordTokenRequest("token-123", "nova-senha"));
+
+        assertThat(tokenReset.getAppUser().getTokenVersion()).isEqualTo(8);
+    }
+
+    @Test
+    void personalDataDeveIncluirDadosDoLeitorQuandoHouver() {
+        Reader leitor = new Reader();
+        leitor.setRegistrationNumber("2024001");
+        leitor.setCpf("12345678901");
+        leitor.setFullName("Maria Souza");
+        AppUser usuario = usuario(Role.READER, leitor);
+
+        assertThat(AuthService.personalDataOf(usuario))
+                .contains("2024001", "12345678901", "Maria Souza", "leitor@lumilivre.test");
     }
 
     @Test
@@ -213,6 +342,11 @@ class AuthServiceTest {
         usuario.setPasswordHash("hash");
         usuario.setRole(role);
         usuario.setReader(leitor);
+        // Espelha o NOT NULL DEFAULT da V7: conta vinda do banco nunca tem flag
+        // nula, e a verificação de status falha fechado.
+        usuario.setActive(true);
+        usuario.setLocked(false);
+        usuario.setTokenVersion(0);
         return usuario;
     }
 }

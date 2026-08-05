@@ -1,23 +1,22 @@
 package br.com.lumilivre.api.dto.user;
 
-import java.util.UUID;
-
-import br.com.lumilivre.api.dto.common.LocalizedEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Corpo do {@code PATCH /api/users/{id}/status}.
+ *
+ * <p>Os dois campos são opcionais e {@code null} significa "não mexer": a aba de
+ * Usuários tem um toggle por coluna e não deve reenviar o estado do outro.
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserResponse {
+public class UserStatusRequest {
 
-    private UUID id;
-    private String email;
-    private LocalizedEnum role;
-    private String readerRegistrationNumber;
     private Boolean active;
     private Boolean locked;
 }

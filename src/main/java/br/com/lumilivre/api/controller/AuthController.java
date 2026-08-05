@@ -8,7 +8,9 @@ import br.com.lumilivre.api.dto.auth.ChangePasswordRequest;
 import br.com.lumilivre.api.dto.auth.LoginRequest;
 import br.com.lumilivre.api.dto.auth.LoginResponse;
 import br.com.lumilivre.api.dto.auth.ResetPasswordTokenRequest;
+import br.com.lumilivre.api.dto.auth.TokenResponse;
 import br.com.lumilivre.api.enums.AccessEvent;
+import br.com.lumilivre.api.model.AppUser;
 import br.com.lumilivre.api.service.AccessLogService;
 import br.com.lumilivre.api.service.AppUserService;
 import br.com.lumilivre.api.service.AuthService;
@@ -18,7 +20,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,12 +54,12 @@ public class AuthController {
                     .header("Content-Language", locale.toLanguageTag())
                     .body(body);
         } catch (AuthenticationException e) {
-            // Registra a tentativa (credenciais inválidas OU conta bloqueada) para
-            // detecção de brute force. Usuário inexistente também cai aqui.
-            String reason = (e instanceof org.springframework.security.authentication.LockedException)
-                    ? "account-locked" : "invalid-credentials";
+            // Registra a tentativa (credenciais inválidas, trava por tentativas
+            // ou conta desativada/bloqueada) para detecção de brute force e para
+            // explicar depois por que alguém não conseguiu entrar. Usuário
+            // inexistente também cai aqui.
             accessLogService.record(AccessEvent.LOGIN_FAILED, req.getUsername(), "ANONYMOUS",
-                    AccessLogService.RESULT_FAILURE, reason);
+                    AccessLogService.RESULT_FAILURE, failureReason(e));
             throw e;
         }
     }
@@ -81,10 +87,44 @@ public class AuthController {
     @PutMapping("/change-password")
     @Operation(operationId = "auth.changePassword")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest req, Locale locale) {
-        userService.changePassword(req);
-        return ResponseEntity.noContent()
+    public ResponseEntity<TokenResponse> changePassword(@Valid @RequestBody ChangePasswordRequest req, Locale locale) {
+        // A troca revoga os tokens emitidos antes dela (inclusive o que veio
+        // nesta requisição), então devolvemos um token novo: quem trocou a senha
+        // continua logado no próprio dispositivo, os outros caem.
+        AppUser updated = userService.changePassword(req);
+        return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
-                .build();
+                .body(new TokenResponse(authService.issueToken(updated)));
+    }
+
+    @PostMapping("/logout")
+    @Operation(operationId = "auth.logout")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> logout(Authentication authentication) {
+        String email = authService.logout(authentication.getName());
+        accessLogService.record(AccessEvent.LOGOUT, email, authority(authentication),
+                AccessLogService.RESULT_SUCCESS, null);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Motivo curto e estável para a trilha de acessos (não vai para o cliente). */
+    private String failureReason(AuthenticationException e) {
+        if (e instanceof LockedException) {
+            return "too-many-attempts";
+        }
+        if (e instanceof DisabledException) {
+            // Último segmento da chave i18n: distingue "desativada" de
+            // "bloqueada" na trilha (bloqueio é reação a incidente).
+            String key = e.getMessage();
+            return key != null ? key.substring(key.lastIndexOf('.') + 1) : "account-disabled";
+        }
+        return "invalid-credentials";
+    }
+
+    private String authority(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElse("UNKNOWN");
     }
 }

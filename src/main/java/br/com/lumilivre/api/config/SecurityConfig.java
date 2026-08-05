@@ -171,6 +171,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // Public endpoints
+                        // Logout antes do permitAll de /api/auth/**: precisa de
+                        // principal para saber de quem revogar os tokens.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/docs", "/docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
@@ -244,6 +247,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/imports/**").hasRole("ADMIN")
                         // Self-service do próprio usuário (ex.: concluir tour)
                         .requestMatchers("/api/users/me/**").authenticated()
+                        // Ativar/bloquear conta é só do ADMIN (regra também no
+                        // @PreAuthorize; aqui é a barreira de URL).
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/*/status").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
                         // Auditoria & acessos — leitura só ADMIN
                         .requestMatchers("/api/access-logs/**", "/api/audit-logs/**").hasRole("ADMIN")

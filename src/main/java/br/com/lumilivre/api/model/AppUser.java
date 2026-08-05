@@ -67,6 +67,25 @@ public class AppUser {
     @Builder.Default
     private Boolean guidedTourCompleted = false;
 
+    /** Desligamento administrativo: mantém o histórico e tira o acesso. */
+    @Column(name = "active", nullable = false)
+    @Builder.Default
+    private Boolean active = true;
+
+    /** Bloqueio por segurança (suspeita de conta comprometida). */
+    @Column(name = "locked", nullable = false)
+    @Builder.Default
+    private Boolean locked = false;
+
+    /**
+     * Geração de token válida para esta conta. O JWT carrega a versão vigente na
+     * emissão; o filtro exige igualdade exata, então incrementar aqui mata na
+     * hora todo token já emitido — sem guardar estado de token no servidor.
+     */
+    @Column(name = "token_version", nullable = false)
+    @Builder.Default
+    private Integer tokenVersion = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -83,6 +102,27 @@ public class AppUser {
         if (updatedAt == null) updatedAt = now;
         if (mustChangePassword == null) mustChangePassword = false;
         if (guidedTourCompleted == null) guidedTourCompleted = false;
+        if (active == null) active = true;
+        if (locked == null) locked = false;
+        if (tokenVersion == null) tokenVersion = 0;
+    }
+
+    /**
+     * Invalida todo token já emitido para esta conta. Incremento simples: não
+     * importa quanto vale, importa que nenhum token antigo bate com o novo valor.
+     */
+    public void revokeIssuedTokens() {
+        this.tokenVersion = (tokenVersion == null ? 0 : tokenVersion) + 1;
+    }
+
+    /**
+     * Conta em condições de autenticar. Falha fechado de propósito: flag nula
+     * (linha antiga, objeto montado à mão) não vale como permissão.
+     */
+    public boolean canAuthenticate() {
+        return Boolean.TRUE.equals(active)
+                && !Boolean.TRUE.equals(locked)
+                && deletedAt == null;
     }
 
     @PreUpdate

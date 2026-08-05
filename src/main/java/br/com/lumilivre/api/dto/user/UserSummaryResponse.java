@@ -17,4 +17,8 @@ public class UserSummaryResponse {
     private UUID id;
     private String email;
     private LocalizedEnum role;
+    // A aba de Usuários precisa dos dois estados para desenhar o toggle sem
+    // uma segunda chamada por linha.
+    private Boolean active;
+    private Boolean locked;
 }

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.sql.DriverManager;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -51,8 +52,8 @@ class FlywayMigrationTest {
                 .isTrue();
 
         assertThat(result.migrationsExecuted)
-                .as("Must apply the whole baseline (V1..V6)")
-                .isGreaterThanOrEqualTo(6);
+                .as("Must apply the whole baseline (V1..V7)")
+                .isGreaterThanOrEqualTo(7);
 
         assertThat(result.warnings)
                 .as("No warnings expected on a fresh database")
@@ -75,6 +76,34 @@ class FlywayMigrationTest {
         assertThat(secondRun.migrationsExecuted)
                 .as("Re-running migrate() on an up-to-date DB should be a no-op")
                 .isZero();
+    }
+
+    @Test
+    void latest_migration_applies_on_a_database_already_at_the_previous_version() {
+        // Cenário de deploy real: o banco está na V6 e só a V7 chega. Não basta
+        // aplicar em banco novo — ADD COLUMN tem de passar em tabela com dados.
+        Flyway upToSix = Flyway.configure()
+                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                .locations("classpath:db/migration")
+                .target(MigrationVersion.fromVersion("6"))
+                .cleanDisabled(false)
+                .load();
+
+        upToSix.clean();
+        assertThat(upToSix.migrate().success).isTrue();
+
+        Flyway toLatest = Flyway.configure()
+                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                .locations("classpath:db/migration")
+                .load();
+
+        MigrateResult result = toLatest.migrate();
+
+        assertThat(result.success).isTrue();
+        assertThat(result.migrationsExecuted)
+                .as("Only the pending migrations should run on an existing database")
+                .isEqualTo(1);
+        assertThat(result.warnings).isEmpty();
     }
 
     @Test

@@ -6,6 +6,7 @@ import java.util.UUID;
 import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.user.UserRequest;
 import br.com.lumilivre.api.dto.user.UserResponse;
+import br.com.lumilivre.api.dto.user.UserStatusRequest;
 import br.com.lumilivre.api.dto.user.UserSummaryResponse;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.mapper.UserMapper;
@@ -21,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -88,6 +90,19 @@ public class UserController {
             @Valid @RequestBody UserRequest req,
             Locale locale) {
         UserResponse body = mapper.toResponse(userService.updateUser(id, req), locale);
+        return ResponseEntity.ok()
+                .header("Content-Language", locale.toLanguageTag())
+                .body(body);
+    }
+
+    @PatchMapping("/{id}/status")
+    @Operation(operationId = "users.setStatus")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> setStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody UserStatusRequest req,
+            Locale locale) {
+        UserResponse body = mapper.toResponse(userService.setStatus(id, req), locale);
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(body);

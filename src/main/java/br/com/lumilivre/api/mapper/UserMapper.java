@@ -26,6 +26,8 @@ public class UserMapper {
                 .role(role)
                 .readerRegistrationNumber(
                         user.getReader() != null ? user.getReader().getRegistrationNumber() : null)
+                .active(Boolean.TRUE.equals(user.getActive()))
+                .locked(Boolean.TRUE.equals(user.getLocked()))
                 .build();
     }
 
@@ -37,6 +39,8 @@ public class UserMapper {
                 .id(user.getId())
                 .email(user.getEmail())
                 .role(role)
+                .active(Boolean.TRUE.equals(user.getActive()))
+                .locked(Boolean.TRUE.equals(user.getLocked()))
                 .build();
     }
 }

@@ -19,7 +19,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<AppUser> appUser = appUserRepository.findByEmailOrRegistrationNumber(username, username);
+        // Conta com deleted_at preenchido não é candidata a autenticação: um
+        // token emitido antes da exclusão precisa deixar de resolver principal.
+        Optional<AppUser> appUser = appUserRepository.findAliveByLogin(username);
 
         if (appUser.isEmpty()) {
             throw new UsernameNotFoundException("Usuário não encontrado: " + username);

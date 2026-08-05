@@ -138,6 +138,63 @@ class SchemaStructureTest {
     }
 
     @Test
+    void app_user_carries_account_status_and_revocation_columns() throws Exception {
+        // V7: sem estas colunas o login volta a ignorar desligamento e o JWT
+        // volta a ser irrevogável.
+        List<String> columns = listObjects(
+                "SELECT column_name FROM information_schema.columns " +
+                "WHERE table_schema = 'public' AND table_name = 'app_user'");
+
+        assertThat(columns).contains("active", "locked", "token_version");
+        // O corte por timestamp foi substituído pelo contador: comparar iat com
+        // um instante deixava 1s de janela em que o logout não revogava.
+        assertThat(columns).doesNotContain("tokens_valid_from");
+    }
+
+    @Test
+    void account_status_columns_are_not_null_with_safe_defaults() throws Exception {
+        try (Connection conn = newConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT column_name, is_nullable, column_default " +
+                     "FROM information_schema.columns " +
+                     "WHERE table_schema = 'public' AND table_name = 'app_user' " +
+                     "AND column_name IN ('active', 'locked', 'token_version')")) {
+            int checked = 0;
+            while (rs.next()) {
+                String column = rs.getString("column_name");
+                assertThat(rs.getString("is_nullable"))
+                        .as("%s must be NOT NULL", column)
+                        .isEqualTo("NO");
+                assertThat(rs.getString("column_default"))
+                        .as("%s must keep existing rows working", column)
+                        .isNotNull();
+                checked++;
+            }
+            assertThat(checked).isEqualTo(3);
+        }
+    }
+
+    @Test
+    void token_version_cannot_go_backwards() throws Exception {
+        // Contador andando para tras faria tokens antigos voltarem a valer.
+        List<String> constraints = listObjects(
+                "SELECT conname FROM pg_constraint c " +
+                "JOIN pg_class t ON t.oid = c.conrelid " +
+                "WHERE t.relname = 'app_user' AND c.contype = 'c'");
+
+        assertThat(constraints).contains("ck_app_user_token_version_nonneg");
+    }
+
+    @Test
+    void partial_indexes_support_account_status_lookups() throws Exception {
+        List<String> indexes = listObjects(
+                "SELECT indexname FROM pg_indexes WHERE schemaname = 'public'");
+
+        assertThat(indexes).contains("idx_app_user_role_active", "idx_app_user_reader_id_alive");
+    }
+
+    @Test
     void rls_is_enabled_on_all_business_tables() throws Exception {
         List<String> rlsOff = listObjects(
                 "SELECT c.relname FROM pg_class c " +

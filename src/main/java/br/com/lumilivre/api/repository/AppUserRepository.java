@@ -30,6 +30,31 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
         return findByEmailOrReader_RegistrationNumber(email, matricula);
     }
 
+    /**
+     * Busca de autenticação: conta com {@code deleted_at} preenchido não existe
+     * mais para efeito de login. LEFT JOIN porque conta de staff não tem leitor.
+     */
+    @Query("""
+                        SELECT u FROM AppUser u
+                        LEFT JOIN u.reader r
+                        WHERE u.deletedAt IS NULL
+                          AND (u.email = :login OR r.registrationNumber = :login)
+                    """)
+    Optional<AppUser> findAliveByLogin(@Param("login") String login);
+
+    /**
+     * Quantos ADMIN ainda podem entrar. Base da regra que impede tijolar o
+     * sistema desativando/bloqueando o último administrador.
+     */
+    @Query("""
+                        SELECT COUNT(u) FROM AppUser u
+                        WHERE u.role = br.com.lumilivre.api.enums.Role.ADMIN
+                          AND u.active = TRUE
+                          AND u.locked = FALSE
+                          AND u.deletedAt IS NULL
+                    """)
+    long countUsableAdmins();
+
     @Query("""
                         SELECT u FROM AppUser u
                         WHERE CAST(u.id AS string) LIKE CONCAT('%', :texto, '%')
