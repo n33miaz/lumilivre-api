@@ -181,6 +181,15 @@ Swagger UI em `/docs`, spec em `/v3/api-docs`. Três grupos: `api-pt-br`,
 `@Operation` com `operationId`, título e descrição nos dois idiomas —
 `scripts/check-openapi-annotations.sh` falha o CI se alguma faltar.
 
+<div align="center">
+  <img src="https://raw.githubusercontent.com/n33miaz/lumilivre-web/HEAD/docs/screenshots/swagger.png" width="92%" alt="Swagger UI da LumiLivre API, com o seletor de grupo de idioma e as operações agrupadas por tag" style="border-radius: 10px; margin: 5px;">
+</div>
+
+> Print do `/docs` do stack local. A imagem é servida do repositório
+> [`lumilivre-web`](https://github.com/n33miaz/lumilivre-web/tree/HEAD/docs/screenshots)
+> de propósito: binário de captura fica em um repositório só, e clonar a API
+> continua trazendo apenas código.
+
 O spec descreve a API inteira, então **em produção ele não é público**: defina
 `LUMILIVRE_DOCS_PUBLIC=false` e `/docs` e `/v3/api-docs/**` passam a exigir um
 token de ADMIN (a UI do Swagger tem o botão *Authorize*). Em dev o default é
