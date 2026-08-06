@@ -1,11 +1,13 @@
 package br.com.lumilivre.api.controller;
 
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.service.ReportService;
@@ -18,7 +20,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = ReportController.class)
-@Import({I18nConfig.class, MessageResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class})
 @WithMockUser(roles = "ADMIN")
 class ReportControllerTest {
 
@@ -78,5 +80,22 @@ class ReportControllerTest {
     void librarianCanAccessReports() throws Exception {
         mockMvc.perform(get("/api/reports/loans"))
                 .andExpect(status().isOk());
+    }
+
+    /**
+     * O relatório de leitores é uma lista nominal de alunos em PDF — nome,
+     * matrícula, situação. É o documento mais sensível que a API emite, e nenhum
+     * leitor tem razão para baixá-lo. Vale para toda a família {@code /reports}.
+     */
+    @Test
+    @WithMockUser(roles = "READER")
+    void aReaderCannotDownloadAnyReport() throws Exception {
+        mockMvc.perform(get("/api/reports/readers")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/reports/loans")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/reports/books")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/reports/copies")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/reports/books/statistics")).andExpect(status().isForbidden());
+
+        verifyNoInteractions(reportService);
     }
 }

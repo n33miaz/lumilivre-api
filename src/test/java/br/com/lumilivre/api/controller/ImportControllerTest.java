@@ -1,7 +1,10 @@
 package br.com.lumilivre.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -9,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.service.ImportService;
@@ -22,7 +26,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = ImportController.class)
-@Import({I18nConfig.class, MessageResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class})
 @WithMockUser(roles = "ADMIN")
 class ImportControllerTest {
 
@@ -69,5 +73,26 @@ class ImportControllerTest {
 
         mockMvc.perform(multipart("/api/imports/copies").file(file).with(csrf()))
                 .andExpect(status().isOk());
+    }
+
+    /**
+     * Importação em massa é só do ADMIN — inclusive para o bibliotecário. Uma
+     * planilha errada reescreve o acervo inteiro de uma vez, e não existe
+     * "desfazer": é a operação com o maior estrago por clique do sistema.
+     */
+    @Test
+    @WithMockUser(roles = "LIBRARIAN")
+    void aLibrarianCannotBulkImport() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "readers.csv",
+                "text/csv", "matricula,nome\n12345,João".getBytes());
+
+        mockMvc.perform(multipart("/api/imports/readers").file(file).with(csrf()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(multipart("/api/imports/books").file(file).with(csrf()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(multipart("/api/imports/copies").file(file).with(csrf()))
+                .andExpect(status().isForbidden());
+
+        verify(importService, never()).importar(anyString(), any(), any());
     }
 }

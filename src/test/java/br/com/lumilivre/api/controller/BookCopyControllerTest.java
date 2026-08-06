@@ -2,6 +2,7 @@ package br.com.lumilivre.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.mapper.BookCopyMapper;
 import br.com.lumilivre.api.model.Book;
@@ -36,7 +38,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = BookCopyController.class)
-@Import({I18nConfig.class, MessageResolver.class, BookCopyMapper.class, EnumLabelResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class, BookCopyMapper.class, EnumLabelResolver.class})
 @WithMockUser(roles = "ADMIN")
 class BookCopyControllerTest {
 
@@ -111,6 +113,22 @@ class BookCopyControllerTest {
 
         mockMvc.perform(delete("/api/book-copies/T001").with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+    /**
+     * Exemplar é onde mora o dado que a ficha pública esconde de propósito:
+     * tombo, prateleira e situação de cada volume. A família inteira é da
+     * equipe — inclusive a leitura, que é a rota fácil de esquecer.
+     */
+    @Test
+    @WithMockUser(roles = "READER")
+    void aReaderTouchesNoCopyRoute() throws Exception {
+        mockMvc.perform(get("/api/book-copies/by-book/{bookId}", BOOK_ID))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/book-copies/T001").with(csrf()))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(bookCopyService);
     }
 
     private BookCopy bookCopy(BookCopyStatus status) {

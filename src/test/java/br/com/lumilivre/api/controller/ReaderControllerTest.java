@@ -2,6 +2,8 @@ package br.com.lumilivre.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -12,6 +14,7 @@ import java.util.List;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.reader.ReaderListItem;
 import br.com.lumilivre.api.mapper.ReaderMapper;
 import br.com.lumilivre.api.model.Reader;
@@ -31,7 +34,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = ReaderController.class)
-@Import({I18nConfig.class, MessageResolver.class, ReaderMapper.class, EnumLabelResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class, ReaderMapper.class, EnumLabelResolver.class})
 @WithMockUser(roles = "ADMIN")
 class ReaderControllerTest {
 
@@ -47,7 +50,7 @@ class ReaderControllerTest {
     @MockBean
     private CustomUserDetailsService customUserDetailsService;
 
-    @MockBean
+    @MockBean(name = "readerAuthz")
     private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
@@ -80,6 +83,7 @@ class ReaderControllerTest {
         Reader reader = new Reader();
         reader.setRegistrationNumber("12345");
         reader.setFullName("Maria");
+        when(readerAuthorizationService.canAccess("12345")).thenReturn(true);
         when(readerService.buscarPorMatricula(anyString())).thenReturn(reader);
 
         mockMvc.perform(get("/api/readers/12345").header("Accept-Language", "en-US"))
@@ -87,5 +91,34 @@ class ReaderControllerTest {
                 .andExpect(header().string("Content-Language", "en-US"))
                 .andExpect(jsonPath("$.registrationNumber").value("12345"))
                 .andExpect(jsonPath("$.fullName").value("Maria"));
+    }
+
+    /**
+     * A ficha do leitor é o alvo clássico de IDOR: trocar a matrícula na URL e
+     * ler o cadastro do colega — nome, e-mail, telefone, endereço. Quem decide é
+     * o {@code @CanAccessReader}; aqui o guarda diz "não" e o controller não
+     * pode nem chegar ao service.
+     */
+    @Test
+    void aReaderCannotOpenSomeoneElsesRecord() throws Exception {
+        when(readerAuthorizationService.canAccess("99999")).thenReturn(false);
+
+        mockMvc.perform(get("/api/readers/99999"))
+                .andExpect(status().isForbidden());
+
+        verify(readerService, never()).buscarPorMatricula(anyString());
+    }
+
+    /**
+     * A listagem inteira é da equipe. Se o leitor alcançasse a lista, a barreira
+     * por matrícula acima perderia a graça: bastaria pedir todo mundo de uma vez.
+     */
+    @Test
+    @WithMockUser(roles = "READER")
+    void aReaderCannotListEveryReader() throws Exception {
+        mockMvc.perform(get("/api/readers"))
+                .andExpect(status().isForbidden());
+
+        verify(readerService, never()).listarParaAdminV2(any(), any(Pageable.class));
     }
 }

@@ -1,6 +1,7 @@
 package br.com.lumilivre.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -13,6 +14,7 @@ import java.util.UUID;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.loan.LoanListItem;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.mapper.LoanMapper;
@@ -32,7 +34,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = LoanController.class)
-@Import({I18nConfig.class, MessageResolver.class, LoanMapper.class, EnumLabelResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class, LoanMapper.class, EnumLabelResolver.class})
 @WithMockUser(roles = "ADMIN")
 class LoanControllerTest {
 
@@ -48,7 +50,7 @@ class LoanControllerTest {
     @MockBean
     private CustomUserDetailsService customUserDetailsService;
 
-    @MockBean
+    @MockBean(name = "readerAuthz")
     private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
@@ -86,5 +88,32 @@ class LoanControllerTest {
                 .andExpect(header().string("Content-Language", "en-US"))
                 .andExpect(jsonPath("$.content[0].status.code").value("ACTIVE"))
                 .andExpect(jsonPath("$.content[0].status.label").value("Active"));
+    }
+
+    /**
+     * A listagem de empréstimos nomeia quem está com o quê e quem está atrasado.
+     * O leitor tem o próprio histórico (via {@code /loans/reader/{matricula}},
+     * protegido pelo {@code @CanAccessReader}); a lista geral é da equipe.
+     */
+    @Test
+    @WithMockUser(roles = "READER")
+    void aReaderCannotBrowseEveryLoan() throws Exception {
+        mockMvc.perform(get("/api/loans")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/loans/advanced")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/loans/overdue")).andExpect(status().isForbidden());
+
+        verifyNoInteractions(loanService);
+    }
+
+    /** Histórico de empréstimo é dado de leitura: a matrícula na URL tem dono. */
+    @Test
+    @WithMockUser(roles = "READER")
+    void aReaderCannotReadAnotherReadersLoanHistory() throws Exception {
+        when(readerAuthorizationService.canAccess("99999")).thenReturn(false);
+
+        mockMvc.perform(get("/api/loans/reader/{registrationNumber}", "99999"))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(loanService);
     }
 }

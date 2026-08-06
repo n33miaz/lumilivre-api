@@ -1,8 +1,11 @@
 package br.com.lumilivre.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -15,6 +18,7 @@ import java.util.List;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.course.CourseResponse;
 import br.com.lumilivre.api.mapper.CourseMapper;
 import br.com.lumilivre.api.model.Course;
@@ -33,7 +37,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = CourseController.class)
-@Import({I18nConfig.class, MessageResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class})
 @WithMockUser(roles = "ADMIN")
 class CourseControllerTest {
 
@@ -91,5 +95,30 @@ class CourseControllerTest {
 
         mockMvc.perform(delete("/api/courses/1").with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+    /**
+     * Curso é dado estrutural: o leitor precisa <b>ler</b> a lista (o cadastro
+     * dele aponta para um curso, e a audiência dos comunicados também), mas
+     * escrever é da equipe. Apagar um curso arrasta o vínculo de todo mundo
+     * matriculado nele.
+     */
+    @Test
+    @WithMockUser(roles = "READER")
+    void aReaderReadsTheCourseListButDoesNotWriteToIt() throws Exception {
+        when(courseService.buscarCursoParaListaAdmin(isNull(), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        mockMvc.perform(get("/api/courses")).andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/courses").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Curso Fantasma\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/courses/1").with(csrf()))
+                .andExpect(status().isForbidden());
+
+        verify(courseService, never()).cadastrar(any());
+        verify(courseService, never()).excluir(anyInt());
     }
 }

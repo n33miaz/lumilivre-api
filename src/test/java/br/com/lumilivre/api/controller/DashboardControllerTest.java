@@ -1,5 +1,6 @@
 package br.com.lumilivre.api.controller;
 
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -10,6 +11,7 @@ import java.util.List;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.dashboard.DashboardStatsResponse;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
@@ -25,7 +27,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = DashboardController.class)
-@Import({I18nConfig.class, MessageResolver.class, EnumLabelResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class, EnumLabelResolver.class})
 @WithMockUser(roles = "ADMIN")
 class DashboardControllerTest {
 
@@ -41,7 +43,7 @@ class DashboardControllerTest {
     @MockBean
     private CustomUserDetailsService customUserDetailsService;
 
-    @MockBean
+    @MockBean(name = "readerAuthz")
     private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
@@ -74,5 +76,19 @@ class DashboardControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Language", "pt-BR"))
                 .andExpect(jsonPath("$").isArray());
+    }
+
+    /**
+     * O painel é o agregado da operação: atrasos, multas, o que a biblioteca
+     * está deixando de entregar. Serve à gestão e a mais ninguém — o leitor tem
+     * o próprio histórico, não o do acervo inteiro.
+     */
+    @Test
+    @WithMockUser(roles = "READER")
+    void aReaderCannotOpenTheManagementPanel() throws Exception {
+        mockMvc.perform(get("/api/dashboard/stats")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/dashboard/top-books")).andExpect(status().isForbidden());
+
+        verifyNoInteractions(dashboardService);
     }
 }

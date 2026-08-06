@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.metadata.AuthorSummaryResponse;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
@@ -32,7 +33,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = MetadataController.class)
-@Import({I18nConfig.class, MessageResolver.class, EnumLabelResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class, EnumLabelResolver.class})
 @WithMockUser(roles = "ADMIN")
 class MetadataControllerTest {
 

@@ -1,8 +1,11 @@
 package br.com.lumilivre.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -13,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.academicmodule.AcademicModuleResponse;
 import br.com.lumilivre.api.mapper.AcademicModuleMapper;
 import br.com.lumilivre.api.model.AcademicModule;
@@ -31,7 +35,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AcademicModuleController.class)
-@Import({I18nConfig.class, MessageResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class})
 @WithMockUser(roles = "ADMIN")
 class AcademicModuleControllerTest {
 
@@ -90,5 +94,25 @@ class AcademicModuleControllerTest {
 
         mockMvc.perform(delete("/api/academic-modules/1").with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+    /** Módulo é audiência de comunicado: o leitor lê a lista, só a equipe escreve. */
+    @Test
+    @WithMockUser(roles = "READER")
+    void aReaderReadsTheModuleListButDoesNotWriteToIt() throws Exception {
+        when(academicModuleService.buscarPorTexto(isNull(), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        mockMvc.perform(get("/api/academic-modules")).andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/academic-modules").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Módulo Fantasma\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/academic-modules/1").with(csrf()))
+                .andExpect(status().isForbidden());
+
+        verify(academicModuleService, never()).cadastrar(any());
+        verify(academicModuleService, never()).excluir(anyInt());
     }
 }

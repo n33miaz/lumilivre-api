@@ -1,6 +1,8 @@
 package br.com.lumilivre.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -13,9 +15,11 @@ import java.util.UUID;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.book.BookListItemProjection;
 import br.com.lumilivre.api.exception.custom.BusinessRuleException;
 import br.com.lumilivre.api.mapper.BookMapper;
+import br.com.lumilivre.api.model.Book;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
 import br.com.lumilivre.api.security.JwtUtil;
 import br.com.lumilivre.api.service.BookService;
@@ -32,9 +36,11 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = BookController.class)
-@Import({I18nConfig.class, MessageResolver.class, BookMapper.class, EnumLabelResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class, BookMapper.class, EnumLabelResolver.class})
 @WithMockUser(roles = "ADMIN")
 class BookControllerTest {
+
+    private static final UUID BOOK_ID = UUID.fromString("00000000-0000-4000-8000-000000003086");
 
     @Autowired
     private MockMvc mockMvc;
@@ -119,6 +125,30 @@ class BookControllerTest {
         mockMvc.perform(get("/api/books/{id}", "nao-e-uuid").header("Accept-Language", "en-US"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.violations.id").value("Invalid value for this parameter."));
+    }
+
+    /**
+     * A fronteira do catálogo em um teste: a ficha de um livro é pública (o app
+     * abre antes do login), a <b>listagem</b> não é. Elas moram no mesmo
+     * controller e diferem só na anotação — trocar {@code permitAll()} de linha
+     * abriria tombo, prateleira e status de exemplar para qualquer aluno.
+     */
+    @Test
+    @WithMockUser(roles = "READER")
+    void aReaderReadsTheBookRecordButNotTheAdminListing() throws Exception {
+        Book book = new Book();
+        book.setId(BOOK_ID);
+        book.setTitle("Dom Casmurro");
+        when(bookService.findById(BOOK_ID)).thenReturn(Optional.of(book));
+
+        mockMvc.perform(get("/api/books/{id}", BOOK_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Dom Casmurro"));
+
+        mockMvc.perform(get("/api/books")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/books/grouped")).andExpect(status().isForbidden());
+
+        verify(bookService, never()).buscarParaListaAdmin(any(Pageable.class));
     }
 
     private BookListItemProjection bookListItem(

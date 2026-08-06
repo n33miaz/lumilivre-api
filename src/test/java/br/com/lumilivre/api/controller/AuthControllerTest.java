@@ -3,6 +3,7 @@ package br.com.lumilivre.api.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -16,6 +17,7 @@ import java.util.UUID;
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.auth.LoginResponse;
 import br.com.lumilivre.api.enums.AccessEvent;
 import br.com.lumilivre.api.enums.Role;
@@ -35,11 +37,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import({I18nConfig.class, MessageResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class})
 class AuthControllerTest {
 
     @Autowired
@@ -60,7 +63,7 @@ class AuthControllerTest {
     @MockBean
     private CustomUserDetailsService customUserDetailsService;
 
-    @MockBean
+    @MockBean(name = "readerAuthz")
     private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
@@ -94,6 +97,7 @@ class AuthControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "user@test.com", roles = "ADMIN")
     void changePasswordReturnsAFreshTokenBecauseTheOldOneWasRevoked() throws Exception {
         AppUser updated = AppUser.builder()
                 .email("user@test.com")
@@ -110,6 +114,7 @@ class AuthControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "admin@test.com", roles = "ADMIN")
     void logoutRevokesTokensAndRecordsTheEvent() throws Exception {
         when(authService.logout("admin@test.com")).thenReturn("admin@test.com");
 
@@ -121,6 +126,25 @@ class AuthControllerTest {
         verify(authService).logout("admin@test.com");
         verify(accessLogService).record(AccessEvent.LOGOUT, "admin@test.com", "ROLE_ADMIN",
                 AccessLogService.RESULT_SUCCESS, null);
+    }
+
+    /**
+     * As duas rotas de sessão são {@code isAuthenticated()}, e é isso que separa
+     * "sair da minha conta" de "derrubar a sessão de qualquer um": sem
+     * autenticação nenhuma, {@code logout} escolheria o e-mail pelo corpo da
+     * requisição e {@code change-password} trocaria a senha de outra pessoa.
+     */
+    @Test
+    void sessionRoutesRefuseAnAnonymousCaller() throws Exception {
+        mockMvc.perform(post("/api/auth/logout"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(put("/api/auth/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"old-pass\",\"newPassword\":\"chuva-de-papel-77\"}"))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(authService);
+        verifyNoInteractions(userService);
     }
 
     @Test

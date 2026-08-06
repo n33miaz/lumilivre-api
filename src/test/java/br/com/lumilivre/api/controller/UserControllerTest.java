@@ -2,6 +2,8 @@ package br.com.lumilivre.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -12,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
+import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.user.UserStatusRequest;
 import br.com.lumilivre.api.enums.Role;
 import br.com.lumilivre.api.mapper.UserMapper;
@@ -36,7 +39,7 @@ import java.util.List;
 import java.util.UUID;
 
 @WebMvcTest(controllers = UserController.class)
-@Import({I18nConfig.class, MessageResolver.class, UserMapper.class, EnumLabelResolver.class})
+@Import({MethodSecuritySliceConfig.class, I18nConfig.class, MessageResolver.class, UserMapper.class, EnumLabelResolver.class})
 @WithMockUser(roles = "ADMIN")
 class UserControllerTest {
 
@@ -52,7 +55,7 @@ class UserControllerTest {
     @MockBean
     private CustomUserDetailsService customUserDetailsService;
 
-    @MockBean
+    @MockBean(name = "readerAuthz")
     private ReaderAuthorizationService readerAuthorizationService;
 
     @Test
@@ -124,5 +127,31 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Language", "en-US"))
                 .andExpect(jsonPath("$.content[0].role.code").value("LIBRARIAN"));
+    }
+
+    /**
+     * Desativar e bloquear conta é privilégio de ADMIN, não de quem opera o
+     * balcão: o bibliotecário que conseguisse desativar contas poderia desligar
+     * o próprio administrador e ficar sozinho no sistema.
+     */
+    @Test
+    @WithMockUser(roles = "LIBRARIAN")
+    void aLibrarianCannotFlipAccountStatus() throws Exception {
+        mockMvc.perform(patch("/api/users/{id}/status", UUID.randomUUID()).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":false}"))
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).setStatus(any(UUID.class), any(UserStatusRequest.class));
+    }
+
+    /** A lista de contas é da equipe; o leitor não conhece nem os e-mails. */
+    @Test
+    @WithMockUser(roles = "READER")
+    void aReaderCannotListAccounts() throws Exception {
+        mockMvc.perform(get("/api/users"))
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).listForAdmin(any(Pageable.class));
     }
 }
