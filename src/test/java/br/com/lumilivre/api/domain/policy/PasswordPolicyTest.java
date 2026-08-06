@@ -95,6 +95,51 @@ class PasswordPolicyTest {
                 .doesNotThrowAnyException();
     }
 
+    /**
+     * Senha nula é recusada como curta demais, não como {@code NullPointer}. O
+     * caminho existe: o corpo de {@code change-password} é JSON do cliente, e
+     * campo ausente chega nulo antes de qualquer validação de bean.
+     */
+    @Test
+    void aNullPasswordIsRefusedAndDoesNotBlowUp() {
+        assertViolation(null, "validation.password.too-short");
+    }
+
+    /**
+     * A comparação com dado pessoal roda sobre a senha normalizada (sem acento,
+     * sem pontuação). Uma senha só de símbolos normaliza para string vazia — o
+     * que não pode ser lido como "repetição de um caractere" nem derrubar a
+     * política. Sem dado pessoal para comparar, ela passa pelo comprimento.
+     */
+    @Test
+    void aPasswordMadeOnlyOfSymbolsIsNotMistakenForATrivialOne() {
+        assertThatCode(() -> PasswordPolicy.validate("@#$%&*()!", false))
+                .doesNotThrowAnyException();
+    }
+
+    /**
+     * Chamador sem nenhum dado pessoal (o array inteiro nulo) é caso real: a
+     * troca de senha do administrador não tem matrícula nem CPF para comparar.
+     */
+    @Test
+    void aCallerWithoutAnyPersonalDataStillGetsTheOtherRules() {
+        assertThatCode(() -> PasswordPolicy.validate("chuva-de-papel-77", false, (String[]) null))
+                .doesNotThrowAnyException();
+        assertThatExceptionOfType(PasswordPolicyViolationException.class)
+                .isThrownBy(() -> PasswordPolicy.validate("senha123", false, (String[]) null));
+    }
+
+    /**
+     * Dado pessoal que não tem letra nem dígito não gera token nenhum — e sem
+     * token, não pode condenar senha alguma. Se gerasse um token vazio, toda
+     * senha do sistema seria recusada como "derivada de dado pessoal".
+     */
+    @Test
+    void personalDataWithoutLettersOrDigitsBlocksNothing() {
+        assertThatCode(() -> PasswordPolicy.validate("chuva-de-papel-77", false, "---", "..."))
+                .doesNotThrowAnyException();
+    }
+
     private static void assertViolation(String password, String expectedKey) {
         assertViolation(password, expectedKey, personalData());
     }
