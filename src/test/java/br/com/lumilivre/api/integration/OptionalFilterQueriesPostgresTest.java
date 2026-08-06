@@ -645,6 +645,41 @@ class OptionalFilterQueriesPostgresTest {
     }
 
     /**
+     * O caso que o T05 nao conseguiu testar porque nao existia no seed: livro com
+     * <b>zero exemplares cadastrados</b>.
+     *
+     * <p>Nao e a mesma coisa que "todos emprestados", e a diferenca importa: o
+     * LEFT JOIN com exemplares nao produz nenhuma linha, entao a agregacao tinha
+     * de ser conferida contra um livro assim para provar que responde 0/0 em vez
+     * de sumir da pagina. E o argumento de compra de acervo na forma mais direta
+     * — "N alunos querem, nao temos nenhum".
+     */
+    @Test
+    void theSummaryReportsBooksTheLibraryDoesNotOwnAtAll() {
+        bookInterestRepository.deleteAll();
+        Book missing = bookWithNoCopyAtAll();
+        try {
+            authenticateAsReader("2024001");
+            interestController.toggle(missing.getId(), PT_BR);
+            authenticateAsReader("2024002");
+            interestController.toggle(missing.getId(), PT_BR);
+
+            authenticateAs("admin");
+            var page = interestController.summary(true, PAGE, PT_BR).getBody();
+
+            assertThat(page.getContent()).hasSize(1);
+            BookInterestSummaryResponse row = page.getContent().get(0);
+            assertThat(row.bookId()).isEqualTo(missing.getId());
+            assertThat(row.interestCount()).isEqualTo(2);
+            assertThat(row.totalCopies()).isZero();
+            assertThat(row.availableCopies()).isZero();
+        } finally {
+            SecurityContextHolder.clearContext();
+            bookInterestRepository.deleteAll();
+        }
+    }
+
+    /**
      * Uma pagina de interesses tem de custar uma consulta de dados, e nao uma por
      * livro.
      *
@@ -807,16 +842,26 @@ class OptionalFilterQueriesPostgresTest {
 
     /**
      * Livro cujo acervo existe mas esta todo fora de circulacao (emprestado,
-     * manutencao, indisponivel) — o caso que interessa ao indicador. O seed atual
-     * nao tem nenhum livro com zero exemplares cadastrados; fica registrado para
-     * o T07.
+     * manutencao, indisponivel). O filtro exige {@code total > 0} de proposito:
+     * desde o T07 o seed tambem tem um livro <b>sem exemplar nenhum</b>, e os
+     * dois casos precisam ficar separados — e a diferenca entre "esta todo
+     * emprestado" e "a biblioteca nao tem o titulo".
      */
     private Book bookWithoutAvailableCopy() {
         return bookRepository.findAll().stream()
+                .filter(book -> bookCopyRepository.countByBook_Id(book.getId()) > 0)
                 .filter(book -> bookCopyRepository.countByBookIdAndStatus(
                         book.getId(), BookCopyStatus.AVAILABLE) == 0)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("seed should have a book with no available copy"));
+    }
+
+    /** Livro que a biblioteca simplesmente nao tem — zero exemplares cadastrados. */
+    private Book bookWithNoCopyAtAll() {
+        return bookRepository.findAll().stream()
+                .filter(book -> bookCopyRepository.countByBook_Id(book.getId()) == 0)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("seed should have a book with no copies"));
     }
 
     private Book bookWithAvailableCopies() {
@@ -837,10 +882,10 @@ class OptionalFilterQueriesPostgresTest {
     /**
      * Principal de leitor montado a partir da linha de {@code reader}.
      *
-     * <p>O seed atual da conta de acesso a um unico leitor (2024001), e estes
-     * testes precisam de dois para provar que um nao ve o interesse do outro. O
-     * que o endpoint exige e um principal com papel READER e leitor vinculado,
-     * nao um fluxo de login — o login em si e coberto pelos testes de auth.
+     * <p>Monta o principal direto em vez de passar pelo login porque o que o
+     * endpoint exige e um papel READER com leitor vinculado, e nao um fluxo de
+     * autenticacao — o login em si e coberto pelos testes de auth. Serve tambem
+     * para leitores sem conta, que sao a maioria do seed.
      */
     private void authenticateAsReader(String matricula) {
         Reader reader = readerRepository.findByRegistrationNumber(matricula)
