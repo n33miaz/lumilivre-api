@@ -17,6 +17,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.RequiredTypeException;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class JwtUtil {
@@ -24,11 +25,38 @@ public class JwtUtil {
     /** Claim privada com a geração de tokens da conta (V7: app_user.token_version). */
     static final String TOKEN_VERSION_CLAIM = "tver";
 
+    /** HS256 assina com chave de 256 bits; o jjwt recusa qualquer coisa menor. */
+    static final int MIN_SECRET_BYTES = 32;
+
     @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.expiration}")
     private long expiration;
+
+    /**
+     * Recusa a subida quando o segredo é curto demais para assinar.
+     *
+     * <p>Sem esta checagem o defeito é silencioso e caro: a chave só é derivada
+     * na hora de assinar, então a aplicação sobe inteira, o {@code /actuator/health}
+     * responde UP, o host marca o deploy como bem-sucedido — e <b>todo</b> login
+     * devolve 500, porque {@link Keys#hmacShaKeyFor} lança em cada requisição.
+     * Aconteceu em produção: o serviço passou a se declarar saudável sem
+     * conseguir autenticar ninguém, e do lado de fora parecia erro de senha.
+     *
+     * <p>Falhar aqui transforma isso num deploy vermelho, com a causa escrita.
+     * A mensagem diz o tamanho recebido, nunca o valor.
+     */
+    @PostConstruct
+    void assertSecretIsStrongEnough() {
+        int length = secret == null ? 0 : secret.getBytes(StandardCharsets.UTF_8).length;
+        if (length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                    "jwt.secret tem " + length + " bytes e o HS256 exige no minimo " + MIN_SECRET_BYTES
+                            + ". Defina LUMILIVRE_JWT_SECRET com pelo menos " + MIN_SECRET_BYTES
+                            + " caracteres no ambiente de execucao.");
+        }
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
