@@ -32,6 +32,13 @@
         <logger name="br.com.lumilivre" level="DEBUG"/>
         <logger name="org.springframework.security" level="WARN"/>
         <logger name="org.hibernate.SQL" level="WARN"/>
+
+        <!-- O message source registra CADA busca de chave, e sao dezenas por
+             requisicao (uma por bundle da cadeia de fallback, vezes cinco
+             idiomas). Fica DEBUG do pacote, mas nao este: o ruido esconde o
+             log util e, quando o stdout e limitado, cada linha custa
+             centenas de milissegundos e trava a thread da requisicao. -->
+        <logger name="br.com.lumilivre.api.config.I18nConfig$FallbackChainMessageSource" level="INFO"/>
     </springProfile>
 
 </configuration>
