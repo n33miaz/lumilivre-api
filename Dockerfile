@@ -46,7 +46,11 @@ COPY --from=build /build/target/*.jar /app/app.jar
 # JVM enxuta para containers pequenos (Render free = 512 MB):
 # MaxRAMPercentage respeita o limite de memória do container; SerialGC tem o
 # menor footprint. Sobrescreva com -e JAVA_OPTS="..." se tiver mais memória.
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC"
+# TieredStopAtLevel=1 para no compilador C1: o C2 gasta CPU otimizando codigo
+# que, numa instancia de 0.1 vCPU, custa mais para compilar do que economiza.
+# Corta uma fatia grande do tempo de subida, que e o que decide se o host
+# encontra a porta antes de desistir.
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC -XX:TieredStopAtLevel=1"
 
 # Sem isto o Spring cai no perfil `default`, e o logback-spring.xml poe
 # `br.com.lumilivre` em DEBUG — o message source registra cada busca de chave

@@ -50,6 +50,16 @@ application.properties
 application-*.properties
 !application-example.properties
 !src/test/resources/application.properties
+
+# Precisa vir DEPOIS do `application-*.properties` sem caminho: no git vale a
+# ultima regra que casa, e a de cima re-ignorava este arquivo.
+#
+# application-prod.properties nao guarda segredo nenhum — so ajustes de custo de
+# inicializacao para a instancia pequena. Tem de ir para a imagem, senao o deploy
+# volta a demorar demais e o host desiste antes de a porta abrir. As regras
+# amplas existem contra properties com credencial; abrir excecao nomeada e mais
+# seguro do que afrouxa-las.
+!src/main/resources/application-prod.properties
 lumilivre-key.pem
 *.pem
 *.p12
