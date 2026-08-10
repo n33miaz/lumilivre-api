@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Locale;
 import java.util.Map;
@@ -124,6 +125,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest()
             .header("Content-Language", locale.toLanguageTag())
             .body(body);
+    }
+
+    /**
+     * Rota inexistente que passou pela cadeia de segurança: 404, nunca 500.
+     *
+     * <p>Uma URL desconhecida e protegida para em 401 no filtro, antes do
+     * dispatcher. As liberadas por {@code permitAll} chegam até aqui e, sem este
+     * handler, a {@code NoResourceFoundException} caía no genérico e virava 500 —
+     * como acontecia em {@code /docs} e {@code /v3/api-docs} com o springdoc
+     * desligado em produção.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResource(
+            NoResourceFoundException ex, Locale locale, WebRequest request) {
+        return errorResponse(HttpStatus.NOT_FOUND,
+            messages.resolve("error.resource-not-found.title", locale),
+            messages.resolve("error.route-not-found.message", locale), locale, request);
     }
 
     /** Método HTTP inexistente na rota: 405, nunca 500 do handler genérico. */
