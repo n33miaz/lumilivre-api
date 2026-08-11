@@ -14,6 +14,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import br.com.lumilivre.api.dto.reader.ReaderListItem;
+import br.com.lumilivre.api.dto.reader.ReaderPenaltySummaryResponse;
 import br.com.lumilivre.api.dto.reader.ReaderRequest;
 import br.com.lumilivre.api.enums.LibraryType;
 import br.com.lumilivre.api.enums.PenaltyCode;
@@ -152,6 +153,22 @@ class ReaderServiceTest {
                 eq("%ada@example.test%"),
                 eq("11999990000"),
                 eq(pageable));
+    }
+
+    @Test
+    void penaltySummaryAggregatesGlobalCountsAndDerivesNoPenalty() {
+        when(readerRepository.countByPenaltyCode(PenaltyCode.WARNING)).thenReturn(4L);
+        when(readerRepository.countByPenaltyCode(PenaltyCode.SUSPENSION)).thenReturn(2L);
+        when(readerRepository.countByPenaltyCodeIn(List.of(PenaltyCode.BLOCK, PenaltyCode.BAN))).thenReturn(3L);
+        when(readerRepository.count()).thenReturn(50L);
+
+        ReaderPenaltySummaryResponse summary = service().getPenaltySummary();
+
+        assertThat(summary.warning()).isEqualTo(4L);
+        assertThat(summary.suspension()).isEqualTo(2L);
+        assertThat(summary.block()).isEqualTo(3L);
+        // "Sem penalidade" é o resto (50 - 4 - 2 - 3), englobando null e REGISTRO.
+        assertThat(summary.noPenalty()).isEqualTo(41L);
     }
 
     @Test

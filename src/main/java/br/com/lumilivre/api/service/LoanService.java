@@ -30,6 +30,7 @@ import br.com.lumilivre.api.domain.policy.ReservationPolicy;
 import br.com.lumilivre.api.dto.loan.ActiveLoanItem;
 import br.com.lumilivre.api.dto.loan.LoanListItem;
 import br.com.lumilivre.api.dto.loan.LoanRequest;
+import br.com.lumilivre.api.dto.loan.LoanStatusSummaryResponse;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.enums.BookCopyStatus;
 import br.com.lumilivre.api.enums.PenaltyCode;
@@ -304,6 +305,29 @@ public class LoanService {
     @Cacheable(value = DASHBOARD_ACTIVE_OVERDUE_COUNT)
     public long getContagemEmprestimosAtivosEAtrasados() {
         return loanRepository.countByStatusIn(List.of(LoanStatus.ACTIVE, LoanStatus.OVERDUE));
+    }
+
+    /**
+     * Totais globais por status para os cartões-aba da listagem. Calculado ao
+     * vivo (sem cache) para bater com a lista logo após criar/devolver/excluir um
+     * empréstimo — o painel gerencial usa a materialized view, que atrasa até 15
+     * min e não serve para esse casamento imediato. A semântica de cada campo é a
+     * mesma do filtro avançado, para que o número da aba coincida com o total da
+     * lista quando ela é filtrada.
+     */
+    public LoanStatusSummaryResponse getStatusSummary() {
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime inicioDoDia = LocalDate.now().atStartOfDay().atOffset(now.getOffset());
+        OffsetDateTime fimDoDia = LocalDate.now().atTime(23, 59, 59).atOffset(now.getOffset());
+
+        long active = loanRepository.countByStatusAndDueAtGreaterThanEqual(LoanStatus.ACTIVE, now);
+        long overdue = loanRepository.countByStatus(LoanStatus.OVERDUE)
+                + loanRepository.countByStatusAndDueAtBefore(LoanStatus.ACTIVE, now);
+        long dueToday = loanRepository.countByDueAtBetween(inicioDoDia, fimDoDia);
+        long completed = loanRepository.countByStatus(LoanStatus.COMPLETED);
+        long all = loanRepository.count();
+
+        return new LoanStatusSummaryResponse(all, active, overdue, dueToday, completed);
     }
 
     public List<ActiveLoanItem> buscarApenasAtrasadosV2() {

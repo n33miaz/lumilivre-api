@@ -16,6 +16,7 @@ import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.loan.LoanListItem;
+import br.com.lumilivre.api.dto.loan.LoanStatusSummaryResponse;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.mapper.LoanMapper;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
@@ -90,6 +91,21 @@ class LoanControllerTest {
                 .andExpect(jsonPath("$.content[0].status.label").value("Active"));
     }
 
+    @Test
+    void statusSummaryReturnsGlobalCounts() throws Exception {
+        when(loanService.getStatusSummary())
+                .thenReturn(new LoanStatusSummaryResponse(164, 40, 8, 7, 112));
+
+        mockMvc.perform(get("/api/loans/status-summary").header("Accept-Language", "pt-BR"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Language", "pt-BR"))
+                .andExpect(jsonPath("$.all").value(164))
+                .andExpect(jsonPath("$.active").value(40))
+                .andExpect(jsonPath("$.overdue").value(8))
+                .andExpect(jsonPath("$.dueToday").value(7))
+                .andExpect(jsonPath("$.completed").value(112));
+    }
+
     /**
      * A listagem de empréstimos nomeia quem está com o quê e quem está atrasado.
      * O leitor tem o próprio histórico (via {@code /loans/reader/{matricula}},
@@ -101,6 +117,7 @@ class LoanControllerTest {
         mockMvc.perform(get("/api/loans")).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/loans/advanced")).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/loans/overdue")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/loans/status-summary")).andExpect(status().isForbidden());
 
         verifyNoInteractions(loanService);
     }

@@ -23,6 +23,18 @@ public interface LoanRepository extends JpaRepository<Loan, UUID> {
 
     long countByStatusIn(List<LoanStatus> statuses);
 
+    long countByStatus(LoanStatus status);
+
+    // Contagens usadas pelo resumo por status (status-summary). Reproduzem, como
+    // COUNT, exatamente os ramos do filtro avançado: ativo = ACTIVE com dueAt no
+    // futuro; parte dos atrasados = ACTIVE com dueAt já vencido; vence hoje =
+    // dueAt dentro do dia. Assim o número da aba bate com a lista filtrada.
+    long countByStatusAndDueAtGreaterThanEqual(LoanStatus status, OffsetDateTime dataRef);
+
+    long countByStatusAndDueAtBefore(LoanStatus status, OffsetDateTime dataRef);
+
+    long countByDueAtBetween(OffsetDateTime inicio, OffsetDateTime fim);
+
     List<Loan> findByStatusAndDueAtBefore(LoanStatus status, OffsetDateTime now);
 
     List<Loan> findByStatusAndDueAtGreaterThanEqual(LoanStatus status, OffsetDateTime now);

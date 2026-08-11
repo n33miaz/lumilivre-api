@@ -16,6 +16,7 @@ import br.com.lumilivre.api.config.I18nConfig;
 import br.com.lumilivre.api.config.MessageResolver;
 import br.com.lumilivre.api.config.MethodSecuritySliceConfig;
 import br.com.lumilivre.api.dto.reader.ReaderListItem;
+import br.com.lumilivre.api.dto.reader.ReaderPenaltySummaryResponse;
 import br.com.lumilivre.api.mapper.ReaderMapper;
 import br.com.lumilivre.api.model.Reader;
 import br.com.lumilivre.api.security.CustomUserDetailsService;
@@ -79,6 +80,20 @@ class ReaderControllerTest {
     }
 
     @Test
+    void penaltySummaryReturnsGlobalCounts() throws Exception {
+        when(readerService.getPenaltySummary())
+                .thenReturn(new ReaderPenaltySummaryResponse(41, 4, 2, 3));
+
+        mockMvc.perform(get("/api/readers/penalty-summary").header("Accept-Language", "pt-BR"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Language", "pt-BR"))
+                .andExpect(jsonPath("$.noPenalty").value(41))
+                .andExpect(jsonPath("$.warning").value(4))
+                .andExpect(jsonPath("$.suspension").value(2))
+                .andExpect(jsonPath("$.block").value(3));
+    }
+
+    @Test
     void getOneSetsContentLanguageFromAcceptHeader() throws Exception {
         Reader reader = new Reader();
         reader.setRegistrationNumber("12345");
@@ -118,7 +133,10 @@ class ReaderControllerTest {
     void aReaderCannotListEveryReader() throws Exception {
         mockMvc.perform(get("/api/readers"))
                 .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/readers/penalty-summary"))
+                .andExpect(status().isForbidden());
 
         verify(readerService, never()).listarParaAdminV2(any(), any(Pageable.class));
+        verify(readerService, never()).getPenaltySummary();
     }
 }

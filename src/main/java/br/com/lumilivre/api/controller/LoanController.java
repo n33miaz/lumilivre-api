@@ -8,6 +8,7 @@ import br.com.lumilivre.api.config.SwaggerTags;
 import br.com.lumilivre.api.dto.loan.ActiveLoanResponse;
 import br.com.lumilivre.api.dto.loan.LoanRequest;
 import br.com.lumilivre.api.dto.loan.LoanResponse;
+import br.com.lumilivre.api.dto.loan.LoanStatusSummaryResponse;
 import br.com.lumilivre.api.mapper.LoanMapper;
 import br.com.lumilivre.api.enums.LoanStatus;
 import br.com.lumilivre.api.security.CanAccessLoan;
@@ -115,6 +116,15 @@ public class LoanController {
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(loanService.getContagemEmprestimosAtivosEAtrasados());
+    }
+
+    @GetMapping("/status-summary")
+    @Operation(operationId = "loans.statusSummary")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
+    public ResponseEntity<LoanStatusSummaryResponse> statusSummary(Locale locale) {
+        return ResponseEntity.ok()
+                .header("Content-Language", locale.toLanguageTag())
+                .body(loanService.getStatusSummary());
     }
 
     @GetMapping("/reader/{registrationNumber}")

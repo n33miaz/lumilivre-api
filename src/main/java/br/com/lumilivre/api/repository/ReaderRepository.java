@@ -30,6 +30,13 @@ public interface ReaderRepository extends JpaRepository<Reader, UUID> {
 
     Optional<Reader> findByFullNameIgnoreCase(String fullName);
 
+    // Contagens globais por penalidade para os cartões da tela de leitores. O
+    // "sem penalidade" é derivado (total - demais), então não precisa de método
+    // próprio e ainda cobre quem tem REGISTRO, que a tela não exibe como cartão.
+    long countByPenaltyCode(PenaltyCode penaltyCode);
+
+    long countByPenaltyCodeIn(List<PenaltyCode> penaltyCodes);
+
     @Query("""
             SELECT a FROM Reader a
             WHERE LOWER(a.fullName) LIKE LOWER(CONCAT('%', :texto, '%'))

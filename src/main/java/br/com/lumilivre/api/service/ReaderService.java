@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import br.com.lumilivre.api.dto.reader.ReaderListItem;
+import br.com.lumilivre.api.dto.reader.ReaderPenaltySummaryResponse;
 import br.com.lumilivre.api.dto.reader.ReaderRankingItem;
 import br.com.lumilivre.api.dto.reader.ReaderRequest;
 import br.com.lumilivre.api.enums.LibraryType;
@@ -108,6 +109,21 @@ public class ReaderService {
     @Cacheable(value = READER_COUNT)
     public long getContagemTotal() {
         return readerRepository.count();
+    }
+
+    /**
+     * Totais globais por categoria de penalidade para os cartões da tela de
+     * leitores. "block" agrega BLOQUEIO + BANIMENTO (a tela junta os dois num só
+     * cartão) e "noPenalty" é derivado (total - demais), o que mantém REGISTRO no
+     * balde de "sem penalidade" — exatamente como a tela categoriza cada linha.
+     */
+    public ReaderPenaltySummaryResponse getPenaltySummary() {
+        long warning = readerRepository.countByPenaltyCode(PenaltyCode.WARNING);
+        long suspension = readerRepository.countByPenaltyCode(PenaltyCode.SUSPENSION);
+        long block = readerRepository.countByPenaltyCodeIn(List.of(PenaltyCode.BLOCK, PenaltyCode.BAN));
+        long noPenalty = readerRepository.count() - warning - suspension - block;
+
+        return new ReaderPenaltySummaryResponse(noPenalty, warning, suspension, block);
     }
 
     @Auditable(action = "READER_CREATED", targetParam = "#request.registrationNumber")

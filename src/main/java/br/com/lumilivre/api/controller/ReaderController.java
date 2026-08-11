@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Locale;
 
 import br.com.lumilivre.api.config.SwaggerTags;
+import br.com.lumilivre.api.dto.reader.ReaderPenaltySummaryResponse;
 import br.com.lumilivre.api.dto.reader.ReaderRankingResponse;
 import br.com.lumilivre.api.dto.reader.ReaderRequest;
 import br.com.lumilivre.api.dto.reader.ReaderResponse;
@@ -77,6 +78,15 @@ public class ReaderController {
         return ResponseEntity.ok()
                 .header("Content-Language", locale.toLanguageTag())
                 .body(page);
+    }
+
+    @GetMapping("/penalty-summary")
+    @Operation(operationId = "readers.penaltySummary")
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
+    public ResponseEntity<ReaderPenaltySummaryResponse> penaltySummary(Locale locale) {
+        return ResponseEntity.ok()
+                .header("Content-Language", locale.toLanguageTag())
+                .body(readerService.getPenaltySummary());
     }
 
     @GetMapping("/{registrationNumber}")

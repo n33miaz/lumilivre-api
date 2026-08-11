@@ -315,6 +315,25 @@ class LoanServiceTest {
         assertThat(service.getContagemAtrasadosReal()).isEqualTo(3);
     }
 
+    @Test
+    void statusSummaryAggregatesGlobalCountsWithAdvancedFilterSemantics() {
+        // Atrasados = OVERDUE armazenados (5) + ACTIVE já vencidos (3), como no filtro.
+        when(loanRepository.countByStatusAndDueAtGreaterThanEqual(eq(LoanStatus.ACTIVE), any())).thenReturn(40L);
+        when(loanRepository.countByStatus(LoanStatus.OVERDUE)).thenReturn(5L);
+        when(loanRepository.countByStatusAndDueAtBefore(eq(LoanStatus.ACTIVE), any())).thenReturn(3L);
+        when(loanRepository.countByDueAtBetween(any(), any())).thenReturn(7L);
+        when(loanRepository.countByStatus(LoanStatus.COMPLETED)).thenReturn(112L);
+        when(loanRepository.count()).thenReturn(164L);
+
+        var summary = service.getStatusSummary();
+
+        assertThat(summary.all()).isEqualTo(164L);
+        assertThat(summary.active()).isEqualTo(40L);
+        assertThat(summary.overdue()).isEqualTo(8L);
+        assertThat(summary.dueToday()).isEqualTo(7L);
+        assertThat(summary.completed()).isEqualTo(112L);
+    }
+
     private static LoanRequest request() {
         OffsetDateTime now = OffsetDateTime.now();
         return LoanRequest.builder()
