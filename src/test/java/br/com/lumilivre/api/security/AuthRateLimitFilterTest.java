@@ -255,6 +255,10 @@ class AuthRateLimitFilterTest {
     }
 
     private static AuthRateLimitFilter newFilter() {
+        return newFilter(new RateLimitProperties());
+    }
+
+    private static AuthRateLimitFilter newFilter(RateLimitProperties properties) {
         // ObjectMapper pelo builder do Spring (registra o módulo de java.time,
         // igual ao bean injetado em produção), MessageResolver com os bundles de
         // verdade e o LocaleResolver real — assim o corpo do 429 é exercitado,
@@ -263,7 +267,8 @@ class AuthRateLimitFilterTest {
         return new AuthRateLimitFilter(
                 Jackson2ObjectMapperBuilder.json().build(),
                 new MessageResolver(i18n.messageSource()),
-                i18n.localeResolver());
+                i18n.localeResolver(),
+                properties);
     }
 
     private static MockHttpServletRequest loginRequest(String remoteAddr) {
@@ -288,6 +293,67 @@ class AuthRateLimitFilterTest {
             request.setServletPath("/api/auth/login");
             request.setRemoteAddr("203.0.113.50");
             filter.doFilter(request, new MockHttpServletResponse(), chain);
+        }
+
+        verify(chain, times(5)).doFilter(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any());
+    }
+
+    /**
+     * O teto configurado precisa chegar ao balde de verdade, senão a instância de
+     * teste continuaria apanhando do 429 e a configuração seria decorativa.
+     */
+    @Test
+    void oTetoDeAuthVemDaConfiguracaoENaoDeConstante() throws Exception {
+        RateLimitProperties afrouxado = new RateLimitProperties();
+        afrouxado.getAuth().setCapacity(12);
+        AuthRateLimitFilter filter = newFilter(afrouxado);
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        for (int i = 0; i < 13; i++) {
+            filter.doFilter(loginRequest("203.0.113.90"), new MockHttpServletResponse(), chain);
+        }
+
+        verify(chain, times(12)).doFilter(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any());
+    }
+
+    /**
+     * A janela configurada também precisa sair no {@code Retry-After}: um cliente
+     * que respeita o cabeçalho voltaria cedo demais se ele mentisse o default.
+     */
+    @Test
+    void oRetryAfterRefleteAJanelaConfigurada() throws Exception {
+        RateLimitProperties apertado = new RateLimitProperties();
+        apertado.getAuth().setCapacity(1);
+        apertado.getAuth().setWindow(java.time.Duration.ofMinutes(3));
+        AuthRateLimitFilter filter = newFilter(apertado);
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        filter.doFilter(loginRequest("203.0.113.91"), new MockHttpServletResponse(), chain);
+        MockHttpServletResponse blocked = new MockHttpServletResponse();
+        filter.doFilter(loginRequest("203.0.113.91"), blocked, chain);
+
+        assertThat(blocked.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+        assertThat(blocked.getHeader("Retry-After")).isEqualTo("180");
+    }
+
+    /**
+     * Afrouxar a leitura pública não pode afrouxar o login junto — é justamente
+     * a separação de baldes que permite dar folga ao pentest sem abrir a porta
+     * de adivinhação de credencial.
+     */
+    @Test
+    void afrouxarLeituraPublicaNaoMexeNoBaldeDeAuth() throws Exception {
+        RateLimitProperties properties = new RateLimitProperties();
+        properties.getPublicRead().setCapacity(10_000);
+        AuthRateLimitFilter filter = newFilter(properties);
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        for (int i = 0; i < 6; i++) {
+            filter.doFilter(loginRequest("203.0.113.92"), new MockHttpServletResponse(), chain);
         }
 
         verify(chain, times(5)).doFilter(

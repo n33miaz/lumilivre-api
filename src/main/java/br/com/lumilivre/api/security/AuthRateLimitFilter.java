@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.MDC;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -27,12 +28,15 @@ import lombok.RequiredArgsConstructor;
 /**
  * Rate limit por IP, com dois grupos de balde e limites diferentes.
  *
+ * <p>Os tetos vêm de {@link RateLimitProperties} — os defaults descritos abaixo
+ * são os mesmos números que antes viviam cravados aqui.
+ *
  * <p><b>Autenticação</b> ({@code /api/auth/login}, {@code forgot-password},
  * {@code reset-password}, {@code validate-token/**}): 5 requisições por 10
  * minutos. É limite de adivinhação de credencial — apertado de propósito.
  *
  * <p><b>Leituras do acervo</b> ({@code /api/books/**}, {@code /api/settings/public},
- * {@code /api/app-version}): {@value #MAX_PUBLIC_READS} por minuto. Existe porque
+ * {@code /api/app-version}): 300 por minuto. Existe porque
  * boa parte dessas rotas é anônima — a ficha do livro passou a ser, e catálogo,
  * busca pública e navegação por gênero já eram — e endpoint anônimo é superfície
  * de DoS. O teto é folgado de propósito: uma tela do app dispara meia dúzia de
@@ -41,7 +45,7 @@ import lombok.RequiredArgsConstructor;
  * borda (proxy/CDN), não em processo — aqui já se pagou servlet e JSON.
  *
  * <p><b>Marcar interesse</b> ({@code POST}/{@code DELETE}
- * {@code /api/books/{id}/interest}): {@value #MAX_INTEREST_WRITES} por minuto.
+ * {@code /api/books/{id}/interest}): 120 por minuto.
  * Tem balde próprio, e não o de leitura, por dois motivos. É escrita autenticada
  * e não leitura anônima — o custo, o abuso possível e o teto natural são outros
  * (a unicidade da V8 limita cada leitor ao tamanho do acervo, ele não consegue
@@ -54,20 +58,13 @@ import lombok.RequiredArgsConstructor;
  * <p>Retorna HTTP 429 com {@code Retry-After} ao estourar o balde do grupo.
  */
 @Component
+@EnableConfigurationProperties(RateLimitProperties.class)
 @RequiredArgsConstructor
 public class AuthRateLimitFilter extends OncePerRequestFilter {
 
-    private static final int MAX_REQUESTS = 5;
-    private static final Duration WINDOW = Duration.ofMinutes(10);
-
-    private static final int MAX_PUBLIC_READS = 300;
-    private static final Duration PUBLIC_READ_WINDOW = Duration.ofMinutes(1);
-
-    // 120/min: uma pessoa tocando em coração faz umas dezenas por minuto no
-    // limite, e o NAT da escola soma várias. Folgado para uso humano, apertado
-    // para laço automatizado.
-    private static final int MAX_INTEREST_WRITES = 120;
-    private static final Duration INTEREST_WRITE_WINDOW = Duration.ofMinutes(1);
+    // O default de interesse (120/min) é folgado de propósito: uma pessoa tocando
+    // em coração faz umas dezenas por minuto no limite, e o NAT da escola soma
+    // várias. Folgado para uso humano, apertado para laço automatizado.
 
     private static final String GROUP_AUTH = "auth";
     private static final String GROUP_VALIDATE_TOKEN = "validate-token";
@@ -82,6 +79,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
     private final MessageResolver messageResolver;
     private final LocaleResolver localeResolver;
+    private final RateLimitProperties properties;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -183,24 +181,27 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         return localeResolver.resolveLocale(request);
     }
 
-    private static Duration windowOf(String group) {
+    /**
+     * O balde configurado do grupo. {@code validate-token} tem entrada própria
+     * mesmo com os mesmos defaults do auth: eles nunca dividiram cota (a chave do
+     * mapa inclui o grupo), e separar aqui deixa a instância de teste afrouxar um
+     * sem afrouxar o outro.
+     */
+    private RateLimitProperties.Bucket configOf(String group) {
         return switch (group) {
-            case GROUP_PUBLIC_READ -> PUBLIC_READ_WINDOW;
-            case GROUP_INTEREST_WRITE -> INTEREST_WRITE_WINDOW;
-            default -> WINDOW;
+            case GROUP_PUBLIC_READ -> properties.getPublicRead();
+            case GROUP_INTEREST_WRITE -> properties.getInterestWrite();
+            case GROUP_VALIDATE_TOKEN -> properties.getValidateToken();
+            default -> properties.getAuth();
         };
     }
 
-    private static int capacityOf(String group) {
-        return switch (group) {
-            case GROUP_PUBLIC_READ -> MAX_PUBLIC_READS;
-            case GROUP_INTEREST_WRITE -> MAX_INTEREST_WRITES;
-            default -> MAX_REQUESTS;
-        };
+    private Duration windowOf(String group) {
+        return configOf(group).getWindow();
     }
 
     private Bucket buildBucket(String group) {
-        int capacity = capacityOf(group);
+        int capacity = configOf(group).getCapacity();
         Bandwidth limit = Bandwidth.builder()
                 .capacity(capacity)
                 .refillIntervally(capacity, windowOf(group))

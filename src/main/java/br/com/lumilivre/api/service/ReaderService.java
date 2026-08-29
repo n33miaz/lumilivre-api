@@ -46,9 +46,29 @@ import br.com.lumilivre.api.service.infra.postalcode.PostalAddress;
 import br.com.lumilivre.api.service.infra.postalcode.PostalCodeRouter;
 import br.com.lumilivre.api.service.infra.storage.StorageBucket;
 import br.com.lumilivre.api.service.infra.storage.StorageProvider;
+import br.com.lumilivre.api.utils.SortAllowlist;
 
 @Service
 public class ReaderService {
+
+    /**
+     * Campos de ordenacao aceitos na listagem de leitores, traduzidos para o
+     * caminho JPQL que as tres consultas entendem (alias {@code a}=Reader,
+     * {@code c}=course). Sem isto, {@code ?sort=courseName} — o proprio nome do
+     * campo em {@code ReaderListItem} — e qualquer campo desconhecido chegavam
+     * ao Hibernate e viravam 500; a lista de livros ja passava por aqui, a de
+     * leitores tinha ficado de fora. Desempate por matricula (unica) garante
+     * ordem total e paginacao estavel.
+     */
+    private static final SortAllowlist LISTA_SORT = SortAllowlist.of(
+            "registrationNumber", "registrationNumber",
+            "fullName", "fullName",
+            "courseName", "course.name",
+            "readerCategory", "readerCategory",
+            "email", "email",
+            "phoneNumber", "phoneNumber",
+            "penaltyCode", "penaltyCode",
+            "birthDate", "birthDate");
 
     private final ReaderRepository readerRepository;
     private final CourseRepository courseRepository;
@@ -82,10 +102,11 @@ public class ReaderService {
     }
 
     public Page<ReaderListItem> listarParaAdminV2(String texto, Pageable pageable) {
+        Pageable ordenado = LISTA_SORT.sanitizeWithTotalOrder(pageable, "registrationNumber", "registrationNumber");
         if (texto == null || texto.isBlank()) {
-            return readerRepository.findReaderListItems(pageable);
+            return readerRepository.findReaderListItems(ordenado);
         }
-        return readerRepository.findReaderListItemsByText(texto, pageable);
+        return readerRepository.findReaderListItemsByText(texto, ordenado);
     }
 
     public Page<ReaderListItem> buscarAvancadoV2(String penalidadeStr, String matricula, String nome,
@@ -95,10 +116,11 @@ public class ReaderService {
         String nomeFiltro = criarFiltroLike(nome);
         String cursoNomeFiltro = criarFiltroLike(cursoNome);
         String emailFiltro = criarFiltroLike(email);
+        Pageable ordenado = LISTA_SORT.sanitizeWithTotalOrder(pageable, "registrationNumber", "registrationNumber");
 
         return readerRepository.buscarAvancadoV2(
                 penalidadeEnum, matricula, nomeFiltro, cursoNomeFiltro, turnoId, moduloId, dataNascimento,
-                emailFiltro, celular, pageable);
+                emailFiltro, celular, ordenado);
     }
 
     public Reader buscarPorMatricula(String matricula) {

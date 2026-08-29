@@ -46,6 +46,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -96,28 +98,56 @@ class ReaderServiceTest {
         LocaleContextHolder.resetLocaleContext();
     }
 
+    // Sem sort do cliente, a listagem passa a ordenar por matricula (ordem total
+    // para paginacao estavel), entao o pageable que chega ao repositorio ja vem
+    // reescrito pela allowlist — nao e mais o cru.
+    private static final Pageable ORDENADO_PADRAO =
+            PageRequest.of(0, 20, Sort.by(Sort.Order.asc("registrationNumber")));
+
     @Test
     void listForAdminUsesUnfilteredQueryWhenTextIsBlank() {
-        var pageable = PageRequest.of(0, 20);
         var page = new PageImpl<>(List.of(listItem("2025001")));
-        when(readerRepository.findReaderListItems(pageable)).thenReturn(page);
+        when(readerRepository.findReaderListItems(ORDENADO_PADRAO)).thenReturn(page);
 
-        assertThat(service().listarParaAdminV2(" ", pageable)).isSameAs(page);
+        assertThat(service().listarParaAdminV2(" ", PageRequest.of(0, 20))).isSameAs(page);
         verify(readerRepository, never()).findReaderListItemsByText(any(), any());
     }
 
     @Test
     void listForAdminUsesTextSearchWhenTextIsPresent() {
-        var pageable = PageRequest.of(0, 20);
         var page = new PageImpl<>(List.of(listItem("2025001")));
-        when(readerRepository.findReaderListItemsByText("Ada", pageable)).thenReturn(page);
+        when(readerRepository.findReaderListItemsByText("Ada", ORDENADO_PADRAO)).thenReturn(page);
 
-        assertThat(service().listarParaAdminV2("Ada", pageable)).isSameAs(page);
+        assertThat(service().listarParaAdminV2("Ada", PageRequest.of(0, 20))).isSameAs(page);
+    }
+
+    @Test
+    void listForAdminMapsCourseNameToJpqlPathAndAddsTieBreaker() {
+        var page = new PageImpl<>(List.of(listItem("2025001")));
+        var esperado = PageRequest.of(0, 20, Sort.by(
+                Sort.Order.desc("course.name"),
+                Sort.Order.asc("registrationNumber")));
+        when(readerRepository.findReaderListItems(esperado)).thenReturn(page);
+
+        // O cliente pede o campo do ReaderListItem ("courseName"); antes isso ia
+        // cru ao Hibernate como propriedade inexistente e virava 500.
+        var pedido = PageRequest.of(0, 20, Sort.by(Sort.Order.desc("courseName")));
+        assertThat(service().listarParaAdminV2(" ", pedido)).isSameAs(page);
+    }
+
+    @Test
+    void listForAdminRejectsUnknownSortFieldWithBusinessRule() {
+        var pedido = PageRequest.of(0, 20, Sort.by(Sort.Order.asc("name")));
+
+        assertThatExceptionOfType(BusinessRuleException.class)
+                .isThrownBy(() -> service().listarParaAdminV2(" ", pedido));
+        verify(readerRepository, never()).findReaderListItems(any());
     }
 
     @Test
     void advancedSearchNormalizesEnumAndLikeFilters() {
         var pageable = PageRequest.of(0, 10);
+        var ordenado = PageRequest.of(0, 10, Sort.by(Sort.Order.asc("registrationNumber")));
         when(readerRepository.buscarAvancadoV2(
                 eq(PenaltyCode.WARNING),
                 eq("2025001"),
@@ -128,7 +158,7 @@ class ReaderServiceTest {
                 eq(LocalDate.of(2001, 1, 5)),
                 eq("%ada@example.test%"),
                 eq("11999990000"),
-                eq(pageable))).thenReturn(new PageImpl<>(List.of()));
+                eq(ordenado))).thenReturn(new PageImpl<>(List.of()));
 
         service().buscarAvancadoV2(
                 "warning",
@@ -152,7 +182,7 @@ class ReaderServiceTest {
                 eq(LocalDate.of(2001, 1, 5)),
                 eq("%ada@example.test%"),
                 eq("11999990000"),
-                eq(pageable));
+                eq(ordenado));
     }
 
     @Test
