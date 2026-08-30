@@ -499,6 +499,32 @@ class AppUserServiceTest {
         return new AppUserService(emailService, passwordEncoder, appUserRepository, messages);
     }
 
+    @Test
+    void updateMyLocaleSavesSupportedLanguageForTheLoggedUser() {
+        AppUser loggedUser = AppUser.builder()
+                .email("admin@example.test")
+                .role(Role.ADMIN)
+                .preferredLocale("pt-BR")
+                .build();
+        setLoggedUser("admin@example.test");
+        when(appUserRepository.findByEmailOrRegistrationNumber("admin@example.test", "admin@example.test"))
+                .thenReturn(Optional.of(loggedUser));
+
+        service().updateMyLocale("hi-IN");
+
+        assertThat(loggedUser.getPreferredLocale()).isEqualTo("hi-IN");
+        verify(appUserRepository).save(loggedUser);
+    }
+
+    @Test
+    void updateMyLocaleRejectsUnsupportedLanguageBeforeTouchingTheDatabase() {
+        assertThatExceptionOfType(BusinessRuleException.class)
+                .isThrownBy(() -> service().updateMyLocale("tlh-KX"))
+                .satisfies(error -> assertThat(error.getMessageKey())
+                        .isEqualTo("user.locale.unsupported"));
+        verify(appUserRepository, never()).save(any());
+    }
+
     private static void setLoggedUser(String username) {
         User principal = (User) User.withUsername(username)
                 .password("ignored")

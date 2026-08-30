@@ -294,4 +294,27 @@ public class AppUserService {
         appUser.setGuidedTourCompleted(true);
         appUserRepository.save(appUser);
     }
+
+    /**
+     * Idiomas que os clientes de fato usam (pastas de i18n do web/app). E a lista
+     * que decide em que lingua saem os e-mails transacionais, entao vive aqui e
+     * nao herda a do resolver de request (que aceita variantes soltas como "en"
+     * para casar o Accept-Language do navegador).
+     */
+    private static final java.util.Set<String> SUPPORTED_LOCALES =
+            java.util.Set.of("pt-BR", "en-US", "es-ES", "zh-CN", "hi-IN");
+
+    public void updateMyLocale(String locale) {
+        if (locale == null || !SUPPORTED_LOCALES.contains(locale.trim())) {
+            throw BusinessRuleException.ofKey("user.locale.unsupported");
+        }
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = userDetails.getUsername();
+
+        AppUser appUser = appUserRepository.findByEmailOrRegistrationNumber(username, username)
+                .orElseThrow(() -> ResourceNotFoundException.ofKey("user.logged-in-not-found"));
+
+        appUser.setPreferredLocale(locale.trim());
+        appUserRepository.save(appUser);
+    }
 }

@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 import br.com.lumilivre.api.config.SwaggerTags;
+import br.com.lumilivre.api.dto.user.LocaleRequest;
 import br.com.lumilivre.api.dto.user.UserRequest;
 import br.com.lumilivre.api.dto.user.UserResponse;
 import br.com.lumilivre.api.dto.user.UserStatusRequest;
@@ -121,6 +122,14 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> completeTour() {
         userService.completeTour();
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/locale")
+    @Operation(operationId = "users.updateMyLocale")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> updateMyLocale(@Valid @RequestBody LocaleRequest request) {
+        userService.updateMyLocale(request.getLocale());
         return ResponseEntity.noContent().build();
     }
 }
