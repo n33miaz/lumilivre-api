@@ -1,20 +1,21 @@
-name: Keep alive (API + banco)
+name: Keep alive (banco)
 
-# Mantém a instância do Render acordada e, principalmente, o projeto do Supabase
-# fora da pausa por inatividade (o plano free pausa após ~7 dias sem nenhuma
-# consulta). A API só consulta o banco enquanto está de pé, mas no free ela
-# hiberna após ~15 min sem tráfego — então o "escrever no banco de tempos em
-# tempos" precisa vir de fora. Este cron bate num endpoint público que lê o
-# banco (/api/app-version), o que acorda a API e gera atividade no Postgres.
+# Objetivo ÚNICO: impedir que o projeto do Supabase (free) pause por
+# inatividade — ele pausa após ~7 dias sem nenhuma consulta. Qualquer query
+# (leitura conta) zera esse relógio.
 #
-# Observação: o agendador do GitHub Actions é best-effort (pode atrasar sob
-# carga). Isso é irrelevante para a janela de 7 dias do Supabase e ajuda — sem
-# garantir — a reduzir o cold start. Para eliminar o cold start de vez, só
-# saindo do plano free.
+# Frequência de propósito BAIXA (2x/dia). O erro anterior era pingar a cada
+# 10 min, o que mantinha a API do Render acordada 24/7 e QUEIMAVA as 750
+# horas/mês do free tier — justamente o que suspende o serviço. Duas batidas
+# por dia deixam a API dormir quase o tempo todo (gasta pouquíssimas horas) e
+# ainda sobra folga enorme sobre a janela de 7 dias do Supabase.
+#
+# Bate num endpoint público que lê o banco (/api/app-version): acorda a API só
+# o suficiente para uma consulta e ela volta a dormir. Não custa nada.
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "0 9,21 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -28,15 +29,15 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping API (lê o banco e acorda a instância)
+      - name: Toca o banco via endpoint público (acorda a API, roda 1 query)
         run: |
-          for i in 1 2 3; do
-            code=$(curl -s -m 120 -o /dev/null -w "%{http_code}" \
+          for i in 1 2 3 4; do
+            code=$(curl -s -m 180 -o /dev/null -w "%{http_code}" \
               https://lumilivre-api.onrender.com/api/app-version || echo 000)
             echo "tentativa $i -> HTTP $code"
             if [ "$code" = "200" ]; then exit 0; fi
-            sleep 30
+            sleep 45
           done
-          echo "API não respondeu 200 após 3 tentativas (pode ser cold start em curso)."
-          # Não falha o job: um ping perdido não é erro, o próximo cron cobre.
+          echo "API não respondeu 200 (cold start longo ou serviço suspenso)."
+          # Não falha o job: a próxima janela cobre; a de 7 dias é folgada.
           exit 0
