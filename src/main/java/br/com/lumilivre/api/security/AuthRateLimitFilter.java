@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.MDC;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -59,6 +60,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Component
 @EnableConfigurationProperties(RateLimitProperties.class)
+@Import(ClientIpResolver.class)
 @RequiredArgsConstructor
 public class AuthRateLimitFilter extends OncePerRequestFilter {
 
@@ -80,6 +82,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private final MessageResolver messageResolver;
     private final LocaleResolver localeResolver;
     private final RateLimitProperties properties;
+    private final ClientIpResolver clientIpResolver;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -210,10 +213,11 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     }
 
     private String resolveClientIp(HttpServletRequest request) {
-        // Com server.forward-headers-strategy=framework, getRemoteAddr() já é o IP
-        // real resolvido pelo proxy confiável. NÃO parseamos X-Forwarded-For do
-        // cliente (falsificável → burla o limite + DoS de memória).
-        String ip = request.getRemoteAddr();
+        // O IP real vem do ClientIpResolver (IP público mais à direita do
+        // X-Forwarded-For, anexado pela borda do Render). Chavear o balde pelo
+        // primeiro elemento — como fazia o getRemoteAddr() com a estratégia
+        // "framework" — deixava o atacante rotacionar o header e furar o limite.
+        String ip = clientIpResolver.resolve(request);
         return (ip != null && !ip.isBlank()) ? ip : "unknown";
     }
 }

@@ -138,6 +138,22 @@ public class SecurityConfig {
                 .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
 
+                // Headers de segurança explícitos. HSTS vai em TODA resposta
+                // (AnyRequest) porque, com forward-headers-strategy=none,
+                // request.isSecure() deixa de ser derivado do X-Forwarded-Proto e
+                // o writer padrão não dispararia — o serviço só atende HTTPS no
+                // Render, então forçar é seguro. CSP de API pura ('none' + sem
+                // frame) e Referrer-Policy complementam o nosniff/X-Frame padrão.
+                .headers(headers -> headers
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .requestMatcher(org.springframework.security.web.util.matcher.AnyRequestMatcher.INSTANCE)
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000L))
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'none'; frame-ancestors 'none'; base-uri 'none'"))
+                        .referrerPolicy(ref -> ref
+                                .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
+
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
                             Locale locale = resolveLocale(req);

@@ -68,3 +68,7 @@ coverage/
 /coverage/
 # Arquivos de teste temporarios na raiz
 /test/
+
+# Claude/skills tooling (nao versionar)
+.agents/
+skills-lock.json

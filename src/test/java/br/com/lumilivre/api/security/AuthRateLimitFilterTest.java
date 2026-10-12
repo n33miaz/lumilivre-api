@@ -81,20 +81,40 @@ class AuthRateLimitFilterTest {
     }
 
     @Test
-    void forwardedForHeaderIsIgnoredForRateLimiting() throws Exception {
-        // Mesmo IP resolvido pelo proxy (remoteAddr) com X-Forwarded-For variável
-        // NÃO deve burlar o limite: o filtro ignora o header do cliente.
+    void rotatingLeftForwardedEntriesDoesNotBypassRateLimit() throws Exception {
+        // O cliente real é o IP PÚBLICO mais à direita (anexado pela borda do
+        // Render); 198.51.100.77 abaixo. Um atacante rotaciona as entradas à
+        // esquerda (203.0.113.i) tentando criar baldes novos — não consegue: a
+        // chave é o rightmost, então o limite continua valendo. Regressão do
+        // bypass de X-Forwarded-For confirmado em produção.
         AuthRateLimitFilter filter = newFilter();
         FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
 
         for (int i = 0; i < 5; i++) {
-            filter.doFilter(forwardedLoginRequest("10.0.0.99", "198.51.100." + i), new MockHttpServletResponse(), chain);
+            filter.doFilter(forwardedLoginRequest("10.0.0.1", "203.0.113." + i + ", 198.51.100.77"),
+                    new MockHttpServletResponse(), chain);
         }
 
         MockHttpServletResponse blocked = new MockHttpServletResponse();
-        filter.doFilter(forwardedLoginRequest("10.0.0.99", "198.51.100.250"), blocked, chain);
+        filter.doFilter(forwardedLoginRequest("10.0.0.1", "203.0.113.250, 198.51.100.77"), blocked, chain);
 
         assertThat(blocked.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
+    }
+
+    @Test
+    void differentRealClientsGetSeparateBuckets() throws Exception {
+        // Dois clientes externos reais (rightmost distinto) não compartilham
+        // balde: 5 de um não bloqueiam o outro.
+        AuthRateLimitFilter filter = newFilter();
+        FilterChain chain = org.mockito.Mockito.mock(FilterChain.class);
+
+        for (int i = 0; i < 5; i++) {
+            filter.doFilter(forwardedLoginRequest("10.0.0.1", "198.51.100.10"), new MockHttpServletResponse(), chain);
+        }
+        MockHttpServletResponse other = new MockHttpServletResponse();
+        filter.doFilter(forwardedLoginRequest("10.0.0.1", "198.51.100.20"), other, chain);
+
+        assertThat(other.getStatus()).isEqualTo(HttpStatus.OK.value());
     }
 
     @Test
@@ -268,7 +288,8 @@ class AuthRateLimitFilterTest {
                 Jackson2ObjectMapperBuilder.json().build(),
                 new MessageResolver(i18n.messageSource()),
                 i18n.localeResolver(),
-                properties);
+                properties,
+                new ClientIpResolver());
     }
 
     private static MockHttpServletRequest loginRequest(String remoteAddr) {
