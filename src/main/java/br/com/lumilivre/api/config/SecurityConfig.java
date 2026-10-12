@@ -191,6 +191,8 @@ public class SecurityConfig {
                     }
                     auth
                         .requestMatchers("/error").permitAll()
+                        // TEMPORÁRIO: diagnóstico do IP real atrás do Render. Remover.
+                        .requestMatchers(HttpMethod.GET, "/api/_diag/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // Public endpoints

@@ -35,10 +35,32 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 public class ClientIpResolver {
 
+    /**
+     * Headers de IP ÚNICO que o ingress do Render/Cloudflare preenche com o IP
+     * real da conexão (e sobrescreve se o cliente tentar forjar). São a fonte
+     * mais confiável; ordem de preferência. O {@code X-Forwarded-For}, por si só,
+     * NÃO serve no Render: ele mantém o que o cliente envia na frente dos hops
+     * que o proxy anexa (confirmado por teste — rotacionar o XFF furava o limite).
+     */
+    private static final String[] TRUSTED_IP_HEADERS = {
+            "CF-Connecting-IP", "True-Client-IP", "X-Real-IP"
+    };
+
     public String resolve(HttpServletRequest request) {
         if (request == null) {
             return null;
         }
+        for (String header : TRUSTED_IP_HEADERS) {
+            String value = request.getHeader(header);
+            if (value != null && !value.isBlank()) {
+                String candidate = stripPort(value.trim());
+                if (isExternal(candidate)) {
+                    return candidate;
+                }
+            }
+        }
+        // Fallback: IP público mais à direita do X-Forwarded-For (o que a borda
+        // anexa). Mantido para proxies que injetam o IP real aqui.
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
             String[] hops = forwarded.split(",");
