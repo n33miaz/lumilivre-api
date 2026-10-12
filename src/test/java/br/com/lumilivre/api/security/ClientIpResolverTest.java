@@ -26,6 +26,37 @@ class ClientIpResolverTest {
     }
 
     @Test
+    void preferirCfConnectingIpSobreForwardedFor() {
+        // No Render (atrás do Cloudflare) o IP real vem no CF-Connecting-IP, que
+        // a borda sobrescreve. Ele vence o X-Forwarded-For forjável. Regressão do
+        // bypass confirmado e fechado em produção.
+        MockHttpServletRequest r = req("0:0:0:0:0:0:0:1", "203.0.113.1, 104.23.254.232, 10.28.211.133");
+        r.addHeader("CF-Connecting-IP", "179.191.73.66");
+        assertThat(resolver.resolve(r)).isEqualTo("179.191.73.66");
+    }
+
+    @Test
+    void rotacionarForwardedForNaoMudaOIpQuandoHaCfConnectingIp() {
+        MockHttpServletRequest a = req("0:0:0:0:0:0:0:1", "9.9.9.9, 104.23.254.232");
+        a.addHeader("CF-Connecting-IP", "179.191.73.66");
+        MockHttpServletRequest b = req("0:0:0:0:0:0:0:1", "8.8.8.8, 104.23.254.232");
+        b.addHeader("CF-Connecting-IP", "179.191.73.66");
+        assertThat(resolver.resolve(a)).isEqualTo("179.191.73.66");
+        assertThat(resolver.resolve(b)).isEqualTo("179.191.73.66");
+    }
+
+    @Test
+    void trueClientIpEXRealIpComoFallbackAntesDoForwardedFor() {
+        MockHttpServletRequest tci = req("10.0.0.1", "203.0.113.1");
+        tci.addHeader("True-Client-IP", "198.51.100.9");
+        assertThat(resolver.resolve(tci)).isEqualTo("198.51.100.9");
+
+        MockHttpServletRequest xri = req("10.0.0.1", "203.0.113.1");
+        xri.addHeader("X-Real-IP", "198.51.100.10");
+        assertThat(resolver.resolve(xri)).isEqualTo("198.51.100.10");
+    }
+
+    @Test
     void semForwardedUsaRemoteAddr() {
         assertThat(resolver.resolve(req("198.51.100.5", null))).isEqualTo("198.51.100.5");
     }
